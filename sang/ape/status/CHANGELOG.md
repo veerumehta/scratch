@@ -9,6 +9,19 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ## [2.2.4] - 2026-08-01
 
+- **Fixed** — `jazzx_sdk.manifest.spec_binding`'s surface-defaults table had two real deviations
+  from its own design, found by checking the plan's own named acceptance tests against what was
+  actually implemented rather than trusting that the code existing meant it was correct. (1)
+  `stream` was defaulted `True` for `WORKSPACE`/`ASSISTANT`, contradicting the explicit "advisory,
+  never default it" rule (`respond_stream()` can't produce structured output) — no surface
+  defaults `stream` now. (2) `conversation` was defaulted `True` unconditionally, with no check
+  for whether a `ConversationStore` was actually supplied — a spec that reads as memory-enabled
+  but isn't, since `InteractiveAgent._conversation_active()` also needs a `session_id` per call.
+  `bind_spec()`/`build_from_manifest()` gained a `store=` parameter: `conversation` now defaults
+  `True` only when a store is passed through, otherwise it stays `False` with a warning naming
+  both requirements. No live consumer of this feature exists yet in either repo, so the corrected
+  (safer) default carries zero regression risk to anything already running on it.
+
 - **Added** — `jazzx_sdk.llm.structured.IncompleteOutputError` (a `StructuredOutputError`
   subclass) and `validate(..., truncated=)`: a response cut off at the output token limit is now
   classified distinctly from malformed JSON, so callers stop retrying a truncation with

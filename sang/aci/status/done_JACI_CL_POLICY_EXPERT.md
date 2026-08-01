@@ -1,10 +1,9 @@
-# Status: CiSpreadPolicyExpert — FR-SOP Closure
+# Done: CiSpreadPolicyExpert — FR-SOP Closure
 
-Author: Virendra Mehta · Updated 2026-07-31
+Author: Virendra Mehta · Updated 2026-08-01
 Repo: jaci (+ japes, per the two decisions below) · Plan: docs/plans/plan_JACI_CL_POLICY_EXPERT.md
 
-**Phases 0-5 done** (2026-08-01). Phase 6 not started. This is a `status_` file, not a `done_` file
-— routing the existing UI surfaces through the expert is still ahead.
+**All 6 phases done** (2026-08-01).
 
 ## Git findings (Phase 0's own ask)
 
@@ -310,8 +309,47 @@ special-instructions fixture directly — no new YAML invented for this. Asserts
 1978 at session start), 3 skipped, no regressions. jaci 790 passed (was 756 at session start), 8
 skipped, 5 xfailed, same 5 pre-existing unrelated failures throughout.
 
-**Still not done:** Phase 6 — routing the three existing UI surfaces (Concepts tab, Docs &
-Policies tab, Covenants tab's Policy sources expander) through the expert.
-`interpret_policy_finding()` is still not wired into any UI click-through; that's Phase 6's job
-(UI routing), not Phase 4/5's (building the mechanism) — the same boundary Phase 3 drew around
-`credit_validation.provides.validate` vs. the review-queue/workbook UI that reads its output.
+## Phase 6 — done (routing the three UI surfaces through the expert)
+
+**Concepts tab.** `ui/registry.py`'s `Scenario` gained `policy_resolution_target` (a lazy-loaded,
+no-arg Streamlit renderer — same `(module, attr)` convention as `pipeline_target`/`demo_target`)
+and `.policy_resolution_renderer()`. `ui/concepts_view.py`'s `render()` calls it generically
+(`if renderer is not None: renderer()`) — zero ci-specific code landed there, exactly as
+directed. `ci_spread`'s entry points at a new `render_policy_resolution()`
+(`demo_page.py`): a program selector, then the real `CI_REGISTRY`-configured
+`DefaultPolicyExpert.resolve()` rendered in ladder order with each policy's scope badge,
+effective date, and pinned version, plus conflicts. Verified directly (not just by inspection):
+resolving with no program gives core-only order; resolving with `rb-abl-2026` puts
+`RB_CI_OVERLAY` first — the RB overlay visibly narrowing core, per the acceptance criterion.
+Non-C&I scenarios have no `policy_resolution_target`, so `concepts_view.render()`'s existing
+behavior for them is untouched — proven by test, not assumed.
+
+**Docs & Policies tab (tab 7).** `render_docs_and_policies` itself stays generic — it renders
+whatever order/scope it's handed, it never resolves anything (kept exactly `credit_policies: list`
+in, per the plan's own instruction not to teach the shared helper about resolution). Tab 7's own
+call site now resolves via the same `DefaultPolicyExpert` and passes `credit_policies` in
+`precedence_order`, not a raw registry dict's insertion order; each entry's expander now shows
+its ladder position (`#1`, `#2`, ...) and scope badge alongside the existing `stub`/extracted tag.
+Tab_d (a different tab, the application-stage checklist) was deliberately left untouched — the
+plan names "tab 7" specifically.
+
+**Covenants tab, Policy sources expander.** Kept exactly as-is, per the plan's own instruction.
+Added the "why" affordance immediately after it: a `🔍 Why?` expander over
+`st.session_state["ci_spread_findings"]`'s `POLICY_VIOLATION` entries, calling
+`interpret_policy_finding()` (Phase 4) to show the clause citation, approval authority, SCOA key,
+and source region for whichever finding is picked. No review queue exists yet
+(that plan's own Phase 2 is unstarted) to embed this in, so it stands alone, with a comment
+pointing whoever builds that queue at this same function rather than re-deriving it — the "do
+not build two queues" instruction, honored by not building a second citation mechanism either.
+Verified directly with a real `ComplianceResult`-derived finding: clause and approval authority
+render correctly; the source region honestly reports "no source coordinate" for a computed metric
+(`leverage_x`) with no single source cell, the same posture established in Phase 4.
+
+3 new tests (`test_ui_registry.py`). Full suites: japes unaffected (no japes changes this phase);
+jaci 793 passed (was 790), 8 skipped, 5 xfailed, same 5 pre-existing unrelated failures.
+
+**All six phases of the plan are now done.** `docs/plans/plan_JACI_CL_POLICY_EXPERT.md` is fully
+implemented. The plan's own "Adjacent scope" note (populating the Concepts tab for AML/CRE/
+insurance diligence/KYC to the C&I standard) is explicitly named as a separate, later plan — not
+something this one ever claimed to finish — so it doesn't block promoting this to a `done_` file.
+Renamed accordingly.
