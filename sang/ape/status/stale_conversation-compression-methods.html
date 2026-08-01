@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conversation Compression in LLM Agents — A Reference</title>
+<style>
+  :root{
+    --ink:#1c1c22;
+    --muted:#5a5a63;
+    --faint:#8a8a92;
+    --rule:#d9d6cc;
+    --paper:#fcfbf7;
+    --coral-fill:#faece7; --coral-line:#d85a30; --coral-ink:#993c1d;
+    --teal-fill:#e1f5ee;  --teal-line:#1d9e75;  --teal-ink:#0f6e56;
+    --purple-fill:#eeedfe;--purple-line:#534ab7;--purple-ink:#3c3489;
+    --gray-fill:#f1efe8;  --gray-line:#888780;  --gray-ink:#2c2c2a;
+  }
+  *{box-sizing:border-box;}
+  html{font-size:17px;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:820px;margin:0 auto;padding:72px 32px 96px;}
+  .eyebrow{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    font-size:0.72rem;letter-spacing:0.16em;text-transform:uppercase;
+    color:var(--coral-line);font-weight:600;margin:0 0 18px;
+  }
+  h1{
+    font-size:2.5rem;line-height:1.12;font-weight:600;letter-spacing:-0.01em;
+    margin:0 0 14px;
+  }
+  .lede{font-size:1.18rem;color:var(--muted);margin:0 0 8px;font-style:italic;}
+  .meta{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    font-size:0.8rem;color:var(--faint);letter-spacing:0.02em;
+    margin:22px 0 0;padding-top:18px;border-top:1px solid var(--rule);
+  }
+  h2{
+    font-size:1.42rem;font-weight:600;letter-spacing:-0.005em;
+    margin:54px 0 6px;padding-bottom:8px;border-bottom:1px solid var(--rule);
+  }
+  h2 .num{color:var(--faint);font-weight:500;margin-right:0.5em;font-size:0.95rem;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;}
+  p{margin:16px 0;}
+  a{color:var(--purple-line);text-decoration:none;border-bottom:1px solid rgba(83,74,183,0.3);}
+  a:hover{border-bottom-color:var(--purple-line);}
+  strong{font-weight:600;}
+  code{
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    font-size:0.85em;background:#efece3;padding:0.1em 0.4em;border-radius:4px;color:var(--gray-ink);
+  }
+  figure{margin:32px 0;}
+  figure svg{display:block;width:100%;height:auto;}
+  figcaption{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    font-size:0.82rem;color:var(--muted);margin-top:14px;line-height:1.5;
+  }
+  figcaption .lbl{font-weight:600;color:var(--ink);}
+  table{
+    width:100%;border-collapse:collapse;margin:26px 0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    font-size:0.83rem;line-height:1.45;
+  }
+  caption{
+    text-align:left;font-size:0.82rem;color:var(--muted);margin-bottom:12px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  }
+  caption .lbl{font-weight:600;color:var(--ink);}
+  thead th{
+    text-align:left;font-weight:600;color:var(--ink);
+    border-bottom:2px solid var(--ink);padding:9px 12px 9px 0;vertical-align:bottom;
+  }
+  tbody td{border-bottom:1px solid var(--rule);padding:11px 12px 11px 0;vertical-align:top;color:var(--muted);}
+  tbody td:first-child{color:var(--ink);}
+  .fam{
+    display:inline-block;font-size:0.7rem;font-weight:600;letter-spacing:0.04em;
+    text-transform:uppercase;padding:2px 8px;border-radius:4px;white-space:nowrap;
+  }
+  .fam.drop{background:var(--coral-fill);color:var(--coral-ink);}
+  .fam.transform{background:var(--teal-fill);color:var(--teal-ink);}
+  .fam.offload{background:var(--purple-fill);color:var(--purple-ink);}
+  .point{margin:22px 0;padding-left:20px;border-left:3px solid var(--rule);}
+  .point h3{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    font-size:0.95rem;font-weight:600;margin:0 0 4px;color:var(--ink);
+  }
+  .point p{margin:6px 0;color:var(--muted);font-size:1.02rem;}
+  ol.refs{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    font-size:0.86rem;line-height:1.55;color:var(--muted);padding-left:26px;
+  }
+  ol.refs li{margin:11px 0;}
+  ol.refs li::marker{color:var(--faint);}
+  ol.refs .title{color:var(--ink);font-style:italic;}
+  .note{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    font-size:0.78rem;color:var(--faint);font-style:normal;
+  }
+  @media (max-width:560px){
+    html{font-size:16px;}
+    .wrap{padding:48px 20px 64px;}
+    h1{font-size:2rem;}
+    table{font-size:0.78rem;}
+  }
+  @media print{
+    body{background:#fff;}
+    .wrap{padding:0;max-width:none;}
+    a{color:var(--ink);border:none;}
+    h2{break-after:avoid;}
+    figure,table,.point{break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Context engineering · reference note</p>
+  <h1>Conversation compression in LLM agents</h1>
+  <p class="lede">Method families, a working taxonomy, and citable anchors</p>
+  <p class="meta">Reference note · June 2026 · prepared for work on knowledge graphs and large language models</p>
+
+  <h2><span class="num">1</span>Overview</h2>
+  <p>
+    There is no formal ISO- or RFC-style standard for compressing an agent's conversation history. What
+    exists instead is a recognizable set of method families and an emerging 2025–2026 survey literature that
+    imposes a shared taxonomy on them. The most useful framing organizes agent context compression along three
+    orthogonal dimensions rather than as a flat list of techniques: the <strong>compression target</strong>
+    (what is compressed), the <strong>compression mechanism</strong> (how it is transformed and retained), and
+    the <strong>control policy</strong> (who decides when compression is triggered). When citing a "standard,"
+    cite the taxonomy — not a single algorithm — because the methods remain, by the survey literature's own
+    account, scattered and only preliminarily synthesized.
+  </p>
+  <p>
+    A second distinction is load-bearing for any literature review: <strong>prompt compression</strong> reduces
+    a single static input, whereas <strong>conversation compression</strong> operates over a multi-turn
+    trajectory whose relevance structure evolves over time. Several widely cited "compression" methods
+    (token pruning, soft-token gisting) are really single-turn input compressors borrowed into the multi-turn
+    setting, and should be labeled as such.
+  </p>
+
+  <h2><span class="num">2</span>Taxonomy</h2>
+  <p>
+    The diagram below organizes the method families along the mechanism axis — the practical question of
+    <em>what you do</em> when the window fills up. The control-policy band underneath is orthogonal: the same
+    summarizer can fire on a fixed threshold, a budget heuristic, or an agent's own tool-call decision.
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 680 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Taxonomy of conversation compression strategies">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <rect x="240" y="20" width="200" height="50" rx="8" fill="#f1efe8" stroke="#888780" stroke-width="0.75"/>
+      <text x="340" y="40" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" fill="#2c2c2a">Context window fills</text>
+      <text x="340" y="56" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#5f5e5a">history exceeds budget</text>
+
+      <line x1="340" y1="70" x2="140" y2="108" stroke="#888780" stroke-width="1.5" marker-end="url(#ah)"/>
+      <line x1="340" y1="70" x2="340" y2="108" stroke="#888780" stroke-width="1.5" marker-end="url(#ah)"/>
+      <line x1="340" y1="70" x2="540" y2="108" stroke="#888780" stroke-width="1.5" marker-end="url(#ah)"/>
+
+      <rect x="40" y="112" width="190" height="50" rx="8" fill="#faece7" stroke="#d85a30" stroke-width="0.75"/>
+      <text x="135" y="132" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" fill="#993c1d">Drop</text>
+      <text x="135" y="148" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#993c1d">discard turns · lossy</text>
+
+      <rect x="245" y="112" width="190" height="50" rx="8" fill="#e1f5ee" stroke="#1d9e75" stroke-width="0.75"/>
+      <text x="340" y="132" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" fill="#0f6e56">Transform</text>
+      <text x="340" y="148" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#0f6e56">rewrite shorter</text>
+
+      <rect x="450" y="112" width="190" height="50" rx="8" fill="#eeedfe" stroke="#534ab7" stroke-width="0.75"/>
+      <text x="545" y="132" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" fill="#3c3489">Offload</text>
+      <text x="545" y="148" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#3c3489">store · recall later</text>
+
+      <line x1="135" y1="162" x2="135" y2="196" stroke="#888780" stroke-width="1.5" marker-end="url(#ah)"/>
+      <line x1="340" y1="162" x2="340" y2="196" stroke="#888780" stroke-width="1.5" marker-end="url(#ah)"/>
+      <line x1="545" y1="162" x2="545" y2="196" stroke="#888780" stroke-width="1.5" marker-end="url(#ah)"/>
+
+      <rect x="40" y="198" width="190" height="44" rx="8" fill="#faece7" stroke="#d85a30" stroke-width="0.75"/>
+      <text x="135" y="220" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" fill="#993c1d">Sliding window</text>
+      <rect x="40" y="250" width="190" height="44" rx="8" fill="#faece7" stroke="#d85a30" stroke-width="0.75"/>
+      <text x="135" y="272" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" fill="#993c1d">FIFO eviction</text>
+      <rect x="40" y="302" width="190" height="44" rx="8" fill="#faece7" stroke="#d85a30" stroke-width="0.75"/>
+      <text x="135" y="324" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" fill="#993c1d">Attention sinks</text>
+
+      <rect x="245" y="198" width="190" height="44" rx="8" fill="#e1f5ee" stroke="#1d9e75" stroke-width="0.75"/>
+      <text x="340" y="220" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" fill="#0f6e56">Recursive summary</text>
+      <rect x="245" y="250" width="190" height="44" rx="8" fill="#e1f5ee" stroke="#1d9e75" stroke-width="0.75"/>
+      <text x="340" y="272" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" fill="#0f6e56">Token pruning</text>
+      <rect x="245" y="302" width="190" height="44" rx="8" fill="#e1f5ee" stroke="#1d9e75" stroke-width="0.75"/>
+      <text x="340" y="324" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" fill="#0f6e56">Soft / gist tokens</text>
+
+      <rect x="450" y="198" width="190" height="44" rx="8" fill="#eeedfe" stroke="#534ab7" stroke-width="0.75"/>
+      <text x="545" y="220" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" fill="#3c3489">RAG over history</text>
+      <rect x="450" y="250" width="190" height="44" rx="8" fill="#eeedfe" stroke="#534ab7" stroke-width="0.75"/>
+      <text x="545" y="272" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" fill="#3c3489">Tiered memory</text>
+      <rect x="450" y="302" width="190" height="44" rx="8" fill="#eeedfe" stroke="#534ab7" stroke-width="0.75"/>
+      <text x="545" y="324" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" fill="#3c3489">Knowledge graph</text>
+
+      <rect x="140" y="378" width="400" height="62" rx="8" fill="#f1efe8" stroke="#888780" stroke-width="0.75"/>
+      <text x="340" y="400" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" fill="#2c2c2a">Control policy: when to trigger</text>
+      <text x="340" y="420" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#5f5e5a">fixed threshold · budget-based · learned / agent-decided</text>
+    </svg>
+    <figcaption><span class="lbl">Figure 1.</span> Compression method families along the mechanism axis (drop / transform / offload), with the orthogonal control-policy dimension shown below. A production-common control policy is to compact at roughly 85% of the window so there is headroom for the summarization call itself.</figcaption>
+  </figure>
+
+  <h2><span class="num">3</span>Method families</h2>
+  <table>
+    <caption><span class="lbl">Table 1.</span> Conversation compression method families with representative methods, trade-offs, and citable anchors. Reference numbers refer to Section 5.</caption>
+    <thead>
+      <tr>
+        <th style="width:14%">Family</th>
+        <th style="width:21%">Method</th>
+        <th style="width:25%">What it does</th>
+        <th style="width:25%">Key trade-off</th>
+        <th style="width:15%">Anchor</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="fam drop">Drop</span></td>
+        <td>Sliding window / truncation</td>
+        <td>Keep the last <em>k</em> turns, discard older ones</td>
+        <td>Lowest cost; silently loses early facts</td>
+        <td>Baseline; [1]</td>
+      </tr>
+      <tr>
+        <td><span class="fam drop">Drop</span></td>
+        <td>FIFO history queue</td>
+        <td>Evict oldest first, often pin the system prompt</td>
+        <td>Same as above, with anchored instructions</td>
+        <td>[2]</td>
+      </tr>
+      <tr>
+        <td><span class="fam transform">Transform</span></td>
+        <td>Recursive / hierarchical summarization</td>
+        <td>An LLM rewrites old turns into a running summary</td>
+        <td>Coherent but lossy; can drop artifacts (file paths, IDs)</td>
+        <td>[3], [6]</td>
+      </tr>
+      <tr>
+        <td><span class="fam transform">Transform</span></td>
+        <td>Token-level pruning</td>
+        <td>Remove low-information (low-perplexity) tokens</td>
+        <td>Model-agnostic and fast; degrades readability</td>
+        <td>[4]</td>
+      </tr>
+      <tr>
+        <td><span class="fam transform">Transform</span></td>
+        <td>Soft / gist tokens</td>
+        <td>Compress text into learned latent tokens</td>
+        <td>High ratio; requires model-side training</td>
+        <td>[5]</td>
+      </tr>
+      <tr>
+        <td><span class="fam offload">Offload</span></td>
+        <td>RAG over conversation history</td>
+        <td>Externalize turns, retrieve relevant ones on demand</td>
+        <td>Scales unboundedly; retrieval misses hurt</td>
+        <td>[7]</td>
+      </tr>
+      <tr>
+        <td><span class="fam offload">Offload</span></td>
+        <td>Tiered / virtual memory</td>
+        <td>OS-style paging between context and external store</td>
+        <td>Most flexible; orchestration overhead</td>
+        <td>[2]</td>
+      </tr>
+      <tr>
+        <td><span class="fam offload">Offload</span></td>
+        <td>Structured memory (event / knowledge graph)</td>
+        <td>Store entities and relations, not raw text</td>
+        <td>Queryable and durable; extraction is hard</td>
+        <td>[7], [8]</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2><span class="num">4</span>Framing points for a paper</h2>
+
+  <div class="point">
+    <h3>Cite the taxonomy, not an algorithm</h3>
+    <p>
+      The survey literature is explicit that the methods are scattered across compression targets, transformation
+      mechanisms, and control strategies — spanning pruning, summarization, selective retrieval, and
+      representation-level interventions — and that these efforts remain preliminary and disjointed, without
+      systematic synthesis [1]. A claim of a "standard" should therefore reference the three-axis taxonomy.
+    </p>
+  </div>
+
+  <div class="point">
+    <h3>Separate prompt compression from conversation compression</h3>
+    <p>
+      Prior surveys on prompt compression treat single-turn reduction of static inputs; conversation compression
+      concerns multi-turn trajectories whose relevance structure evolves over time [1]. LLMLingua and gisting
+      are best classified as single-turn input compressors adapted to the multi-turn case [4], [5].
+    </p>
+  </div>
+
+  <div class="point">
+    <h3>MemGPT is the standard anchor for the offload family</h3>
+    <p>
+      It frames context management as OS-style virtual memory — paging information between a limited
+      main context (the active window) and external recall and archival storage (a searchable message database
+      and a vector-indexed long-term store) [2]. Most subsequent memory systems position themselves relative to it.
+    </p>
+  </div>
+
+  <div class="point">
+    <h3>Use LoCoMo for the evaluation section</h3>
+    <p>
+      On long-dialogue QA, long-context models and RAG improve "memory" by roughly 22–66% but still lag humans
+      substantially, especially on temporal reasoning; both also perform poorly on event-graph summarization,
+      suggesting they capture isolated facts without comprehending the broader relational structure [7]. This
+      result is the empirical case for graph-structured memory over flat summarization.
+    </p>
+  </div>
+
+  <div class="point">
+    <h3>Define fidelity relative to the downstream task</h3>
+    <p>
+      Compression quality is task-dependent, not universal. Production evaluation makes the point concrete: a chat
+      assistant can afford to forget earlier topics, but a coding agent that forgets which files it modified will
+      make conflicting edits [6]. This argues for probe-based evaluation over generic n-gram overlap metrics.
+    </p>
+  </div>
+
+  <h2><span class="num">5</span>References</h2>
+  <ol class="refs">
+    <li>
+      <span class="title">Context Compression for LLM Agents: A Survey of Methods.</span> Preprint, 2025–2026.
+      Proposes the unified three-axis taxonomy (compression target / mechanism / control policy).
+      <span class="note">Preprints.org manuscript.</span>
+    </li>
+    <li>
+      Packer, C., Fang, V., Patil, S. G., Lin, K., Wooders, S., &amp; Gonzalez, J. E. (2023).
+      <span class="title">MemGPT: Towards LLMs as Operating Systems.</span> arXiv:2310.08560.
+    </li>
+    <li>
+      Recursive / hierarchical dialogue summarization line of work (multiple authors).
+      <span class="note">See survey [1] §on summarization for primary citations.</span>
+    </li>
+    <li>
+      Jiang, H., et al. (2023). <span class="title">LLMLingua: Compressing Prompts for Accelerated Inference of
+      Large Language Models.</span> arXiv preprint. <span class="note">Verify exact identifier before citing.</span>
+    </li>
+    <li>
+      Mu, J., Li, X. L., &amp; Goodman, N. (2023). <span class="title">Learning to Compress Prompts with Gist
+      Tokens.</span> arXiv preprint. <span class="note">Verify exact identifier before citing.</span>
+    </li>
+    <li>
+      Factory.ai (2025). <span class="title">Evaluating Context Compression for AI Agents.</span>
+      Engineering report. <span class="note">factory.ai/news/evaluating-compression</span>
+    </li>
+    <li>
+      Maharana, A., et al. (2024). <span class="title">Evaluating Very Long-Term Conversational Memory of LLM
+      Agents (LoCoMo).</span> arXiv:2402.17753.
+    </li>
+    <li>
+      <span class="title">A-Mem: Agentic Memory for LLM Agents.</span> (2025). arXiv:2502.12110.
+      Structured / linked memory with entity relations.
+    </li>
+  </ol>
+
+  <p class="note" style="margin-top:40px;padding-top:18px;border-top:1px solid var(--rule);">
+    Compiled from the 2025–2026 survey and evaluation literature. Reference identifiers marked
+    "verify" should be confirmed against the primary sources before inclusion in a manuscript.
+  </p>
+
+</div>
+</body>
+</html>
