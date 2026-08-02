@@ -7,7 +7,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
-## [2.2.4] - 2026-08-01
+## [2.3.0] - 2026-08-02
+
+Split out of what had been accumulating as 2.2.4 — this is everything from the MACER-onto-
+`jazzx_sdk.agents` migration prep through the new chassis it enabled, one coherent arc
+("generalize the execution mechanism, then build the third chassis on it"). 2.2.4 shipped
+separately first with just the original policy/manifest/hooks/SSRF/agent-definition-store bundle.
+
+- **Added** — `jazzx_sdk.agents.ReasoningAgent` (`agents/reasoning/`): a new chassis alongside
+  `InteractiveAgent`/`DocumentAgent`, constructor-injected with `AgentExecutionService` like its
+  siblings. One primitive serves both a floor (a robust single-shot structured call — retry,
+  schema-validation feedback, and truncated-output feedback via `run_kit.run_agent`, none of
+  which the existing generic tier or any of the five operational modes have today) and a ceiling
+  (the same call with `tools=[...]`, the agentic/batchable shape MACER's migration proved out).
+  Resolves models via the SDK's existing shared `resolve_model` — no new retry/model-resolution
+  implementation. Design: `docs/plans/design_note_reasoning_substrate.md`.
+- **Changed** — All five operational modes (`ReasonerMode`, `InvestigatorMode`, `GovernorMode`,
+  `VerifierMode`, `NarratorMode`) now call `ReasoningAgent` instead of `AgentExecutionService`'s
+  generic tier, so a schema-validation failure, truncated output, or transient error gets
+  retried-with-feedback instead of failing the mode outright. No public constructor/`.run()`
+  signature change on any of them; each mode's own short-circuit path (Governor's authority gate,
+  Verifier's empty-batch return) is untouched and still bypasses the LLM entirely.
+- **Fixed** — `AgentExecutionService.run()`'s generic tier (`OpenAIProvider.run()`) gets the same
+  retry/schema-feedback fix for its no-tools, single-message case — the shape every real caller
+  uses. `output_type=` now goes straight to the real `Agent`, so a schema mismatch retries with
+  feedback instead of a hand-parsed raw string with no correction path. The tool-calling branch
+  (no real caller exercises it — `tool_executor` was never wired to anything) and
+  `AnthropicProvider.run()` (a fundamentally different, non-Agents-SDK implementation) are out of
+  scope, for real architectural reasons, not oversights. Also fixed two confirmed-dead branches
+  found along the way: `agent.temperature`/`agent.max_tokens` being set as attributes `Agent`'s
+  dataclass doesn't have (silently inert), and empty `result.messages`/`result.tool_calls` reads
+  (`RunResult` has neither field).
+- **Added** — `Rule.condition`/`Rule.applicability` open onto a registered, pluggable `Condition`
+  union (`fabric.canonical.condition_evaluator`) instead of a closed `Union[Expression,
+  DslExpression]`: a `ConditionEvaluator` registry (`register_condition_evaluator`/
+  `get_condition_evaluator`, mirroring the existing compaction-strategy registry) with three
+  built-ins (`ExpressionEvaluator`, `DslEvaluator`, `RatioEvaluator` — the last wrapping
+  `tools.ratio_evaluator.evaluate_ratio`, threshold resolved via the existing `profile:<key>`
+  convention against a `PolicyProfile` passed through the evaluation context). New `RuleOutcome`
+  (`verdict`: closed governance-facing enum, vs `status`: pack-vocabulary string — deliberately
+  separate fields) and `EvidenceContract` (what a condition reads, computed statically) types.
+  `Rule.applicability` is a new, orthogonal field: a cheap pre-check evaluated before `condition`,
+  so an inapplicable rule costs nothing. `DefaultPolicyExpert.check_compliance` now dispatches
+  every condition kind through the registry, which also closes a real gap: DSL/ratio conditions
+  now participate in cross-policy field-precedence (`fields_claimed`) the same way flat
+  `Expression` conditions always have — previously only `Expression` conditions could be claimed/
+  skipped by a higher-precedence policy. A discriminated-union `kind` tag (with shape-sniffing
+  fallback for pre-P8 dicts with no `kind` key) keeps every existing pack-authored condition —
+  Python or YAML — validating unchanged. Also fixed the same closed-`isinstance` gap in
+  `PolicyRegistry`'s legacy `policy_clauses` shim, which would otherwise crash constructing a
+  registry containing any `RatioCondition` rule. Design: `docs/plans/policy-ir-abstraction.md`.
+- **Added** — `jazzx_sdk.conductor.run_replicated_segments` (P1) and `EnsembleCollapse` (P2), the
+  segment × replica × regroup topology MACER's `jtbd_runner.py`/`summarization_agent.py` hand-roll
+  today. `run_replicated_segments` is built over the existing `fan_out` at both the segment and
+  replica level: `precompute` runs once per segment (not once per replica), a caller-supplied
+  `key_of` regroups every replica's results explicitly rather than by position, and a failing
+  replica is recorded as a `ReplicaFailure` and excluded from the regroup rather than sinking its
+  siblings or synthesizing a vote. `EnsembleCollapse` (`DeterministicVote`, `AnyEscalate`,
+  `LlmFold`) then folds a regrouped item's votes into one result, deliberately excluding any
+  `ReplicaFailure` from the fold — fixing the real bug in MACER's own collapse, where a replica
+  that exhausted retries synthesized an `ERROR` vote that still diluted the majority. No registry
+  for `EnsembleCollapse` (unlike the P8 `ConditionEvaluator`): a pack picks its collapse strategy
+  in code, not from pack-authored data. Design: `docs/plans/reasoner-chassis-analysis.md` §4/P1/P2.
+- **Added** — `jazzx_sdk.agents.reasoning.PrecomputedGrounding` (P6): generalizes MACER's
+  `guideline_enrichment.py` — parse a corpus into heading-scoped `Snippet`s once
+  (`HeadingSnippetExtractor`), cheaply prefilter by keyword overlap (`KeywordPrefilter`, MACER's
+  own weighting), select the top few via an LLM shown headings only, never body content
+  (`HeadingsOnlySelector`, built on `ReasoningAgent`), and cache the parse by a content fingerprint
+  so a corpus change invalidates automatically with no TTL needed (`InMemoryGroundingCache`). The
+  non-negotiable part is `BrowseGate`: closes a pack's own list/search tool selectors for the
+  duration of the call that consumes the selection, via the same `InvocationContext`/
+  `PermissionScope` mechanism `InteractiveAgent._build_parent_tools` already uses — a no-op when no
+  `InvocationContext` is ambient, same convention as `admit_hop`. Deny-only, so a direct
+  `read_document` a caller wants to keep available (to follow a citation) stays admitted. Every
+  part (extractor/prefilter/selector/cache) is swappable; `gate` composes separately since closing
+  the door wraps the *consuming* call, not `ground()` itself. Distinct from the existing
+  `tools.grounding` (`build_summary_index`/`select_items`): that has no LLM selection step, no
+  cache, and no gate. Design: `docs/plans/reasoner-chassis-analysis.md` §2.1/§4/P6.
 
 Step 2 of the MACER-onto-`jazzx_sdk.agents` migration (a japes-side prerequisite; MACER itself not
 touched yet). Prompted by a kernel-vs-japes sweep that led into comparing MACER's own hand-rolled
@@ -91,6 +167,8 @@ accumulated open design questions, see `docs/status/status_assistant_ws_fabric_e
   its module-level `agents` import broke the SDK's tier-1/tier-2 "server-free" import boundary
   (`agents` transitively pulls `uvicorn`) — fixed by deferring the import into the factory
   function, matching the lazy-import convention sibling `tools/*.py` files already use. 13 tests.
+
+## [2.2.4] - 2026-08-01
 
 `docs/plans/plan_agent_definition_store_and_facade.md` Part 1 (of 3; Parts 2-3 not started — the
 facade needs real design decisions the plan itself leaves open). See
