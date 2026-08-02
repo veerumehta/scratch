@@ -7,6 +7,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
+## [0.19.0] - 2026-08-01
+
+`plan_JACI_CONCEPTS_TAB_PARITY.md` Phases 0/1/4 (of 5; Phases 2-3 are real pack-authoring work, not
+started; Phase 5 blocked on Phase 2). See `docs/status/status_JACI_CONCEPTS_TAB_PARITY.md`.
+
+- **Verified** — `clinical-intake-core`'s pack already loads and its Concepts tab renders clean
+  end-to-end; nothing was wrong, now confirmed rather than assumed.
+- **Fixed a false premise** — `aml_investigation_core.yaml`/`earnings_review.yaml` do not actually
+  load via `Pack.from_manifest` (wrong location/shape entirely, not just incomplete) — the plan's
+  own Phase 1 "cheap wiring" for these two does not apply; correctly left unwired rather than wired
+  into a crash.
+- **Added** — `portfolio_monitoring` gains a `pipeline_target` pointing at its existing, previously
+  unwired `PORTFOLIO_REVIEW_PIPELINE`, so its Concepts tab now shows the real assembly diagram
+  instead of degrading to platform-layer-only.
+
+## [0.18.0] - 2026-08-01
+
+`plan_JACI_CL_GOVERNED_LAYER_UI.md` Phase 5 — plan now fully complete (all 5 phases, 0 added
+during execution). See `docs/status/done_JACI_CL_GOVERNED_LAYER_UI.md` for full detail.
+
+- **Added** — Covenants tab gains a layered-spread-views table: reported beside reclassified
+  (and, once a correction has run, underwritten), a period picker, and a caption stating whether
+  Total assets stayed identical while Total current assets moved. Only the layers that genuinely
+  exist as whole-statement projections today are shown — a real "normalized" layer would be new
+  capability work, not UI wiring, so it's flagged rather than faked.
+
+## [0.17.0] - 2026-08-01
+
+`plan_JACI_CL_GOVERNED_LAYER_UI.md` Phase 4 (of 5; Phase 5 not started, the hardest phase now
+behind it). See `docs/status/status_JACI_CL_GOVERNED_LAYER_UI.md` for full detail.
+
+- **Added** — Covenants tab gains a corrections-and-approval expander driving
+  `spread_approval_engine`'s suspend/resume cycle from Streamlit: draft a rationale-required
+  correction against a flagged spread, approve or reject, and see exactly which metrics and
+  covenant tests (via `evaluate_covenant_policy`) flipped as a result. Verified stateless-engine
+  safety across Streamlit reruns and the single-use suspension guard before wiring it up.
+
+## [0.16.0] - 2026-08-01
+
+`plan_JACI_CL_GOVERNED_LAYER_UI.md` Phase 3 (of 5; Phases 4-5 not started). See
+`docs/status/status_JACI_CL_GOVERNED_LAYER_UI.md` for full detail.
+
+- **Added** — Covenants tab gains a source-region view: a table of every populated cell's
+  resolved provenance (`cell_source_regions`), plus a reverse-lookup picker showing every other
+  cell fed by the same source coordinate (`cells_fed_by`) — pure UI wiring around already-shipped,
+  already-tested functions from Wave 3b.
+
+## [0.15.0] - 2026-08-01
+
+`plan_JACI_CL_GOVERNED_LAYER_UI.md` Phase 2 (of 5; Phases 3-5 not started). See
+`docs/status/status_JACI_CL_GOVERNED_LAYER_UI.md` for full detail.
+
+- **Added** — Covenants tab gains an aggregate status banner (`aggregate_status`, pass/pass-with-
+  flags/blocked) at the top, and a review-queue expander ranking session findings via
+  `rank_for_review` with adjustable severity/confidence/magnitude/covenant weight sliders, each
+  row showing the raw confidence and covenant-feeding rationale behind its rank (new
+  `review_rationale()`), plus the credit file's exception summary (`exception_summary`, proven
+  identical to the governed workbook's Exceptions sheet content).
+
 ## [0.14.0] - 2026-08-01
 
 - **Added** — `CiSpreadPolicyExpert`'s deal-scope tier (FR-SOP-1): every core/convention/overlay

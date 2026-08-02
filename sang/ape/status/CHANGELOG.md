@@ -9,6 +9,127 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ## [2.2.4] - 2026-08-01
 
+Step 2 of the MACER-onto-`jazzx_sdk.agents` migration (a japes-side prerequisite; MACER itself not
+touched yet). Prompted by a kernel-vs-japes sweep that led into comparing MACER's own hand-rolled
+OpenAI-Agents-SDK code against this module — `run_kit.py`/`models.py` were originally lifted from
+MACER's code; this closes the gap that opened since, and modernizes `run_kit.py` onto primitives
+that didn't exist when it was lifted (`jazzx_sdk.concurrency.backoff_delay`, `jazzx_sdk.failures`'
+structured classification) rather than porting MACER's older shape unchanged. No existing callers
+of `run_agent`/`resolve_model` (confirmed) — zero back-compat risk.
+
+- **Added** — `resolve_model()` now handles Gemini and any `litellm/<provider>/<model>`-prefixed
+  name via the OpenAI Agents SDK's own generic `LitellmModel` (previously `NotImplementedError` for
+  Gemini). Bare Gemini names default to LiteLLM's `gemini/` prefix; Vertex AI's project/location-
+  scoped routing needs the explicit `litellm/vertex_ai/<model>` form. Requires the existing
+  `litellm` extra.
+- **Added** — `run_agent()` gains a fourth retry category, `IncompleteOutputError` (a truncated
+  response), alongside `MaxTurnsExceeded`/`ModelBehaviorError`/`APIStatusError` — feeds a "write
+  shorter" correction back into the session and retries, mirroring the existing schema-validation
+  retry shape.
+- **Changed** — `run_agent`'s `on_retry(event, attempt, failure)` now hands the callback a
+  `jazzx_sdk.failures.StructuredFailure` (via `classify_failure`) instead of the bare exception —
+  one shared failure taxonomy across the model layer (`RetryingModel`) and this run loop, not two
+  ad hoc vocabularies. New failure rules registered for the three run-loop-specific exception types
+  (mapping `APIStatusError` 429→`RATE_LIMITED`, 408→`TIMEOUT`, else→`PROVIDER_ERROR`, carefully
+  scoped to not shadow the existing built-in 401/403/5xx classification).
+- **Fixed** — `run_agent`'s own retry backoff was a bespoke, non-jittered exponential formula;
+  now uses `jazzx_sdk.concurrency.backoff_delay` + jitter, matching `RetryingModel`'s own formula
+  instead of a second, slightly different one.
+- **Fixed** — the `ModelBehaviorError` retry branch fed the raw validation-error text back into the
+  conversation session verbatim; now passed through `redact_secrets` first, in case the error text
+  ever echoes a credential-shaped value from the model's own (rejected) output.
+- **Changed** — `on_retry(event, attempt, failure)` gains a fourth positional arg, the raw
+  exception, alongside the `StructuredFailure` — a caller wiring its own tracer (e.g. MLflow spans)
+  needs the live exception object for `span.record_exception`, which a serializable value type
+  can't carry. Upstreamed while doing step 5 of the MACER migration (MACER's `TraceHooks`
+  integration is the first real caller). No existing callers besides japes' own tests — zero
+  back-compat risk.
+- **Changed** — upstreamed MACER's more directive `ModelBehaviorError`/`IncompleteOutputError`
+  session-feedback wording (found more effective in MACER's own production use) in place of the
+  generic placeholder text.
+- **Fixed** — an exhausted `APIStatusError` retry loop re-raised the bare exception with no
+  `request_id`; now enriches the message with it (mirroring MACER's own behavior), so a provider
+  support ticket has something to reference.
+- **Added** — `tests/test_retrying_model.py` (57 tests), ported from MACER's own equivalent file
+  while doing step 5 of the migration (delegating MACER's `run_agent` retry loop to this module) —
+  MACER's `RetryingModel` was a byte-identical duplicate of this module's own, now replaced there
+  with a re-export shim, so its white-box coverage (status-code/header extraction, backoff/jitter,
+  orphaned-reasoning-item retry, streaming retry-before/after-yielding) had no remaining home but
+  here.
+- **Added** — `build_directory_tools()` gained `write_document` (via a new `output_dir` param) and
+  a `compress_search_output` hook for `search_documents`, plus `extended_regexp` support (grep
+  `-E`) — step 8 of the MACER migration: comparing this factory against MACER's own
+  `tools/documents.py` found real capability gaps (not a duplicate, unlike steps 1/3/4), so these
+  were upstreamed rather than dismissed. MACER's own tool is unchanged — the gate/enum/settings
+  coupling and `read_reference` retrieval tool that go with its own headroom compressor stay
+  domain-specific, not moved here.
+- **Added** — `tests/test_raw_json_schema_output.py` (16 tests) and
+  `tests/test_incomplete_output_detection.py` (9 tests), ported from MACER while doing step 9 of
+  the migration (deleting MACER's now-hollowed-out `json_schema_output.py`/`models/retrying.py`
+  re-export shims) — both had more thorough coverage of these shared classes
+  (`RawJsonSchemaOutput`; `find_incomplete_output_message`/`RetryingModel`'s incomplete-output
+  handling) than this module's own existing tests.
+- 13 new tests across `test_agent_models.py`/`test_agents_run_kit.py`.
+
+`docs/plans/plan_assistant_ws_fabric_enablement.md` W3 (of W1-W4; W1/W2/W4 not started — real
+accumulated open design questions, see `docs/status/status_assistant_ws_fabric_enablement.md`).
+
+- **Added** — `jazzx_sdk.security_context(value)`: a per-turn security-context manager supporting
+  both `with` and `async with` (checked directly that a plain `@contextmanager` doesn't support
+  `async with` at all, so built as a class implementing both protocols), for a caller dispatching
+  many turns on one long-lived task (e.g. a per-session WebSocket worker) where set/clear-in-finally
+  would otherwise be hand-rolled per dispatch. Verified concurrent-task isolation directly. 5 tests.
+
+`docs/plans/plan_JAPES_1_9_X_DIRECTORY_BACKED_TOOLS.md` complete. See
+`docs/status/done_JAPES_1_9_X_DIRECTORY_BACKED_TOOLS.md`.
+
+- **Added** — `jazzx_sdk.tools.build_directory_tools`/`DirectoryToolSet`: a source-keyed
+  `@function_tool` factory (list/read/search over named local directories) for download-then-agent
+  solutions, built exactly per the plan's own design. Found and fixed two real bugs the plan itself
+  didn't catch: its acceptance tests called `@function_tool`-wrapped tools directly (a
+  `FunctionTool` is not callable — fixed by invoking through the real `on_invoke_tool` path), and
+  its module-level `agents` import broke the SDK's tier-1/tier-2 "server-free" import boundary
+  (`agents` transitively pulls `uvicorn`) — fixed by deferring the import into the factory
+  function, matching the lazy-import convention sibling `tools/*.py` files already use. 13 tests.
+
+`docs/plans/plan_agent_definition_store_and_facade.md` Part 1 (of 3; Parts 2-3 not started — the
+facade needs real design decisions the plan itself leaves open). See
+`docs/status/status_agent_definition_store_and_facade.md`.
+
+- **Added** — `jazzx_sdk.agents.AgentDefinition`/`AgentDefinitionStore`/
+  `InProcessAgentDefinitionStore`, plus a `fabric.db`-backed `DbAgentDefinitionStore`
+  (`jazzx_sdk.agents.definition_store_db`, lazy-imported): a persisted, name-keyed registry of
+  agent definitions that can point at either a japes-native `InteractiveAgentSpec` or an opaque
+  kernel-hosted agent id — the one real gap identified against kernel's own agent model, everything
+  else already having a more general japes-native equivalent. 10 new tests.
+
+`docs/plans/plan_invocation_completion_hooks.md` core mechanism. See
+`docs/status/status_invocation_completion_hooks.md` for full detail, including an open decision
+(deliberately not made) on whether this should absorb the existing `webhook_url` field.
+
+- **Added** — `MessageHeader.on_complete_hook` (`HookSpec{channel, config}`): a per-invocation,
+  caller-selected completion notifier that names any channel `build_channel()` supports (not just
+  webhook), delivered via new `jazzx_sdk.channels.notify.deliver_completion_hook` at all three
+  entry points that produce a `ResponseMessage` (queue runtime, server `/invoke`, inbound event
+  router) — wider coverage than the existing webhook-only, queue-path-only `webhook_url`. A
+  failing response's payload carries a `classify_failure`-derived, redacted `{code, message,
+  action}` rather than a raw exception string. Best-effort throughout: a bad channel name or a
+  failed delivery is logged, never raised into the invocation's own response. 9 new tests.
+
+- **Fixed** — a real, live SSRF gap in `jazzx_sdk.channels.WebhookChannel`: neither the channel
+  itself nor `QueueProcessor._deliver_webhook` (the `header.webhook_url` push-notification path
+  shipped in 2.2.2) validated the caller-supplied URL before POSTing to it — a caller could point
+  japes's own infrastructure at a private/internal address (e.g. a cloud metadata endpoint).
+  Found while researching `docs/plans/plan_invocation_completion_hooks.md`'s own explicitly-flagged
+  SSRF prerequisite for a *new* hook mechanism, then discovering the identical, already-shipped gap
+  in the existing one. Fixed by extracting `read_from_url`'s tested SSRF guard
+  (`_is_private_ip`/`_validate_url_safe`) out of `jazzx_sdk/tools/documents.py` into a new shared
+  `jazzx_sdk/net_safety.py` (`is_private_ip`/`validate_url_safe`), and calling it from
+  `WebhookChannel.send()` before every POST. `documents.py` keeps a thin local
+  `_validate_url_safe` aliasing the shared `is_private_ip` so its own existing monkeypatch-based
+  test keeps working unchanged. 2 new tests cover a private channel URL and a private per-message
+  `target` override, both refused before any request is made.
+
 - **Fixed** — `jazzx_sdk.manifest.spec_binding`'s surface-defaults table had two real deviations
   from its own design, found by checking the plan's own named acceptance tests against what was
   actually implemented rather than trusting that the code existing meant it was correct. (1)
