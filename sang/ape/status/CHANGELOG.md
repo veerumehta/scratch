@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
+## [2.3.1] - 2026-08-02
+
+`docs/plans/REFACTOR-2.4-subpackage-interiors.md`, Phases 6, 7, and 11 — landed as a patch rather
+than a minor bump (module-layout reorganization + one facade-closure pass, no public behavior
+change beyond what's called out below).
+
+- **Changed** (Phase 6 — facade closure) — closed the `llm`/`agents.interactive`/`tools`/
+  `fabric.canonical` package facades (cost math, model identity, provider ABC, routing types,
+  router/scope/knowledge, `processors`, `Predicate` all now reachable from their package root
+  instead of forcing submodule pins). Made `DbCostRecordStore` and the four LLM providers lazy
+  (PEP 562), matching the SDK's `_db` convention — `import jazzx_sdk.llm` no longer pulls
+  SQLAlchemy or a vendor SDK unconditionally.
+- **Fixed** — an `ImportError` escaping `__getattr__` for a missing optional LLM provider extra,
+  which broke `hasattr()`/`dir()` instead of just failing on construction.
+- **Added** — status-marker docstrings on five real-but-unexercised surfaces (`llm/routing.py`,
+  `evaluation/compounding.py`, `tools/{grounding,tool_compression,dir_tools}.py`, `skills/`), per
+  the "capability shipped ahead of demand" convention, so a future audit doesn't mistake staged
+  work for dead code.
+- **Removed** — `tools/kg_store.py`, a 25-line back-compat shim for symbols already removed in
+  1.6.7; its two real tests retargeted at `fabric.graph.triple` directly rather than deleted.
+- **Changed** (Phase 7 — `fabric/canonical/store.py` split) — 1,596 LOC of 13 copy-pasted CRUD
+  store classes collapsed to a generic `_EntityStore` base plus thin per-type subclasses in a new
+  `store/` package (`_base.py`/`core.py`/`derived.py`/`facade.py`). `PolicyStore` kept fully
+  bespoke (different method names, its own OData-escaping, a richer collection description) since
+  forcing it into the generic shape would have papered over real differences. All 14 public names
+  unchanged; verified identical KH call shapes for all 13 types via a recording fake KH client.
+- **Changed** (Phase 11 — `tools/` regroup) — `tools/` (24 flat modules, 255 KB) regrouped into
+  `documents/` (the document-processing cluster, plus the flat `documents.py`'s local-file half
+  now `documents/local.py` and chunking now `documents/chunking.py`), `knowledge_hub/` (ontology,
+  policy, knowledge_graph, plus `documents.py`'s KH-callable half), `platform/` (discovery,
+  workflow), and `agent/` (grounding, tool_compression, dir_tools). Evicted `financial.py` ->
+  `finance/metrics.py` (fixed `finance/__init__.py`'s inverted dependency on `tools/`),
+  `filings.py` + `EdgarFallbackSource` -> `finance/filings.py` (untangles conversion.py's routing
+  from SEC-specific ingestion), `assessment.py` -> `fabric/assessment.py`. Renamed the private
+  `documents._extract_text_from_html` to public `documents/local.py::extract_text_from_html`,
+  closing the one real cross-module private-name reach the split surfaced.
+  `tools/__init__.py`'s 116-name facade re-exports every moved name unchanged.
+
 ## [2.3.0] - 2026-08-02
 
 Split out of what had been accumulating as 2.2.4 — this is everything from the MACER-onto-
@@ -84,6 +122,15 @@ separately first with just the original policy/manifest/hooks/SSRF/agent-definit
   the door wraps the *consuming* call, not `ground()` itself. Distinct from the existing
   `tools.grounding` (`build_summary_index`/`select_items`): that has no LLM selection step, no
   cache, and no gate. Design: `docs/plans/reasoner-chassis-analysis.md` §2.1/§4/P6.
+- **Added** — `"segment_tail"` registered as a named `register_compaction_strategy` entry
+  (`jazzx_sdk.agents.interactive.memory.SegmentTailStrategy`), alongside the existing
+  `"summarize"`/`"drop"`. Same algorithm `run_kit.strip_session` already applies directly to a
+  `SQLiteSession` — user items + the last assistant turn per segment, no LLM call — extracted
+  into a shared pure function (`run_kit.segment_tail_items`) so `strip_session` and the new
+  strategy can't drift apart. Meaningful for a `ConversationStore` backing a Responses-API/
+  agentic session (items carry a `type`); a documented no-op for a plain chat-style history with
+  no `type` field. Design: `docs/plans/reasoner-chassis-analysis.md` §4/P5 (half — the other half,
+  MACER's `reasoning_group_evict` byte-triggered evictor, is separate, unbuilt work).
 
 Step 2 of the MACER-onto-`jazzx_sdk.agents` migration (a japes-side prerequisite; MACER itself not
 touched yet). Prompted by a kernel-vs-japes sweep that led into comparing MACER's own hand-rolled
@@ -167,6 +214,19 @@ accumulated open design questions, see `docs/status/status_assistant_ws_fabric_e
   its module-level `agents` import broke the SDK's tier-1/tier-2 "server-free" import boundary
   (`agents` transitively pulls `uvicorn`) — fixed by deferring the import into the factory
   function, matching the lazy-import convention sibling `tools/*.py` files already use. 13 tests.
+
+- **Changed** — `jazzx_sdk`'s root namespace regrouped from 34 flat modules into `observability/`
+  and `server/` subpackages plus three targeted moves (`fabric/db/engine.py`,
+  `agents/kernel_model.py`, `clients/mocks.py`) — pure module-layout reorganization, no behavior
+  or public-symbol change. `tracing.py` (five unrelated concerns in one 1029-line file) split
+  along its existing eager/lazy boundary, which is now structural (a lazy module simply isn't
+  referenced from any `__init__.py`) rather than hand-maintained. Landed on
+  `refactor/sdk-layout-2.3`, not `dev` directly, because macer/jaci/juno run live path installs
+  against this working tree. Hardened `tests/test_import_boundary.py` against passing vacuously
+  after a module move/rename, and added a `jazzx_sdk.__all__` snapshot test — neither existed
+  before. Removed three now-dead back-compat shims (`llm/sanitize.py`, `fabric/pack/__init__.py`,
+  `utils/`) after repointing their last real callers, two of them in jaci. Full design/rationale:
+  `docs/plans/REFACTOR-2.3-sdk-layout.md` (gitignored).
 
 ## [2.2.4] - 2026-08-01
 
