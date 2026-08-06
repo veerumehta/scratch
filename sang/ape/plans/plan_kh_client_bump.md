@@ -1,5 +1,74 @@
 # Plan: Knowledge Hub client bump (v2 idempotency + RBAC alignment)
 
+> **Status (2026-08-04): entity side DONE (`0be8458`); document side + RBAC verification still
+> open.** Corrected a stale assumption first: the generated client already had `create_entity_v2`/
+> `read_entities_v2` bindings (gated by `KH_V2_ENTITIES_AVAILABLE`, currently `True`) — the client
+> regen (step 1, entities only) had already happened, just never wired into any caller.
+>
+> Did steps 2-3 for entities: `create_entity_v2` now returns `(entity, created)` instead of just
+> `entity` (the native 201-vs-200 signal), and `fabric.entities.EntityStore.ensure()` prefers it
+> over the pre-check + v1 `create_entity` path when available and no explicit `idempotency_key`
+> was given (v2's dedup key is the content hash of `json_value`, which can't express a caller
+> key's separate identity basis — that case always uses the pre-check path). Any v2 failure (old
+> backend, version-gated client, transient error) falls back to the pre-check path unchanged —
+> `ensure()` never gets less reliable than before. Added `MockKnowledgeHubClient.create_entity_v2`
+> for parity (content-hash idempotent, scoped to `(collection_id, content_hash)` matching the real
+> uniqueness key). 8 new tests (routing proof via spies, v2-failure fallback, idempotency_key
+> exclusion) plus 2 existing `test_knowledge_hub_client_v2_entities.py` tests fixed for the new
+> return shape; full suite 2328 passed, no regressions.
+>
+> **Found and fixed (`55977d1`)**: `EntityStore._find_by_fingerprint` never actually implemented
+> key-based dedup — `ensure()`'s own docstring promised two different payloads under the same
+> `idempotency_key` dedupe, but the pre-check only ever matched a candidate's content hash, so two
+> such calls silently created two separate entities instead. Fixed: an explicit `idempotency_key`
+> now matches by `(collection_id, name)` instead of content — there's nowhere else to persist an
+> arbitrary caller key remotely (`json_value` must conform to the caller's ontology schema, and
+> entity creation has no separate metadata field), so `name` is the identity signal, mirroring
+> KH's own v1 `(collection_id, name)` uniqueness contract. 1 new test (collection-scoping); full
+> suite 2329 passed, no regressions.
+>
+> **Document side (2026-08-04): DONE via a hand-rolled binding (`54b2d00`).** Checked the real KH
+> server-side OpenAPI schema directly (`/Users/sangit/src/knowledge_hub/knowledge_hub_openapi_
+> schema.yaml`) — the v2 document endpoints genuinely exist server-side (`POST /api/v2/
+> collections/{id}/newdocuments`, idempotent on `sha256(file bytes)`, 200=duplicate/201=new). But
+> unlike entities, **no v2 document-create binding exists anywhere in the generated client** —
+> checked both the pinned `client-api` rev and its one newer available commit (`4bcf1f4`); neither
+> has it. Rather than leave this blocked on an external `client-api` regen, hand-rolled
+> `KnowledgeHubClient.create_document_v2` directly against the shared httpx client
+> (`self._raw_client.get_async_httpx_client()`) — same `_MultipartBody` file-part encoding v1's
+> generated `upload_binary_document.py` uses internally, routed through the same shared client so
+> the existing request-headers-provider and denied-response hooks (auth, `x-security-context`,
+> 401/403 → `KnowledgeHubAccessError`) still apply automatically. Explicitly documented as
+> meant-to-be-replaced once `client-api` actually regenerates a real binding — not a permanent
+> primitive. Extracted `_resolve_upload_name_and_mime` out of `create_document` (v1) so extension-
+> normalization/MIME-inference isn't re-derived for v2.
+>
+> `fabric.docs.DocStore.ensure()` prefers `create_document_v2` when present, hydrating a 200
+> idempotent-hit's id-only response (`{document_id}` only, per KH's own v2 contract) via the
+> existing `_outcome()` best-effort re-fetch. Any v2 failure falls back to the pre-check + v1
+> `put()` path unchanged. `MockKnowledgeHubClient.create_document_v2` added for parity (matches a
+> content_hash stamped by either path — its own or a metadata-stamped `content_hash`/`sha256`),
+> signature exact-matching the real client's per the existing mock/real parameter-drift contract
+> test (`test_integration_followups.py::test_mock_kh_parameters_match_real`) — caught and fixed a
+> real drift there before committing. 9 new tests (real-httpx-transport round trip for the
+> hand-rolled call, routing proof, v2-failure fallback); full suite 2338 passed, no regressions.
+>
+> **Step 5 (2026-08-04): DONE, both claims verified true (`9ca6bae`)** — no production code
+> change needed, just closing a verification gap. The existing tests only proved the
+> denied-response hook function raises in isolation and that a *fake* KH's raised error
+> propagates — neither proved the mechanism fires during a real `KnowledgeHubClient` call. New
+> `httpx.MockTransport` round-trip tests confirm: `x-user-id` actually lands on the wire for every
+> write path (`create_entity`, `create_entity_v2`, `update_entity`, `create_document`, and the
+> hand-rolled `create_document_v2`), and `read_entity` genuinely raises `KnowledgeHubAccessError`
+> end-to-end on 401/403 while staying a plain `None` on 404 (not conflated with denial). Also read
+> KH's own server source directly (not assumed): `common/core/dependencies.py::
+> get_current_user_id_optional` reads the literal `x-user-id` header and `api_v2.py` stamps it
+> onto `created_by_user_id`/`updated_by_user_id` — confirms the header japes sends is exactly the
+> one KH's audit-column logic consumes. 9 new tests; full suite 2347 passed, no regressions.
+>
+> **Still open, longer-term**: once `client-api` genuinely regenerates a document-v2 binding,
+> `create_document_v2`'s hand-rolled HTTP call should be replaced with the real generated one.
+
 Local planning doc (gitignored). Tracks what changes in the japes KH surface when the generated
 `knowledge_hub_client` is regenerated against current KH `main`.
 

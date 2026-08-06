@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
+## [Unreleased]
+
+- **Migrated** — KYC, KYC-Anthropic, and Earnings-Anthropic conductors onto the shared `jazzx_sdk.modes.operational` chassis, replacing per-scenario hand-rolled mode subclasses (several with no real Pydantic output schema, no retry/truncation handling).
+- **Fixed** — `Context.apply_verifier_report` raised `AttributeError` against real evidence (`EvidenceObject.status` is read-only); KYC/KYC-Anthropic's `ReviewContext` now override it, matching AML's `CaseContext`.
+- **Simplified** — `CREPolicyExpert` wires its registry/overlay-map into `DefaultPolicyExpert` instead of duplicating ~230 lines of overlay/compliance logic.
+
 ## [0.19.0] - 2026-08-01
 
 `plan_JACI_CONCEPTS_TAB_PARITY.md` Phases 0/1/4 (of 5; Phases 2-3 are real pack-authoring work, not

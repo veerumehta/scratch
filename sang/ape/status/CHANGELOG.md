@@ -2,10 +2,126 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+## [Unreleased]
+
+- **Fixed** — `python` floor raised to `>=3.12` (was `>=3.11`, already broken for Claude via `ReasoningAgent`/litellm; no real consumer runs 3.11).
+- **Fixed** — `DslEvaluator.evidence_contract` now calls `jazzx_sdk.expressions.parse.identifiers()` (existed all along, just never wired) — a DSL rule now correctly claims its referenced fields, fixing policy precedence (a deal-level DSL rule no longer lets a lower overlay rule also fire on the same field).
+- **Fixed** — `InteractiveAgent._skill_instructions` now gates `Skill.references` through `admit_hop` like `tools`/`reads` already do — a caller denied `ref:x` could previously still receive its content.
+- **Fixed** — `_series_value` (time-series formulas: `prior`/`avg`/`cagr`/`ltm`) now enforces `confidence_floor`, matching the plain-field-lookup path.
+- **Added** — `PreflightGate`/`PreflightGateDecision` (`jazzx_sdk.agents.interactive`) — a generic pre-agent classification gate (one LLM round-trip: structured verdict + deterministic output-guardrail refusal mapping), generalized from jazzx-assistant's hand-built mortgage-safety gate.
+- **Added** — `Source.locator` (`jazzx_sdk.agents.interactive.response`) — citations can now carry a page/cell/section `Locator`, same union `SourceCoordinate` already uses; `SourceBuilder` passes it through unchanged.
+
+Known limitation, not fixed: Dependabot alert #98 (`cryptography>=50.0.0`) still deferred — mlflow caps `cryptography<50` through at least 3.15.1. Also flagged, not yet fixed: `sync_collection()` fetches only the first 100 KH documents (no pagination) and resolves duplicate filenames by list order rather than doc id, which can silently mismatch content on a re-sync.
+
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Entries are intentionally terse; `git log`/`git diff` carries the full detail.
+## [2.3.3] - 2026-08-05
+
+- **Added** — `EvidenceRequestSpec`/`RichHypothesisUpdate` + `InvestigatorMode(rich_evidence_requests=True)`: lets a domain's Investigator keep LLM-authored per-request `query_params` (e.g. which policy clause to fetch) instead of the bare `evidence_requests: list[str]` AML/CRE use. Existing callers unaffected.
+- **Added** — `GovernorDecision.required_actions` — real downstream consumers (KYC-Anthropic/Earnings-Anthropic UIs) read this; the shared `GovernorMode` didn't carry it.
+- **Added** — `run_kit.run_agent` now stabilizes `prompt_cache_key` across every retry/continuation of a run when the caller didn't set one, generalizing a mechanism MACER's own `agent_utils.run_agent` proved out; no `ReasoningAgent`-backed mode set one before.
+- **Added** — `ReasoningGroupEvictStrategy` (`jazzx_sdk.agents.interactive`) — a `reasoning_group_evict` `CompactionStrategy`, porting MACER's `input_filter.py` group-eviction algorithm as token-triggered (via `max_chars`) instead of byte-triggered. `run_kit.evict_reasoning_groups` is the shared, budget-agnostic algorithm behind both this and the existing byte-triggered `InputFilter`.
+- **Fixed** — Dependabot: bumped `aiohttp>=3.14.3` (OOB heap read, WebSocket request smuggling, unnegotiated compressed frames) and `gitpython>=3.1.57` (arbitrary file truncation/read/overwrite via unguarded git options), clearing 6 of 7 open alerts. `cryptography>=50.0.0` (alert #98, Bleichenbacher oracle) deferred: every mlflow release through 3.15.1 caps `cryptography<50`, so bumping it now would silently downgrade mlflow 3.14.0→3.2.0. Revisit once mlflow ships a compatible release.
+
+## [2.3.2] - 2026-08-04
+
+`docs/plans/plan_assistant_sourav.md` (Studio design-doc review — P0/P1/P2/P3 code items, all
+done) + `docs/plans/plan_kh_client_bump.md` (KH v2 idempotency — entity + document sides, plus
+identity/RBAC verification).
+
+- **Added** — `Skill.reads` (`jazzx_sdk/agents/interactive/{spec,reads,agent}.py`): a skill
+  declares which `KnowledgeBinding`s (by new `KnowledgeBinding.name`) it needs on-demand tool
+  access to; `InteractiveAgent` generates a closure-bound `list_<name>`/`read_<name>`/
+  `search_<name>` `@function_tool` triple per binding at build time, gated through the existing
+  `admit_hop`/`PermissionScope.narrow()` cascade via a new `doc_source:<name>` selector. Fixes a
+  real correctness gap: the push-based `docs:` grounding path (`resolve_knowledge`) only ever
+  emitted `"[doc] {name}"` per document — filename only — so a grounded agent could name a
+  document and read none of its content. `list_`/`search_` rendering reuses
+  `tools.agent.grounding.build_summary_index` (that helper's first real internal consumer,
+  closing a second near-duplicate index-renderer risk); `select_items` doesn't fold in (in-memory
+  dict select vs. `reads`' remote per-id fetch — a different mechanism).
+- **Added** — `Skill.spec_ref` (assistant-as-skill composition, architecture doc §6): a skill can
+  name a full `InteractiveAgentSpec` (resolved via a new `InteractiveAgent(profile_registry=...)`
+  param) and run it as its own independently-guarded turn — its own guardrails/knowledge/
+  output_schema all apply, unlike a flattened `tools`/`references` skill — exposed to the parent
+  as a plain `@function_tool` (there's no Agents-SDK `Agent` object to wrap via `as_tool()`). No
+  manual permission-scope narrowing needed: the nested turn runs under the same ambient
+  `InvocationContext`, and its own `_check_turn_entry` already checks `assistant:<spec_ref>`.
+- **Added** — `ProfileRegistry.validate()` now also checks the `spec_ref` composition graph: a
+  dangling reference (doesn't resolve within the same registry) or a cycle (A wraps B wraps A,
+  which would recurse forever at runtime) both fail validation with the actual cycle chain named.
+  New `ProfileRegistry.publish()` (async) runs `validate()` first, then an optional
+  `evaluator(name, spec) -> reason | None` hook (the same block-reason convention as a
+  `GuardrailCheck`) — a caller-supplied extension point, not a hard-wire to
+  `jazzx_sdk.evaluation`'s pack/conductor-shaped `EvaluationHarness`. Side-effect classification
+  (the architecture doc's 3rd publish check) is explicitly not implemented — no such concept
+  exists anywhere in `jazzx_sdk.tools` yet.
+- **Added** — `SkillRegistry`/`GuardrailRegistry` tiering: `register(..., tier=)` (default 3) /
+  `tier_of(name)`, the same 1/2/3 platform/pack-config/builder convention as
+  `tools.documents.templates.TemplateRegistry`. Goes one step past that reference pattern: a
+  less-trusted tier registering over an existing more-trusted name now raises unless
+  `allow_override=True` is passed explicitly (`TemplateRegistry`'s own bare `_put` has no such
+  guard).
+- **Added** — `jazzx_sdk.server.create_knowledge_hub_mock_app(client=None, **client_kwargs)`: a
+  FastAPI adapter serving any `KnowledgeHubLike` delegate (a fresh `MockKnowledgeHubClient` by
+  default — already covers `list_documents`/`download_documents`/`read_entities`/`create_entity`/
+  etc., file-backed via `data_dir=`) over HTTP routes matching the real KH API 1:1. Closes "every
+  pack rebuilds a mock KH server" (jazzx-assistant's own hand-rolled `mock_knowledge_hub` FastAPI
+  app + `FileBackedStore` was the motivating case) without generalizing the parts that don't
+  generalize: a pack's own product-specific API mock (e.g. jazzx-assistant's `mock_assistant_api`
+  — no shared japes client behind it) and devcontainer/compose templates (deploy infra, not SDK
+  code) both stay pack-owned.
+- **Added** — `scripts/new_assistant_scaffold.py <domain-name>`: generates
+  `examples/<domain>/{profile/{profile.yaml,persona.md},harness.py,handler.py,test_<domain>.py,
+  README.md}` — the middle rung between the 20-line `examples/loan_assistant/` snippet and a full
+  production pack. Generated profile is deliberately skill-less so its test can use
+  `jazzx_sdk.llm.scripted.ScriptedLLM` directly (keyless, no live model) — `ScriptedLLM` only
+  covers the single-shot path, not the agentic Runner path. `handler.py` demonstrates the six
+  `HandlerContext` touchpoints (`ctx.message`, `ctx.runtime`, `ctx.extend_visibility`/
+  `log_metric`/`update_status`, and building the response off `ctx.message.header`), marked 1-6
+  inline.
+- **Added** — `handlers.propagated_headers`: context-manager counterpart to
+  `set_propagated_headers`/`clear_propagated_headers` (sync + async, clears even on exception),
+  mirroring `security_context`'s exact shape — juno had independently hand-rolled the identical
+  capture/restore pattern for the same queue-worker identity-propagation problem this module
+  already solves.
+- **Fixed** — `InProcessTurnRunStore.reap_stale` (`jazzx_sdk/runs/store.py`) swept off a
+  `list(self._runs.values())` snapshot taken at loop start; a concurrent `heartbeat()` renewing a
+  *later* run in the same sweep, landing during an *earlier* run's `await self.update(...)` (the
+  loop's only yield point), still got reaped off stale data. Prompted by a real juno production
+  incident (#227). Fix: re-read each run fresh from `self._runs` immediately before its own
+  staleness check/write, matching what `store_db.py`'s row-locked `reap_stale` already does for
+  the DB backend.
+- **Fixed** — `EntityStore.ensure(idempotency_key=...)` (`jazzx_sdk/fabric/entities/store.py`)
+  never actually deduped by key: `_find_by_fingerprint` only ever matched a candidate's *content*
+  hash, but a key-derived fingerprint is never equal to a content hash, so two calls with the same
+  key but different content silently created two entities instead of one — despite `ensure()`'s
+  own docstring promising the opposite. Fixed: an explicit `idempotency_key` now matches by
+  `(collection_id, name)` instead of content (there's nowhere else to persist an arbitrary caller
+  key remotely — `json_value` must conform to the caller's ontology schema).
+- **Added** — KH v2 idempotent-create wiring, entity side
+  (`jazzx_sdk/clients/knowledge_hub_client.py::create_entity_v2` now returns `(entity, created)`
+  instead of just `entity` — the native 201-vs-200 signal — and `EntityStore.ensure()` prefers it
+  over the pre-check+v1 path when available and no explicit `idempotency_key` is given).
+- **Added** — KH v2 idempotent-create wiring, document side: no generated binding exists for
+  document create anywhere in `client-api` (checked the pinned rev and its latest available
+  commit) — unlike entities, whose v2 bindings already existed unwired.
+  `KnowledgeHubClient.create_document_v2` is hand-rolled directly against the shared httpx client
+  (same `_MultipartBody` file-part encoding v1's generated binding uses, so the existing
+  request-headers-provider and denied-response hooks still apply); meant to be replaced by a real
+  generated binding once `client-api` regenerates. `DocStore.ensure()` prefers it the same way,
+  hydrating a 200 idempotent-hit's id-only response via the existing `_outcome()` re-fetch.
+  `MockKnowledgeHubClient` gets `create_entity_v2`/`create_document_v2` for parity, signatures
+  exact-matching the real client's per the existing mock/real parameter-drift contract test.
+- **Verified** — KH v2 bump identity/RBAC step: `x-user-id` forwarding on every KH write path
+  (`create_entity`, `create_entity_v2`, `update_entity`, `create_document`, `create_document_v2`)
+  and `read_entity` 401/403 → `KnowledgeHubAccessError` (404 staying a plain miss, never conflated
+  with denial) were asserted in the plan but never exercised end-to-end against a real
+  `KnowledgeHubClient` call — new `httpx.MockTransport` round-trip tests close that gap. No code
+  change; both claims held. Cross-checked KH's own server source directly:
+  `common/core/dependencies.py::get_current_user_id_optional` reads the literal `x-user-id`
+  header and `api_v2.py` stamps it onto `created_by_user_id`/`updated_by_user_id`.
 
 ## [2.3.1] - 2026-08-02
 
