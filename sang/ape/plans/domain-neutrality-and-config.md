@@ -4,6 +4,18 @@ Companion to `reasoner-chassis-analysis.md` and `policy-ir-abstraction.md`. Audi
 `/Users/sangit/src/japes` `jazzx_sdk/` (SDK package only — tests/, examples/, docs/, ui/, common/,
 .venv/ excluded).
 
+> **Fix #1 shipped 2026-08-08.** `modes/catalog.py`'s five AML literals
+> (`investigator.canonical_consumes`/`.derived_object`, `conductor.derived_object`,
+> `narrator.canonical_produces`/`.derived_object`) are now `None`, matching the pattern
+> `simulator`/`optimizer`/`influencer`/`negotiator` already used. Verified before the edit that
+> nothing in `jazzx_sdk/` reads these three `ModeContract` fields (the only other hits are
+> `experts/catalog.py`'s separately-named `ExpertContract`, a different class). `tests/
+> test_operational_modes.py::test_mode_registry_has_canonical_io` updated to assert `None` instead
+> of the literal values it previously locked in. `reasoner-chassis-analysis.md`'s companion-docs
+> blockquote had claimed this fix already landed — it hadn't, until now; that claim is accurate as
+> of this date. Fix #2 (wiring `Pack.domain`/`.segment`/`.regulatory_context`) and fix #3 (the
+> AST-based neutrality lint) remain unbuilt.
+
 ---
 
 ## 0. The instinct is correct, and it's already violated once

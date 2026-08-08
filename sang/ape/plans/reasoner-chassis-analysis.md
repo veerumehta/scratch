@@ -11,9 +11,11 @@
 
 > **Companion docs.** `policy-ir-abstraction.md` — the pluggable policy-rule IR (P8).
 > `domain-neutrality-and-config.md` — the SDK must not encode "mortgage" (or any domain) anywhere;
-> a real violation of this rule was found in `jazzx_sdk/modes/catalog.py` and is fixed there. The
-> domain flows through `Pack.domain`/`.segment`/`.regulatory_context` — already in the manifest
-> schema, currently dead, needs wiring rather than a new mechanism.
+> a real violation of this rule was found in `jazzx_sdk/modes/catalog.py` and is fixed there (this
+> claim was stale for a stretch — a completeness audit on 2026-08-07 caught that the fix hadn't
+> actually landed yet despite this sentence; it landed for real 2026-08-08, see that doc's own
+> status note). The domain flows through `Pack.domain`/`.segment`/`.regulatory_context` — already
+> in the manifest schema, currently dead, needs wiring rather than a new mechanism.
 
 > **P1/P2 shipped 2026-08-02** as part of the v2.3.0 local work (unpushed), right after P8:
 > `jazzx_sdk.conductor.run_replicated_segments` (`conductor/replication.py` — `Segment`/`Replica`/
@@ -159,6 +161,20 @@
 > exactly (verified: all of Phase 4's original tests pass unchanged). Full japes suite green
 > throughout (2513 passed, 3 skipped, no failures). Phase 0 and Phase 5 remain deferred, per the
 > reordering decision above -- not started.
+>
+> **Two corrections landed 2026-08-08, from an independent completeness audit
+> (`design_note_mode_chassis_completeness.md`).** First: the shipped chassis defaulted
+> `replicas=3` in three places (`spec.py`, `pipeline.py`, `conductor/replication.py`), citing
+> MACER's own default -- exactly the inherited-not-measured assumption
+> `design_note_p1_p2_sizing.md` warns against (that note measured batched k=3 at **zero variance
+> reduction, 3.1x cost**, and concludes "default `replicas=1`, not 3"). All three now default to
+> 1; the toy demo pack's YAML followed suit. Second: §4c above describes `evaluator.stochastic` as
+> what "selects which `EnsembleCollapse` a rule's kind should even reach" -- it doesn't;
+> `partition_rules` routes on `execution` alone, and `stochastic` is read nowhere. Behavior matches
+> the plan by coincidence, not by wiring: `execution == LIVE` and `stochastic == True` are
+> perfectly correlated across all four registered evaluators today. Left unwired deliberately
+> (verified there's no evaluator yet that's LIVE-but-not-`stochastic` to justify the seam) --
+> documented instead, on the field itself, per the audit's own reasoning.
 
 ---
 

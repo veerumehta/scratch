@@ -71,6 +71,71 @@ chassis
     prior_outcomes params wire both in; omitting all three is unchanged
     from the prior release.
 
+Fix replicas default, document stochastic, close a domain-neutrality gap
+(from an independent completeness audit against the chassis work above)
+
+  - agents.adjudication.spec/pipeline, conductor.replication: replicas
+    default 3 -> 1. The shipped default contradicted this repo's own
+    measurement (batched k=3 on a real fixture: zero variance reduction,
+    3.1x cost) -- an inherited-not-measured assumption, not a tuned one.
+  - fabric.canonical.condition_evaluator.ConditionEvaluator.stochastic:
+    documented, not wired -- it's currently redundant with
+    execution == LIVE across all four registered evaluators, so gating
+    partition_rules on it today would be an untested seam with no
+    behavior to justify it.
+  - modes/catalog.py: nulled five AML literals (canonical_produces/
+    canonical_consumes/derived_object on investigator/conductor/
+    narrator) that had no business being in a domain-neutral mode
+    registry -- verified nothing in jazzx_sdk reads them first.
+
+Migrate EvaluatorMode onto ReasoningAgent
+
+  The one EVOLVE-layer mode left out of the v2.3.0 five-mode migration.
+  Previously held its own AsyncOpenAI client (unusable on an
+  Anthropic-only deployment) and parsed a bare json.loads with no
+  retry -- a truncated/malformed response either raised or silently
+  produced an empty improvement_signals list, stopping the compounding
+  loop with no error anywhere.
+
+  - modes/evolve/evaluator.py: now inherits BaseMode; constructor takes
+    ctx: HandlerContext (matching the other five modes); run() returns
+    ModeResult instead of a bare EvaluationReport. No real caller
+    depended on the old shape (verified zero constructor call sites
+    anywhere in japes beyond docstring mentions and re-exports).
+  - Caught along the way: a dict-typed output_type field (typed or
+    bare) breaks OpenAI's strict-schema mode outright
+    ("additionalProperties should not be set") -- confirmed this would
+    also break NarratorMode's NarrativeOutput.sections in a real call.
+    Fixed only for the new _EvaluatorLlmOutput model via
+    AgentOutputSchema(..., strict_json_schema=False); NarratorMode's
+    pre-existing instance of the same bug is untouched, out of scope.
+
+Fix the same strict-schema bug in NarratorMode
+
+  - modes/operational/narrator.py: NarrativeOutput's sections/
+    citations/metadata are all dict-typed -- same AgentOutputSchema(...,
+    strict_json_schema=False) fix. The existing test file mocked at the
+    Runner.run() level (the ReasoningAgent.run(runner=...) test seam),
+    so it never reached the real get_output_schema()/AgentOutputSchema
+    construction either -- added the same boundary contract test.
+  - Found, then fixed same-session: VerifierMode/VerifierReport has the
+    identical bug (evidence_results/notes/attestations all dict-typed).
+    GovernorMode/GovernorDecision and InvestigatorMode/HypothesisUpdate
+    are clean (list/bool/str only); ReasonerMode's output_schema is
+    pack-supplied, not an SDK schema.
+
+Fix the same strict-schema bug in VerifierMode
+
+  - modes/operational/verifier.py: same AgentOutputSchema(...,
+    strict_json_schema=False) fix, same test blind spot, same added
+    contract test.
+  - Cleaned up (not a behavior change): the empty-evidence early return
+    built VerifierReport(evidence_id=..., status=..., quality_score=...,
+    findings=..., flags=..., attestation=...) -- none of those are real
+    VerifierReport fields; pydantic v2 silently ignores unknown kwargs,
+    so this always produced the same bare-defaults object a plain
+    VerifierReport() would, just via misleading dead code.
+
 ## 2.3.4
 Generalize install_request_headers_hook for bare httpx clients
 

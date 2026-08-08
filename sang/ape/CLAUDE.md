@@ -42,6 +42,52 @@
   still not started — everything above is verified against toy/mocked evidence only. See
   `docs/plans/reasoner-chassis-analysis.md`'s 2026-08-07 "Phase 4 shipped"/"Reordering decision"/
   "Phase 6 shipped" notes for the full breakdown.
+- **Three corrections landed 2026-08-08, from an independent completeness audit**
+  (`design_note_mode_chassis_completeness.md`, `plan_JACI_CL_SPREAD_ADJUDICATION.md` in jaci —
+  both verified against code before acting). (1) `replicas` default fixed `3` → `1` in
+  `spec.py`/`pipeline.py`/`conductor/replication.py` — the shipped default contradicted
+  `design_note_p1_p2_sizing.md`'s own measurement (zero variance reduction at 3.1x cost). (2)
+  `ConditionEvaluator.stochastic` documented as currently redundant with `execution == LIVE`
+  (verified true across all four registered evaluators) rather than wired into
+  `partition_rules` — no evaluator yet needs the distinction, wiring it now would be an untested
+  seam. (3) `modes/catalog.py`'s five AML literals (`canonical_produces`/`canonical_consumes`/
+  `derived_object` on investigator/conductor/narrator) nulled per
+  `domain-neutrality-and-config.md`'s fix #1 — verified nothing in `jazzx_sdk/` reads them first;
+  `test_operational_modes.py` updated. Full suite still green (2513 passed, 3 skipped).
+- **`EvaluatorMode` migrated onto `ReasoningAgent`, same audit, 2026-08-08.** The one EVOLVE-layer
+  mode left out of the v2.3.0 five-mode migration: previously held its own `AsyncOpenAI` client
+  (an Anthropic-only deployment couldn't run it at all) and parsed a bare `json.loads` with no
+  retry — a truncated/malformed response either raised or silently yielded an empty
+  `improvement_signals` list, stopping the compounding loop with no error anywhere. Now inherits
+  `BaseMode`, constructor takes `ctx: HandlerContext` (matching the other five), `run()` returns
+  `ModeResult` (was bare `EvaluationReport`) — verified zero real callers depended on the old
+  shape (only docstring mentions + re-exports anywhere in japes). Caught a real, previously-latent
+  bug along the way: a dict-typed field on any `output_type` pydantic model (typed or bare) breaks
+  OpenAI's strict-schema mode outright (`additionalProperties should not be set`) — confirmed this
+  would *also* break `NarratorMode`'s `NarrativeOutput.sections: dict[str, str]` in a real call;
+  fixed only for the new `_EvaluatorLlmOutput` model via `AgentOutputSchema(...,
+  strict_json_schema=False)`, scoped to this one call site. 8 new tests
+  (`tests/test_evaluator_mode.py`), including a boundary contract test for the strict-schema bug
+  (mocked-`ReasoningAgent` tests alone would never have caught it — none of them construct the
+  real `AgentOutputSchema`).
+- **`NarratorMode` got the same strict-schema fix, 2026-08-08.** `NarrativeOutput`'s
+  `sections`/`citations`/`metadata` are all dict-typed — same `output_type=` fix
+  (`AgentOutputSchema(NarrativeOutput, strict_json_schema=False)`), same blind spot in its
+  existing test file (`test_narrator_mode_reasoning_agent.py` mocks at the `Runner.run()` level
+  via the `runner=` test seam, so none of its tests ever reached the real
+  `get_output_schema()`/`AgentOutputSchema` construction either) — added the same boundary
+  contract test there.
+- **`VerifierMode` got the same fix, 2026-08-08** — `VerifierReport`'s `evidence_results`/`notes`/
+  `attestations` are all dict-typed, identical `AgentOutputSchema(..., strict_json_schema=False)`
+  treatment, same test blind spot, same added contract test. Also cleaned up (while in the same
+  method): the empty-evidence early return built `VerifierReport(evidence_id=..., status=...,
+  quality_score=..., findings=..., flags=..., attestation=...)` — none of those are real
+  `VerifierReport` fields; pydantic v2 silently ignores unknown kwargs by default (verified
+  empirically — no crash), so this was always producing the same bare-defaults object a plain
+  `VerifierReport()` would, just via misleading dead code. Not a behavior change, a clarity one.
+  `GovernorMode`/`GovernorDecision` and `InvestigatorMode`/`HypothesisUpdate` remain clean
+  (list/bool/str only, confirmed); `ReasonerMode`'s `output_schema` is pack-supplied, not an SDK
+  schema, so not japes's to fix. Full suite green (2523 passed, 3 skipped).
 
 Design docs (gitignored, `docs/plans/`): `reasoner-chassis-analysis.md` (P1/P2/P6/P8 build
 sequence + Phase 4 chassis), `policy-ir-abstraction.md` (P8 detail),
