@@ -4,6 +4,142 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 ## [Unreleased]
 
+Add AdjudicationAgent chassis (jazzx_sdk.agents.adjudication)
+
+  Per-segment obligation checking: batched replicated verification for           
+  LLM-evaluated obligations, direct evaluation for deterministic ones,           
+  scoped evidence access per segment, applicability gating, incremental          
+  re-run support, and a fail-closed dynamic segment planner. New                 
+  NaturalLanguageCondition evaluator; Trace mode-tagging fix for                 
+  mlflow_bridge; toy demo pack.
+
+  Per-segment obligation checking with replicated variance reduction --
+  generalizes MACER's own section x replica x batch-verify shape into a
+  reusable, domain-neutral SDK primitive.
+
+  - workspace.py: EvidenceWorkspace/Mount -- narrows the ambient
+    PermissionScope to a segment's mounts for the duration of its calls,
+    restored after.
+  - partition.py: partition_rules splits a segment's Rule objects into
+    DETERMINISTIC/LIVE by resolved ConditionEvaluator.execution.
+  - spec.py: AdjudicationAgentSpec -- domain-neutral pack config (persona,
+    model, replicas, regime_values/status_vocabulary carried verbatim,
+    never branched on), with from_dir(yaml + persona.md) loading.
+  - pipeline.py: run_segment -- batches every LIVE obligation into one
+    prompt per replica, replicates (P1 run_replicated_segments), collapses
+    per obligation (P2 EnsembleCollapse); DETERMINISTIC rules go straight
+    through their own evaluator, no LLM. A rule with condition=None is
+    skipped, matching DefaultPolicyExpert.check_compliance exactly.
+  - agent.py: AdjudicationAgent facade -- fans run_segment out across
+    segments (one bad segment doesn't sink the case), reconciles, emits a
+    narrative. A narrative-generation failure never discards already-
+    computed outcomes.
+  - fabric.canonical.policy/condition_evaluator: new NaturalLanguageCondition
+    kind + NaturalLanguageEvaluator (LIVE, stochastic) -- the Condition
+    union had no LLM-backed kind for a chassis-level obligation to declare
+    itself LIVE with.
+  - observability.mlflow_bridge: new name_patterns parameter on
+    span_to_trace_step/spans_to_canonical_trace -- the existing mode_map
+    is keyed on span_type (LLM/TOOL/...), too coarse to tell an adjudicate
+    call from an emit call apart (both are plain LLM spans); name_patterns
+    matches on the agent/session name instead, checked first.
+  - examples/adjudication_demo: toy two-segment mortgage-underwriting pack
+    (mirrors examples/loan_assistant's spec-plus-harness shape).
+
+Add P3/P7 (impact resolution + segment planning) to the AdjudicationAgent
+chassis
+
+  Generalizes MACER's rerun_orchestrator.py/orchestrator_agent.py rather
+  than porting them -- MACER may never adopt this chassis, but the
+  primitives are useful to japes's other consumers regardless.
+
+  - pipeline.run_segment: now honors Rule.applicability (a real gap --
+    it didn't before, unlike DefaultPolicyExpert.check_compliance). An
+    inapplicable rule short-circuits to RuleOutcome(verdict=NOT_APPLICABLE)
+    before reaching its condition, deterministic or LIVE, no LLM call.
+  - New agents.adjudication.planner: SegmentPlanner protocol +
+    plan_or_fallback -- the SDK owns the fail-closed discipline (planner
+    exception or empty plan falls back to the static segment list); the
+    case-profile/regrouping logic itself stays pack-side.
+  - New agents.adjudication.impact: impacted_rules() keys off
+    ConditionEvaluator.evidence_contract() (P8) instead of MACER's
+    document-classification-triple mapping file -- reusable by any pack.
+    merge_with_carry_forward() + a RunMode enum/resolve_run_mode()
+    matching MACER's own INITIAL/INCREMENTAL/FORCED_FULL upgrade-downgrade
+    rules, plus a NO_OP mode for explicitly-empty impact.
+  - AdjudicationAgent.adjudicate: new optional planner/changed_fields/
+    prior_outcomes params wire both in; omitting all three is unchanged
+    from the prior release.
+
+## 2.3.4
+Generalize install_request_headers_hook for bare httpx clients
+
+  Detects a bare httpx.AsyncClient/httpx.Client (not just a generated
+  AuthenticatedClient/Client wrapper) and installs the hook directly on
+  its own event_hooks["request"] -- covers a consumer building a plain
+  httpx client by hand (e.g. jazzx-assistant's assistant_client.py)
+  without needing a generated-client wrapper to hang the hook off of.
+
+  Export install_request_headers_hook, add KernelClient.get_agent, add
+  render_prompt_template
+  
+  - clients.__init__: install_request_headers_hook is now public -- a
+    consumer wrapping their own raw generated client (not going through
+    KernelClient/KnowledgeHubClient) can harden it the same way, instead
+    of hand-rolling per-call header injection.
+  - KernelClient.get_agent(name): mirrors get_tool(), reuses the same
+    search_agent_by_name endpoint invoke_agent already uses internally.
+  - New jazzx_sdk.templating.render_prompt_template: sandboxed Jinja2
+    rendering of untrusted templates into prompts, fail-soft on any
+    error (bad syntax, sandbox violation, jinja2 not installed). New
+    optional 'templating' extra (jinja2), lazy-imported. Exported from
+    jazzx_sdk.templating and the top-level jazzx_sdk package.
+
+
+  Bump patch version to 2.3.4
+  
+  - fabric.canonical.store.core.PolicyStore.list_policies: paginate                                
+    read_entities (was capped at limit=500, silently dropping policies                             
+    beyond the first page).                                                                        
+  - tools.documents.classifiers.classify_llm: completeness_passed was                              
+    vacuously True for a document type with no registered classifier                               
+    (required=[] -> not [] == True even though nothing was extracted).                             
+  - server.governed_http: clear_governed_context() now runs on early                               
+    400/409 exits too, not just the happy path (set_governed_context and                           
+    the mutating-idempotency check moved inside the try/finally).                                  
+  - tools.agent.dir_tools.build_directory_tools: show_hidden: bool =                               
+    False -- dotfiles excluded from list_documents/search_documents by                             
+    default (write_document also refuses to create one), with an opt-in                            
+    for a caller with a legitimate dotfile.                                                        
+  - fabric.fabric.KnowledgeFabric: accepts manifest_store, threaded to                             
+    the lazily-constructed DocStore. Added NullMaterializeManifestStore                            
+    (jazzx_sdk.fabric.docs) as a first-class no-persistence option. 
+
+## 2.3.3 contd.
+ Generalize escaped-literal-text stripping beyond NUL to surrogates and C0
+  controls 
+  
+  sanitize.py: the double-JSON-encode mechanism that surfaces a NUL's
+  "\u0000" escape as literal text applies equally to lone surrogates and
+  C0 controls. _SURROGATE_LITERAL/_CONTROL_LITERAL now strip those forms
+  too (control literals still opt-in via strip_control, matching the
+  real-byte behavior). Both derived from the same code-point sets as the 
+  real-character checks, so the two can't drift apart. 
+
+  Fix bot-reported gaps: SSRF scheme allowlist, PreflightGate empty-refusal fail-open, sync_collection page_size drift, dir_tools path-containment bypass
+
+  - net_safety.validate_url_safe + tools/documents/local._validate_url_safe:
+    reject non-http(s) schemes (file://, gopher://, ...), not just private IPs.
+    Documented (TODO) the separate, still-open DNS-rebinding gap in is_private_ip.
+  - PreflightGate.evaluate: an empty-string refusal now still blocks (falls
+    back to fallback_refusal) instead of silently passing the turn through --
+    matches the class's own documented contract (None = pass, any string = block).
+  - fabric.docs.store.sync_collection: page_size 100 -> 1000, matching the
+    other 5 KH pagination fixes (was an unintentional drift, no server cap).
+  - tools.agent.dir_tools._safe_relative: path-containment check now uses
+    parents-based comparison instead of a naive string prefix, closing a 
+    symlink-escape bypass via a sibling directory sharing root's name as a 
+    prefix (same pattern as the existing zip-slip guard).
 - **Fixed** — `python` floor raised to `>=3.12` (was `>=3.11`, already broken for Claude via `ReasoningAgent`/litellm; no real consumer runs 3.11).
 - **Fixed** — `DslEvaluator.evidence_contract` now calls `jazzx_sdk.expressions.parse.identifiers()` (existed all along, just never wired) — a DSL rule now correctly claims its referenced fields, fixing policy precedence (a deal-level DSL rule no longer lets a lower overlay rule also fire on the same field).
 - **Fixed** — `InteractiveAgent._skill_instructions` now gates `Skill.references` through `admit_hop` like `tools`/`reads` already do — a caller denied `ref:x` could previously still receive its content.

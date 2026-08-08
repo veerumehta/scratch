@@ -39,15 +39,126 @@
 > default `HeadingSnippetExtractor` leaves them `None` since no page/section concept exists
 > anywhere else in the SDK to derive them from.
 
-> **P5 (half) shipped 2026-08-02**: `"segment_tail"` registered as a named compaction strategy
+> **P5 shipped in full 2026-08-02/03** (this entry corrects the "half" note below, which is
+> stale): `"segment_tail"` registered as a named compaction strategy
 > (`jazzx_sdk.agents.interactive.memory.SegmentTailStrategy`) — the same algorithm
 > `run_kit.strip_session` applies directly to a `SQLiteSession`, extracted into a shared pure
 > function (`run_kit.segment_tail_items`) so both callers stay in sync. A no-op for a plain
 > chat-style history with no `type` field (only meaningful for a Responses-API/agentic session's
-> items) — documented, not a bug. The other half of P5 — porting MACER's `reasoning_group_evict`
-> byte-triggered evictor as token-triggered — is separate, real build work and remains unbuilt.
-> P3/P4/P7 also remain unbuilt — no caller yet, and each needs the full `AdjudicationAgent`
-> chassis this doc's own build sequence puts much later (Phase 4/6).
+> items) — documented, not a bug. **The other half also landed**: `"reasoning_group_evict"`
+> (`jazzx_sdk/agents/interactive/memory.py`, `ReasoningGroupEvictStrategy`, backed by
+> `run_kit._reasoning_item_groups`/`run_kit.evict_reasoning_groups`) — group-aware eviction of
+> MACER's `input_filter.py` shape, budgeted on serialized-char-count (matching MACER's own
+> byte-budget convention) rather than strict token-count, which is a fine fidelity gap, not a
+> functional one. P3/P4/P7 remain unbuilt — no caller yet, and each needs the full
+> `AdjudicationAgent` chassis this doc's own build sequence puts much later (Phase 4/6).
+>
+> **Verified 2026-08-07, re-reading this doc against current code (P1/P2/P6/P8 API surfaces,
+> MACER's own `jtbd_runner.py`/`jtbd_agent.py`/`summarization_agent.py`/`guideline_enrichment.py`,
+> and the 5 modes' actual implementations):** P1/P2 (`jazzx_sdk/conductor/replication.py`,
+> `ensemble.py`) have zero drift from this doc's description — signatures, precompute-once-per-
+> segment, failed-replica exclusion, `key_of`-based regrouping, all match. MACER's own adjudication
+> logic is **unchanged** since this doc was written — the files moved into a `src/macer/jtbd/`
+> subpackage but the last commit touching any of `jtbd_runner.py`/`jtbd_agent.py`/
+> `summarization_agent.py`/`guideline_enrichment.py` predates this analysis (2026-07-28, before the
+> 2026-08-01 draft). Nothing in §1/§2/§4/§8 needs re-checking against a moving target.
+>
+> **The crux, now precisely confirmed rather than assumed**: `jazzx_sdk/modes/operational/
+> {reasoner,narrator,governor,investigator,verifier}.py` each construct exactly one
+> `ReasoningAgent(...)` and call `.run()` **once**, in their own `run()` method. Zero references to
+> `run_replicated_segments`, `EnsembleCollapse`, `PrecomputedGrounding`, or `BrowseGate` anywhere in
+> `jazzx_sdk/modes/`. So: **P1/P2/P5/P6/P8 all exist and work as standalone primitives, but nothing
+> wires them together, and nothing wires them into a mode.** `ReasoningAgent` + the five modes,
+> as they exist today, cannot reproduce MACER's segment×replica×batch+grounding+ensemble topology —
+> not because a primitive is missing, but because **Phase 4 — the chassis that wires them
+> together — has not been started.** `jazzx_sdk/agents/adjudication/` does not exist.
+> `examples/adjudication_demo/` (this doc's own Phase 4 deliverable) does not exist either; the
+> only "adjudication" hit anywhere in japes is `tests/test_adjudication_policies.py`, which tests
+> `jazzx_sdk.evaluation.scorers`' unrelated same-named scoring-composition policies, not this
+> chassis. **Restated: Phases 0-3 of §7's build sequence are now fully done (P1/P2/P5/P6/P8);
+> Phase 4 is the next and only remaining blocker before Phase 5 (the actual MACER-parity question)
+> can even start.** See the new §4c below for what Phase 4 concretely requires, now that the
+> primitives it wires together are no longer speculative.
+>
+> **Phase 4 shipped 2026-08-07.** `jazzx_sdk/agents/adjudication/` now exists, wiring P1/P2/P4/P8
+> into the §4c plan exactly: `workspace.py` (`EvidenceWorkspace`/`Mount`, narrowing the ambient
+> `PermissionScope` to a segment's mounts for the duration of its calls — P4), `partition.py`
+> (`partition_rules`, splitting a segment's `Rule`s into DETERMINISTIC/LIVE by resolved
+> `ConditionEvaluator.execution` — P8), `spec.py` (`AdjudicationAgentSpec`, domain-neutral —
+> verified it never branches on `regime_values`/`status_vocabulary`, just stores them, per
+> `domain-neutrality-and-config.md`), `pipeline.py` (`run_segment`, batching every LIVE obligation
+> into one prompt per replica — MACER's own `verify_all_jtbds` shape — then P1 `replicated` +
+> P2 `collapse`; DETERMINISTIC rules go straight through their evaluator, `k=1`, no LLM), and
+> `agent.py` (`AdjudicationAgent`, fanning `run_segment` out across segments with `fan_out(...,
+> degrade=True)` so one bad segment doesn't sink the case, then thin `ReasoningAgent`-based
+> `_reconcile`/`_emit` defaults — pack-overridable seams, not `GovernorMode`/`NarratorMode`; see
+> `agent.py`'s own docstring for why those modes are the wrong shape here).
+>
+> A new `NaturalLanguageCondition`/`NaturalLanguageEvaluator` closed the one real P8 gap this
+> wiring surfaced: `Condition`'s union had no LLM-backed kind, so a chassis-level obligation had
+> nowhere to declare itself LIVE. `RuleOutcome`s for a rule with `condition=None` are correctly
+> never fabricated — confirmed against `DefaultPolicyExpert.check_compliance`'s own handling
+> (skipped, not defaulted to `SATISFIED`) and matched exactly in `_evaluate_deterministic`.
+>
+> Mode-tagging for the Trace (this doc's own outstanding "so the Trace doesn't mislabel every LLM
+> call 'reasoner'" problem) turned out to need a real mechanism addition, not just a config value:
+> `mlflow_bridge`'s existing `mode_map` is keyed on span_type (`LLM`/`TOOL`/...), so `run_segment`'s
+> adjudicate call and `AdjudicationAgent._emit`'s narrative call — both plain `LLM` spans — were
+> indistinguishable to it. Added `name_patterns` (an ordered `(substring, mode)` list, checked
+> against `span.name` before falling back to `mode_map`) to `span_to_trace_step`/
+> `spans_to_canonical_trace`; `agents/adjudication/tracing.py`'s `adjudication_name_patterns()`
+> supplies the chassis's own list (`":adjudicate:"` → REASONER, `":emit"` → NARRATOR). DETERMINISTIC
+> obligations and the default no-op `_reconcile` produce no LLM span at all, so there is nothing to
+> tag for them yet — a pack overriding `_reconcile` with a real call extends the list itself.
+>
+> `examples/adjudication_demo/` is the toy end-to-end pack this doc called for — a two-segment
+> mortgage-underwriting demo (`income`/`property`, each mixing one DETERMINISTIC `Expression` and
+> one LIVE `NaturalLanguageCondition`), mirroring `examples/loan_assistant/`'s spec-plus-harness
+> shape. Full japes suite green throughout (2487 passed, 3 skipped, no failures) — no test outside
+> the new files needed a change. **Phase 5 (the actual MACER-parity question — does this chassis,
+> pointed at MACER's own real obligations/policy corpus, reproduce its behavior) is next and is
+> explicitly not started**; everything above is verified against toy/mocked evidence, not MACER's
+> real segments.
+>
+> **Reordering decision, 2026-08-07: benchmarking (Phase 0) and MACER-parity shadow-running
+> (Phase 5) are deferred to the end, in favor of building P3/P7 next.** MACER may never adopt this
+> chassis — that isn't the point. The primitives (P1/P2/P4/P6/P8, now P3/P7) generalize regardless
+> of whether MACER specifically ends up calling them; other japes consumers benefit from them
+> existing as SDK primitives independent of MACER-parity validation. Benchmarking and diff-based
+> validation happen once, at the end, against whatever's been built by then — not gating every
+> phase. §7 below is updated to reflect the new order (P3/P7 next, Phase 0/5 last).
+>
+> **Phase 6 (P3/P7) shipped 2026-08-07,** generalized rather than ported (both were designed to
+> reuse existing SDK mechanisms instead of MACER's own domain-specific joins):
+>
+> **P7 split in two.** Applicability gating (the cheap half -- "filter inapplicable, zero LLM
+> calls") turned out to be a real gap in `run_segment` itself, not a future planner feature: it
+> didn't honor `Rule.applicability` at all, unlike `DefaultPolicyExpert.check_compliance`. Fixed
+> directly in `pipeline.run_segment` (a new `_apply_applicability_gate`, run before the
+> DETERMINISTIC/LIVE partition, for both partitions alike) -- an inapplicable rule now short-
+> circuits to a real `RuleOutcome(verdict=NOT_APPLICABLE)` before ever reaching its condition,
+> deterministic or LIVE. The genuinely pack-specific half -- case-profile-driven dynamic
+> regrouping -- shipped as `agents/adjudication/planner.py`'s `SegmentPlanner` Protocol +
+> `plan_or_fallback()`: the SDK owns only the fail-closed discipline (any planner exception or
+> empty plan falls back to the static segment list, logged, never takes the run down); the case-
+> profile logic itself is pack-side, deliberately not built here.
+>
+> **P3 generalized, not the document-classification-triple join.** `agents/adjudication/impact.py`
+> keys impact off `ConditionEvaluator.evidence_contract()` (P8, already existed) instead of
+> MACER's `reverse_document_mapping.json` -- "did this rule's applicability/condition read a field
+> that changed" rather than a document-type lookup table, so it's reusable by any pack rather than
+> tied to one mapping file's shape. A rule declaring no fields at all fails open (always re-
+> checked), mirroring MACER's own "unknown document type → all sections" convention. Shipped
+> `impacted_rules()`, `merge_with_carry_forward()`, and a `RunMode` enum +
+> `resolve_run_mode()` matching MACER's own upgrade/downgrade rules (`INITIAL`+prior-run→
+> `FORCED_FULL`, `INCREMENTAL`+no-prior-run→`INITIAL`) plus the doc's proposed `NO_OP` fourth mode
+> for explicitly-empty impact.
+>
+> Both wired into `AdjudicationAgent.adjudicate` as optional keyword params (`planner`,
+> `changed_fields`, `prior_outcomes`) -- omitting all three reproduces Phase 4's original behavior
+> exactly (verified: all of Phase 4's original tests pass unchanged). Full japes suite green
+> throughout (2513 passed, 3 skipped, no failures). Phase 0 and Phase 5 remain deferred, per the
+> reordering decision above -- not started.
 
 ---
 
@@ -252,7 +363,7 @@ agent must route around, not a silent degradation it can't see.
 | **Dynamic segmentation / applicability** | `orchestrator_agent.py` | — | ❌ **P7** |
 | **Impact resolution (incremental)** | `rerun_orchestrator.py` | `Manifest` is file-level only | ❌ **P3** |
 | **Evidence workspace / mounts + gates** | `tools/documents.py` | `dir_tools`, `read_local_file`, `authority.admit_hop` | 🟡 **P4** |
-| Reasoning-group input filter | `input_filter.py` | `CompactionPolicy` + `register_compaction_strategy` | 🟡 **P5** |
+| Reasoning-group input filter | `input_filter.py` | `CompactionPolicy` + `register_compaction_strategy` | ✅ **P5** (shipped, see update note) |
 | Obligation register | `models/jtbd_ontology.py` | canonical `Policy{rules: list[Rule]}` — see companion doc `policy-ir-abstraction.md` | 🟡 |
 | Rule-evaluator dispatch | n/a (English only) | `Rule.condition` is a closed 2-way union wired with `isinstance` | ❌ **P8** |
 | Carry-forward / admissibility | 3 resolver modules | `SuspensionStore`, `ConversationStore.supersede`, `WriteOutcome` | 🟡 |
@@ -528,6 +639,68 @@ import linking them — they can drift silently.
 
 ---
 
+## 4c. Phase 4, concretely (added 2026-08-07, now that P1/P2/P5/P6/P8 are no longer speculative)
+
+The original Phase 4 entry in §7 was necessarily vague — "chassis (3-4 weeks) —
+`AdjudicationAgentSpec`, `AdjudicationAgent`, P4 workspace, `build_adjudication_pipeline`" — written
+before any primitive existed to wire. Now that P1/P2/P5/P6/P8 are real, confirmed, drift-free code,
+Phase 4's job is specifically **wiring five already-built things and one not-yet-built thing**
+together into one pipeline, not building six things from scratch. Concretely, per obligation-batch:
+
+1. **Precompute** (P6, `PrecomputedGrounding`) — once per segment, before any replica runs. Already
+   shippable standalone; the chassis just needs to call it as the pipeline's precompute step and
+   pass its output into each replica's prompt, the same way `run_replicated_segments`'
+   `precompute` parameter is already shaped to receive it (§4/P1 — `precompute` runs once per
+   segment, outside the replica loop; this is not new wiring work on P1's side, just a caller).
+2. **Partition by evaluator kind** (P8, `ConditionEvaluator.execution`) — split the segment's
+   obligations into DETERMINISTIC (skip the LLM, skip replication, `k=1`, straight to
+   `DefaultPolicyExpert.check_compliance`) and LIVE (needs `ReasoningAgent`). This is the one
+   genuinely new piece of glue: nothing today reads `execution` to *route*, only to *evaluate*
+   once already inside `check_compliance`. Small — a filter over `Policy.rules`, no new primitive.
+3. **Replicated batch verification** (P1, `run_replicated_segments`) — the LIVE partition only.
+   `process: (segment, replica) -> results` is where `ReasoningAgent.run(tools=[...])` actually
+   gets called, batched (one call, many obligations, per MACER's `verify_all_jtbds` shape — §1).
+   This is the other genuinely new piece: a `process` callable that builds the batched prompt from
+   the LIVE obligations + P6's grounding output, and calls `ReasoningAgent.run()`. Everything
+   *around* that call (session-per-replica via `session_for`, regrouping via `key_of`,
+   `failed_replicas` exclusion) is already P1's job, unchanged.
+4. **Collapse** (P2, `EnsembleCollapse`) — per obligation, over its `k` replica results.
+   `evaluator.stochastic` (P8) selects which `EnsembleCollapse` a rule's kind should even reach —
+   MACER's `AnyEscalate` for asymmetric-risk domains, `DeterministicVote` for a domain that wants no
+   LLM in the loop at all (§6's per-pack table). Already shippable as-is; wiring is "call `.collapse()`
+   after step 3, keyed by the obligation."
+5. **Evidence workspace** (P4, still unbuilt) — the one primitive in this list that doesn't exist
+   yet. Named mounts + access classes, plus the two gate mechanisms MACER proved out (browse block —
+   already generalized as P6's `BrowseGate`; hard read cap that errors rather than truncates —
+   not yet a primitive, currently just a pattern in `tools/documents.py`-equivalent code). Smaller
+   than it looks: `admit_hop(f"mount:{name}")` + `permission_scope.narrow([...])` already exist in
+   `authority.context`; P4 is mostly the *convention* of using them per-segment, not new mechanism.
+6. **Reconcile + emit** (Governor/Narrator modes, unchanged) — these two modes' existing
+   single-shot `ReasoningAgent.run()` calls slot in after step 4 without modification; they were
+   never the missing piece.
+
+**What this means for sizing**: steps 1, 4, and 6 are pure wiring (hours, not weeks) against
+primitives that already work. Step 5 (P4) is genuinely unbuilt but small relative to the others.
+Steps 2 and 3 are the real work — a router over `Policy.rules` by evaluator kind, and one
+`process` callable that shapes the batched-prompt-plus-grounding call. That's a materially smaller
+Phase 4 than "3-4 weeks" implied when nothing existed to wire; most of the estimate should now go to
+`AdjudicationAgentSpec`/`build_adjudication_pipeline` as the actual new surface area (the
+`ConductorPipeline` a pack rewires — mirroring `agents/document/`'s `agent.py`/`pipeline.py` split,
+per §7's original framing) plus the `examples/adjudication_demo/` deliverable (still absent) and the
+mode-tagging discipline in §4b (supplying `mode_map` to `spans_to_canonical_trace` — not yet done
+because nothing calls it in this shape yet).
+
+**Direct answer to "can ReasoningAgent + the five modes do MACER's actual job today":** no —
+each mode is a single-shot wrapper (`jazzx_sdk/modes/operational/{reasoner,narrator,governor,
+investigator,verifier}.py`, one `ReasoningAgent(...)` construction, one `.run()` call, zero
+references to `run_replicated_segments`/`EnsembleCollapse`/`PrecomputedGrounding`/`BrowseGate`
+anywhere in `jazzx_sdk/modes/`), so there is no segment×replica×batch topology, no grounding
+injection, and no ensemble collapse in the current mode layer at all. The primitives that would
+close that gap already exist and are verified drift-free against this doc; what's missing is Phase
+4 itself — the pipeline that calls them in the right order — which has not been started.
+
+---
+
 ## 5. What not to port
 
 1. **ERROR replicas diluting the ensemble vote** (`jtbd_runner.py:456-485` → summarization). §4/P2.
@@ -582,41 +755,59 @@ reimplemented.
 
 ## 7. Build sequence
 
-**Phase 0 — measure the batching claim (1 week).** The batched-prompt design rests on "share
-document reads across requirements" (`jtbd_agent.py:1611`). That benefit is **asserted in a
-docstring and never measured** — no benchmark exists anywhere in the repo. It's also now testable
+**Reordered 2026-08-07 (see the update note near the top): phase numbers below are kept stable
+because code already cross-references them (e.g. `agent.py`'s docstring points at "Phase 6" for
+P3's carry-forward) — but actual build order is now 1→2→3→4→**6**→5→0→7. Phase 6 (P3/P7) is next;
+Phase 0 (benchmarking) and Phase 5 (MACER shadow-run diff) both move to the end, run once against
+whatever's been built by then, not gating anything in between.**
+
+**Phase 0 — measure the batching claim (1 week). DEFERRED TO END.** The batched-prompt design rests
+on "share document reads across requirements" (`jtbd_agent.py:1611`). That benefit is **asserted in
+a docstring and never measured** — no benchmark exists anywhere in the repo. It's also now testable
 cheaply, because the dead `verify_jtbd` path is still there: run both, compare tokens, cost, wall
 clock, and finding agreement. Also measure the k=3 ensemble's actual contribution — if replicas
-agree ~always, k=3 is a 3× bill for variance reduction nobody needs. These two numbers size P1 and
-P2. Do this before building either.
+agree ~always, k=3 is a 3× bill for variance reduction nobody needs. These two numbers would have
+sized P1/P2 had this run first; run retrospectively instead, against whatever's shipped by then.
 
-**Phase 1 — SDK upgrade, 1.9.6 → 2.2.4 (2–3 weeks).** Unglamorous and on the critical path for
+**Phase 1 — SDK upgrade, 1.9.6 → 2.2.4 (2–3 weeks). DONE.** Unglamorous and on the critical path for
 everything else. Two majors of drift across `resolve_model`, `strip_session`, `KnowledgeHubClient` →
 `fabric`, plus MACER's own `pydantic` deprecation suppressions. Delete the three dead modules while
 you're in there. Nothing below is safe to start until this lands.
 
-**Phase 2 — primitives (3–4 weeks).** P1, P2, P5. Self-contained, unit-testable against existing
-patterns (`tests/test_fanout.py`, `test_compaction.py`, `test_conductor_engine.py`), useful
-independently of the chassis.
+**Phase 2 — primitives (3–4 weeks). DONE.** P1, P2, P5 (both halves — see the 2026-08-07 update
+note near the top). Self-contained, unit-testable against existing patterns
+(`tests/test_fanout.py`, `test_compaction.py`, `test_conductor_engine.py`), useful independently of
+the chassis. Verified zero API drift as of 2026-08-07.
 
-**Phase 3 — P6 `PrecomputedGrounding` (2–3 weeks).** Broken out from the chassis because it is the
-highest-value transferable asset and the one most likely to be wanted by a team that never adopts
-the rest. Ship it standalone.
+**Phase 3 — P6 `PrecomputedGrounding` (2–3 weeks). DONE.** Broken out from the chassis because it
+is the highest-value transferable asset and the one most likely to be wanted by a team that never
+adopts the rest. Shipped standalone (`jazzx_sdk/agents/reasoning/grounding.py`).
 
-**Phase 4 — chassis (3–4 weeks).** `AdjudicationAgentSpec`, `AdjudicationAgent`, P4 workspace,
-`build_adjudication_pipeline`. Wire extraction to `DocumentAgent` rather than reimplementing. Tag
-every step with its mode (§4b) and supply the `mode_map` to `spans_to_canonical_trace` — without it
-the default map labels every LLM call `reasoner` and the Trace is wrong. Ship an
-`examples/adjudication_demo/` toy pack, the way `examples/loan_assistant/` demonstrates
-`InteractiveAgent`.
+**Phase 4 — chassis (3–4 weeks). DONE 2026-08-07.** `AdjudicationAgentSpec`, `AdjudicationAgent`,
+P4 `EvidenceWorkspace`, `run_segment` (this doc's `build_adjudication_pipeline`) all shipped in
+`jazzx_sdk/agents/adjudication/` — see the 2026-08-07 "Phase 4 shipped" update note near the top for
+the full breakdown. Mode-tagging landed as a new `name_patterns` seam on `mlflow_bridge`
+(`spans_to_canonical_trace`), not just a `mode_map` value — span_type alone can't tell an adjudicate
+call from an emit call apart (both are plain `LLM` spans). `examples/adjudication_demo/` ships, the
+way `examples/loan_assistant/` demonstrates `InteractiveAgent`. Extraction was not wired to
+`DocumentAgent` in this pass — no caller needed it yet; still a fair follow-up if/when Phase 5 turns
+up a real extraction step this chassis owns.
 
-**Phase 5 — mortgage pack.** Obligation register, regime detector, ontology bindings become pack
-data. Shadow-run against production MACER and diff **finding-by-finding** — wall-clock and cost are
-not the acceptance bar; the disagreements are the output.
+**Phase 5 — mortgage pack. DEFERRED TO END (was next; moved after Phase 6).** Obligation register,
+regime detector, ontology bindings become pack data. Shadow-run against production MACER and diff
+**finding-by-finding** — wall-clock and cost are not the acceptance bar; the disagreements are the
+output. Run once P3/P7 exist too, not as a gate before them — MACER may never adopt this chassis;
+the primitives are worth building for japes's other consumers regardless.
 
-**Phase 6 — P3 impact + carry-forward, P7 planner.** Deliberately last. Incremental re-run is an
-optimization over a correct full run, and `condition_resolution.md` is 79 KB of accumulated
-special-case logic — the highest-entropy corner of the system.
+**Phase 6 — P3 impact + carry-forward, P7 planner. DONE 2026-08-07.** No longer "deliberately
+last" — see the 2026-08-07 reordering note near the top for the full breakdown. `run_segment` now
+honors `Rule.applicability` directly (the gap found this session); `agents/adjudication/
+planner.py` (`SegmentPlanner`/`plan_or_fallback`) and `agents/adjudication/impact.py`
+(`impacted_rules`/`merge_with_carry_forward`/`RunMode`/`resolve_run_mode`) both shipped, wired into
+`AdjudicationAgent.adjudicate` as optional params. Both primitives generalize their MACER
+counterpart rather than port it: P3 keys off `evidence_contract()` (P8) instead of MACER's
+document-classification-triple join; P7's planner is a fail-closed harness around pack-supplied
+case-profile logic, not MACER's `orchestrator_agent.py` itself.
 
 **Phase 7 — AML pack.** First pack authored by someone who didn't write the chassis. The real test.
 

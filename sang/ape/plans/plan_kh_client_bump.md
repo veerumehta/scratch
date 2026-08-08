@@ -1,7 +1,15 @@
 # Plan: Knowledge Hub client bump (v2 idempotency + RBAC alignment)
 
-> **Status (2026-08-04): entity side DONE (`0be8458`); document side + RBAC verification still
-> open.** Corrected a stale assumption first: the generated client already had `create_entity_v2`/
+> **Status (2026-08-07): effectively DONE.** Entity side DONE (`0be8458`); document side DONE
+> (hand-rolled `create_document_v2`, see Step 4 below); RBAC verification DONE, both claims
+> verified true (`9ca6bae`, see Step 5 below). Only one item remains, and it's externally
+> blocked, not on japes: once `client-api` genuinely regenerates a real document-v2 binding,
+> `create_document_v2`'s hand-rolled HTTP call should be replaced with it. Staying as a `plan_`
+> file rather than moving to `docs/status/done_*.md` until that external item resolves — see
+> "Still open, longer-term" near the end of this file.
+>
+> Original (2026-08-04) status, kept for history: entity side DONE (`0be8458`); document side +
+> RBAC verification still open. Corrected a stale assumption first: the generated client already had `create_entity_v2`/
 > `read_entities_v2` bindings (gated by `KH_V2_ENTITIES_AVAILABLE`, currently `True`) — the client
 > regen (step 1, entities only) had already happened, just never wired into any caller.
 >

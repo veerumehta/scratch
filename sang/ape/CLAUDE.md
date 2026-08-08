@@ -1,6 +1,6 @@
 # Claude Session Status
 
-**Last Updated**: 2026-08-02
+**Last Updated**: 2026-08-07
 
 ## Working Principles
 
@@ -14,63 +14,38 @@
 
 ## Current Session Context
 
-### Version Status: 2.3.0 pushed; 2.3.1 in progress (local, unpushed)
+### Version Status: 2.3.4 (per `_version.py`); Phase 4 chassis work uncommitted on top
 - **jazzx_sdk/_version.py**: single source of truth (`__version__`); `pyproject.toml`'s
-  `version` must match — enforced by `tests/test_version_sync.py`.
-- **v2.3.0 is pushed** — `dev` and `origin/dev` both at `2e997b9`. No longer amendable;
-  anything new is a fresh commit. (The commit went through several rounds of `--amend`
-  locally before pushing — the SDK-layout refactor got folded in during one of them, per
-  the entry below — so its final pushed SHA doesn't match earlier SHAs referenced in this
-  file's own history; that's expected, not a discrepancy to chase.)
-- **v2.3.1** (local, unpushed) — `docs/plans/REFACTOR-2.4-subpackage-interiors.md` Phases 6, 7,
-  and 11, landed as a patch not a minor bump. Phase 6 (`e1207da`): closed the `llm`/
-  `agents.interactive`/`tools`/`fabric.canonical` facades, made `DbCostRecordStore`+providers
-  lazy, status-marked five staged-capability surfaces, deleted `tools/kg_store.py` (a 1.6.7-era
-  shim). The plan's two open judgment calls got settled first (`a765e90`) with real caller
-  evidence, not guessed: `conversion.convert_document` is the canonical local-document-read
-  entry point (`read_local_file` has zero real callers, `convert_document` has 2 japes + 7 jaci);
-  `ratio_evaluator.py` stays in `tools/` whole, not split into `fabric/` — it has zero
-  `fabric.canonical` imports, unlike `assessment.py`. Phase 7 (`f1623a9`): `fabric/canonical/
-  store.py` (1,596 LOC, 13 copy-pasted CRUD classes) split into a `store/` package around one
-  generic `_EntityStore`; verified identical KH call shapes for all 13 types via a recording
-  fake client. Phase 11 (`29f6a9a`, `0104f6a`): evicted `financial.py`/`filings.py`/
-  `assessment.py` out of `tools/` into `finance/`/`fabric/`, then regrouped the rest of `tools/`
-  (24 flat modules) into `documents/`/`knowledge_hub/`/`platform/`/`agent/` subpackages,
-  splitting the old flat `documents.py` three ways in the process. See `docs/status/
-  CHANGELOG.md`'s `[2.3.1]` entry for the full list. Skipped: `base_registry.py`'s eviction (the
-  plan's weakest-justified move, no unambiguous target) and the `providers/{base,stub}.py`
-  further nesting under `documents/` (real risk for small discoverability benefit) — both
-  deliberate, not oversights. Phases 8–10 and 12 (docs) of that plan are not started.
-  jaci needed real fixes at every phase (submodule pins on moved modules) since it runs on a
-  live path install of this working tree — all landed on jaci's own `dev` immediately.
-
-### What v2.3.0 actually is
-One arc: generalize the execution mechanism (`ReasoningAgent`, provider-portable —
-OpenAI and Anthropic through the same call shape), then build the next chassis
-generation on top of it, then close every real gap jaci's live validation surfaced.
-
-- `jazzx_sdk.agents.reasoning.ReasoningAgent` — floor+ceiling reasoning primitive over
-  `AgentExecutionService`/`run_kit`. All five operational modes (Reasoner/Investigator/
-  Governor/Verifier/Narrator) now call it; `AgentExecutionService.run()`'s own no-tools
-  retry path was fixed to match. Returns real `TokenUsage` (fresh input/output + cached/
-  reasoning breakdown) as a 3rd return value — `ModeResult.tokens_used`/`.token_usage`
-  are now populated for real (were dead — always 0/None — since the migration itself,
-  found only via a live jaci run, not any mock).
-- P8 (`fabric.canonical.condition_evaluator`) — `Rule.condition`/`.applicability` open onto
-  a registered `ConditionEvaluator` union (`Expression`/`DslExpression`/`RatioCondition`).
-- P1/P2 (`jazzx_sdk.conductor`) — `run_replicated_segments` + `EnsembleCollapse`: segment ×
-  replica × regroup topology over `fan_out`, failed replicas excluded from the vote.
-- P6 (`jazzx_sdk.agents.reasoning.grounding`) — `PrecomputedGrounding` + `BrowseGate`:
-  heading-scoped snippet extraction, keyword prefilter, headings-only LLM selector,
-  fingerprint-keyed cache, deny-only browse gate over `authority.context`.
-- `InvestigatorMode` now takes a required `hypothesis_content_type` constructor arg —
-  the bare `THypothesisContent` TypeVar it used to parameterize `HypothesisUpdate[...]`
-  with produces a `content` field schema with no `"type"` key, silently accepted by a
-  mocked runner but rejected outright by OpenAI's strict structured-outputs validation.
-  Found via a real jaci gold-case run, not any existing test. All jaci callers updated.
+  `version` must match — enforced by `tests/test_version_sync.py`. Currently `2.3.4`.
+- **AdjudicationAgent chassis (Phase 4 of `docs/plans/reasoner-chassis-analysis.md`) — built,
+  uncommitted.** New package `jazzx_sdk/agents/adjudication/` (`workspace.py` P4
+  `EvidenceWorkspace`/`Mount`; `partition.py` P8 DETERMINISTIC/LIVE `Rule` split;
+  `spec.py` `AdjudicationAgentSpec`; `pipeline.py` `run_segment` — P1 replication + P2 collapse
+  over batched LIVE obligations; `agent.py` `AdjudicationAgent` facade). Closed one real P8 gap
+  along the way: added `NaturalLanguageCondition`/`NaturalLanguageEvaluator` to
+  `fabric.canonical.policy`/`condition_evaluator` (the `Condition` union had no LLM-backed kind).
+  Added `name_patterns` to `observability.mlflow_bridge.span_to_trace_step`/
+  `spans_to_canonical_trace` — its existing `mode_map` is keyed on span_type (`LLM`/`TOOL`/...),
+  too coarse to tell an adjudicate call from an emit call apart (both are plain `LLM` spans);
+  `agents/adjudication/tracing.py` supplies the chassis's own name-pattern list.
+  `examples/adjudication_demo/` ships as the toy pack.
+- **Phase 6 (P3/P7) also built, same session, uncommitted.** Reordering decision: benchmarking
+  (Phase 0) and MACER-parity shadow-running (Phase 5) deferred to the end — MACER may never adopt
+  this chassis, but the primitives are worth building for japes's other consumers regardless.
+  `run_segment` now honors `Rule.applicability` (a real gap found this session — it didn't before);
+  new `agents/adjudication/planner.py` (`SegmentPlanner`/`plan_or_fallback`, P7's fail-closed
+  dynamic-segmentation seam) and `impact.py` (`impacted_rules`/`merge_with_carry_forward`/
+  `RunMode`/`resolve_run_mode`, P3 keyed off `evidence_contract()` rather than MACER's document-
+  triple join). Both wired into `AdjudicationAgent.adjudicate` as optional params
+  (`planner`/`changed_fields`/`prior_outcomes`) — omitting all three is unchanged from Phase 4.
+  Full suite green (2513 passed, 3 skipped). Phase 0/5 (benchmarking + MACER-parity validation)
+  still not started — everything above is verified against toy/mocked evidence only. See
+  `docs/plans/reasoner-chassis-analysis.md`'s 2026-08-07 "Phase 4 shipped"/"Reordering decision"/
+  "Phase 6 shipped" notes for the full breakdown.
 
 Design docs (gitignored, `docs/plans/`): `reasoner-chassis-analysis.md` (P1/P2/P6/P8 build
-sequence), `policy-ir-abstraction.md` (P8 detail), `design_note_reasoning_substrate.md`.
+sequence + Phase 4 chassis), `policy-ir-abstraction.md` (P8 detail),
+`design_note_reasoning_substrate.md`.
 
 ### Related repos
 - **jaci** (`/Users/sangit/src/jaci`) — the primary real consumer validating this version.
