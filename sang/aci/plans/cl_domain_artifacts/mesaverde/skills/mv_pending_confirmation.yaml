@@ -1,0 +1,25 @@
+# tier: 3 (customer overlay) · pack: cre_underwriting_core · case: Mesa Verde Apartments
+# Encodes the rule the customer wrote in prose at row 19 of their own sheet.
+name: mv_pending_confirmation
+description: "Pre-flag / post-flag gating for NOI and DSCR."
+applies_to:
+  - opex_insurance
+  - opex_property_tax
+  - net_operating_income
+  - dscr
+instructions: |
+  The customer's template states the rule in a free-text note at the bottom of the sheet:
+  "Insurance and Property Tax pending analyst confirmation. Post-flag NOI/DSCR locks once cleared."
+
+  Implement it as a gate, not as a label:
+
+  - While Insurance or Property Tax is unconfirmed, emit NOI and DSCR with state=pre_flag.
+  - A pre_flag DSCR must not flow into covenant testing or the credit decision. It is a working
+    number, and the customer's own row labels say so.
+  - When every gated field is confirmed, promote NOI and DSCR to state=final and lock them. That
+    promotion is a human action with an actor recorded — never automatic on a re-run.
+  - Do not rename the rows to drop "(pre-flag)". The customer put workflow state in the label
+    because a spreadsheet has nowhere else to put it; we keep their labels and carry the state
+    properly alongside.
+references:
+  - cre_underwriting_core:policies

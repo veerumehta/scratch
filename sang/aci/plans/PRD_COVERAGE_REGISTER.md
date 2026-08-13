@@ -196,6 +196,47 @@ liquidity) — what remains open is narrower: full granular balance-sheet cross-
 matching the reference workbook's own house EBITDAR/FCC definitions specifically (already declared
 gaps, not exit-criterion blockers). Waves 2 through 4 have no plans yet.
 
+## Governed-pipeline wiring gap, found and closed, 2026-08-08
+
+A gap on a different axis than the ones above, caught by `design_note_mode_chassis_completeness.md`
+§2.1 (a completeness audit against the japes `AdjudicationAgent` chassis, not this register) and
+closed the same day, `plan_JACI_CL_SPREAD_ADJUDICATION.md` Phase 0.
+
+**The gap.** FR-VAL-1/3/4/5's four arithmetic controls (`detect_balance_control`/`_cash_flow_tie`/
+`_equity_rollforward`/`_period_continuity`) run only when `validate_package(...,
+control_tolerance=...)` gets a non-`None` value. From the Wave 1 landing (2026-07-29) through
+2026-08-08, `credit_validation/provides.py`'s `validate()` — the step the *governed pipeline*
+(`run_cl_spread`) actually calls — never passed one, and `CLSpreadContext` had no field to carry
+it. So the four controls were **implemented, unit-tested, and even RB-verified**
+(`test_rb_reference_case.py` calls the detectors directly) — the basis for the 2026-07-29 `done
+(RB)` scoring above — but were **unreachable through the one path a real deployment actually
+runs**. `done (RB)` was correct against this register's own stated bar ("implemented with tests");
+it did not mean "live in the governed pipeline," and a reader could reasonably have assumed
+otherwise. That's the same failure mode the "real vs. synthetic" (RB) distinction exists to name,
+on a different axis: **unit-verified vs. pipeline-reachable** are not the same claim either.
+
+**The fix.** `CLSpreadContext.control_tolerance: Decimal | None = None` added; threaded through
+`credit_validation/provides.py` into `validate_package()`. 2 regression tests
+(`tests/unit/test_cl_capability.py`) cover both directions: off by default (matching "tolerance is
+institution policy, never a module default" — no value invented here), and the finding surfaces
+when a caller sets one.
+
+**Does the P0 number move?** No net change, but not because nothing happened — record why, per
+this register's own second lesson (say precisely what's proven, not a single pass/fail headline).
+Before 2026-08-08: `done (RB)` was true under "implemented with tests," false under "reachable in
+the governed pipeline" — a real gap the register's status vocabulary had no word for. After: both
+are true. FR-VAL-1/3/4/5 stay scored `done (RB)`; the VAL P0 figure (83%, 7 done + 1 partial / 9)
+and the P0 headline (61%) are unchanged. What changed is that the `done (RB)` claim is now fully
+true rather than true-with-an-unstated-caveat.
+
+**Update, same day, second pass.** The demo path (`scenarios/ci_spread/ui/demo_page.py`) now sets
+`control_tolerance=Decimal("2")` on its `CLSpreadContext`, so the four controls run for real in the
+one live-demo call site, not just when a caller explicitly opts in. `$2` matches the PRD's own
+documented RB rounding fact ("$1-2 ending-cash rounding in some years") — a placeholder grounded in
+real source text, not an invented number, pending a real institution-configured threshold (there is
+still no `arithmetic_control_tolerance` in any pack's `PolicyProfile` — this is a literal in the one
+call site, not pack data yet). "Reachable" is now also "on in the one real run that exists."
+
 ## Lesson recorded
 
 The `audit` status was worth having. Four requirements scored provisionally at 0.5 were absent, and three scored at `none` already existed. A coverage claim assembled from recollection of a codebase is unreliable in both directions, and the areas where confidence feels highest are not the ones where it is warranted. Read the file.

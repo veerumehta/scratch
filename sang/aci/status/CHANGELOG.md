@@ -9,9 +9,39 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ## [Unreleased]
 
+## [0.19.4] - 2026-08-13
+
+- **Vocabulary enforcement wired into live spreading.** `spreader.spread_financials()` gained
+  `vocabulary=`, threaded into `structure_statement()`; `spread_financials_package()` defaults to
+  the pack's `CHART_OF_ACCOUNTS`. Unresolved keys surface as `SpreadPackage.vocabulary_gaps` ->
+  new `DefectClass.VOCABULARY_GAP` finding (Medium, non-blocking) via `detect_vocabulary_gaps()`,
+  wired into `validate_package()`. (japes side: `FinancialSpread.vocabulary_gaps`, additive.)
+- `DocStore.materialize()` (japes) no longer runs its metadata probe when
+  `NullMaterializeManifestStore` is configured -- was one wasted `get_document_metadata` HTTP call
+  per document for an answer that could never be used.
+
+## [0.19.3] - 2026-08-11
+
+- **Docs** — `docs/ARCHITECTURE.md` rewritten from scratch. The prior version described the AML
+  scenario's own code as if it were the platform (several cited paths no longer exist there); the
+  new version reflects the current multi-scenario reality — the shared `jazzx_sdk` platform layer
+  (`BaseConductor`, shared Modes, canonical object chain, Experts/Skills, EVOLVE), domain pack
+  governance, the previously-undocumented commercial-lending capabilities layer (including this
+  round's document-packet pipeline, scoped honestly as opt-in, not canonical), and a rebuilt,
+  verified file reference appendix.
+- **Added** — Document upload widget (`scenarios/shared/document_upload.py`, `render_document_upload`) wired into `ci_spread`, `cre_underwriting`, `portfolio_monitoring`, `insurance_diligence`: a zip stands in for a folder upload, unpacked via `jazzx_sdk`'s `unpack_zip`. `ci_spread` gains `_seed_uploaded_financials` to feed uploaded docs into `CIToolRegistry`'s evidence pipeline.
+- **Fixed** — `ci_spread`'s `_run_fabric` never set `FabricConfig.local_cache_dir`, so LOCAL-mode `fabric.docs` silently missed the per-loan `artifact_dir` entirely — anything written there was unreadable on the next call.
+- **Added** — `commercial_lending/docintel.py`'s `.japes/`-or-co-located-`.md` local-cache fallback (previously only used by `ci_spread`) wired into `cre_underwriting`, `portfolio_monitoring`, `insurance_diligence` too (swapped their raw `jazzx_sdk.convert_document` import for the `.japes`-aware wrapper).
+- **Added** — `docintel.ensure_local_cache`/`ensure_local_caches`: an async Knowledge-Hub pull tier ahead of live conversion (derived doc first, falling back to pulling+converting the original), backed by a `.kh_manifest.json` sibling manifest. `docintel.check_staleness` flags when a doc's fabric copy changed since last pull (metadata-only, never auto-resolves).
+- **Added** — `scenarios/shared/fabric.py`: `build_fabric()` (connected-KH-vs-local-Mock switch, factored out of three duplicate copies) and `cached_build_fabric()`.
+- **Fixed** — `MockKnowledgeHubClient` doesn't persist across process/script-rerun boundaries (no save-back to `data_dir`); since Streamlit reruns the whole script on every interaction, an uncached fabric would forget a just-pushed packet before it could ever appear in a dropdown. `cached_build_fabric()` caches the fabric object in `st.session_state` for the session's lifetime. Filed upstream as [japes#57](https://github.com/JazzX-LLC/japes/issues/57) (along with a second `FabricConfig` validation papercut also found and worked around).
+- **Added** — Named "document packet" system: `capabilities/commercial_lending/document_packet.py` (`push_folder_as_packet`, `list_packets`/`list_all_packets`, `save_packets_to_manifest`) and `scenarios/shared/packet_picker.py` (dropdown UI, wired into `ci_spread`'s upload flow). Pushes both original bytes and derived `.japes` markdown per doc, dedups via `fabric.docs.ensure()`'s content-hash idempotency. `local_path` auto-detected when a packet's source folder is already inside the repo (vendored, zero-fabric-dependency pick). `config/demo_document_packets.json` is the committed offline registry, merged with live Knowledge Hub results — populated via new `scripts/export_document_packet_manifest.py`. Two more new scripts: `scripts/push_source_docs_to_fabric.py`, `scripts/refresh_and_push_japes.py`. Named "packet", not "pack", to avoid colliding with the existing governed-domain-pack concept (`config/packs/`, `pack_id`, `pack_manifest.yaml`).
+- **Added** — `scripts/shrink_source_pdfs.py`: swaps a large source PDF for a small labeled stub + its `.japes/<stem>.md` (existence-only resolution, so the stub's actual bytes never matter). Used to shrink and commit the YETI/MAA 10-K sample PDFs (50-70MB → <1MB each); originals preserved locally under a gitignored `_originals/`.
 - **Migrated** — KYC, KYC-Anthropic, and Earnings-Anthropic conductors onto the shared `jazzx_sdk.modes.operational` chassis, replacing per-scenario hand-rolled mode subclasses (several with no real Pydantic output schema, no retry/truncation handling).
 - **Fixed** — `Context.apply_verifier_report` raised `AttributeError` against real evidence (`EvidenceObject.status` is read-only); KYC/KYC-Anthropic's `ReviewContext` now override it, matching AML's `CaseContext`.
 - **Simplified** — `CREPolicyExpert` wires its registry/overlay-map into `DefaultPolicyExpert` instead of duplicating ~230 lines of overlay/compliance logic.
+- **Fixed** — `CLSpreadContext` had no `control_tolerance` field, so `credit_validation.provides.validate()` never passed one to `validate_package()`, which gates the four arithmetic controls (`detect_balance_control`/`_cash_flow_tie`/`_equity_rollforward`/`_period_continuity`, FR-VAL-1/3/4/5) on it being non-`None` — all four were dead in the governed pipeline regardless of a real imbalance, exercised only by tests calling the detectors directly. Added the field (`Decimal | None = None`, off by default — tolerance is institution policy, never a module default) and threaded it through; 2 new regression tests in `tests/unit/test_cl_capability.py` (both directions: off by default, surfaces the finding when set). `scenarios/ci_spread/ui/demo_page.py` now sets `control_tolerance=Decimal("2")` (matching the PRD's own documented RB rounding fact) so the controls actually run in the one live-demo call site, not just when a caller opts in.
+- **Fixed** — `ci_spread`'s demo/dashboard pages displayed the leverage covenant ceiling as a hardcoded "policy max 3.0x" label in 3 places (2 in `demo_page.py`, 1 in `dashboard.py`) — stale against `CI_CORE_LEVERAGE_POLICY`'s real `CI-LEVERAGE-CEILING` of 3.5x (3.0x is a separate, lower `CI-LEVERAGE-WARNING` tier that isn't the ceiling at all). Added `_ci_policy_rule_value()`, reading the real value from `CI_REGISTRY` — the same registry `DefaultPolicyExpert.check_compliance()` actually gates the decision on — instead of a hand-maintained string. 4 new tests in `tests/unit/test_ci_spread_demo_page.py`.
 
 ## [0.19.0] - 2026-08-01
 

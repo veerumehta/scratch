@@ -1,0 +1,32 @@
+# tier: 3 (customer overlay) · pack: ci-spread-core · case: Regional Bank / C-DIVE, LLC
+# Authored by the FDE after reading the customer's own workbook. Nothing here is derivable from
+# the loan documents — it is knowledge that existed only in the customer's spreadsheet.
+name: rb_house_ebitda
+description: "Regional Bank's house EBITDA definitions (CIT EBITDA / Adj. EBITDA / Adj. EBITDAR)."
+applies_to:
+  - cit_ebitda
+  - cit_ebitda_margin_pct
+  - adjusted_ebitda
+  - adjusted_ebitdar
+  - adjusted_ebitdar_margin_pct
+instructions: |
+  This institution does not use textbook EBITDA. Three house definitions apply, in this order:
+
+    CIT EBITDA    = Gross Profit - SG&A - Rent
+    Adj. EBITDA   = CIT EBITDA + Adjustments (policy-approved add-backs only)
+    Adj. EBITDAR  = Adj. EBITDA + Rent
+
+  Rules that follow from that and are easy to get wrong:
+
+  - CIT EBITDA never references operating income, D&A, or interest. Do not reconstruct it from
+    net income upward. If Gross Profit, SG&A or Rent is missing for a period, CIT EBITDA for that
+    period is unmatched — do not substitute a conventional EBITDA.
+  - Rent is subtracted in CIT EBITDA and added back in Adj. EBITDAR. That is intentional, not a
+    double count.
+  - "Adj. EBITDAR" here is NOT the pack's `ebitdar` metric (operating_income + D&A + rent). Same
+    word, different lineage and a different number. Never bind this row to that metric.
+  - Four rows in this template are labelled "Margin". Each margin divides its immediately
+    preceding metric by Revenue. Resolve by key, never by label.
+references:
+  - ci-spread-core:chart_of_accounts
+  - rb_case:output_template#income_statement

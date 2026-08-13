@@ -1,0 +1,518 @@
+# OutputTemplate — Regional Bank / C-DIVE, LLC · "First Citizens Format"
+#
+# INDUCED, NOT AUTHORED. Every row, label, order, unit, and derivation below was read out of the
+# customer's own workbook:
+#   docs/LoanSamples/Regional Bank/Output Cleaned.xlsx → sheet "First Citizens Format"
+# Cell references in `induced_from` are that sheet's. Nothing here was invented; where the workbook
+# is ambiguous or wrong, the row says so rather than smoothing it over.
+#
+# Relationship to the existing pack asset: config/packs/ci-spread-core/spread_template_rb.yaml is
+# the same layout expressed as *render* rows (label + source binding). This file is the same
+# layout expressed as a *fill contract* (key + dtype + unit + derivation + column semantics), which
+# is what a TemplateFillAgent needs and what a render template deliberately doesn't carry. They
+# should be generated from one another, not maintained twice — see the domain page, Appendix A2.
+
+name: rb_first_citizens_format
+version: "1.0.0"
+label: "C&I Credit Spread — Regional Bank / C-DIVE, LLC"
+vocabulary_ref: ci-spread-core
+units: thousands
+status: draft            # induced; requires `jazzx template publish --approved-by` to reach tier 2
+source_artifact:
+  path: "docs/LoanSamples/Regional Bank/Output Cleaned.xlsx"
+  sheet: "First Citizens Format"
+  rows_read: "A2:P89"
+
+# ── Column axis ───────────────────────────────────────────────────────────────────────────────
+# Read from row 3. Note the two interim columns and the derived LTM column; the LTM column's
+# formula differs by line semantics (see `ltm_rule` per row), which is the single most important
+# thing this workbook encodes and the thing a naive "copy the last column" filler gets wrong.
+columns:
+  - {id: fy2019,  label: "2019",        kind: fiscal_year, period_end: "2019-12-31"}
+  - {id: fy2020,  label: "2020",        kind: fiscal_year, period_end: "2020-12-31"}
+  - {id: fy2021,  label: "2021",        kind: fiscal_year, period_end: "2021-12-31"}
+  - {id: fy2022,  label: "2022",        kind: fiscal_year, period_end: "2022-12-31"}
+  - {id: py0922,  label: "PY 9/22",     kind: interim, months: 9, period_end: "2022-09-30"}
+  - {id: cy0923,  label: "CY 9/23",     kind: interim, months: 9, period_end: "2023-09-30"}
+  - {id: ltm0923, label: "LTM Sept 23", kind: ltm, period_end: "2023-09-30", derived: true}
+
+# The workbook's own LTM construction, verbatim from its formulas. FLOW rows roll forward;
+# STOCK rows take the latest interim balance. J4 '=G4-H4+I4' vs J34 '=I34'.
+ltm_rules:
+  flow:  "fy2022 - py0922 + cy0923"     # matches PRD worked example: 61,443 - 44,326 + 57,581 = 74,698
+  stock: "cy0923"
+
+sections:
+  # ── Income statement block (sheet rows 4-31) ────────────────────────────────────────────────
+  - id: income_statement
+    label: "Income Statement"
+    fields:
+      - key: net_sales
+        label: "Revenue"
+        order: 1
+        dtype: decimal
+        unit: thousands
+        semantics: flow
+        induced_from: {row: 4, number_format: "_(* #,##0_);_(* (#,##0);_(* \"-\"??_);_(@_)"}
+
+      - key: revenue_growth_pct
+        label: "Growth"
+        order: 2
+        dtype: percent
+        semantics: ratio
+        derivation: "net_sales / prior(net_sales) - 1"
+        induced_from: {row: 5, number_format: "0.00%"}
+        note: >
+          D5 and H5 contain the literal string "N/A", not a null — the first period of each
+          comparison series. dtype is percent but the cell is mixed-type in the source. The fill
+          agent must emit an explicit no-prior-period status here, not 0 and not blank.
+
+      - key: cost_of_goods_sold
+        label: "COGS"
+        order: 3
+        dtype: decimal
+        unit: thousands
+        semantics: flow
+        induced_from: {row: 6}
+
+      - key: gross_profit
+        label: "Gross Profit"
+        order: 4
+        dtype: decimal
+        unit: thousands
+        semantics: flow
+        derivation: "net_sales - cost_of_goods_sold"
+        induced_from: {row: 7, formula: "=D4-D6"}
+
+      - key: gross_margin_pct
+        label: "Margin"
+        order: 5
+        dtype: percent
+        semantics: ratio
+        derivation: "gross_profit / net_sales"
+        induced_from: {row: 8, formula: "=D7/D4", number_format: "0.0%"}
+        note: >
+          FOUR different rows in this workbook carry the label "Margin" (sheet rows 8, 13, 17, 20).
+          Label is not an identity. This is the concrete reason a filled cell echoes `key`, never
+          (section,label) — see the domain page, §2.4.
+
+      - key: selling_general_and_administrative_expenses
+        label: "SG&A"
+        order: 6
+        dtype: decimal
+        unit: thousands
+        semantics: flow
+        induced_from: {row: 10}
+        defect:
+          kind: hardcoded_plug
+          cell: H10
+          formula: "=10853-1"
+          note: >
+            An analyst typed a bare arithmetic plug into a data cell. Induction records it; it does
+            not reproduce it. detect_hardcoded_plugs should fire on the reference workbook itself.
+
+      - key: rent_expense
+        label: "Rent"
+        order: 7
+        dtype: decimal
+        unit: thousands
+        semantics: flow
+        induced_from: {row: 11}
+
+      - key: cit_ebitda
+        label: "CIT EBITDA"
+        order: 8
+        dtype: decimal
+        unit: thousands
+        semantics: flow
+        emphasis: bold
+        derivation: "gross_profit - selling_general_and_administrative_expenses - rent_expense"
+        induced_from: {row: 12, formula: "=D7-D10-D11"}
+        note: >
+          A HOUSE DEFINITION, not textbook EBITDA — it never touches operating income, D&A, or
+          interest, and it subtracts rent. This is the single most important induced fact in the
+          file: an institution's own metric, only knowable from their workbook. It is why the FDE
+          loop exists.
+
+      - key: cit_ebitda_margin_pct
+        label: "Margin"
+        order: 9
+        dtype: percent
+        semantics: ratio
+        derivation: "cit_ebitda / net_sales"
+        induced_from: {row: 13, formula: "=D12/D4"}
+
+      - key: addback_adjustments_total
+        label: "Adjustments"
+        order: 10
+        dtype: decimal
+        unit: thousands
+        semantics: flow
+        policy_conditional: true
+        induced_from: {row: 15}
+        note: >
+          Non-zero only in FY2022 (3,663) — the bad-debt add-back. Policy-conditional: which items
+          are admissible comes from the PolicyProfile and the add-back library, not from the
+          statements, so this is NOT a static derivation. See skill rb_addback_bad_debt.
+
+      - key: adjusted_ebitda
+        label: "Adj. EBITDA"
+        order: 11
+        dtype: decimal
+        unit: thousands
+        semantics: flow
+        emphasis: bold
+        derivation: "cit_ebitda + addback_adjustments_total"
+        induced_from: {row: 16, formula: "=D12+D15"}
+
+      - key: adjusted_ebitda_margin_pct
+        label: "Margin"
+        order: 12
+        dtype: percent
+        semantics: ratio
+        derivation: "adjusted_ebitda / net_sales"
+        induced_from: {row: 17}
+
+      - key: adjusted_ebitdar
+        label: "Adj. EBITDAR"
+        order: 13
+        dtype: decimal
+        unit: thousands
+        semantics: flow
+        emphasis: bold
+        derivation: "adjusted_ebitda + rent_expense"
+        induced_from: {row: 19, formula: "=D16+D11"}
+        note: >
+          Different lineage from the pack's existing `ebitdar` metric (operating_income + D&A +
+          rent). Same name, different number. Binding this row to the pack metric would be wrong.
+
+      - key: adjusted_ebitdar_margin_pct
+        label: "Margin"
+        order: 14
+        dtype: percent
+        semantics: ratio
+        derivation: "adjusted_ebitdar / net_sales"
+        induced_from: {row: 20}
+
+      - key: interest_expense
+        label: "Interest Expense"
+        order: 15
+        dtype: decimal
+        unit: thousands
+        semantics: flow
+        induced_from: {row: 22}
+
+      - key: depreciation_and_amortization
+        label: "D&A"
+        order: 16
+        dtype: decimal
+        unit: thousands
+        semantics: flow
+        induced_from: {row: 23}
+
+      - key: gain_loss_on_sale_of_assets
+        label: "(Gain) Loss on Sale of Assets"
+        order: 17
+        dtype: decimal
+        unit: thousands
+        semantics: flow
+        sign_convention: "expense_positive"
+        induced_from: {row: 24}
+        note: "Negative in FY2020/FY2021/CY9-23 — a gain. Sign-label check applies (FR-VAL)."
+
+      - key: other_expense_income
+        label: "Other Expense (Income)"
+        order: 18
+        dtype: decimal
+        unit: thousands
+        semantics: flow
+        sign_convention: "expense_positive"
+        induced_from: {row: 25}
+
+      - key: total_other
+        label: "Total Other"
+        order: 19
+        dtype: decimal
+        unit: thousands
+        semantics: flow
+        derivation: "interest_expense + depreciation_and_amortization + gain_loss_on_sale_of_assets + other_expense_income"
+        induced_from: {row: 26, formula: "=SUM(D22:D25)"}
+
+      - key: income_tax_expense
+        label: "Income Taxes (Benefit)"
+        order: 20
+        dtype: decimal
+        unit: thousands
+        semantics: flow
+        induced_from: {row: 28}
+
+      - key: net_income
+        label: "Net Income"
+        order: 21
+        dtype: decimal
+        unit: thousands
+        semantics: flow
+        derivation: "adjusted_ebitdar - total_other - income_tax_expense - rent_expense - addback_adjustments_total"
+        induced_from: {row: 29, formula: "=D19-D26-D28-D11-D15"}
+        note: >
+          Derived DOWNWARD from Adj. EBITDAR rather than up from revenue. Reconciles because
+          EBITDAR added rent and adjustments back and this subtracts them again. It is arithmetically
+          correct and structurally unusual; do not "fix" it to a conventional build-up — the
+          customer's covenant language references these rows.
+
+      - key: total_capex
+        label: "Total Capex"
+        order: 22
+        dtype: decimal
+        unit: thousands
+        semantics: flow
+        induced_from: {row: 31}
+
+  # ── Summary balance sheet (sheet rows 33-43) ────────────────────────────────────────────────
+  - id: summary_balance_sheet
+    label: "Summary Balance Sheet"
+    fields:
+      - key: cash_and_equivalents
+        label: "Cash"
+        order: 23
+        dtype: decimal
+        unit: thousands
+        semantics: stock
+        induced_from: {row: 34, ltm_formula: "=I34"}
+
+      - key: current_assets_ex_cash
+        label: "Current Assets (ex Cash)"
+        order: 24
+        dtype: decimal
+        unit: thousands
+        semantics: stock
+        induced_from: {row: 35}
+        note: >
+          A combined aggregate (AR + prepaid + other receivables) with no single canonical key.
+          Fills from a summation over the chart of accounts, not a one-to-one match.
+
+      - key: property_plant_and_equipment_net
+        label: "PP&E"
+        order: 25
+        dtype: decimal
+        unit: thousands
+        semantics: stock
+        induced_from: {row: 36}
+
+      - key: current_liabilities_ex_cpltd
+        label: "Current Liabilities (ex CPLTD)"
+        order: 26
+        dtype: decimal
+        unit: thousands
+        semantics: stock
+        induced_from: {row: 37}
+        note: "Excludes CPLTD by construction — an RMA-style reclass, see skill rb_cpltd_exclusion."
+
+      - key: total_debt
+        label: "DEBT BALANCES"
+        order: 27
+        dtype: decimal
+        unit: thousands
+        semantics: stock
+        induced_from: {row: 39}
+        defect:
+          kind: hardcoded_plug
+          cell: D39
+          formula: "=25007-D37"
+          note: "FY2019 debt derived from a typed constant 25,007 minus current liabilities."
+
+      - key: total_debt_to_cit_ebitda
+        label: "Total Debt / CIT EBITDA"
+        order: 28
+        dtype: ratio
+        semantics: ratio
+        derivation: "total_debt / cit_ebitda"
+        induced_from: {row: 41, number_format: "0.00"}
+        columns: [fy2019, fy2020, fy2021, fy2022]
+        note: "Populated for FY columns only — no interim or LTM leverage in this workbook."
+
+      - key: total_debt_to_adjusted_ebitda
+        label: "Total Debt/Adj. EBITDA"
+        order: 29
+        dtype: ratio
+        semantics: ratio
+        derivation: "total_debt / adjusted_ebitda"
+        induced_from: {row: 42}
+        columns: [fy2019, fy2020, fy2021, fy2022]
+
+      - key: debt_plus_leases_to_ebitdar
+        label: "Debt + Leases/ EBITDAR"
+        order: 30
+        dtype: ratio
+        semantics: ratio
+        derivation: "(total_debt + rent_expense) / adjusted_ebitdar"
+        induced_from: {row: 43, formula: "=(D39+D11)/D19"}
+        columns: [fy2019, fy2020, fy2021, fy2022]
+
+  # ── Adjusted fixed-charge coverage block (sheet rows 48-77) ─────────────────────────────────
+  # Own column axis: FY2019-FY2022 + LTM Sept 23. No separate interim columns.
+  - id: adjusted_fcc
+    label: "Adjusted Fixed Charge Coverage Calculation"
+    columns: [fy2019, fy2020, fy2021, fy2022, ltm0923]
+    fields:
+      - key: fcc_adjusted_ebitda
+        label: "Adjusted EBITDA"
+        order: 31
+        dtype: decimal
+        unit: thousands
+        derivation: "adjusted_ebitda"
+        induced_from: {row: 53, formula: "=D16"}
+
+      - key: maintenance_capex
+        label: "Less Maintenance Capex"
+        order: 32
+        dtype: decimal
+        unit: thousands
+        assumption: true
+        induced_from: {row: 54}
+        note: >
+          Flat 1,000 in every period, including the LTM column (=G54). Not a reported figure —
+          an analyst assumption about the maintenance/growth capex split. FR-CUS-6: must be
+          rendered as an assumption with an editable value and a rationale, never as reported.
+
+      - key: growth_capex
+        label: "Less Growth Capex"
+        order: 33
+        dtype: decimal
+        unit: thousands
+        derivation: "total_capex - maintenance_capex"
+        induced_from: {row: 55}
+        note: "Verified against the source: FY2019 5,829 - 1,000 = 4,829."
+
+      - key: cash_taxes
+        label: "Less Cash Taxes (Refund)"
+        order: 34
+        dtype: decimal
+        unit: thousands
+        induced_from: {row: 56}
+
+      - key: subtotal_fcf
+        label: "Subtotal FCF"
+        order: 35
+        dtype: decimal
+        unit: thousands
+        derivation: "fcc_adjusted_ebitda - maintenance_capex - growth_capex - cash_taxes"
+        induced_from: {row: 57, formula: "=D53-SUM(D54:D56)"}
+
+      - key: financed_capex
+        label: "Financed Capex"
+        order: 36
+        dtype: decimal
+        unit: thousands
+        assumption: true
+        induced_from: {row: 60}
+
+      - key: lease_rent_addback_numerator
+        label: "Lease/Rent Expense"
+        order: 37
+        dtype: decimal
+        unit: thousands
+        derivation: "rent_expense"
+        induced_from: {row: 61, ltm_formula: "=J11"}
+
+      - key: fcc_numerator
+        label: "Numerator for Adj FCC Test (A)"
+        order: 38
+        dtype: decimal
+        unit: thousands
+        emphasis: bold
+        derivation: "subtotal_fcf + financed_capex + lease_rent_addback_numerator"
+        induced_from: {row: 62, formula: "=SUM(D57:D61)"}
+
+      - key: cash_interest
+        label: "Cash Interest"
+        order: 39
+        dtype: decimal
+        unit: thousands
+        induced_from: {row: 65}
+        note: >
+          Distinct from `interest_expense` (row 22) in every period — 1,892 vs 2,096 in FY2019.
+          Cash vs accrued. A filler that maps both labels to one key silently corrupts the FCC.
+
+      - key: principal_repayments
+        label: "Principal Repayments"
+        order: 40
+        dtype: decimal
+        unit: thousands
+        induced_from: {row: 66}
+
+      - key: fixed_charges_subtotal
+        label: "Subtotal"
+        order: 41
+        dtype: decimal
+        unit: thousands
+        derivation: "cash_interest + principal_repayments"
+        induced_from: {row: 67}
+
+      - key: less_refinanced_debt
+        label: "less: refinanced debt"
+        order: 42
+        dtype: decimal
+        unit: thousands
+        induced_from: {row: 70}
+
+      - key: less_asset_sale_proceeds_amort
+        label: "less: proceeds from asset sales - amort"
+        order: 43
+        dtype: decimal
+        unit: thousands
+        induced_from: {row: 71}
+
+      - key: lease_rent_addback_denominator
+        label: "Lease/Rent Expense"
+        order: 44
+        dtype: decimal
+        unit: thousands
+        derivation: "rent_expense"
+        induced_from: {row: 72, ltm_formula: "=J11"}
+        note: "Same label as order 37 — appears in both numerator and denominator. Two keys, one label."
+
+      - key: fcc_denominator
+        label: "Denominator for Adj FCC Test (B)"
+        order: 45
+        dtype: decimal
+        unit: thousands
+        emphasis: bold
+        derivation: "fixed_charges_subtotal + less_refinanced_debt + less_asset_sale_proceeds_amort + lease_rent_addback_denominator"
+        induced_from: {row: 73, formula: "=SUM(D67:D72)"}
+
+      - key: adjusted_fcf_burn
+        label: "Adj FCF / (Burn)"
+        order: 46
+        dtype: decimal
+        unit: thousands
+        derivation: "fcc_numerator - fcc_denominator"
+        induced_from: {row: 75}
+
+      - key: adjusted_fcc_ratio
+        label: "Adj FCC (Adj. EBITDA)"
+        order: 47
+        dtype: ratio
+        derivation: "fcc_numerator / fcc_denominator"
+        induced_from: {row: 76, number_format: "_(* #,##0.00_);..."}
+        covenant: true
+
+      - key: cit_fcc_ratio
+        label: "CIT FCC"
+        order: 48
+        dtype: ratio
+        derivation: "subtotal_fcf / fixed_charges_subtotal"
+        induced_from: {row: 77}
+        covenant: true
+        note: >
+          A second, stricter coverage ratio on the same page — pre-adjustment numerator over
+          pre-adjustment fixed charges. FY2019 = 0.10x against Adj FCC 1.01x. Both are reported;
+          a template that keeps only one loses the customer's own conservatism check.
+
+# ── What induction could NOT determine, recorded rather than guessed ──────────────────────────
+open_questions:
+  - "Rows 44-47 and 78-89 of the sheet are empty in the supplied file; whether the customer's live
+     template has content there is unknown."
+  - "The `Sheet1` tab contains a single value at F17 and no header — purpose unknown, not induced."
+  - "Maintenance capex is flat 1,000 across five periods. Whether that is a house convention or a
+     one-off analyst choice for this borrower cannot be determined from one workbook."

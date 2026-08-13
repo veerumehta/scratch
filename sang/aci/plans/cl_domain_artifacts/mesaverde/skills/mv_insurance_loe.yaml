@@ -1,0 +1,26 @@
+# tier: 3 (customer overlay) · pack: cre_underwriting_core · case: Mesa Verde Apartments
+name: mv_insurance_loe
+description: "Insurance variance threshold and the letter-of-explanation evidence binding."
+applies_to:
+  - opex_insurance
+instructions: |
+  Insurance moves 193,200 -> 266,600 into the T-12, +38.0%, against a property where every other
+  operating line moves 2-3%. A variance of that size on a single line is not a spread question, it
+  is an underwriting question.
+
+  When any operating expense line moves more than 15% year-over-year while total operating
+  expenses move less than 10%:
+
+  - Do not accept the T-12 figure as final. Emit it with confirmation_required and leave NOI and
+    DSCR in pre_flag state.
+  - Look in the application package for a letter of explanation covering that line. For this case
+    it is MesaVerde_Insurance_LOE_RachelKim.pdf, a sibling of the workbook, NOT part of it.
+  - Bind the LOE as evidence on the insurance cell — the reviewer must be able to open the
+    explanation from the cell, not hunt for it.
+  - If no explanation exists in the package, say so explicitly ("no LOE located for a +38.0%
+    insurance variance") rather than passing the figure through quietly.
+
+  Do not judge whether the increase is reasonable. Surface it, bind the evidence, and let the
+  underwriter decide.
+references:
+  - mesaverde_case:application_package

@@ -1,6 +1,6 @@
 # Claude Session Status
 
-**Last Updated**: 2026-08-07
+**Last Updated**: 2026-08-10
 
 ## Working Principles
 
@@ -14,9 +14,9 @@
 
 ## Current Session Context
 
-### Version Status: 2.3.4 (per `_version.py`); Phase 4 chassis work uncommitted on top
+### Version Status: 2.3.6 (per `_version.py`); Adjudication chassis + eval-service convergence work uncommitted on top
 - **jazzx_sdk/_version.py**: single source of truth (`__version__`); `pyproject.toml`'s
-  `version` must match — enforced by `tests/test_version_sync.py`. Currently `2.3.4`.
+  `version` must match — enforced by `tests/test_version_sync.py`. Currently `2.3.6`.
 - **AdjudicationAgent chassis (Phase 4 of `docs/plans/reasoner-chassis-analysis.md`) — built,
   uncommitted.** New package `jazzx_sdk/agents/adjudication/` (`workspace.py` P4
   `EvidenceWorkspace`/`Mount`; `partition.py` P8 DETERMINISTIC/LIVE `Rule` split;
@@ -88,10 +88,117 @@
   `GovernorMode`/`GovernorDecision` and `InvestigatorMode`/`HypothesisUpdate` remain clean
   (list/bool/str only, confirmed); `ReasonerMode`'s `output_schema` is pack-supplied, not an SDK
   schema, so not japes's to fix. Full suite green (2523 passed, 3 skipped).
+- **`BaseMode.system_prompt` no longer swallows a missing pack asset, 2026-08-08.** Was: catch
+  `FileNotFoundError`, log a warning, substitute `f"You are the {mode_name} mode."` — a mode
+  running on a fabricated nine-word prompt with no visible error. `resolve_mode_prompt` (the
+  default resolver) documents its own contract as raising `FileNotFoundError` on a genuine miss;
+  `BaseMode` was silently defeating that. Now lets it propagate — every mode's `run()` already
+  wraps `self.system_prompt` access in a broad `except Exception` returning
+  `ModeResult(success=False, error=...)`, so this surfaces as a real, checkable failure instead of
+  a crash or a silent bad prompt. 2 new tests in `tests/test_modes_framework.py` (a minimal
+  concrete `BaseMode` subclass didn't exist there before). Full suite green (2525 passed, 3
+  skipped).
+- **v2.3.5, 2026-08-10**: agent identity for eval/feedback attribution (`agent_id` on
+  spec/response/feedback/manifest-binding/inventory) + per-skill/parent `tool_use_behavior`
+  overrides. Unrelated to the eval-service convergence work below beyond both touching
+  `evaluation/feedback.py` (additive `agent_id` field, no conflict).
+- **Japes/eval-service contract convergence, Phases 0-5 built same day, uncommitted.** Reviewed
+  an external proposal PDF (`docs/plans/046e37e4-..._Proposal.pdf`, gitignored) for merging
+  Japes' and eval-service's feedback/attribution/learning contracts; found it reinvented pieces
+  of Japes' own IIF-Charter canonical spine (`fabric.canonical.{decision,evidence}`) and the
+  existing `GuidanceAsset`/`GuidanceProvenance` guidance layer — dropped the proposal's
+  `ApprovedLearningAssetV1` entirely (redundant with `GuidanceAsset`), kept evidence/attribution
+  as lean runtime forms with new required promotion adapters into canonical
+  (`evidence_bundle_to_canonical`, `attribution_to_canonical_decision`, new
+  `DecisionType.ATTRIBUTION`). Full build: new standalone package `jazzx_eval_contracts/` (own
+  `pyproject.toml`, `pydantic`-only — verified zero fastapi/sqlalchemy/asyncpg/azure-storage-
+  queue/mlflow load via a throwaway venv), all contracts through Phase 5 (identity/feedback/
+  evidence/attribution/learning/scoring/execution), `jazzx_sdk/evaluation/
+  eval_service_adapters.py` (7 adapters), `feedback_sink.py` (`EvalServiceFeedbackSink`),
+  `attribution_protocols.py` (`EvidenceProvider`/`AttributionAnalyzer` Protocols), plus additive
+  provenance fields on `ImprovementSignal`/`GuidanceProvenance` and `synthesize_bucket`
+  propagation. Full suite green (2576 passed, 3 skipped). **Phase 6 not started** — hard-blocked
+  on eval-service publishing an approved-learning endpoint that doesn't exist yet; eval-service's
+  own Phases A-F (different repo) untouched. See `docs/plans/
+  plan_eval_service_contract_convergence.md` (gitignored) for the full phase breakdown and the
+  canonical-spine reconciliation decisions.
+
+- **Two hardening passes landed 2026-08-12, generalized to every matching call site, not just the
+  first one found.** (1) **NUL-byte sanitization at every JSON-column SQL write boundary.**
+  `fabric.entities.store` already sanitized (`strip_nulls`) at its write boundary; audited every
+  other `mapped_column(JSON)` store in `jazzx_sdk` and found 6 more that didn't:
+  `fabric/conversation_store.py::SqlConversationStore`, `evaluation/feedback_db.py`,
+  `evaluation/prompt_registry_db.py` (sanitizes before hashing, so `version` stays consistent with
+  what's stored), `conductor/suspension_store_db.py`, `runs/store_db.py` (7 call sites collapsed
+  onto one `_sanitized_dump` helper), `agents/definition_store_db.py`, `llm/cost_store_db.py`
+  (its one open `dict[str, Any]` field). All now sanitize. (2) **New shared primitive,
+  `jazzx_sdk.concurrency.call_maybe_async(fn, *args, timeout=None, **kwargs)`** — decides sync-vs-
+  async *before* invoking a caller-pluggable callable (never calls it eagerly, so a blocking sync
+  callable can't defeat a timeout the way the old `if isawaitable(fn(...))` idiom could), offloads
+  a sync callable via `run_offloaded`, and uniformly times out either branch. Replaced 12 hand-
+  rolled instances of the same "call this pluggable callable, sync or async, check
+  `isawaitable`/`iscoroutinefunction`" pattern across `tools/base_registry.py`,
+  `evaluation/scorers.py` (`FunctionScorer`, `AdjudicatorScorer`), `evaluation/pass_bars.py`,
+  `evaluation/optimization.py`, `agents/document/{agent,pipeline}.py`,
+  `agents/interactive/{agent,chat,registry}.py`, and — the most consequential find — **`conductor/
+  engine.py`'s step/guard/loop-convergence dispatch**, the core execution path every pack
+  conductor run goes through: the old `_maybe_await(comp(state))` shape called `comp(state)`
+  eagerly, so a blocking sync step component stalled the loop *before* any timeout could bound it;
+  `call_maybe_async` closes that for real, not just cosmetically. Removed `conductor/engine.py`'s
+  now-dead `_maybe_await` helper and simplified `_emit_step_event`'s timeout branching in the same
+  pass. `jazzx_sdk.__all__` gained `call_maybe_async`. 13 new/updated tests across
+  `test_fabric_conversation.py`, `test_base_tool_registry_execute.py` (new),
+  `test_concurrency.py`. Full suite green (2589 passed, 3 skipped).
+
+- **`run_with_recovery` — schema-validation/truncated-output/API-status retry for a caller that
+  builds its own `Agent`, 2026-08-12.** `InteractiveAgent` had none of `run_agent`'s recoverable-
+  failure handling (`ModelBehaviorError`/`IncompleteOutputError`/`APIStatusError`) since it builds
+  its own `Agent` (skills-as-sub-agents) and calls `Runner.run()` directly rather than going
+  through `run_agent`. New `jazzx_sdk.agents.run_kit.run_with_recovery(run_once, *, feedback,
+  name, max_retries=3, on_retry=None)` — the same retry mechanism over a caller-supplied
+  `run_once()`/`feedback()` instead of owning Agent construction (so it skips MaxTurns
+  continuation, which needs to rebuild the Agent — stays `run_agent`-only). `run_agent`'s own two
+  feedback-message bodies extracted into shared `_model_behavior_feedback`/
+  `_incomplete_output_feedback` helpers so wording can't drift between the two; `run_agent` itself
+  otherwise untouched (33 existing tests re-run unchanged, confirming the refactor is behavior-
+  neutral). Wired into `InteractiveAgent._respond_agentic` — `feedback` appends to the active
+  session when one exists, or to the input list directly when stateless; not wired into
+  `_stream_agentic` (already documents why: can't retry after partial output streamed). Checked
+  `DocumentAgent`: needs no change — its `classify`/`extract` already route through
+  `OpenAIProvider`'s no-tools/single-message fast path → `run_agent`, so already covered; the new
+  primitive is there for whenever it (or a future agent) builds its own `Agent` directly. 8 new
+  tests in `test_agents_run_kit.py`, 2 in `test_interactive_agent.py` (stateless + active-session
+  retry through `respond()`). Full suite green (2597 passed, 3 skipped).
+
+- **`DocumentAgent` closes its "fat agent" source-description gaps, 2026-08-12.** Surveyed how
+  much of the `ReasoningAgent`/`InteractiveAgent` shape `DocumentAgent` already had before adding
+  anything (its own docstring already calls out this family) — most of it: `DocumentAgentSpec`
+  (policy, YAML-loadable) + `DocTurn`/`run_document` (per-invocation, conductor-routed source
+  description already unifying folder/KH-collection/standalone-zip into one auto-detected
+  "collection" route via `process_dir`'s incremental+manifest+concurrent machinery) already mirror
+  `InteractiveAgentSpec` + `respond()`. Three real, narrow gaps closed: (1) no "downloadable"
+  source — new `jazzx_sdk.tools.documents.local.download_to_file`/`download_files` (SSRF-safe,
+  sharing `read_from_url`'s per-redirect-hop-validated `_safe_fetch`, now extracted as a shared
+  helper; concurrent via the same `conductor.fan_out` `process_package` already uses; a failing
+  URL is skipped not batch-sinking; Content-Disposition filenames sanitized against path
+  traversal). (2) "fabric accessible" was collection-only — new `DocumentAgent.materialize_blob_to`
+  (durable counterpart to the existing temp-file-only `process_blob`). (3) no one-call front door —
+  new `DocumentAgent.run(turn: DocTurn, ...)` wraps `build_document_pipeline`/
+  `build_document_components`/`run_document` in one call, mirroring `respond()` (local import
+  inside the method to avoid `pipeline.py`↔`agent.py` circularity). `DocTurn` gained `urls:
+  list[str]` and `blob_pointers: dict[str, str]` (pointer→filename, required per-pointer since a
+  blob key carries no extension and `convert_document` routes on it), both auto-routing to the
+  existing "collection" branch — a downloaded `.zip` gets unpacked by `process_dir`'s existing
+  `include_zips` handling for free, no new zip logic needed. Confirmed, not changed: template
+  routing (`route_template`) already "use a registered template if available, else schema-only."
+  15 new tests (`test_download_files.py` new, `test_document_pipeline.py`,
+  `test_document_agent.py`). Full suite green (2612 passed, 3 skipped). Planned in plan-mode first
+  (`/Users/sangit/.claude/plans/atomic-doodling-sun.md`) given the multi-file scope.
 
 Design docs (gitignored, `docs/plans/`): `reasoner-chassis-analysis.md` (P1/P2/P6/P8 build
 sequence + Phase 4 chassis), `policy-ir-abstraction.md` (P8 detail),
-`design_note_reasoning_substrate.md`.
+`design_note_reasoning_substrate.md`, `plan_eval_service_contract_convergence.md` (eval-service
+contract convergence, Phases 0-5 shipped).
 
 ### Related repos
 - **jaci** (`/Users/sangit/src/jaci`) — the primary real consumer validating this version.

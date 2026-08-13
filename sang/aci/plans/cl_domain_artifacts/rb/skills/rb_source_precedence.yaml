@@ -1,0 +1,29 @@
+# tier: 3 (customer overlay) · pack: ci-spread-core · case: Regional Bank / C-DIVE, LLC
+# Derived from the case's own PROVENANCE.yaml — five source documents at four assurance levels.
+name: rb_source_precedence
+description: "Which RB statement wins when two documents cover the same period."
+applies_to: []          # whole template — precedence is not field-scoped
+instructions: |
+  Five source documents cover overlapping periods at four different assurance levels. Apply the
+  institution's precedence, which is NOT simply "newest wins":
+
+    audited > reviewed > compilation > company_prepared
+
+  Case-specific consequences, all of which have bitten this file before:
+
+  - FY2022 appears twice: in the 9-month compilation (as a comparative) and in the FY2022/FY2023
+    audit. The audit wins. Record that the compilation's FY2022 was superseded, do not silently
+    drop it.
+  - The CY 9/23 column comes from an internal accounting-system export with no CPA report letter —
+    company_prepared, the lowest tier. It is used anyway because the LTM needs an interim leg and
+    it is the only one at the right period kind. Carry that assurance level onto every cell built
+    from it; do not let the LTM column inherit the audit's assurance.
+  - "2022 - 9 months.pdf" omits a statement of cash flows entirely. Cash-flow rows sourced from
+    that period are unavailable, not zero.
+  - The FY2022/FY2023 audit arrived after the LTM date. It is not part of the interim stack, but it
+    is the only source for the Employee Retention Tax Credit footnote (a $2,331,124 relief refund
+    and roughly $573,000 of unrecorded tax obligation) and the related-party receivable note. Read
+    it for disclosures even though it is out of the period stack.
+  - The credit application (.docx) is deal context only. Never spread a figure from it.
+references:
+  - rb_case:provenance

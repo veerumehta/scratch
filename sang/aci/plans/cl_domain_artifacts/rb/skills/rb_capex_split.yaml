@@ -1,0 +1,25 @@
+# tier: 3 (customer overlay) · pack: ci-spread-core · case: Regional Bank / C-DIVE, LLC
+name: rb_capex_split
+description: "Maintenance-vs-growth capex split and the cash/accrued interest distinction."
+applies_to:
+  - maintenance_capex
+  - growth_capex
+  - financed_capex
+  - cash_interest
+instructions: |
+  Total Capex is reported. The split beneath it is not, and neither is cash interest. All of the
+  following are ASSUMPTIONS and must be emitted as assumptions — editable value plus rationale,
+  never presented as a reported figure:
+
+  - Maintenance Capex: the analyst carries a flat 1,000 (thousands) in every period, including the
+    LTM column. Populate it at that value, mark it assumed, and surface it for confirmation on
+    every new borrower — it is a house placeholder, not a measurement.
+  - Growth Capex = Total Capex - Maintenance Capex. Derived, so it inherits the assumption.
+  - Financed Capex is an analyst input with no statement line behind it.
+
+  Separately, and not an assumption: "Cash Interest" in the fixed-charge block is a DIFFERENT
+  figure from "Interest Expense" in the income statement — 1,892 vs 2,096 in FY2019, and they
+  differ in every period. Cash versus accrued. Never map both labels onto one key; doing so
+  silently corrupts the fixed-charge coverage ratio, which is a covenant metric.
+references:
+  - ci-spread-core:addbacks

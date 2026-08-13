@@ -2,34 +2,110 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Recent Session Status (2026-08-02)
+## Recent Session Status (2026-08-11)
 
-jaci `dev` is 18 commits ahead of `origin/dev`, nothing pushed. Full suite is 804 passed /
-0 failed / 8 skipped / 4 xfailed (both `requires_api_key`-marked live tests included — real
-API keys are configured in this environment, so they run for real, not skipped).
+jaci `dev` is at `a6b068b` (local, unpushed) plus a large uncommitted working tree (see
+`git status` — everything below is real but not yet committed; commit only when asked). Version
+is unchanged at `0.19.2` this round — do not bump without explicit user sign-off (default to a
+patch bump if/when one is requested). Full suite: 809 passed, 8 skipped, 4 xfailed, 1 xpassed,
+**1 known pre-existing failure**
+(`test_decision_canonical.py::TestDecisionType::test_decision_type_all_values` — asserts
+`len(DecisionType) == 3`, actual is 4; last touched June 6, untouched this session, unrelated to
+anything below — a stale test, not a regression).
 
-This round validated jaci against japes v2.3.0 (also local/unpushed — see japes CLAUDE.md)
-and fixed everything real it surfaced, in both repos:
-- `AMLConductor`'s `ReasonerMode` is provider-portable via japes's `ReasoningAgent` — passing
-  an Anthropic `model_name` directly to the *same* `ReasonerMode` used for GPT gives a real
-  apples-to-apples comparison (identical prompt/schema, different model). No Anthropic-
-  specific conductor/mode subclass is needed for this. Deleted `AnthropicConductor` and its
-  dead `MixedModelHooks` mechanism from `tests/eval/run_eval_anthropic.py` entirely — see
-  "Agent Framework & Model Provider" below, which this directly supersedes.
-- Real per-mode token/cost tracking now exists in `AMLConductor` itself (not just an eval
-  script): `_accumulate_tokens()` writes each step's `ModeResult.token_usage` into
-  `CaseContext.metadata["token_usage_by_mode"]`.
-- `jaci.scenarios.aml.skills.investigation.AMLInvestigativeSkill.investigate()` had a latent
-  bug (`e.attested` — never a real `EvidenceObject` attribute, should be `e.verifier_status ==
-  EvidenceStatus.ATTESTED`) that a previous, unrelated japes-side bug had been silently
-  masking (Investigator failed before ever producing real evidence, so the buggy generator
-  expression never actually evaluated against a real item). Found and fixed once the
-  masking bug was fixed.
-- `pyproject.toml` now pins `japes[litellm]` — japes's `ReasoningAgent` needs it to resolve
-  an Anthropic `model_name` via litellm's `AnthropicModel` passthrough.
-- Known, separate lockfile issue (not touched this round): `uv.lock` and `poetry.lock`
-  disagree with each other and with `pyproject.toml`'s real pin — see the "jaci lockfile
-  tooling" note in japes-side memory if picking this up.
+**This round: document upload → Knowledge-Hub-backed "document packet" pipeline, built up in
+stages across one long session.** In order:
+
+1. **Upload widget** (`src/jaci/scenarios/shared/document_upload.py`, new `shared/` package):
+   `render_document_upload()` — a zip stands in for a folder upload (browsers can't upload
+   directories), unpacked via `jazzx_sdk`'s own `unpack_zip`. Wired into `ci_spread` (evidence-
+   seeding for `CIToolRegistry`, new `_seed_uploaded_financials`), `cre_underwriting`,
+   `portfolio_monitoring`, `insurance_diligence`. Fixed a real bug found along the way:
+   `ci_spread`'s `_run_fabric` never set `FabricConfig.local_cache_dir`, so LOCAL-mode
+   `fabric.docs` silently missed the per-loan `artifact_dir` entirely.
+2. **`.japes` local-markdown-cache convention generalized.** `commercial_lending/docintel.py`'s
+   `.japes/`-or-co-located-`.md` staging fallback (used only by `ci_spread` before) is now also
+   wired into `cre_underwriting`, `portfolio_monitoring`, `insurance_diligence` (swapped their
+   raw `jazzx_sdk` `convert_document` import for the `.japes`-aware wrapper) — behavior-preserving
+   for their current (tiny) sample docs, but means large real docs there would get the same
+   truncate-and-cache treatment `scripts/shrink_source_pdfs.py` gives the YETI/MAA 10-Ks.
+3. **YETI/MAA 10-K PDFs shrunk and committed.** `scripts/shrink_source_pdfs.py`: swap a 50-70MB
+   source PDF for a small labeled stub + its real `.japes/<stem>.md`; `docintel.convert_document`
+   resolves the real content regardless of the stub's actual bytes (existence-only check, no
+   hash). Originals preserved under a sibling `_originals/` (gitignored). Committed the stubs +
+   `.japes/` caches to git via `git add -f` (`docs/LoanSamples` is fully gitignored, but explicit
+   force-adds still work) — MAA's staging was co-located `.md` (no `.japes/` subfolder), migrated
+   to the `.japes/` convention in the process.
+4. **Knowledge-Hub push/pull tier added to `docintel.py`.** `ensure_local_cache`/
+   `ensure_local_caches` (async — deliberately *not* a `fabric=` param on the sync
+   `convert_document`, since bridging an async fabric fetch inside an already-sync function risks
+   "asyncio.run() cannot be called from a running event loop" for callers that are themselves
+   async): if no local cache, try a pushed **derived** doc first (cheap), then fall back to
+   pulling the **original** and converting it locally (the one place real conversion cost can
+   land on a pull). `check_staleness()` — cheap metadata-only hash comparison, flags when a doc
+   was updated remotely since last pull (never auto-resolves). `shared/fabric.py`'s
+   `build_fabric()` (connected-KH-vs-local-Mock switch, factored out of three separate copies)
+   and `cached_build_fabric()` — **a real bug found and fixed**: `MockKnowledgeHubClient` doesn't
+   persist across process invocations at all (no save-back to `data_dir`, confirmed by reading
+   the source — filed as japes issue, see below), and since Streamlit reruns the whole script on
+   every interaction, an uncached `build_fabric()` would forget a just-pushed packet before a user
+   could ever see it in a dropdown. Fixed with `st.session_state` caching, verified against
+   `AppTest`'s real session machinery, not a hand-rolled substitute.
+5. **Named "document packet" system**
+   (`src/jaci/capabilities/commercial_lending/document_packet.py`,
+   `src/jaci/scenarios/shared/packet_picker.py`). Deliberately called **"packet", not "pack"** —
+   `config/packs/` already means governed domain packs in this repo (`pack_id`,
+   `pack_manifest.yaml`, certification status); a document packet is unrelated, kept distinct to
+   avoid colliding with that concept anywhere it's grepped for. `push_folder_as_packet()` pushes
+   *both* tiers (original + derived) per file, dedups via `fabric.docs.ensure()`'s content-hash
+   idempotency (not reimplemented), and auto-flags `local_path` when the source folder is already
+   inside the repo (vendored, zero-fabric-dependency pick — same story as the YETI/MAA stubs).
+   `config/demo_document_packets.json` (repo root, explicitly *not* under `config/packs/`) is the
+   committed offline registry `list_all_packets()` always reads first, merged with live KH
+   results on top. Three CLI scripts: `scripts/push_source_docs_to_fabric.py`,
+   `scripts/refresh_and_push_japes.py` (regenerate + push back derived-only, preserving the prior
+   `original_doc_id`), `scripts/export_document_packet_manifest.py` (pull the live KH registry
+   into the committed manifest — the "run on a cloud instance with real KH access, commit the
+   result" workflow). `packet_picker` wired into `ci_spread`'s upload flow (tries the picker
+   first, falls through to direct upload).
+6. **Two japes (jazzx_sdk) papercuts found, worked around in jaci, filed upstream** (can't be
+   fixed from this repo — japes is a pinned git dependency, not an editable sibling here, though a
+   local checkout exists at `../japes`):
+   [japes#57](https://github.com/JazzX-LLC/japes/issues/57) — (a) `MockKnowledgeHubClient`'s
+   `data_dir` never actually persists writes (load-only), (b) `FabricConfig.validate_for_mode()`
+   requires `knowledge_hub_url` even when `kh_client` is the Mock (which already carries
+   `is_mock=True` specifically for this kind of check).
+
+**Deliberately not done, flagged rather than silently skipped:**
+- `cre_underwriting`/`portfolio_monitoring`/`insurance_diligence`'s core intake call chains are
+  synchronous; the fabric pre-hydrate step (`_hydrate_from_fabric`) is only wired at the
+  Streamlit-boundary (`asyncio.run()`) ahead of the upload path, not deep inside the sync parsing
+  pipeline — making the whole chain async is a bigger, more invasive change than this round
+  attempted.
+- `portfolio_monitoring`/`insurance_diligence`'s *default* (non-uploaded) review cases are built
+  eagerly at Python import time (`cases.py` module load, before any per-request hydration could
+  run) — fabric pre-hydration only covers the upload/packet-pick path, not that eager-import path.
+- No direct Azure Blob backend (bypassing Knowledge Hub) was built — confirmed the real
+  `jazzx_sdk.clients.knowledge_hub_client.KnowledgeHubClient` is HTTP-only (`httpx`,
+  `base_url=".../hub..."`), no Blob SDK usage anywhere in japes; a real KH deployment is already
+  Blob-backed server-side, so `build_fabric()`'s existing connected-KH branch already covers it.
+  Revisit only if a concrete "KH unreachable but Blob is" deployment gap shows up.
+
+**Convention captured in Claude Code memory** (not duplicated here — see
+`~/.claude/projects/-Users-sangit-src-jaci/memory/`): the jaci-vs-japes repo boundary (demo/dev
+convenience → jaci; general platform capability → japes), the full document-packet convention
+(naming, file locations, the cloud-export-then-commit workflow), and "never bump the version
+without asking; default to patch."
+
+Prior round (2026-08-08, kept for history): `CLSpreadContext.control_tolerance` threaded through
+so the four arithmetic controls (FR-VAL-1/3/4/5) became reachable in the governed pipeline
+(previously dead code despite being implemented/tested); fixed a stale hardcoded "3.0x" leverage
+ceiling in `ci_spread`'s UI (real ceiling is 3.5x, read from `CI_REGISTRY` now); investigated and
+mostly disproved a "scenarios are inconsistent" premise across all 8 scenarios; found (but didn't
+fix) that no conductor populates `CanonicalTrace.steps` with granular per-mode entries, so the
+Trace tabs' thinness is a real backend data gap, not presentation; surveyed the `web/commercial-
+lending-demo` submodule for portable feature concepts (provenance tooltips, chain-of-thought
+banner, DSCR scenario builder, risk-rating panel — none built, just scoped).
 
 ---
 

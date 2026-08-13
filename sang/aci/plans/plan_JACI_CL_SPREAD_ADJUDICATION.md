@@ -40,6 +40,24 @@ load-bearing at runtime; what matters is tagging the trace correctly.
 
 ## Phase 0 — P0 defect: the four arithmetic controls never run
 
+**DONE 2026-08-08.** `control_tolerance: Decimal | None = None` added to `CLSpreadContext`,
+threaded through in `credit_validation/provides.py`. 2 new regression tests in
+`tests/unit/test_cl_capability.py` (`test_control_tolerance_none_by_default_leaves_
+balance_control_dead`, `test_control_tolerance_set_surfaces_balance_control`). Full suite green
+(806 passed, 8 skipped, 4 xfailed, 1 xpassed -- the xpass is an unrelated, already-tracked
+live-integration flake, not from this change).
+
+**Same day, second pass.** The plumbing alone left every real call site still not exercising the
+four controls -- `demo_page.py` built a `CLSpreadContext` without one. Wired
+`control_tolerance=Decimal("2")` directly into `demo_page.py`'s construction (matching the PRD's
+own documented RB rounding fact, "$1-2 ending-cash rounding in some years" -- a placeholder
+grounded in real source text, not an invented number). Still no `PolicyProfile`-sourced default --
+no such profile object flows through this pipeline yet, and building that threading mechanism now
+would be ahead of any caller who needs it. Register re-scored
+(`PRD_COVERAGE_REGISTER.md`'s new "Governed-pipeline wiring gap" section): P0 headline (61%) and
+VAL (83%) don't move -- `done (RB)` was already true under the register's own "implemented with
+tests" bar; what changed is that the claim no longer has an unstated reachability caveat.
+
 **Files:** `capabilities/commercial_lending/cl_capability.py` (`CLSpreadContext`, `:31-46`),
 `capabilities/credit_validation/provides.py:22-36`.
 

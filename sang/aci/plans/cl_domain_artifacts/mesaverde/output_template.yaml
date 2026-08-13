@@ -1,0 +1,193 @@
+# OutputTemplate — Mesa Verde Apartments · CRE multifamily T-12 operating spread
+#
+# INDUCED, NOT AUTHORED. Read out of the customer's own workbook:
+#   docs/LoanSamples/MesaVerde/Application Package/Financials/Mesa_Verde_T12_Spread.xlsx
+#   → sheet "T-12 Spread" (A1:E19)
+# The sheet's own subtitle names it a template: "Bank CRE Multifamily Template".
+#
+# This is the deliberate contrast case to rb_first_citizens_format. Same mechanism, different
+# segment, one-fifth the size, and a workflow semantic (pending-confirmation) that the C&I
+# template does not have. If the induction/fill machinery only worked on the C&I shape, it would
+# be a spreading feature rather than a platform primitive — this is the file that proves it isn't.
+
+name: mesaverde_cre_t12_operating
+version: "1.0.0"
+label: "CRE Multifamily T-12 Operating Spread (Mesa Verde Apartments)"
+vocabulary_ref: cre_underwriting_core
+units: units          # whole dollars, not thousands — see note on number_format below
+status: draft
+source_artifact:
+  path: "docs/LoanSamples/MesaVerde/Application Package/Financials/Mesa_Verde_T12_Spread.xlsx"
+  sheet: "T-12 Spread"
+  rows_read: "A1:E19"
+
+# ── Column axis (row 4) ───────────────────────────────────────────────────────────────────────
+# Note what is NOT here: no fiscal-year labels, no period-end dates. The customer's own header is
+# relative ("Year 1", "Year 2", "T-12"). Induction records that faithfully; binding these to real
+# period ends is a fill-time job driven by the rent roll / operating statements, not a template
+# fact. Guessing calendar years here would be inventing information.
+columns:
+  - {id: year_1, label: "Year 1", kind: annual, relative: true}
+  - {id: year_2, label: "Year 2", kind: annual, relative: true}
+  - {id: t12,    label: "T-12",   kind: trailing_twelve, anchor: latest}
+  - {id: yoy_pct, label: "YoY %", kind: derived_ratio, derived: true}
+
+# Every value column uses $#,##0 — whole dollars. The C&I template is in thousands. A fill agent
+# that carries a units assumption across templates produces a 1000x scale error, which is exactly
+# what detect_scale_errors exists to catch.
+yoy_rule: "(t12 - year_2) / year_2"
+
+sections:
+  - id: operating_statement
+    label: "T-12 Operating Spread"
+    fields:
+      - key: effective_gross_income
+        label: "Effective Gross Income"
+        order: 1
+        dtype: decimal
+        unit: dollars
+        semantics: flow
+        induced_from: {row: 5, number_format: "$#,##0"}
+
+      - key: opex_property_management
+        label: "Property Management"
+        order: 2
+        dtype: decimal
+        unit: dollars
+        semantics: flow
+        induced_from: {row: 6}
+
+      - key: opex_payroll_and_benefits
+        label: "Payroll & Benefits"
+        order: 3
+        dtype: decimal
+        unit: dollars
+        semantics: flow
+        induced_from: {row: 7}
+
+      - key: opex_maintenance_and_operations
+        label: "Maintenance & Operations"
+        order: 4
+        dtype: decimal
+        unit: dollars
+        semantics: flow
+        induced_from: {row: 8}
+
+      - key: opex_utilities
+        label: "Utilities"
+        order: 5
+        dtype: decimal
+        unit: dollars
+        semantics: flow
+        induced_from: {row: 9}
+
+      - key: opex_general_and_administrative
+        label: "General & Administrative"
+        order: 6
+        dtype: decimal
+        unit: dollars
+        semantics: flow
+        induced_from: {row: 10}
+
+      - key: opex_replacement_reserves
+        label: "Replacement Reserves"
+        order: 7
+        dtype: decimal
+        unit: dollars
+        semantics: flow
+        induced_from: {row: 11}
+        note: >
+          Underwriting convention, not a cash expense — a reserve deducted above the NOI line.
+          Agency/CREFC templates differ on whether reserves sit above or below NOI; this customer
+          puts them above. That placement is a template fact and must not be normalised away.
+
+      - key: opex_insurance
+        label: "Insurance"
+        order: 8
+        dtype: decimal
+        unit: dollars
+        semantics: flow
+        confirmation_required: true
+        induced_from: {row: 12}
+        note: >
+          193,200 → 266,600 T-12, +38.0% against a portfolio where every other line moves 2-3%.
+          The sheet's own row-19 note flags this line as pending. See skill mv_insurance_loe.
+
+      - key: opex_property_tax
+        label: "Property Tax"
+        order: 9
+        dtype: decimal
+        unit: dollars
+        semantics: flow
+        confirmation_required: true
+        induced_from: {row: 13}
+
+      - key: total_operating_expenses
+        label: "Total Operating Expenses"
+        order: 10
+        dtype: decimal
+        unit: dollars
+        semantics: flow
+        emphasis: bold
+        derivation: >
+          opex_property_management + opex_payroll_and_benefits + opex_maintenance_and_operations
+          + opex_utilities + opex_general_and_administrative + opex_replacement_reserves
+          + opex_insurance + opex_property_tax
+        induced_from: {row: 14, formula: "=SUM(B6:B13)"}
+
+      - key: net_operating_income
+        label: "NOI (pre-flag)"
+        order: 11
+        dtype: decimal
+        unit: dollars
+        semantics: flow
+        emphasis: bold
+        derivation: "effective_gross_income - total_operating_expenses"
+        induced_from: {row: 15, formula: "=B5-B14"}
+        state: pre_flag
+        note: >
+          The label itself carries workflow state — "(pre-flag)". Two states of one figure, and the
+          customer wrote the state into the row label because their spreadsheet has nowhere else to
+          put it. In the platform this is candidate-vs-approved discipline, not a naming convention.
+
+      - key: annual_debt_service
+        label: "Debt Service"
+        order: 12
+        dtype: decimal
+        unit: dollars
+        semantics: flow
+        induced_from: {row: 16}
+        note: "Flat 2,740,000 across all three columns — a term-sheet constant, not an extracted figure."
+
+      - key: dscr
+        label: "DSCR (pre-flag)"
+        order: 13
+        dtype: ratio
+        derivation: "net_operating_income / annual_debt_service"
+        induced_from: {row: 17, number_format: "0.00\"x\""}
+        state: pre_flag
+        covenant: true
+        columns: [year_1, year_2, t12]
+        note: >
+          number_format 0.00"x" — the trailing x is a display suffix, not data. A naive reader that
+          treats the format string as a unit emits "1.02x x".
+
+# ── Workflow semantics the sheet states in prose (row 19) ─────────────────────────────────────
+# "Note: Insurance and Property Tax pending analyst confirmation. Post-flag NOI/DSCR locks once
+#  cleared."
+# This is a real gating rule, written where a spreadsheet can express it — a free-text note. It is
+# the clearest single argument for why the template is not the whole contract and a skill is needed.
+gates:
+  - id: pending_confirmation
+    applies_to: [opex_insurance, opex_property_tax]
+    rule: >
+      While any field in applies_to is unconfirmed, net_operating_income and dscr are emitted in
+      state=pre_flag and must not flow into covenant testing or the credit decision. Confirming all
+      of them promotes both to state=final and locks them.
+    source: {row: 19, verbatim: true}
+
+open_questions:
+  - "Column headers are relative (Year 1 / Year 2); actual period ends are not in this sheet."
+  - "No unit count, no per-unit metrics, and no vacancy/economic-occupancy line — either the
+     customer computes those elsewhere or this extract is partial. Not inferred."
+  - "Single sheet, no rent roll tab. The insurance LOE is a sibling PDF, not part of the workbook."
