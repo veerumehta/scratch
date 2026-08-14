@@ -2,6 +2,49 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+## [2.4.1] - 2026-08-13
+
+- **`MatrixCondition` — a table-valued `Condition` kind (P8, D2).** Generalizes
+  `RatioCondition`'s single `profile:<key>` threshold to a lookup keyed by N axes (e.g.
+  loan-amount band x FICO tier x purpose), each independently numeric-banded or categorical —
+  the primitive an eligibility grid needs instead of dozens of near-duplicate rules or DSL
+  `if()` chains that bury the numbers. Resolved cell values live in a new
+  `PolicyProfile.tables` bucket (`profile_table:<name>` reference, fail-closed
+  `PolicyProfile.get_table()`) — never a literal, same discipline `RatioCondition` already
+  enforces. An explicit `NA`/`False`/`None` cell evaluates to `VIOLATED` (the grid gave a real
+  answer), not `INDETERMINATE`. Fully additive: `DefaultPolicyExpert.check_compliance` and the
+  adjudication chassis's `partition_rules`/`impacted_rules` all dispatch via the existing
+  `get_condition_evaluator(kind)` registry, so zero other call sites changed.
+- Fixed a real, latent gap in `ExpressionEvaluator`: `ComparisonOperator.IN`/`NOT_IN`/`CONTAINS`
+  were declared on the enum but never implemented — an `Expression(operator=IN, ...)` silently
+  evaluated as always-`VIOLATED`. Now implemented (skips the numeric cast for these operators),
+  closing the "N states → N rules" gap directly on the existing `Expression` kind.
+- **HITL suspend now works inside a `Loop`** (D3). `ConductorEngine` previously converted a
+  `SuspendRun` raised from a loop's body straight into a `RuntimeError` ("supported only for
+  top-level steps"). `_run_loop` now catches a mid-body suspend per-step and can be re-entered
+  from that exact point on resume — finishing the interrupted iteration's remaining steps
+  without re-running the ones before it, then continuing the loop (convergence/max-iterations)
+  and the rest of the pipeline completely normally. `Suspension`/`DurableSuspension` gained
+  `loop_id`/`loop_iteration` (both additive, `None` for a top-level suspend — no DB migration,
+  `DurableSuspension` round-trips through one JSON column). New `ConductorPipeline.get_loop()`.
+  A second suspend inside the same resumed loop, and `resume_durable` through a loop suspend,
+  both just work — no special-casing needed beyond the one resume path.
+- **Two bug fixes to the condition-evaluator kinds landed alongside D2/D3, reported externally:**
+  - `RatioCondition.direction` was typed `ComparisonOperator` (9 values) while
+    `RatioEvaluator.evaluate()` only ever handled 2 (`RatioDirection`'s `>=`/`<=`) — a strict
+    operator like `<` validated fine at construction and then raised `ValueError` at first
+    evaluation. Narrowed the field to `RatioDirection` directly (pydantic now rejects an invalid
+    value at construction, naming both legal values), plus a validator explaining *why* only
+    `>=`/`<=` are evaluable (margin-to-threshold semantics) and pointing to `Expression` for a
+    genuinely strict comparison. Non-breaking — every existing call site already used `>=`/`<=`.
+  - `ExpressionEvaluator.evaluate()` unconditionally `float()`-cast the actual value for every
+    non-membership operator, so a string-typed field (`citizenship_type == "itin"`) raised
+    `ValueError` instead of evaluating. `==`/`!=` now compare raw values (no implicit numeric
+    coercion — `"5" == 5` is correctly `VIOLATED`, a deliberate behavior change); ordering
+    operators (`>`,`>=`,`<`,`<=`) still cast, but a cast/comparison failure is now
+    `INDETERMINATE` rather than a raise, matching `DslEvaluator`'s existing convention for
+    unresolvable data.
+
 ## [2.4.0] - 2026-08-13
 
 **Unified Assistant Framework ships, plus a full reliability hardening
@@ -1334,6 +1377,299 @@ guard/loop-convergence dispatch -- the core path every pack conductor run goes t
 where the old eager-call shape let a blocking sync component or observer stall the loop
 before on_step_timeout ever got a chance to bound it. Removed the now-dead _maybe_await
 helper and simplified _emit_step_event's timeout branching in the same pass.
+
+## [2.4.1] - 2026-08-13
+
+**Mode chassis plan complete (all 7 phases), a new `jazzx_sdk.pipelines` home for
+japes' "reference pipeline" family, and two portable cross-instance
+primitives.** `Curator.synthesize_bucket` migrated onto `ReasoningAgent` --
+the last cognitive mode still bypassing it -- alongside `TurnRunStore.
+latest_run()` (reconnecting-caller state) and a generic bundle/publish
+primitive for cross-instance promotion (`jazzx_sdk.manifest`). Plus a
+symmetry pass triggered by consolidating `chat.py`/`document/pipeline.py`
+into `jazzx_sdk/pipelines/`: closed a three-way "pipeline.py" naming
+collision across the SDK and brought `DocumentAgentSpec` in line with its
+sibling fat-agent families.
+
+Collapse six duplicate `_reasoning` lazy-property copies into `BaseMode`; derive
+`platform_catalog.MODES` from `modes.catalog.MODE_REGISTRY`
+
+The identical lazy `_reasoning` property (plus its identical justification comment)
+was independently declared in `VerifierMode`, `InvestigatorMode`, `GovernorMode`,
+`ReasonerMode`, `NarratorMode`, and `EvaluatorMode` -- six copies of "construct the
+`ReasoningAgent` on first use, not at `__init__` time." Moved to `BaseMode` once:
+a `ctx: HandlerContext | None = None` class attribute, `self._reasoning_agent = None`
+in `__init__`, and one `_reasoning` property reading `self.ctx.runtime.agents` /
+`self.api_model_name`, raising a clear `RuntimeError` if `ctx` is unbound instead of
+an opaque `AttributeError`. Deleted all six copies. Pure deduplication -- the full
+mode test suite (239 tests) passes unchanged.
+
+`platform_catalog.MODES` was a third, unlinked copy of "what modes exist," hand-
+maintained alongside `modes.catalog.MODE_REGISTRY` and `fabric.canonical.trace`'s
+`TraceStepMode` enum -- three lists that could silently drift. `MODES` now derives
+its key set and descriptions from `MODE_REGISTRY` directly; only the emoji/display-
+name presentation layer (which `MODE_REGISTRY` doesn't carry) stays a local dict.
+`TraceStepMode` stays a separate enum rather than importing `modes` into it --
+`trace.py` is a canonical-object module, and that edge would add an undocumented
+cycle risk into `fabric.canonical` -- so a new test asserts the two stay set-
+identical instead of deriving one from the other. Checked `jaci/ui/platform_view.py`'s
+try/except-fallback import of seven `platform_catalog` symbols: every name it
+imports is still exported unchanged.
+
+2 new tests in test_platform_catalog.py (MODES tracks MODE_REGISTRY;
+TraceStepMode/MODE_REGISTRY set-identity). Full suite green (2838 passed, 3 skipped).
+
+`Curator.synthesize_bucket` migrated onto `ReasoningAgent` -- the last of the seven cognitive
+modes still bypassing it
+
+`synthesize_bucket` (Curator's Layer 2 LLM synthesis step) called a bare `llm.run()` via
+`jazzx_sdk.llm.structured_call` -- no retry, no truncation handling, no token accounting, the
+same gap `EvaluatorMode` had before its own v2.4.0 migration. Added `agents:
+AgentExecutionService | None` alongside the existing `llm: Any | None` (both now optional;
+exactly one must be given, enforced with a `ValueError`). The `agents=` path constructs a
+`ReasoningAgent` and routes through `name=f"curator:synthesize:{tag}",
+output_type=_SynthesizedGuidance` -- the same retry-with-feedback-on-schema-failure and
+truncation-retry handling the other six modes have, plus real token usage, recorded on the
+returned asset's `metadata["tokens_used"]` (nowhere else to put it -- `GuidanceAsset` has no
+dedicated usage field, and inventing one for a single caller wasn't warranted). The `llm=` path
+stays for one release, now emitting a `DeprecationWarning` -- jaci's
+`scenarios/ci_spread/demo_correction_to_guidance.py` and `tests/unit/test_hitl_approval.py` both
+call it and are left unmigrated deliberately; the deprecation window is exactly for callers like
+that.
+
+5 new tests in test_curator_synthesis.py: the `agents=` path (asset content + token-usage
+metadata, via the same monkeypatched-`ReasoningAgent` seam `test_evaluator_mode.py` established),
+the deprecation warning on `llm=`, and the neither/both `ValueError` guard. Full suite green
+(2841 passed, 3 skipped).
+
+`TurnRunStore.latest_run(conversation_id)` -- the most recent run for a conversation, regardless
+of status
+
+Surveyed juno's recent commits for expansion ideas: a reconnecting chat UI needs to render "what's
+happening now" for a conversation, and was reaching for a separately-tracked `last_message` status
+field that can drift from the run record itself. `TurnRunStore` already had `has_active_run() ->
+bool` but nothing that returns the run -- added `latest_run(conversation_id) -> TurnRun | None`,
+the most recently created run regardless of status (QUEUED/RUNNING/terminal), so a caller reads
+state from the source of truth instead of a second, driftable copy. Implemented on both backends:
+`InProcessTurnRunStore` (max by `created_at` over the conversation's runs) and `DbTurnRunStore`
+(one indexed query -- `conversation_id` and `created_at` were already indexed columns on
+`TurnRunRecord` for `has_active_run`/FIFO ordering, so this adds no new index).
+
+4 new tests in test_resilient_runs.py (both backends: returns the newest run by `created_at`
+across multiple runs and multiple conversations, `None` for an unknown conversation). Full suite
+green (2844 passed, 3 skipped).
+
+`jazzx_sdk.manifest.bundle`/`.publish` -- a portable, retry-safe cross-instance promotion
+primitive, generalized from `assistant`'s working export/publish pattern
+
+Surveyed `assistant`'s recent commits for expansion ideas: `app/assistant/promotion.py` exports an
+assistant's full dependency closure into one portable zip, then publishes each part into another
+instance's owning service -- proven, working, ~1100 lines. Read it in full before generalizing
+anything: most of it (BPMN/Flowable closure-walking, kernel's agent-config YAML shape, Knowledge
+Hub collection resolution, Role CRUD) is `assistant`-repo domain specifics with no japes
+equivalent -- porting that would be dead code in an SDK with no BPMN/Flowable/KH-collection
+consumer. What's genuinely portable: the in-memory zip-slip-safe bundle format, a per-asset-type
+`Publisher` protocol (each publisher owns its own conflict policy -- upsert, skip-duplicate,
+reuse-by-name; `promote()` has no opinion on it), and the retry-safety convention itself -- every
+`Publisher` is idempotent, and the caller writes its "roll-up" record only *after* `promote()`
+returns successfully, mirroring `assistant`'s own "create the assistant row last" trick that makes
+a failed publish resumable with the same bundle.
+
+Scoped deliberately narrow: `jazzx_sdk.manifest.AssistantManifest` (skills + pack_id +
+profile_ref) has no established "dependency closure" concept the way `assistant`'s `Assistant` row
+does -- guessing at one now would be inventing structure a real consumer might want differently.
+Shipped the generic primitive plus exactly one real, already-upsert-shaped reference
+implementation instead of speculating further:
+
+- `jazzx_sdk/manifest/bundle.py` -- `pack_bundle`/`unpack_bundle`, in-memory (no filesystem
+  intermediate, unlike the document pipeline's disk-oriented `unpack_zip`), zip-slip-safe on
+  unpack, plus a `BundleManifest` top-level entry (name/groups/warnings) so a receiving side can
+  introspect a bundle without guessing from entry names.
+- `jazzx_sdk/manifest/publish.py` -- `Publisher` protocol, `PublishResult`/`PromotionResult`, and
+  `promote(groups, publishers=..., order=...)`, the ordered orchestrator. Fails loud (not silent
+  drop) on a group with no registered publisher.
+- `jazzx_sdk/manifest/publishers.py` -- `AgentDefinitionStorePublisher`, wrapping the already
+  upsert-by-name `AgentDefinitionStore.put` (no new conflict policy needed). The one concrete
+  implementation proving the protocol against a real store, not an abstraction with zero
+  implementations.
+
+18 new tests (test_manifest_bundle.py, test_manifest_publish.py): pack/unpack round-trip, empty
+groups, zip-slip/absolute-path/non-zip/missing-manifest rejection; `promote()` ordering, missing-
+publisher failure, result aggregation; `AgentDefinitionStorePublisher` upsert-by-name, retry
+idempotency, entry-name-vs-definition-name decoupling, malformed-entry rejection; one end-to-end
+bundle-to-store test. Full suite green (2862 passed, 3 skipped).
+
+New `jazzx_sdk/pipelines/` package -- one home and one catalog for japes' "reference pipeline"
+family, plus a symmetry cleanup found while designing it
+
+Two reference pipelines already existed -- `chat.py` (wraps `InteractiveAgent`) and
+`document/pipeline.py` (wraps `DocumentAgent`) -- built independently, in the same shape (a thin
+`ConductorPipeline` + step functions + a per-invocation "Turn" dataclass + a `run_X()` wrapper),
+without ever cross-referencing each other. Neither had a discovery point (no catalog entry the
+way modes/experts/fabric-surfaces already get from `platform_catalog.py`), and "pipeline.py" as a
+filename already meant three different things in the SDK: the `ConductorPipeline` primitive
+itself (`conductor/pipeline.py`), a reference-pipeline instance built from it
+(`document/pipeline.py`), and an unrelated bespoke batch pipeline that doesn't use
+`ConductorPipeline` at all (`adjudication/pipeline.py`).
+
+Moved both into a new `jazzx_sdk/pipelines/` package, sibling to `agents/`/`modes/`/`conductor/`
+-- not just future multi-owner pipelines, all of them, since a lightly-used pipeline today could
+grow to span more than one agent over time, at which point "whose package does it live in" stops
+having a good answer. `agents/document/pipeline.py` renamed to `pipelines/document_ingest.py` on
+the move (matching its own docstring's self-description); `chat.py` kept its name (already
+domain-named, no collision) and just moved. Clean move, no re-export shim left at the old paths
+(CLAUDE.md's own anti-pattern list names "re-exporting types" as a backwards-compatibility hack
+to avoid) -- every japes-internal and jaci caller fixed in this pass.
+
+New `jazzx_sdk/pipelines/catalog.py` -- `PipelineContract`/`PIPELINE_REGISTRY`, mirroring
+`jazzx_sdk/modes/catalog.py`'s `ModeContract`/`MODE_REGISTRY` shape exactly: module path, the
+primitive(s) wrapped, turn type, step ids, entrypoint. References pipelines by import path rather
+than physically containing their code, same as `MODE_REGISTRY` does for modes. `platform_catalog.
+PIPELINES` (id -> description) derives from it, same pattern just shipped for `MODES` earlier in
+this version. Deliberately lightweight: `jazzx_sdk/pipelines/__init__.py` only imports the
+catalog, not `chat.py`/`document_ingest.py` themselves -- matches `jazzx_sdk/modes/__init__.py`'s
+own convention of never eagerly importing its heavy per-mode implementations just to expose the
+registry; confirmed empirically (no `InteractiveAgent`/`DocumentAgent` modules load transitively
+via `platform_catalog.PIPELINES`).
+
+Auditing every repeated filename across `jazzx_sdk/` (14 `base.py`, 12 `store.py`, 4 `catalog.py`,
+4 `agent.py`, 3 `pipeline.py`, 3 `engine.py`, 3 `loader.py`, 7 `schema.py` + 4 `schemas.py`, ...)
+to check whether "pipeline.py" was a one-off or a symptom found two more real instances of the
+same failure mode (same filename, genuinely different structural role -- not just "same name,
+same convention, different domain," which every other repeated name turned out to be):
+
+- `agents/adjudication/pipeline.py` -> `agents/adjudication/segment.py` (matching its own
+  `run_segment` entrypoint) -- fully closes the "pipeline.py means two things" collision this
+  pass started from, rather than narrowing it. Internal-only, no jaci consumer.
+- `DocumentAgentSpec` extracted from `agent.py` (651 lines, largest of the three fat-agent
+  `agent.py` files) into a new `agents/document/spec.py`, matching `InteractiveAgentSpec`/
+  `AdjudicationAgentSpec`'s already-dedicated `spec.py` convention.
+
+Assessed and deliberately left alone: `schema.py`/`schemas.py`'s singular/plural spelling split
+(11 files, zero semantic ambiguity, high churn for a cosmetic fix); `manifest/store.py` and
+`runs/store.py` being the only two `store.py`s not nested under `fabric/` (possibly intentional --
+a standing persistence-architecture note distinguishes service-owned-db from fabric-as-HTTP-
+domain-service as two deliberate patterns -- flagged, not touched; moving an established
+top-level package is a materially bigger, riskier change than anything else in this pass).
+
+New `tests/test_pipeline_catalog.py` (registry shape, contract accuracy, every registered module
+path actually importable) plus a `platform_catalog.PIPELINES` tracking test in
+`test_platform_catalog.py`. `tests/test_adjudication_pipeline.py` renamed to
+`test_adjudication_segment.py`. Full suite green (2869 passed, 3 skipped).
+
+New `jazzx_sdk/pipelines/investigation_loop.py` -- the third reference pipeline, generalizing a
+shape five jaci scenarios independently hand-rolled
+
+Deep-read all five jaci investigation-loop conductors (AML, KYC, CRE-underwriting,
+KYC-Anthropic, earnings_anthropic) plus `jazzx_sdk/conductor/{base,engine,checkpoint}.py` and
+every operational mode's real constructor/`run()` signature before designing anything.
+`BaseConductor` is a bare 27-line ABC; `ConductorEngine` already has native loop-until-converged
+support (no pack hand-rolls a `while` loop except the pre-migration KYC baseline). All five
+conductors share one real skeleton -- six modes constructed once and cached on `self`, near-
+identical `_step_investigator`/`_step_evidence`/`_step_verifier` bodies, the same
+`pipeline.model_copy` -> override `max_iterations` -> `ConductorEngine(...).run(context=ctx)` ->
+assemble a pack-owned result object from `run.emitted_for(...)` skeleton -- but diverge on real,
+load-bearing behavior: convergence representation (`LoopStatus` enum vs. a bespoke boolean
+flag), convergence policy (trust the LLM's own claim vs. AML/CRE's deterministic
+evidence-type-count + iteration floor), Sentinel presence (also where the per-iteration
+checkpoint fires, in the two conductors that have one), checkpointing (zero in three of five),
+a deadline guard (AML-only), reasoner-failure policy (halt vs. synthesize-a-fallback), and the
+narrator-gate predicate (every pack has its own "is this the escalating outcome" check).
+
+`InvestigationSpec` -- six already-constructed mode instances (mode construction is already
+adequately generic via each `Mode.__init__`'s own kwargs) plus the hooks where the five
+conductors actually diverge: `fulfill_evidence` (required, 100% pack-owned -- every real tool
+registry has a different `execute()` signature), `sentinel` (optional), `is_active`/
+`mark_converged`/`mark_guard_fired` (convergence-state indirection -- defaults read/write the
+SDK's own `Context.loop_status` field directly, so any `Context` subclass works with zero
+overrides; a pack with a bespoke convergence field overrides these three instead of forcing a
+canonical shape), `convergence_gate` (default: trust the LLM), `deadline_guard` (default: never
+fires), `on_reasoner_failure` (default: `None`, leaving the reasoner step's output `None`),
+`narrator_gate` (default: governor-approved only), `checkpoint` (default: none, called from the
+Sentinel step only -- matches every real conductor's own behavior, confirmed no conductor
+checkpoints per-iteration without a Sentinel present). Deliberately not part of this primitive:
+a `persist` step -- a pack's final checkpoint is tangled up with its own `CanonicalTrace`
+construction (different fields, a termination-reason map specific to its own status
+vocabulary); `build_investigation_pipeline` declares an optional `persist` step id a pack can
+bind its own component to, same as `document_ingest.py`'s optional `package`/`collection` steps.
+Registered in `PIPELINE_REGISTRY`.
+
+15 new tests (`test_investigation_loop.py`, fake modes matching the six real signatures):
+convergence-gate override, default hooks against `Context.loop_status`, Sentinel wired only
+when set, checkpoint firing only via an active Sentinel pass (confirmed against AML's own real
+behavior -- no checkpoint on the converging iteration either), narrator-gate suppression,
+reasoner-failure fallback, deadline-guard short-circuit, `persist` skippable/bindable. Plus a
+`test_pipeline_catalog.py` entry. Full suite green (2885 passed, 3 skipped).
+
+Proof-of-concept migration (jaci, same day): `EarningsAnthropicConductor` -- the simplest of the
+five (no Sentinel, no checkpoint, no deadline guard) -- now builds an `InvestigationSpec` instead
+of hand-rolling `_components()`/`_step_*` methods; existing tests pass unchanged (parity, not a
+behavior change). AML/CRE/KYC-Anthropic/KYC-plain migrations are explicitly deferred, separate,
+higher-risk follow-on work once this primitive is proven -- KYC-plain additionally needs its own
+prior migration onto `ConductorEngine` before it's even a candidate.
+
+`jazzx_sdk/pipelines/investigation_loop.py` gains two additive extension points, closing the gap
+between the proof-of-concept (earnings_anthropic) and the primitive's actual first-class target
+(CRE) -- found by reading CRE's real, current code, not the earlier survey summary
+
+`InvestigationSpec.halt_on_reasoner_failure: bool = False` -- CRE halts the whole run on reasoner
+failure (`ConductorState.halt = True`, downstream steps recorded halted) instead of the
+fallback-and-continue every other conductor uses; `on_reasoner_failure`'s existing contract is
+unchanged, this is a new, independent branch in `reasoner_step`.
+
+`build_investigation_pipeline(post_loop_steps=...)` replaces the hardcoded
+`reasoner -> governor -> narrator` triplet with a pack-supplied sequence (default unchanged) --
+CRE interleaves three deterministic, non-generalizable steps (DSCR stress-test math, an advisory
+policy check, dependency-condition mapping) in a specific order the fixed triplet couldn't
+express. `build_investigation_components(spec, overrides=...)` replaces the narrower
+`persist=` param with a general override map, merged last -- lets a pack add step ids the
+primitive doesn't define, or replace a generic step wholesale (CRE's real `governor` step
+mutates the reasoner's own decision object and `ctx.loop_status` in place rather than returning
+a decision, and its `narrator` step builds a credit-memo `Artifact`, not just a narrative --
+neither fits the generic step's contract at all). Not used by any other caller today, so a safe,
+non-breaking widening; updated the one existing `persist=` test to the new kwarg name.
+
+4 new tests (`halt_on_reasoner_failure` sets `state.halt`/leaves reasoner output `None`, and the
+false-path still falls through to `on_reasoner_failure`; `overrides=` replacing a generic step
+wholesale; `post_loop_steps` producing a declared custom sequence). Full suite green (2889
+passed, 3 skipped).
+
+`CREConductor` migrated (jaci, same day) -- the primitive's actual first-class target, not
+another proof-of-concept. `_step_investigator`/`_step_evidence`/`_step_verifier`/`_step_sentinel`/
+`_step_reasoner`/`_components()` replaced by an `InvestigationSpec`;
+`_step_stress`/`_step_policy`/`_step_governor`/`_step_dependencies`/`_step_narrator`/
+`_step_persist` kept verbatim as `overrides=` -- genuinely pack-specific, exactly what the
+primitive was designed to leave pack-owned. `describe()` returns the generic pipeline instead of
+the YAML-loaded `CRE_PIPELINE` (kept as a module symbol solely for `ui/registry.py`'s diagram
+lookup, same pattern earnings_anthropic's migration established). `CRE_PIPELINE` uses
+`ctx.loop_status` directly (the SDK `Context` base's own field) -- exactly what the primitive's
+default `is_active`/`mark_converged`/`mark_guard_fired` hooks already read/write, so CRE needed
+zero overrides there, unlike earnings_anthropic's bespoke boolean flag. Existing offline
+orchestration tests (`tests/unit/test_cre_conductor_engine.py`) pass unchanged -- parity, not a
+behavior change.
+
+`InvestigationSpec.on_mode_result` -- one more additive hook, for `AMLConductor`'s migration
+
+AML accumulates real LLM token usage per mode (`ctx.metadata["token_usage_by_mode"]`) after every
+investigator/verifier/reasoner/governor/narrator call, feeding a cost-tracking eval
+(`tests/eval/test_anthropic_token_tracking.py` in jaci, gated behind a live-API-key marker so not
+in the offline suite, but a real, tested feature not to be silently dropped). No existing hook
+covered "do something with every mode's raw result" -- `on_mode_result: Callable[[ctx, step_name,
+result], None] | None = None`, called from those five generic steps only (not Sentinel's, which
+is deterministic/non-LLM and has nothing to accumulate). Default `None` -- no-op, unchanged
+behavior for `chat`/`document_ingest`/earnings_anthropic/CRE. 2 new tests. Full suite green (2891
+passed, 3 skipped).
+
+`AMLConductor` migrated (jaci, same day) -- structurally the closest of the four migrated so far
+to CRE (deterministic convergence floor, Sentinel + checkpointing, `ctx.loop_status` used
+directly, zero overrides for the convergence-state hooks) but without CRE's extra steps or
+mutate-in-place governor -- its governor/narrator instead follow earnings_anthropic's pattern
+exactly (generic steps mid-run; the pack remaps/gates in its own post-processing). First real use
+of `deadline_guard` (AML's SAR-deadline check) and `on_mode_result` outside their own test
+coverage. `_step_investigator`/`_step_evidence`/`_step_verifier`/`_step_sentinel`/
+`_step_reasoner`/`_step_governor`/`_step_narrator`/`_components()` replaced by an
+`InvestigationSpec`; `_step_persist` kept verbatim as the one `overrides=` entry. Existing offline
+orchestration tests (`tests/unit/test_aml_conductor_engine.py`) pass unchanged.
 
 ## [2.3.5] - 2026-08-10
 

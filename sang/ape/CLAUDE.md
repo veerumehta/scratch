@@ -194,6 +194,59 @@
   15 new tests (`test_download_files.py` new, `test_document_pipeline.py`,
   `test_document_agent.py`). Full suite green (2612 passed, 3 skipped). Planned in plan-mode first
   (`/Users/sangit/.claude/plans/atomic-doodling-sun.md`) given the multi-file scope.
+- **`MatrixCondition` — a table-valued `Condition` kind (P8, D2), 2026-08-13, uncommitted.**
+  Motivated by a real client engagement (Acra DSCR, jaci `docs/plans/
+  Acra_DSCR_on_Platform_v2_Reuse_and_Build_Plan.md`) whose eligibility grid had no clean
+  encoding in the existing four kinds. Generalizes `RatioCondition`'s single `profile:<key>`
+  threshold to an N-axis lookup (numeric-banded or categorical per axis); resolved cell values
+  live in a new `PolicyProfile.tables` bucket (`profile_table:<name>`, fail-closed
+  `get_table()`) — never a literal, same discipline as `RatioCondition`. An explicit
+  `NA`/`False`/`None` cell is `VIOLATED`, not `INDETERMINATE`. Fully additive — confirmed by
+  reading every `condition.kind` dispatch site (`DefaultPolicyExpert.check_compliance`,
+  `agents/adjudication/{segment,partition,impact}.py`) already goes through the open
+  `get_condition_evaluator` registry, so none needed editing. Also fixed a real latent gap
+  found along the way: `ComparisonOperator.IN`/`NOT_IN`/`CONTAINS` were declared on the enum but
+  never implemented in `ExpressionEvaluator` (silently always-`VIOLATED`) — now implemented,
+  closing D2's secondary "N states → N rules" ask on the existing `Expression` kind rather than
+  extending the (purely numeric) DSL. 34 new tests across `test_condition_evaluator.py` /
+  `test_default_policy_expert.py`, all synthetic/toy data (no real Acra numbers exist in-repo).
+  Full suite green (2911 passed, 3 skipped). No jaci-side wiring yet — `acra_dscr`'s pack has no
+  `MatrixCondition` usage until real Acra grid data exists.
+- **HITL suspend inside a `Loop` (D3), 2026-08-13, uncommitted.** Same Acra doc, same-day
+  follow-on to D2. `ConductorEngine` previously turned a `SuspendRun` raised inside a loop's body
+  straight into a `RuntimeError` ("supported only for top-level steps") — Acra's per-condition
+  and per-property exception approvals are loops, and more generally no investigation-loop
+  scenario could ever pause mid-iteration for a human. Fix: `_run_loop` catches a mid-body
+  suspend per-step (knows exactly which step/iteration) and gained a resume-aware entry point
+  that finishes the interrupted iteration's remaining steps without re-running earlier ones,
+  then continues the loop and the rest of the pipeline normally; `_execute`'s local bookkeeping
+  (`steps`/`seq`/`loop_status`/`done_loops`/`max_iterations`) became optional seeded params so
+  the post-loop continuation reuses its existing `done_loops`-skip logic unchanged.
+  `Suspension`/`DurableSuspension` gained additive `loop_id`/`loop_iteration` (no DB migration —
+  `DurableSuspension` round-trips through one JSON column in both stores). New
+  `ConductorPipeline.get_loop()`. A second suspend inside the same resumed loop, and
+  `resume_durable` through a loop suspend, both work via the same one resume path — no
+  special-casing. Replaced the one test asserting the old `RuntimeError` with 5 real tests. Full
+  suite green (2915 passed, 3 skipped). No jaci-side usage yet — same scope discipline as D2.
+- **Two condition-evaluator bugs fixed, 2026-08-13, uncommitted, reported externally (not
+  self-found).** Verified both against code before fixing. (1) `RatioCondition.direction` was
+  typed `ComparisonOperator` (9 values) but `RatioEvaluator` only ever handled 2 (`>=`/`<=`) —
+  a strict operator like `<` validated at construction, then raised `ValueError` at first
+  evaluation. Narrowed the field to `RatioDirection` (the existing 2-member enum
+  `evaluate_ratio` already expects) directly — confirmed empirically pydantic already coerces a
+  `ComparisonOperator.GTE` instance and rejects `.LT` with its own clear message, so the type
+  narrowing alone fixes it; added a validator on top only to explain *why* (margin-to-threshold
+  semantics) and point to `Expression` for strict comparisons. Grepped both repos first: every
+  existing call site already used `>=`/`<=`, so non-breaking. (2) `ExpressionEvaluator.evaluate()`
+  unconditionally `float()`-cast the actual value for every non-membership operator — a
+  string-typed field (`citizenship_type == "itin"`) raised `ValueError`. `==`/`!=` now compare
+  raw values (`"5" == 5` is correctly `VIOLATED` now, a real behavior change, called out
+  explicitly); ordering operators still cast but a cast failure is `INDETERMINATE`, not a raise
+  — matches `DslEvaluator`'s own existing convention. `_OPS` (the full numeric map) kept intact
+  for `MatrixEvaluator`'s continued reuse; only `ExpressionEvaluator.evaluate()`'s own dispatch
+  changed. 10 new tests in `test_condition_evaluator.py`. Full suite green (2925 passed, 3
+  skipped); jaci's own suite re-run too (695 passed, 2 skipped, same pre-existing unrelated
+  `DecisionType` failure) since `RatioCondition` is core policy IR.
 
 Design docs (gitignored, `docs/plans/`): `reasoner-chassis-analysis.md` (P1/P2/P6/P8 build
 sequence + Phase 4 chassis), `policy-ir-abstraction.md` (P8 detail),

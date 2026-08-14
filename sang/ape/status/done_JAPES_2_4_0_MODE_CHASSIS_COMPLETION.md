@@ -1,5 +1,13 @@
 # plan_JAPES_2_4_0_MODE_CHASSIS_COMPLETION
 
+**Status (2026-08-13): 7/7 phases shipped, in v2.4.0 (unpushed). Plan complete.** Phase 1 (replicas
+default + `stochastic` wiring), Phase 2 (`EvaluatorMode` → `ReasoningAgent`), Phase 3
+(`Curator.synthesize_bucket` → `ReasoningAgent`, `llm=` kept one release with a
+`DeprecationWarning`), Phase 4 (`BaseMode.system_prompt` fails loud), Phase 5 (AML literals
+nulled), Phase 6 (six `_reasoning` copies collapsed into `BaseMode`), and Phase 7
+(`platform_catalog.MODES` derived from `MODE_REGISTRY` + `TraceStepMode` set-identity test) are
+all done — full suite green (2841 passed, 3 skipped). Ready to move to `docs/status/`.
+
 Repo: `japes`, branch `dev`. Target 2.4.0. **Revision 2** — reconciled against `ape/plans/`.
 Written to be executed by Claude Code in the `japes` working tree.
 Findings: `plans/design_note_mode_chassis_completeness.md` §1.

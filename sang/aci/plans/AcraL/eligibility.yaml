@@ -1,0 +1,432 @@
+# Acra DSCR eligibility policy. Loaded with jazzx_sdk.fabric.canonical.policy.load_policies().
+policies:
+- policy_id: ACRA_DSCR_ELIGIBILITY
+  version: 1.1.0
+  name: Acra DSCR Program Eligibility
+  description: 'Executable encoding of the Acra Lending DSCR Program Summary (version 6.15.2026 V1.1):
+    loan-amount/FICO/purpose CLTV grid, DSCR gates, and borrower/property/occupancy overlays. Thresholds
+    resolve from PolicyProfile acra_dscr_v6_15_2026_v1_1; grid cells resolve from profile tables.'
+  policy_type: institutional
+  pack_id: acra-dscr-core
+  jurisdiction: US
+  effective_date: '2026-06-15T00:00:00Z'
+  status: draft
+  source_refs:
+  - ref_id: acra_dscr_program_summary_6_15_2026_v1_1
+    title: Acra Lending DSCR Program Summary, version 6.15.2026 V1.1
+    authority: Acra Lending
+    ref_type: guideline
+  rules:
+  - rule_id: ACRA-ELIG-CLTV-GRID
+    priority: 10
+    action: deny
+    description: 'Primary DSCR eligibility grid: CLTV may not exceed the max for the loan-amount band,
+      FICO tier, and loan purpose (DSCR Program Summary, Investment Property grid).'
+    citations:
+    - acra_dscr_program_summary_6_15_2026_v1_1
+    condition:
+      kind: matrix
+      axes:
+      - field: loan_amount
+        bands:
+        - key: la_le_1_5m
+          min: 100000
+          max: 1500001
+        - key: la_1_5m_2m
+          min: 1500001
+          max: 2000001
+        - key: la_2m_3m
+          min: 2000001
+          max: 3000001
+      - field: fico
+        bands:
+        - key: lt600
+          min: 0
+          max: 600
+        - key: '600'
+          min: 600
+          max: 620
+        - key: '620'
+          min: 620
+          max: 640
+        - key: '640'
+          min: 640
+          max: 660
+        - key: '660'
+          min: 660
+          max: 680
+        - key: '680'
+          min: 680
+          max: 700
+        - key: '700'
+          min: 700
+          max: 720
+        - key: '720'
+          min: 720
+          max: 740
+        - key: '740'
+          min: 740
+          max: 760
+        - key: '760'
+          min: 760
+          max: 780
+        - key: '780'
+          min: 780
+          max: 901
+      - field: loan_purpose
+      table: profile_table:max_cltv_grid
+      compare_field: cltv_pct
+      direction: <=
+  - rule_id: ACRA-LA-MIN
+    priority: 5
+    action: deny
+    description: Minimum loan amount $100,000.
+    citations:
+    - acra_dscr_program_summary_6_15_2026_v1_1
+    condition:
+      kind: expression
+      field: loan_amount
+      operator: '>='
+      value: 100000
+  - rule_id: ACRA-LA-MAX
+    priority: 5
+    action: deny
+    description: Maximum loan amount $3,000,000.
+    citations:
+    - acra_dscr_program_summary_6_15_2026_v1_1
+    condition:
+      kind: expression
+      field: loan_amount
+      operator: <=
+      value: 3000000
+  - rule_id: ACRA-STATE-INELIGIBLE
+    priority: 5
+    action: deny
+    description: Subject property may not be located in an ineligible state (AK, ND, SD).
+    citations:
+    - acra_dscr_program_summary_6_15_2026_v1_1
+    condition:
+      kind: expression
+      field: property_state
+      operator: not_in
+      value:
+      - AK
+      - ND
+      - SD
+  - rule_id: ACRA-HIGH-LTV-DSCR
+    priority: 20
+    action: deny
+    description: LTV > 80% requires a minimum DSCR of 1.20.
+    citations:
+    - acra_dscr_program_summary_6_15_2026_v1_1
+    applicability:
+      kind: expression
+      field: cltv_pct
+      operator: '>'
+      value: 80
+    condition:
+      kind: ratio
+      ratio_name: DSCR
+      numerator: gross_rental_income
+      denominator: pitia
+      threshold: profile:dscr_min_high_ltv
+      direction: '>='
+  - rule_id: ACRA-HIGH-LTV-RESERVES
+    priority: 20
+    action: require_evidence
+    description: LTV > 80% requires 6 months PITIA reserves.
+    citations:
+    - acra_dscr_program_summary_6_15_2026_v1_1
+    applicability:
+      kind: expression
+      field: cltv_pct
+      operator: '>'
+      value: 80
+    condition:
+      kind: expression
+      field: reserves_months
+      operator: '>='
+      value: 6
+    parameters:
+      evidence_types:
+      - bank_statement
+      - asset_statement
+  - rule_id: ACRA-HIGH-LTV-PROPERTY-TYPE
+    priority: 20
+    action: deny
+    description: 'LTV > 80% is limited to SFR, warrantable condo (outside Florida), townhome, PUD. NOTE:
+      the ''outside Florida'' qualifier is NOT enforced by this rule - see ENCODING_NOTES G1.'
+    citations:
+    - acra_dscr_program_summary_6_15_2026_v1_1
+    applicability:
+      kind: expression
+      field: cltv_pct
+      operator: '>'
+      value: 80
+    condition:
+      kind: expression
+      field: property_type
+      operator: in
+      value:
+      - sfr
+      - warrantable_condo
+      - townhome
+      - pud
+  - rule_id: ACRA-SUB-1-DSCR-CLTV
+    priority: 25
+    action: deny
+    description: 'DSCR < 1.0 or No Ratio: max CLTV 75% purchase / 70% R&T / 65% cash-out.'
+    citations:
+    - acra_dscr_program_summary_6_15_2026_v1_1
+    applicability:
+      kind: ratio
+      ratio_name: DSCR
+      numerator: gross_rental_income
+      denominator: pitia
+      threshold: profile:dscr_sub_1_ceiling
+      direction: <=
+    condition:
+      kind: matrix
+      axes:
+      - field: loan_purpose
+      table: profile_table:max_cltv_sub_1_dscr
+      compare_field: cltv_pct
+      direction: <=
+  - rule_id: ACRA-SUB-1-DSCR-FICO
+    priority: 25
+    action: deny
+    description: 'DSCR < 1.0 or No Ratio: minimum FICO 640.'
+    citations:
+    - acra_dscr_program_summary_6_15_2026_v1_1
+    applicability:
+      kind: ratio
+      ratio_name: DSCR
+      numerator: gross_rental_income
+      denominator: pitia
+      threshold: profile:dscr_sub_1_ceiling
+      direction: <=
+    condition:
+      kind: expression
+      field: fico
+      operator: '>='
+      value: 640
+  - rule_id: ACRA-OVER-2M-DSCR
+    priority: 20
+    action: deny
+    description: Loan amount > $2,000,000 must have DSCR of 1.0 or greater.
+    citations:
+    - acra_dscr_program_summary_6_15_2026_v1_1
+    applicability:
+      kind: expression
+      field: loan_amount
+      operator: '>'
+      value: 2000000
+    condition:
+      kind: ratio
+      ratio_name: DSCR
+      numerator: gross_rental_income
+      denominator: pitia
+      threshold: profile:dscr_min_over_2m
+      direction: '>='
+  - rule_id: ACRA-FICO-LT-620-RESERVES
+    priority: 25
+    action: require_evidence
+    description: FICO below 620 requires 12 months reserves.
+    citations:
+    - acra_dscr_program_summary_6_15_2026_v1_1
+    applicability:
+      kind: expression
+      field: fico
+      operator: <
+      value: 620
+    condition:
+      kind: expression
+      field: reserves_months
+      operator: '>='
+      value: 12
+  - rule_id: ACRA-STR-CLTV
+    priority: 30
+    action: deny
+    description: 'Short-term rental: max CLTV 75% purchase / 70% refinance.'
+    citations:
+    - acra_dscr_program_summary_6_15_2026_v1_1
+    applicability:
+      kind: expression
+      field: occupancy_subtype
+      operator: in
+      value:
+      - short_term_rental
+    condition:
+      kind: matrix
+      axes:
+      - field: loan_purpose
+      table: profile_table:max_cltv_short_term_rental
+      compare_field: cltv_pct
+      direction: <=
+  - rule_id: ACRA-PROPERTY-TYPE-CLTV
+    priority: 30
+    action: deny
+    description: Property-type overlay caps (non-warrantable condo, condotel/PUDtel, manufactured, 2-4
+      unit). Florida -5% modifier NOT applied here - see ENCODING_NOTES G1.
+    citations:
+    - acra_dscr_program_summary_6_15_2026_v1_1
+    applicability:
+      kind: expression
+      field: property_type
+      operator: in
+      value:
+      - non_warrantable_condo
+      - condotel
+      - manufactured
+      - two_to_four_unit
+    condition:
+      kind: matrix
+      axes:
+      - field: property_type
+      - field: loan_purpose
+      table: profile_table:max_cltv_property_type
+      compare_field: cltv_pct
+      direction: <=
+  - rule_id: ACRA-ITIN-CLTV
+    priority: 30
+    action: deny
+    description: 'ITIN borrower overlay: max CLTV by FICO tier and purpose; max loan amount $1.0M, min
+      FICO 640.'
+    citations:
+    - acra_dscr_program_summary_6_15_2026_v1_1
+    applicability:
+      kind: expression
+      field: citizenship_type
+      operator: in
+      value:
+      - itin
+    condition:
+      kind: matrix
+      axes:
+      - field: fico
+        bands:
+        - key: lt600
+          min: 0
+          max: 600
+        - key: '600'
+          min: 600
+          max: 620
+        - key: '620'
+          min: 620
+          max: 640
+        - key: '640'
+          min: 640
+          max: 660
+        - key: '660'
+          min: 660
+          max: 680
+        - key: '680'
+          min: 680
+          max: 700
+        - key: '700'
+          min: 700
+          max: 720
+        - key: '720'
+          min: 720
+          max: 740
+        - key: '740'
+          min: 740
+          max: 760
+        - key: '760'
+          min: 760
+          max: 780
+        - key: '780'
+          min: 780
+          max: 901
+      - field: loan_purpose
+      table: profile_table:max_cltv_itin
+      compare_field: cltv_pct
+      direction: <=
+  - rule_id: ACRA-ITIN-LOAN-MAX
+    priority: 30
+    action: deny
+    description: 'ITIN borrower: maximum loan amount $1,000,000.'
+    citations:
+    - acra_dscr_program_summary_6_15_2026_v1_1
+    applicability:
+      kind: expression
+      field: citizenship_type
+      operator: in
+      value:
+      - itin
+    condition:
+      kind: expression
+      field: loan_amount
+      operator: <=
+      value: 1000000
+  - rule_id: ACRA-FOREIGN-NATIONAL-ESCROW
+    priority: 35
+    action: deny
+    description: Foreign National borrowers are ineligible for escrow waiver.
+    citations:
+    - acra_dscr_program_summary_6_15_2026_v1_1
+    applicability:
+      kind: expression
+      field: escrow_waiver_requested
+      operator: ==
+      value: true
+    condition:
+      kind: expression
+      field: citizenship_type
+      operator: not_in
+      value:
+      - foreign_national
+  - rule_id: ACRA-IO-MIN-LOAN
+    priority: 35
+    action: deny
+    description: Interest-only products require a minimum loan amount of $250,000 and minimum FICO 640.
+    citations:
+    - acra_dscr_program_summary_6_15_2026_v1_1
+    applicability:
+      kind: expression
+      field: product_is_interest_only
+      operator: ==
+      value: true
+    condition:
+      kind: expression
+      field: loan_amount
+      operator: '>='
+      value: 250000
+  - rule_id: ACRA-NO-RATIO-CLTV
+    priority: 25
+    action: deny
+    description: 'No Ratio (no qualifying rental income documented): max CLTV 75% purchase / 70% R&T /
+      65% cash-out. Separate from ACRA-SUB-1-DSCR-CLTV because a missing DSCR evaluates INDETERMINATE,
+      not ''<1.0''.'
+    citations:
+    - acra_dscr_program_summary_6_15_2026_v1_1
+    applicability:
+      kind: expression
+      field: dscr_documentation_type
+      operator: in
+      value:
+      - no_ratio
+    condition:
+      kind: matrix
+      axes:
+      - field: loan_purpose
+      table: profile_table:max_cltv_sub_1_dscr
+      compare_field: cltv_pct
+      direction: <=
+  - rule_id: ACRA-NO-RATIO-FICO
+    priority: 25
+    action: deny
+    description: 'No Ratio: minimum FICO 640.'
+    citations:
+    - acra_dscr_program_summary_6_15_2026_v1_1
+    applicability:
+      kind: expression
+      field: dscr_documentation_type
+      operator: in
+      value:
+      - no_ratio
+    condition:
+      kind: expression
+      field: fico
+      operator: '>='
+      value: 640

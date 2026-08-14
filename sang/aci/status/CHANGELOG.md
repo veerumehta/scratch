@@ -9,6 +9,76 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ## [Unreleased]
 
+## [0.19.5] - 2026-08-13
+
+- **japes reference-pipeline reorg.** `chat`/`document_ingest` moved from
+  `jazzx_sdk.agents.interactive.chat`/`jazzx_sdk.agents.document.pipeline` to
+  `jazzx_sdk.pipelines.{chat,document_ingest}`; `DocumentAgentSpec` moved from
+  `jazzx_sdk.agents.document.agent` to `jazzx_sdk.agents.document.spec` (still re-exported from
+  the `jazzx_sdk.agents.document` package). Updated `demo_page.py` (7 import sites) and
+  `test_yeti_credit_outcome.py` (2 import sites) to match.
+- **`EarningsAnthropicConductor` migrated onto japes' new `jazzx_sdk.pipelines.
+  investigation_loop`** (proof-of-concept for the pattern all five investigation-loop scenarios
+  independently hand-roll -- AML/CRE next, once proven). `_step_*`/`_components()` replaced by an
+  `InvestigationSpec`; `describe()` now returns the generic pipeline instead of the YAML-loaded
+  `EARNINGS_PIPELINE` (kept as a module symbol solely for `ui/registry.py`'s diagram lookup).
+  Behavior-neutral -- existing tests pass unchanged.
+- **`CREConductor` migrated onto the same primitive** -- the real target it was designed for
+  (richer than earnings_anthropic: Sentinel, checkpointing, a deterministic convergence floor,
+  plus three pack-only deterministic steps and a custom governor/narrator). japes'
+  `investigation_loop` gained `halt_on_reasoner_failure` and `post_loop_steps`/`overrides=` to
+  cover CRE's real shape (found by reading the current code, not assumed). `_step_stress`/
+  `_step_policy`/`_step_governor`/`_step_dependencies`/`_step_narrator`/`_step_persist` kept
+  verbatim as overrides -- genuinely pack-specific. `tests/unit/test_cre_conductor_engine.py`
+  passes unchanged.
+- **`AMLConductor` migrated onto the same primitive** -- closest structurally to CRE (Sentinel,
+  checkpointing, deterministic convergence floor, `ctx.loop_status` used directly) but without
+  CRE's extra steps or mutate-in-place governor; governor/narrator follow earnings_anthropic's
+  remap-in-post-processing pattern instead. First real use of `deadline_guard` (AML's SAR-deadline
+  check) and japes' new `on_mode_result` hook (AML's per-mode token-usage accumulation into
+  `ctx.metadata["token_usage_by_mode"]`, feeding `tests/eval/test_anthropic_token_tracking.py`).
+  Only `_step_persist` kept as an override. `tests/unit/test_aml_conductor_engine.py` passes
+  unchanged.
+- **`KYCAnthropicConductor` migrated onto the same primitive** -- no japes-side changes needed
+  this time, everything already fit: `is_active`/`mark_converged`/`mark_guard_fired` overridden
+  for its bespoke boolean `converged` flag (like earnings_anthropic); only `governor` kept as an
+  override (it stashes risk-tier document requirements onto `ctx.metadata` before calling
+  `GovernorMode`, a single-use pre-call side effect). `investigator`/`evidence`/`verifier`/
+  `reasoner`/`narrator` are now fully generic. `tests/unit/test_kyc_anthropic_conductor_engine.py`
+  passes unchanged. Four of five investigation-loop scenarios now migrated -- only KYC-plain
+  remains, and it needs its own prior migration onto `ConductorEngine` first (unrelated,
+  separate work).
+- **`KYCConductor` (plain, OpenAI-based) migrated onto the same primitive -- the fifth and
+  last.** Previously a hand-rolled `while` loop with no `BaseConductor`/`describe()`/declarative
+  pipeline at all (UI-unregistered, but real and test-alive: `tests/unit/
+  test_kyc_conductor_equivalence.py` is a deliberate KYC-vs-KYC-Anthropic parity suite for
+  SymphonyAI prep). Now a proper `BaseConductor` subclass. Fits the primitive's defaults even
+  more directly than KYC-Anthropic: `ReviewContext.converged` is a read-only property computed
+  from the base `Context.loop_status` field, and governor has no pre-call side effect, so
+  neither needs an override -- only evidence-fulfillment's per-request `try`/`except` (a
+  resilience feature unique to this conductor among the five) and the reasoner-failure fallback
+  are pack-specific hooks. No japes-side primitive changes needed. All 6 parametrized
+  equivalence-suite tests (both `kyc` and `kyc_anthropic` adapters) pass unchanged. **All five
+  investigation-loop scenarios are now on `jazzx_sdk.pipelines.investigation_loop`.**
+- **`acra_dscr` scenario carved as a new skeleton** -- the first jaci scenario built directly on
+  `jazzx_sdk.pipelines.investigation_loop` from day one (no hand-rolled loop, no later
+  migration). Structural scaffolding only; see `docs/plans/
+  Acra_DSCR_on_Platform_v2_Reuse_and_Build_Plan.md` for the real (separate, not-yet-built) work:
+  taxonomy, policy corpus (`MatrixCondition`-based eligibility grid), vendor integrations.
+  `AcraDSCRConductor` mirrors `KYCConductor`'s just-migrated shape (the simplest of the five --
+  no Sentinel, no checkpoint, convergence read straight off `Context.loop_status`).
+  `schemas/acra_schemas.py` copies `ConditionType`/`LoanCondition` verbatim from
+  `cre_underwriting` (Acra's Byte PTC/PTF buckets map onto them directly); `AcraToolRegistry` is
+  mock-only, two illustrative evidence types. New `config/packs/acra_dscr_core/pack_manifest.yaml`
+  (draft, no conductor/experts/policies sections yet -- both optional in `jazzx_sdk.pack.Pack`).
+  One `ui/registry.py` `SCENARIOS` entry, no demo/dashboard/gold_dir yet. New
+  `tests/unit/test_acra_dscr_conductor_engine.py` (4 tests, scripted-mode orchestration parity).
+  Also fixed a real, pre-existing circular import surfaced while verifying this change (unrelated
+  to acra_dscr itself): `jaci.scenarios.kyc/__init__.py` eagerly importing `conductor.py` created
+  a 3-hop cycle through `jaci.schemas.japes_types` (introduced by the KYC-plain migration above).
+  Fixed with a lazy `__getattr__` for the conductor exports, same pattern already used for
+  `jaci.modes`' EVOLVE-mode exports.
+
 ## [0.19.4] - 2026-08-13
 
 - **Vocabulary enforcement wired into live spreading.** `spreader.spread_financials()` gained

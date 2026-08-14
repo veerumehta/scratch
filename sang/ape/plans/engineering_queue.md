@@ -1,5 +1,14 @@
 # Engineering Queue from the Eval-Service / JAPES Convergence Analysis
 
+> **Status (2026-08-13): 0.2 shipped, in v2.4.0 (pushed)** — execution-state vs quality-verdict
+> separation in `CaseResult`/`EvaluationResults`, plus the wire-adapter fix that was already
+> conflating them. **0.1 disputed, not a mechanical fix** — verified `EvalServiceGuidanceStore`'s
+> hardcoded `DEPLOYED`/`STANDARD`/`1.0` values are each a considered decision (own code comments),
+> not an oversight; the lifecycle-state (`DEPLOYED`) piece is worth fixing, confidence/relevance
+> less clearly so — needs a real decision, not just applying the queue's literal ask.
+> **0.3 could not be located** in this codebase at all — may describe eval-service-side code.
+> **0.4, 3.3, and all of Tier 1/2/4 remain untouched.**
+
 **Date:** 2026-08-12 · **Scope:** actionable coding tasks arising from the convergence proposal, our response to it, and the source verification pass.
 **Companion to:** `claude/Japes_Enhancement_Backlog.md` (from the Studio review — different source, no overlap except where noted).
 

@@ -1,6 +1,14 @@
 # Plan: UAF Phase 1 — the uncontroversial additive deltas
 
-> **Status (2026-08-12): not started.** Scoped from the Notion PRD *Unified Assistant Framework —
+> **Status (2026-08-13): 12/13 phases shipped, in v2.4.0 (pushed).** Phases 1-8, 10-13 complete
+> (guardrail floor, skill catalog, manifest lifecycle w/ versioning+rollback, session lifecycle,
+> router/guardrail tracing, PassBar >=95% gate generalized onto manifests). **Phase 9 (reserve the
+> `reasoning`/thinking-mode stream event type) not done** — blocked externally: the `common`
+> submodule change it needs exists only as an unreviewed local commit (`cffefc4`, "Reserve
+> reasoning/thinking-mode stream event type"), not pushed upstream; needs human review + a push
+> before japes' own submodule pointer can move. Staying as a `plan_` file until Phase 9 lands.
+>
+> Scoped from the Notion PRD *Unified Assistant Framework —
 > Platform v2.0* (fetched 2026-08-12) read against this working tree (HEAD `90475da`, 2.3.6+).
 > Every code claim below was read in the tree and re-verified by an independent adversarial pass.
 > Companion doc: `UAF_PRD_vs_JAPES_Gap_and_Pushback.md` (the full goal-by-goal gap table and the
