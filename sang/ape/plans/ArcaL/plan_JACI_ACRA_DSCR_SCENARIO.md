@@ -1,118 +1,130 @@
-# plan_JACI_ACRA_DSCR_SCENARIO
+# plan_JACI_ACRA_DSCR_SCENARIO — rev 2
 
-**Repo:** jaci (HEAD `5719cf4`) · **Depends on:** japes 2.4.1 + the `MatrixCondition` change set (currently uncommitted in the japes working tree)
-**Goal:** a working Acra Lending Commercial DSCR eligibility scenario — grid-driven assessment producing cited conditions — carved as its own scenario, reusing the `commercial_lending` capability rather than forking `cre_underwriting`.
-**Non-goal:** the Acra deployment engagement. This is Phase 0 substrate: no Byte/LOS, no vendor integrations, no closing or funding.
+**Repo:** jaci `de2609d` ("0.19.5: carve acra_dscr scenario skeleton") · **Depends on:** japes `44f9b55`
+**Supersedes rev 1**, which was written against `5719cf4` — before the `acra_dscr` skeleton existed. Rev 1 proposed a standalone deterministic evaluation loop; that was written blind to the skeleton and is withdrawn. This rev is written against what is actually on disk.
 
-## Why a new scenario rather than folding into `cre_underwriting`
+## What is already on disk (verified, `de2609d`)
 
-Three verified reasons, so this isn't relitigated mid-build:
+```
+src/jaci/scenarios/acra_dscr/        601 LOC
+  conductor.py                       307  AcraDSCRConductor on jazzx_sdk.pipelines.investigation_loop
+  schemas/acra_schemas.py            145  LoanApplication, AcraHypothesisContent,
+                                          LoanCondition, EligibilityRecommendation, enums
+  tools/registry.py                   78  AcraToolRegistry - 2 mock evidence tools
+  __init__.py                         41
+config/packs/acra_dscr_core/
+  pack_manifest.yaml                      0.1.0-draft, governance_chain: DEFERRED
+```
 
-1. `cre_underwriting` has **no pack manifest** — `config/packs/cre_underwriting_core/` contains only `mode_tuning/`, and its policies live in-scenario at `policies/policies.yaml`. There is no `policies.overlays` slot to hang an Acra overlay on, so the mechanism that would make fold-in cheap isn't in use there.
-2. Customer content is baked into its mock layer — `property_name: "Mesa Verde Apartments"` at `tools/registry.py:374,400,427,491`, `max_ltv: 0.75` hardcoded at `:505`, a two-item literal deal selector at `ui/demo_page.py:149`; 16 Mesa Verde references total.
-3. Precedent: `insurance_diligence` was split **out** of `cre_underwriting` for exactly this reason — see `insurance_diligence/cases.py:6`.
+Built directly on the shared `investigation_loop` primitive from day one (its five siblings were hand-rolled and migrated later), mirroring `KYCConductor`'s shape — no Sentinel, no checkpoint, convergence read off `Context.loop_status`. Modes: Investigator / Verifier / Reasoner / Governor / Narrator. Prompts load from `prompts/acra-dscr/{mode}.md`. Placeholder prompts, placeholder mock evidence, placeholder escalation gate.
 
-Carve-out is cheap: the only mandatory shared-file edit is one entry in `SCENARIOS` (`ui/registry.py:96`).
+The skeleton's own docstring already scopes this plan: *"real taxonomy, policy corpus (MatrixCondition-based eligibility grid), and vendor integrations are separate, not-yet-built work."*
 
-**Do not imitate `cl_of_core` / `cl_sp_core`.** They are `0.1.0-draft` scaffolds with no consuming scenario, experts pointing back at `ci_spread`'s `CIPolicyExpert`, `governance_chain: DEFERRED`, and gold-case dirs that don't exist. The one thing worth copying from them is the `depends_on` fragment pattern at `cl_of_core/pack_manifest.yaml:34-38` (resolved by japes `jazzx_sdk/pack/pack.py:127-157`) — the only working reuse-by-reference seam in the repo.
+## 1. The architecture question, settled
+
+Rev 1 and the skeleton looked like competing designs for one scenario. They are not. They are two layers, and the mistake would be to pick one.
+
+**The eligibility grid is arithmetic, not judgment.** 99 numeric cells, band lookups, fail-closed threshold comparisons. Evaluating it inside a mode loop would make a deterministic answer nondeterministic, spend a model call per evaluation, and — decisively — break the citation chain, which is the entire answer to Acra's own stated over-conditioning problem. A condition that says *"CLTV 85.01% exceeds the 85% maximum for $900,000 / FICO 740 / purchase, per DSCR Program Summary 6.15.2026 V1.1"* is defensible. A model's paraphrase of the same fact is not.
+
+**Equally, a pure rule loop cannot do what Acra actually needs modes for**: cross-document discrepancy detection (lease rent vs. Form 1007 market rent), entity and title review, evidence sufficiency and freshness, borrower narrative. That is judgment, and it is why the skeleton is right to exist.
+
+**Resolution — the grid is a deterministic step the loop consumes, not a mode:**
+
+1. A **pre-loop evaluation step** runs the 19 rules over the loan context and emits a structured `EligibilityAssessment` (verdicts, resolved cell keys, composed cap, cited violations) into `Context` before the first model call.
+2. The same evaluator is registered as a **tool** on `AcraToolRegistry` so the Investigator can ask targeted questions ("what is the max CLTV for this shape?") without re-deriving them.
+3. **Governor enforces the deterministic verdicts.** A model-produced recommendation that contradicts a grid VIOLATED is a Governor block, not a negotiation.
+
+This has precedent in the platform's own recorded decisions: computed rows are deterministic via the expression DSL and never model-inferred (the RB/Mesa Verde template invariants), and "deterministic pre-pass before any model call" is the recorded build order for `TemplateFillAgent`. Same discipline, same reason.
+
+The practical consequence: **rev 1's `eligibility.py` survives, but as a step + tool under the conductor, not as a parallel entry point.** Nothing in the skeleton needs to be undone.
 
 ---
 
-## Phase 0 — Land the pack artifacts (no scenario code yet)
+## Phase 0 — Land the policy corpus (no code changes)
 
-Four files exist and are verified green; they just need placing under the manifest that's already at `config/packs/acra_dscr_core/pack_manifest.yaml`.
+Four artifacts exist and are verified green **in the authoring sandbox, not in the repo** — placing them is this phase.
 
 ```
 config/packs/acra_dscr_core/
-  pack_manifest.yaml            # exists (0.1.0-draft)
-  profiles/acra_dscr_profile.yaml    # NEW - 5 tables, 99-cell grid, 6 thresholds, 11 scalars
-  policies/eligibility.yaml          # NEW - 19 rules: 5 matrix, 4 ratio, 10 expression
+  profiles/acra_dscr_profile.yaml    5 tables; 99-cell CLTV grid; 6 thresholds; 11 scalars
+  policies/eligibility.yaml          19 rules: 5 matrix, 4 ratio, 10 expression
+  ENCODING_NOTES.md                  band semantics, cell-key contract, NA discipline, gaps
 tests/scenarios/acra_dscr/
-  test_acra_eligibility.py           # NEW - 17 behavioural cases + grid completeness
+  test_acra_eligibility.py           17 behavioural cases + grid completeness
 ```
 
-Also add `ENCODING_NOTES.md` to the pack directory — it documents band semantics, the `|`-joined cell-key contract, the NA-sentinel discipline, and the four modelling gaps. A future author who reorders `MatrixCondition.axes` without reading it silently invalidates all 99 cell keys.
+Point `pack_manifest.yaml` at `profiles/` and `policies/` (it currently declares neither). Leave `certification_status: draft` and `governance_chain: DEFERRED` — both are accurate until the ABA set exists.
 
-Update `pack_manifest.yaml` to point at the new files (it currently has no `policies:` or `profiles:` section) and leave `certification_status: draft`, `governance_chain: DEFERRED` as they are — both are accurate until the ABA set exists.
+**Acceptance:** `pytest tests/scenarios/acra_dscr/ -q` → 18 passed (needs `pytest-asyncio`); adjust the `PACK` path constant if the pack lands elsewhere.
 
-**Acceptance:** `pytest tests/scenarios/acra_dscr/ -q` → 18 passed. Requires `pytest-asyncio`. Adjust the `PACK` path constant in the test if the pack lands elsewhere.
-
-**Known scars to preserve as-is, and to un-scar once the japes fixes land:** four rules use single-element `in` lists where `==` is meant, and the sub-1.0 DSCR probe compares `<=` against a `dscr_sub_1_ceiling: "0.9999"` threshold. Both are workarounds for japes defects, flagged in `ENCODING_NOTES.md` §2. Don't "clean them up" locally — they'll break.
+**Two workaround scars are now removable.** The artifacts were authored before `44f9b55` and carry four single-element `in` lists standing in for `==`, plus a `dscr_sub_1_ceiling: "0.9999"` inversion. With A1/A2 landed, rewrite them to plain `==` and a direct comparison, and confirm the 18 tests stay green. `ENCODING_NOTES.md` §2 marks each one. **Update §2 to say "fixed in 44f9b55" rather than deleting it** — it is the record of why the artifacts looked odd.
 
 ---
 
-## Phase 1 — Scenario package skeleton
+## Phase 1 — Bind the corpus to the skeleton
 
-```
-src/jaci/scenarios/acra_dscr/
-  __init__.py
-  schemas/acra_case.py        # AcraLoanCase + AcraEligibilityResult
-  policies/registry.py        # PolicyRegistry over the pack YAML
-  cases.py                    # the ONE data seam - fixtures only, no logic
-  eligibility.py              # rule evaluation + cap composition
-  ui/demo_page.py             # render_demo_page(label)
-```
+Three concrete integration tasks. This is where rev 1's design meets the real schemas.
 
-**`schemas/acra_case.py`.** Copy `LoanCondition` / `ConditionType` / `UnderwritingRecommendation` from `cre_underwriting/schemas/case_context.py:61-67, 201-212, 215-240` — `ConditionType`'s four buckets (prior_to_closing / prior_to_funding / post_closing / ongoing_covenant) map onto Byte PTC/PTF directly, so they're the right vocabulary to carry forward. `AcraLoanCase` needs the fields the 19 rules read, and they must be named exactly as authored: `loan_amount`, `fico`, `loan_purpose`, `cltv_pct`, `property_state`, `property_type`, `occupancy_subtype`, `citizenship_type`, `gross_rental_income`, `pitia`, `reserves_months`, `dscr_documentation_type`, `escrow_waiver_requested`, `product_is_interest_only`. A field-name mismatch surfaces as INDETERMINATE, not as an error — write a test that asserts every field named across the 19 rules exists on the model, or this will bite silently.
+**1.1 — Context adapter (`eligibility/context.py`).** `LoanApplication`'s field names do not match what the 19 rules read, and the mismatch fails *silently* as INDETERMINATE rather than loudly:
 
-`dscr_documentation_type` deserves a comment on the model: it is **not** derivable from a missing DSCR. A no-ratio file evaluates INDETERMINATE on a ratio probe, so the sub-1.0 caps would silently not apply without this explicit flag (`ENCODING_NOTES.md` §3 G2).
+| Rule reads | `LoanApplication` has | Action |
+|---|---|---|
+| `fico` | `fico_score` | map |
+| `citizenship_type` | `citizenship` | map + normalize to the enum the rules use (`itin`, `foreign_national`, …) |
+| `loan_purpose` | `loan_purpose` (enum) | map to the rules' string values |
+| `property_state` | `property_address` only | **derive** — needs parsing or a new field |
+| `cltv_pct` | `property_value`, `loan_amount` | **compute** — and see Phase 3 on why this is a proxy |
+| `property_type` | free-form string | constrain to the overlay vocabulary (`non_warrantable_condo`, `condotel`, `manufactured`, `two_to_four_unit`, `sfr`, `warrantable_condo`, `townhome`, `pud`) |
+| `gross_rental_income`, `pitia`, `reserves_months`, `occupancy_subtype`, `dscr_documentation_type` | absent | **add to `LoanApplication`** |
 
-**`policies/registry.py`.** Mirror `cre_underwriting/policies/registry.py:16` — `ACRA_REGISTRY = PolicyRegistry(load_policies(_POLICIES_YAML))`, plus a module-level `PolicyProfile` load. Both are module constants; the profile must reach the evaluator through `RATIO_PROFILE_CONTEXT_KEY` in the context dict.
+`dscr_documentation_type` deserves a comment on the model: it is **not** derivable from a missing DSCR. A no-ratio file evaluates INDETERMINATE on a ratio probe, so the sub-1.0 caps would silently not apply without an explicit flag (`ENCODING_NOTES.md` §3 G2).
 
-**`cases.py`.** Follow the `cre_underwriting/cases.py:1-6` discipline verbatim: *"Adding a case = a new record here (+ a selector entry), no new code."* Five synthetic loans, chosen to exercise the interesting geometry rather than to look realistic: one clean pass mid-grid; one at an exact band boundary ($1,500,000 vs $1,500,001, which flips the cap from 80% to 75%); one landing on an authored `NA` cell; one where two caps bind at once (non-warrantable condo in Florida — the case that proves the composition rule); one sub-1.0 DSCR cash-out. **Synthetic only** — no Acra loan data in the repo, redacted or otherwise.
+**Write the guard as a test, not a convention:** assert that every field named across the 19 rules resolves on the adapter's output. Without it, a rename produces a quiet pass.
 
----
+**1.2 — `LoanCondition` must carry its citation.** The skeleton's model has `condition_id`, `condition_type`, `category`, `description`, `responsible_party`, `severity` — and no link back to what was violated. Add `rule_id`, `policy_refs`, and the resolved `cell_key` / `cell_value`. This is the mechanical form of ABA §5.9 (*no Decision without `policy_refs`, `evidence_refs`, `trace_id`, `produced_by`*), and it is what makes conditions defensible rather than assertive. **Enforce it as an assertion: a condition without a citation is not constructible.**
 
-## Phase 2 — Eligibility evaluation and cap composition
-
-`eligibility.py` is where the real work is, and one piece of it is genuinely undesigned.
-
-**Evaluation loop.** For each rule in priority order: evaluate `applicability` first (non-SATISFIED ⇒ skip, `Verdict.NOT_APPLICABLE`, no `condition` evaluation at all), then `condition`. The reference implementation is in the delivered test file's `_verdict()` helper. Do not re-implement dispatch — use `get_condition_evaluator(kind)`.
-
-**Cap composition — the undesigned piece (`ENCODING_NOTES.md` §3 G3).** Several max-CLTV rules can bind simultaneously (grid 80%, non-warrantable condo 75%, Florida −5%, STR 70%). Each rule reports its own verdict independently; the IR has no notion of "the binding cap." The underwriter needs **`min()` across all satisfied cap rules, with the binding one named** — and this scenario is where that fold gets owned. `RuleOutcome.inputs` already carries `cell_key` and `cell_value` for every matrix rule, so the data is there.
-
-Two rules for the implementation: the composed result must name **which** rule bound and why, and an INDETERMINATE cap rule must **not** silently drop out of the `min()` — an unknown cap is not an absent cap. Model it explicitly (composed result carries a `blocked_by_indeterminate` list) rather than letting a missing field read as a pass.
-
-**Condition generation.** Every VIOLATED rule produces a `LoanCondition` carrying the `rule_id`, the rule's `description`, its `citations` (`acra_dscr_program_summary_6_15_2026_v1_1`), and the resolved `cell_key` / `cell_value` from `RuleOutcome.inputs`. This is the mechanical form of the ABA §5.9 invariant — no Decision without `policy_refs`, `evidence_refs`, `trace_id`, `produced_by` — and the honest answer to Acra's over-conditioning concern: **a condition that cannot cite a directive should not be issuable.** Enforce it as an assertion, not a convention.
-
-Note `experts/policy/default.py:33-50` renders unrecognised Condition kinds as a bare kind string, so a grid violation currently reads `"matrix"` rather than naming the cell. Either wait for the japes fix or render `cell_key`/`cell_value` locally in this scenario — but don't ship a demo where the violation message says `matrix`.
+**1.3 — `cases.py`, the one data seam.** Follow `cre_underwriting/cases.py:1-6` verbatim — *"adding a case = a new record here (+ a selector entry), no new code."* Five synthetic loans chosen for geometry, not realism: a clean mid-grid pass; an exact band boundary ($1,500,000 vs $1,500,001, cap flips 80% → 75%); an authored `NA` cell; two caps binding at once (non-warrantable condo in Florida); a sub-1.0 DSCR cash-out. **Synthetic only** — no Acra loan data in the repo, redacted or otherwise.
 
 ---
 
-## Phase 3 — Registry entry, UI, gold cases
+## Phase 2 — The evaluation step and cap composition
 
-**The one shared-file edit.** Add a `Scenario(...)` entry to `SCENARIOS` at `ui/registry.py:96`. Fields are defined at `:23-56`: `key, label, icon, display, dashboard_target, demo_target, pack_id, gold_dir, pipeline_target, focus_pipeline_target, focus_handoff, policy_resolution_target`. All targets are lazy `(module, attr)` pairs, so nothing imports at registry load. Set `pack_id: acra_dscr_core` — resolved lazily at `:78` via `Pack.from_manifest`, with `FileNotFoundError → None`, so a broken manifest degrades rather than crashing the app.
+**2.1 — `eligibility/evaluate.py`.** For each rule in priority order: evaluate `applicability` first (non-SATISFIED ⇒ skip, `NOT_APPLICABLE`, no `condition` evaluation), then `condition`. Reference implementation is the `_verdict()` helper in the delivered test file. Use `get_condition_evaluator(kind)` — do not re-implement dispatch. The profile reaches the evaluator via `RATIO_PROFILE_CONTEXT_KEY` in the context dict.
 
-**No `app.py` edit needed** — tabs derive from `scenario.has_demo` / `has_dashboard` (`app.py:59,81,128-142`). Modes need no registration.
+**2.2 — Cap composition. This is the one genuinely undesigned piece in the platform.** Several max-CLTV rules can bind at once (grid 80%, non-warrantable condo 75%, Florida −5%, STR 70%). Each rule reports independently; the IR has no notion of "the binding cap." Needed: **`min()` across satisfied cap rules, with the binding rule named.** `RuleOutcome.inputs` already carries `cell_key` and `cell_value` for every matrix rule, so the data is there.
 
-**`ui/common/data_loaders.py:137-148, 228-236`** carries string-literal `scenario ==` branches for trigger-field filtering and gold-case directory mapping. Add entries only if this scenario uses the Dashboard eval stack.
+Two invariants: the composed result must name **which** rule bound and why; and an INDETERMINATE cap must **not** silently drop out of the `min()` — an unknown cap is not an absent cap. Model it explicitly (`blocked_by_indeterminate: list[str]`) rather than letting a missing value read as a pass.
 
-**`ui/pages/dashboard.py:25-41`** is a second, redundant hardcoded router paralleling `ui/dashboard_view.py:60`. Route through `dashboard_view` and leave the legacy path alone. (It's dead weight and worth deleting in a separate change — not this one.)
+**2.3 — Wire into the conductor.** The assessment runs as a pre-loop step feeding `Context`; register the evaluator as a tool on `AcraToolRegistry` alongside `get_credit_report` / `get_appraisal`; add a Governor gate that blocks any recommendation contradicting a deterministic VIOLATED. The existing `GovernorDecision.policy_violations` field is already the right shape to carry them.
 
-**Gold cases.** `tests/eval/gold_cases/acra_dscr/` — required for the Concepts case-fleet view (`ui/concepts_view.py:277-280`), and already referenced by the pack manifest's `evaluation.gold_cases_path` with `pass_threshold: 0.75`. Seed from the five `cases.py` fixtures.
-
-**Demo page.** Deliberately small. `ci_spread/ui/demo_page.py` is 3,101 lines; that is the anti-pattern. Target ~300: a case selector, the grid resolution shown as *inputs → band keys → cell → verdict*, the composed cap with the binding rule named, and the generated conditions with their citations. The demo's job is to make the grid legible to an Acra underwriter, not to be a product.
+**2.4 — Prompts.** `prompts/acra-dscr/{investigator,verifier,reasoner,governor,narrator}.md` are placeholders. The Reasoner and Governor prompts in particular must state that grid verdicts are **given, not inferred** — the model's job is to reason about what is missing, discrepant, or judgment-bearing, never to re-derive a cell.
 
 ---
 
-## Phase 4 — Deferred, with a note on why
+## Phase 3 — UI, gold cases, and the LTV honesty problem
 
-**LTV/CLTV calculation.** There is no appraisal-driven LTV calculator anywhere in the repo — only a book-LTV proxy and an explicit data-gap comment at `ui/property_case_page.py:83` (`"ltv_pct": None  # purchase price assumed -> needs appraisal`) and `ui/demo_page.py:44`. Phase 0–3 take `cltv_pct` as an input on the case model. **This is the largest single omission in the Acra deployment deck**, which schedules LTV for Phase 3 while making it the primary axis of the Phase 0/2 eligibility assessment. Includes the lien-stack rule and the HELOC treatment (CLTV computed on the greater of the credit-line limit or current balance).
+**3.1 — `SCENARIOS` entry** at `ui/registry.py:96` (fields defined `:23-56`; all targets lazy `(module, attr)` pairs). Set `pack_id: acra_dscr_core` — resolved lazily at `:78`, `FileNotFoundError → None`, so a broken manifest degrades rather than crashes. **No `app.py` edit** — tabs derive from `has_demo`/`has_dashboard`. Modes need no registration. Add `ui/common/data_loaders.py:137-148, 228-236` entries only if using the Dashboard eval stack. Route through `ui/dashboard_view.py:60`, not the legacy hardcoded router at `ui/pages/dashboard.py:25-41`.
 
-**DSCR worksheet.** `OutputTemplate` / `TemplateField` / `TemplateFillAgent` do not exist in either repo (zero hits) — still proposed, not shipped. The `LineVocabulary` / `WorkbookLayout` / expression-DSL machinery that *does* ship is enough for a first worksheet if one is needed before those land.
+**3.2 — Demo page**, ~300 lines. `ci_spread/ui/demo_page.py` is 3,101 lines; that is the anti-pattern. Show: case selector, grid resolution as *inputs → band keys → cell → verdict*, the composed cap with the binding rule named, generated conditions with citations, and the loop's judgment findings separately from the deterministic ones. **The separation is the demo's whole point** — an underwriter should see at a glance which findings are arithmetic and which are inference.
 
-**Explicitly out of scope for all phases here:** Byte/LOS anything (no LOS connector exists in either repo; zero hits for Encompass, nCino, Blend, Byte), the ten third-party vendors, broker outreach and the 48-hour escalation protocol, closing and funding.
+**3.3 — Gold cases** at `tests/eval/gold_cases/acra_dscr/` — already referenced by the manifest (`pass_threshold: 0.75`), required by the Concepts case-fleet view (`ui/concepts_view.py:277-280`). Seed from the five fixtures.
+
+**3.4 — LTV.** Phases 0–2 take CLTV as an input or a `loan_amount / property_value` proxy. There is no appraisal-driven LTV calculator anywhere in the repo — only a book proxy and an explicit data-gap comment at `ui/property_case_page.py:83`. **CLTV is the primary axis of all 99 cells**, so a proxy means the grid is exercised against a number the underwriter would not accept. Includes the lien stack and the HELOC rule (CLTV on the greater of credit-line limit or current balance). Decision gate G2 in the program plan; the demo must label the proxy as a proxy until it lands.
+
+**Out of scope, all phases:** Byte/LOS anything (no LOS connector exists in either repo — zero hits for Encompass, nCino, Blend, Byte), the ten vendors, broker outreach and the 48-hour escalation, closing and funding.
 
 ---
 
 ## Acceptance
 
-1. `pytest tests/scenarios/acra_dscr/ -q` green (18 tests), and green again after any japes IR change — this slice is a useful second consumer, exercising `matrix`, `ratio`, and `expression` kinds, `applicability` pre-checks, band boundaries, NA sentinels, and the INDETERMINATE path in one file.
-2. Every field read by the 19 rules exists on `AcraLoanCase` (asserted by test, not by inspection).
-3. For each of the five fixtures the demo shows the resolved cell key, the composed cap with the binding rule named, and one `LoanCondition` per violation, each citing a `rule_id` and the source directive.
-4. No violation message renders as a bare `"matrix"`.
-5. `git diff --stat` touches exactly one pre-existing file: `ui/registry.py` (plus `data_loaders.py` only if the Dashboard eval stack is used).
+1. `pytest tests/scenarios/acra_dscr/ -q` green (18), and green again after any japes IR change — this slice exercises three condition kinds, applicability pre-checks, band boundaries, NA sentinels, and the INDETERMINATE path in one file.
+2. Every field read by the 19 rules resolves on the adapter output — asserted by test.
+3. No `LoanCondition` is constructible without a `rule_id` and a policy ref.
+4. For each of the five fixtures the demo shows resolved cell key, composed cap with the binding rule named, and cited conditions.
+5. Governor blocks a recommendation that contradicts a deterministic VIOLATED — tested with a deliberately contradictory Reasoner output.
+6. Deterministic findings and model findings are visually distinguishable in the demo.
+7. `git diff --stat` touches exactly one pre-existing file outside `scenarios/acra_dscr/`: `ui/registry.py`.
 
-## Sequencing note
+## Sequencing
 
-Phase 0 has no dependency on the japes fixes and can land immediately. Phases 1–3 are unaffected by them except cosmetically (P4b, violation rendering). The two IR defects only need to be fixed before the *next* tranche of program encoding — the prepayment-penalty family and the credit-event overlays — because that tranche needs composite applicability (`AllOf`/`AnyOf`), which is the one item that genuinely blocks.
+Phase 0 has no dependencies and can land immediately. Phase 1.1/1.2 are schema changes and should land together. Phase 2.2 (cap composition) is the design-bearing step — propose the composed-result shape before implementing it. Phase 3.4 is gated on a decision, not on code.

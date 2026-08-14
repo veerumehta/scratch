@@ -4,6 +4,37 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 ## [2.4.1] - 2026-08-13
 
+- **`AllOfCondition`/`AnyOfCondition` — composite `Condition` combinators (P8,
+  `ENCODING_NOTES.md` G1 / `policy-ir-abstraction.md` P3).** Several real conjunctive rules
+  (e.g. "warrantable condo outside Florida," a multi-field prepayment-penalty gate) had no
+  honest encoding: folding the extra predicate into a `MatrixCondition` axis multiplies cells
+  and destroys reviewability; burying it in a `DslExpression` formula defeats the same
+  reviewability discipline `RatioCondition`'s `profile:` rule protects. `AllOf`/`AnyOf` nest any
+  existing kind, including each other (depth-capped at 5), and must be authored with an
+  explicit `kind:` — unlike `matrix`'s axes-key sniff, a bare `conditions: [...]` list can't
+  structurally distinguish the two. Verdict algebra: `AllOf` is `VIOLATED` if any child is,
+  else `INDETERMINATE` if any child is (dominates `SATISFIED` — the safe direction), else
+  `SATISFIED`; `AnyOf` mirrors it. Every child evaluates unconditionally, never short-circuited,
+  so `RuleOutcome.inputs["limbs"]` always shows every limb's own state. `evidence_contract()` is
+  the union of every child's contract, so `check_compliance`'s cross-policy field-claiming
+  precedence still works for a composite. Dispatches through the existing
+  `get_condition_evaluator(kind)` registry — `DefaultPolicyExpert.check_compliance` needed zero
+  edits. Known, documented limitation (not fixed this pass): `execution`/`stochastic` are fixed
+  DETERMINISTIC/False class attributes looked up by `kind` alone, so a composite nesting a
+  `natural_language` (LIVE) child would still evaluate correctly but be misclassified as
+  DETERMINISTIC by the adjudication chassis's `partition_rules` — deferred until a real
+  composite mixes LIVE and DETERMINISTIC children. 19 new tests across
+  `test_condition_evaluator.py`, `test_default_policy_expert.py`, `test_adjudication_
+  partition.py`.
+
+- **`find_profile_literal_drift`/`assert_no_profile_literal_drift`** (P8, `policy-ir-
+  abstraction.md` P4a) — a new `jazzx_sdk/fabric/canonical/policy_lint.py`. `RatioCondition.
+  threshold` must be `profile:<key>` so thresholds stay reviewable in one place; `Expression.
+  value` takes bare literals, so a pack that duplicates a literal into `PolicyProfile.custom`
+  for review has nothing enforcing the two stay equal. The lint checks any `Expression`
+  declaring `domain_extensions["profile_custom_key"]` against its named `PolicyProfile.custom`
+  twin — no schema change (`Expression.domain_extensions` already existed). 8 new tests.
+
 - **`MatrixCondition` — a table-valued `Condition` kind (P8, D2).** Generalizes
   `RatioCondition`'s single `profile:<key>` threshold to a lookup keyed by N axes (e.g.
   loan-amount band x FICO tier x purpose), each independently numeric-banded or categorical —
@@ -44,6 +75,18 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
     operators (`>`,`>=`,`<`,`<=`) still cast, but a cast/comparison failure is now
     `INDETERMINATE` rather than a raise, matching `DslEvaluator`'s existing convention for
     unresolvable data.
+- Fixed `DefaultPolicyExpert._build_rationale` crashing (`ValueError`) on any non-numeric
+  violation value (e.g. `property_state == "AK"`) — found while validating a real policy corpus
+  authored against the fixes above. `_build_rationale` unconditionally `.4g`-formatted each
+  violation's `actual` value, an assumption the `Expression` float-cast bug had made
+  unreachable until now (a non-numeric `actual` used to raise before ever reaching this code).
+  Now formats real numbers with `.4g` and everything else via `str()`. 2 new tests.
+- `_describe_condition` no longer renders a `matrix` violation as the bare string `"matrix"` —
+  it now names the resolved cell and value from `RuleOutcome.inputs` (e.g. `"cltv_pct <= 75
+  (cell la_le_1_5m|640|purchase)"` instead of just `"matrix"`), which is load-bearing for any
+  pack whose over-conditioning story depends on every violation citing what it actually failed.
+  `_condition_label` needed no change — it already rendered correctly for `matrix`
+  (`MatrixEvaluator.evidence_contract()` returns non-empty axis fields). 3 new tests.
 
 ## [2.4.0] - 2026-08-13
 

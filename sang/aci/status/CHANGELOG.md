@@ -9,6 +9,122 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ## [Unreleased]
 
+## [0.20.1] - 2026-08-14
+
+- **`acra_dscr` D3 rev 2 Phase 2.4 + 3.1-3.3.** Investigator/narrator/verifier prompts now each
+  state the deterministic eligibility assessment is given, not inferred (reasoner/governor
+  already had this from Phase 2.3), scoped to what each mode actually does with it —
+  investigator: don't request evidence to re-derive a grid fact; narrator: cite the
+  assessment's own numbers faithfully; verifier: it arrives pre-attested and never appears in
+  the pending queue. New demo page (`ui/registry.py`'s `acra_dscr` entry gains `demo_target`/
+  `gold_dir`) renders the deterministic grid resolution (inputs → band keys → composed cap,
+  binding rule named) unconditionally — no model call — and the live investigation loop only
+  on request, in a visually separate section, per the program plan's own "an underwriter should
+  see at a glance which findings are arithmetic and which are inference." 5 new gold cases
+  under `tests/eval/gold_cases/acra_dscr/`, one per `cases.py` fixture, `expected` blocks
+  computed by running the real evaluator against each fixture (not assumed) — also feeds the
+  Concepts tab's case-fleet view. Phase 3.4 (real appraisal-driven LTV, gated on decision G2)
+  remains open; CLTV stays the `loan_amount / property_value` book proxy, labeled as such in
+  the demo.
+
+## [0.20.0] - 2026-08-14
+
+- **`acra_dscr` A5: profile-literal vs `custom` twin drift lint** (`plan_JAPES_POLICY_IR_
+  AUTHORING_DEFECTS.md` P4a, G4). Eight `Expression` rules in `eligibility.yaml`
+  (`ACRA-LA-MIN`, `ACRA-LA-MAX`, `ACRA-STATE-INELIGIBLE`, `ACRA-HIGH-LTV-PROPERTY-TYPE`,
+  `ACRA-HIGH-LTV-RESERVES`, `ACRA-FICO-LT-620-RESERVES`, `ACRA-IO-MIN-LOAN`,
+  `ACRA-NO-RATIO-FICO`) annotated with `domain_extensions.profile_custom_key`, linking each
+  hardcoded literal to its `PolicyProfile.custom` review twin — matched by value and by rule
+  semantics against the real corpus, not by guessing a naming convention (the `custom` keys
+  don't follow one). New test asserts zero drift against the real corpus, plus a second test
+  guarding the 8 links themselves stay declared. Found along the way: three `custom` keys
+  (`fico_min_str`, `fico_min_io`, `seller_concession_max_pct`) have no consuming rule at all
+  today — noted in `ENCODING_NOTES.md`, not a drift bug. `ENCODING_NOTES.md`'s G3 (cap
+  composition) and G4 status both updated to reflect Phases 2.2/2.3 landing. Depends on new
+  japes `jazzx_sdk.fabric.canonical.policy_lint` (uncommitted-to-pushed, local commit only).
+
+## [0.19.9] - 2026-08-14
+
+- **`acra_dscr` Phase 2.3: wire the eligibility corpus into `AcraDSCRConductor`.** New
+  `eligibility/assessment.py::run_eligibility_assessment`/`EligibilityAssessment` combines
+  Phase 1's `build_eligibility_context` and Phase 2.2's `compose_caps` into one deterministic
+  answer, run before the model loop starts (plain Python in `run_review()`, not a formal
+  pipeline step -- `investigation_loop` has no pre-loop hook, and adding one for this single
+  consumer would be premature). Surfaced to the LLM modes via two channels, traced from the
+  actual `ReasonerMode`/`GovernorMode` source rather than assumed: a synthetic `ATTESTED`
+  `Evidence` entry (`ReasonerMode` serializes full evidence content but not `ctx.metadata`) and
+  `ctx.metadata["eligibility_assessment"]` (`GovernorMode` serializes full metadata but only
+  evidence counts). New `_enforce_deterministic_verdict`: a model-produced Governor approval
+  cannot override a deterministic policy violation -- forces `approved=False` and cites the
+  violated `rule_id`(s) regardless of what the LLM said. Not registered as an `AcraToolRegistry`
+  tool (deviating from the plan doc) -- checked `AcraToolRegistry.execute()`'s signature, it only
+  ever receives `query_params`, no loan/context reference, and the registry is built once per
+  conductor while the assessment is per-review; forcing it through that shape would mean the LLM
+  re-supplying loan fields it already has. `reasoner.md`/`governor.md` each gained one paragraph
+  stating the assessment's verdicts are given, not inferred. `ReviewFile` gained an
+  `eligibility_assessment` field. 3 new tests, including one proving the Governor override fires
+  even when the scripted Governor mode itself approves. No UI/gold cases (Phase 3), no
+  `AllOf`/`AnyOf` (G1).
+
+## [0.19.8] - 2026-08-13
+
+- **`acra_dscr` Phase 2.2: cap composition** (D3 rev 2, `ENCODING_NOTES.md` G3 -- the one
+  genuinely undesigned piece of the program). New `eligibility/compose.py::compose_caps` +
+  `ComposedCap`: `min()` across every applicable max-CLTV rule, the binding rule named. Which
+  rules compose is structural, not a hardcoded list -- any `Rule` whose `condition.kind ==
+  "matrix"` and `compare_field == "cltv_pct"` (today 6: the base grid, property-type overlay,
+  short-term-rental, sub-1.0-DSCR, No-Ratio, ITIN); a future cap rule joins automatically once
+  authored. An authored `"NA"` cell is tracked separately (`ineligible_via`) rather than folded
+  into the `min()` as "an infinitely tight cap"; a cap rule that can't resolve (missing per-loan
+  data) is tracked separately too (`blocked_by_indeterminate`) and forces `passed=False`
+  regardless of the known caps -- an unknown constraint is never assumed looser than what's
+  visible. Runs alongside `check_compliance`, not instead of it -- each cap rule still fires its
+  own independent verdict citing its own directive. 7 new tests against the real corpus and the
+  5 `cases.py` fixtures, including `DOUBLE_CAP` (built in Phase 1 specifically to exercise this)
+  and two inline edge cases (a blocked axis field, a forced tie). No conductor/tool/Governor
+  wiring yet (Phase 2.3), no `EligibilityAssessment` (Phase 2.1).
+
+## [0.19.7] - 2026-08-13
+
+- **`acra_dscr` Phase 1: bind the eligibility corpus to the skeleton's schemas** (D3 rev 2).
+  `LoanApplication` field names now match what the 19 authored rules read directly — renamed
+  `fico_score`→`fico`, `citizenship`→`citizenship_type`; `property_type` closed to a real
+  8-value `PropertyType` enum (drawn from the corpus's own authored vocabulary, not guessed);
+  added `property_state`, `gross_rental_income`, `pitia`, `reserves_months`,
+  `occupancy_subtype`/`dscr_documentation_type` (defaulted), `escrow_waiver_requested`,
+  `product_is_interest_only`. No separate field-mapping adapter needed — the one real consumer
+  in the repo was the skeleton's own scripted-mode test, updated in place. New
+  `eligibility/context.py::build_eligibility_context` handles what's genuinely derived: `cltv_pct`
+  as a book-LTV proxy (`100 * loan_amount / property_value`, explicitly labeled — no
+  appraisal-driven calculator exists yet). `LoanCondition` gained required `rule_id`/
+  `policy_refs` (a condition cannot be constructed without citing what it violated, ABA §5.9)
+  plus optional `cell_key`/`cell_value` for matrix-derived violations. New `cases.py` — 5
+  synthetic `LoanApplication` fixtures (clean pass, loan-amount band boundary, an authored NA
+  grid cell, two caps binding at once, sub-1.0-DSCR cash-out), each verified via
+  `DefaultPolicyExpert.check_compliance` against the real corpus to confirm its intended verdict.
+  New guard test (`tests/scenarios/acra_dscr/test_eligibility_context.py`) asserts every field
+  the 19 rules read resolves on the adapter's output — a rename on either side now fails loud
+  instead of silently reading `INDETERMINATE`. No conductor/UI wiring yet (Phase 2/3).
+
+## [0.19.6] - 2026-08-13
+
+- **`acra_dscr` eligibility policy corpus landed (Phase 0 of `plan_JACI_ACRA_DSCR_SCENARIO.md`
+  rev 2).** `config/packs/acra_dscr_core/{profiles/acra_dscr_profile.yaml,
+  policies/eligibility.yaml, ENCODING_NOTES.md}` and `tests/scenarios/acra_dscr/
+  test_acra_eligibility.py` (18 tests: 17 behavioural + grid completeness) -- the first real
+  consumer of japes' `MatrixCondition` (99-cell CLTV grid, 3 loan-amount bands x 11 FICO bands x
+  3 purposes) plus `RatioCondition`/`Expression` conditions, 19 rules total. Verified against
+  japes `1576f8e`, run from jaci's own test environment. Six single-element `in`/`not_in`
+  occurrences that stood in for `==`/`!=` (`ACRA-STR-CLTV`, `ACRA-ITIN-CLTV`,
+  `ACRA-ITIN-LOAN-MAX`, `ACRA-FOREIGN-NATIONAL-ESCROW`, `ACRA-NO-RATIO-CLTV`,
+  `ACRA-NO-RATIO-FICO`) rewritten to plain `==`/`!=` now that japes' `Expression` float-cast bug
+  is fixed; re-verified 18/18 green after the rewrite. The `dscr_sub_1_ceiling: "0.9999"`
+  ratio-direction workaround is *not* un-scarred -- `RatioCondition.direction` was deliberately
+  not widened to support strict `<`/`>` (see `ENCODING_NOTES.md` §2), so that pattern remains the
+  correct way to express a strict ratio bound. `pack_manifest.yaml` documents the new files but
+  does not yet wire a `policies:` section -- that needs a `PolicyRegistry` Python module
+  (`policies/registry.py`), which is Phase 1, not this pass. No scenario/conductor code touched.
+
 ## [0.19.5] - 2026-08-13
 
 - **japes reference-pipeline reorg.** `chat`/`document_ingest` moved from
