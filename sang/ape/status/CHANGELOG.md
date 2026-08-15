@@ -4,6 +4,49 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 ## [2.4.1] - 2026-08-13
 
+- **New `jazzx_sdk.tools.documents.local_cache`** — the local dev/demo document cache (a git-
+  committed filename→remote-doc-id manifest that hydrates a stubbed local file from a shared
+  Knowledge Hub on demand) generalized from a jaci-specific module. Nothing in the original was
+  domain-specific — pure filename↔doc-id bookkeeping — so this is a direct lift:
+  `manifest_path`/`read_manifest_entry`/`record_push` (two independently-mergeable tiers,
+  derived-markdown and raw-original), `ensure_local_cache`/`ensure_local_caches` (two-tier pull,
+  cheapest first), `StalenessInfo`/`check_staleness` (cheap metadata-only mismatch check, never
+  auto-resolves). Composes ahead of `convert_document` as a separate async pre-step (same
+  "sync callers, async fabric fetch" reasoning the original had) rather than a `fabric=` param
+  on `convert_document` itself. Re-exported from `jazzx_sdk.tools`. 10 new tests
+  (`tests/test_local_cache.py`).
+- **`DocumentAgent.process_dir(collection_id=...)` now has a real Knowledge-Hub-backed
+  integration test**, not just a hand-rolled fake `DocStore`. Confirms the full path —
+  `sync_collection` → `MockKnowledgeHubClient.list_documents`/`materialize`'s download →
+  classification — actually works end-to-end, not just that `process_dir` calls
+  `sync_collection` correctly (`tests/test_doc_pipeline_gaps.py`).
+- **`MockKnowledgeHubClient` now persists documents and ontologies, not just entities (issue
+  #57 part a).** `_load_from_data_dir` already loaded all three from `data_dir` on startup, but
+  only entity mutations wrote back — a document or ontology created/updated/deleted during a
+  session vanished the moment the process restarted (every Streamlit rerun, or any multi-
+  process pipeline). `_persist_entities` generalized into a shared `_persist(store_attr,
+  filename)` helper (`_persist_ontologies` reuses it directly); documents get their own
+  `_persist_documents` since `content` is arbitrary bytes (PDFs, zips, not just UTF-8 text) —
+  base64-encoded before `json.dumps`, decoded back on load, rather than silently mangled by
+  `json.dumps(..., default=str)`'s `str(b'...')` fallback. Wired into every mutator:
+  `create_document`/`update_document`/`delete_document` (`create_document_v2`'s idempotent-hit
+  branch needs nothing new — it returns an existing record, doesn't mutate) and
+  `create_ontology`/`upload_ontology`/`update_ontology`/`delete_ontology`. Found and left alone
+  along the way: `get_document`'s docstring promises `None` on a miss but actually fabricates a
+  fake document — pre-existing, unrelated, not touched. 10 new tests
+  (`tests/test_mock_kh_persistence.py`, new file), each constructing a fresh client against the
+  same `data_dir` to prove the write actually crossed a process boundary, not just an in-memory
+  round-trip.
+- **`FabricConfig.validate_for_mode()` no longer requires `knowledge_hub_url` when a client is
+  already supplied (issue #57 part b).** STRICT/CACHED's `knowledge_hub_url` check exists so
+  *something* can build a client from it; a caller who already constructed one (real or Mock)
+  and hands it straight to `KnowledgeFabric(kh_client=..., config=...)` doesn't need it —
+  before this fix that caller had to pass a throwaway URL string (e.g. jaci's
+  `shared/fabric.py::build_fabric` used `knowledge_hub_url="mock://local-kh"`, "never dialed")
+  just to pass validation. New `validate_for_mode(*, has_client: bool = False)` param, defaults
+  to the old strict behavior (`from_env()`'s own call site, which never sees a client, is
+  unaffected); `KnowledgeFabric.__init__` now passes `has_client=kh_client is not None`. 9 new
+  tests (`tests/test_fabric_config.py`, new file — no prior dedicated coverage of this method).
 - **`AllOfCondition`/`AnyOfCondition` — composite `Condition` combinators (P8,
   `ENCODING_NOTES.md` G1 / `policy-ir-abstraction.md` P3).** Several real conjunctive rules
   (e.g. "warrantable condo outside Florida," a multi-field prepayment-penalty gate) had no

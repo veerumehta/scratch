@@ -9,8 +9,210 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ## [Unreleased]
 
-## [0.20.1] - 2026-08-14
+## [0.20.0] - 2026-08-14
 
+- **`docintel.py` shrunk to conversion only — its KH-manifest half deleted, not just superseded.**
+  Asked to delete `docintel.py` and its dead callers outright; checked first and found the
+  premise didn't fully hold — `convert_document`/`convert_document_json` (the `.japes`-stub-
+  preferring conversion wrapper, with no equivalent in japes) were still live in 4 places none
+  of the 4 `DocumentAgent` migrations touched (`cre_underwriting/operating_spread.py`,
+  `portfolio_monitoring/intake.py`, `insurance_diligence/intake.py`,
+  `ci_spread/ui/demo_page.py`). The KH-manifest half (`ensure_local_cache`/`kh_manifest_path`/
+  `read_kh_manifest_entry`/`record_kh_push`/`check_staleness`) had 3 more real callers never
+  migrated to japes' `local_cache.py` in the earlier pass: `commercial_lending/spreader.py`,
+  `commercial_lending/document_packet.py`, `scenarios/shared/packet_picker.py`. Migrated all
+  three (import-source swap + the two renamed functions, `kh_manifest_path`→`manifest_path`/
+  `read_kh_manifest_entry`→`read_manifest_entry`/`record_kh_push`→`record_push`; `convert_document`
+  stays on `docintel` in `spreader.py`/`document_packet.py`, unrelated to this half). With every
+  real caller gone, deleted the now-genuinely-dead KH-manifest functions from `docintel.py`
+  itself (not just left unused) — it's conversion-only now. Deleted the now-dead
+  `tests/unit/test_docintel_manifest.py` (4 tests, all exclusively exercising the removed
+  functions; equivalent coverage already exists in japes' `tests/test_local_cache.py`, ported
+  there in the earlier pass). Updated 4 stale docstring references elsewhere
+  (`scripts/push_source_docs_to_fabric.py`, `scenarios/shared/{fabric,document_upload}.py`)
+  that still named `docintel.ensure_local_cache`/`docintel.record_kh_push`. All 89 tests across
+  the affected files pass unchanged; no code deleted that still had a real caller.
+- **`ci_spread` gains a `DocumentAgent`-based Phase-0 route, complementing (not replacing) its
+  existing intake** (docintel-vs-DocumentAgent migration, 4 of 4 — the last, and deliberately
+  saved for last given it's the actively-demoed, sales-critical scenario). Different shape from
+  the other three again: `ci_spread` already has a real production Phase-0 (`run_document_intake`,
+  filename-keyword `classify_document`, wired into `CIConductor`) that works fine for the common
+  case and was left untouched — no naive-guess or hard-required-filename bug to fix here. The
+  real gap, found by reading the code rather than assumed: two *disconnected* demo-only
+  `DocumentAgent` usages already existed (`_seed_uploaded_financials` writes straight to
+  `fabric.docs`, bypassing `ctx.evidence`; `_render_bulk_intake` is pure display, no downstream
+  effect at all) — real content classification was proven in the demo but never actually fed
+  the conductor's evidence/hypothesis system. New `commercial_lending.pipeline.
+  run_document_intake_from_folder`: classifies every file in a folder via `DocumentAgent`
+  against `doc_type_map`'s own keys as the taxonomy (content-based, not filename-keyword), and
+  feeds the *exact* same `ctx.evidence`/`fabric.docs`/DATA_GAP-hypothesis machinery
+  `run_document_intake` does — refactored the shared per-document ingest logic into `_ingest_one`
+  so both routes produce identical Evidence regardless of which one ran (pure refactor,
+  zero behavior change, confirmed by the pre-existing 3 tests passing unchanged). Genuinely
+  different from the other three migrations in one respect: a loan package can carry several
+  files of the *same* type (multiple years of financials) — every classified file is ingested,
+  not just one per class. New `CIConductor._run_document_intake_from_folder`, wired as an
+  alternative to the keyword route in both `_step_document_intake` (checks
+  `ctx.metadata["document_folder"]`) and `run_spread` (new `document_folder=` param) — the
+  keyword route stays the default in both, the folder route only runs when `document_paths`
+  isn't given. `run_spread`'s Phase 2 (`spread_filings`) still needs individual paths, so a
+  folder-only call covers Phase 0/1 only; documented, not silently incomplete. 4 new tests,
+  including one against the real YETI sample folder (which genuinely contains one scanned PDF
+  among readable ones) proving classification degrades gracefully — skips the unreadable file,
+  doesn't abort the batch. All 57 pre-existing `ci_spread` tests pass unchanged.
+- **`insurance_diligence` migrated onto `DocumentAgent` classification** (docintel-vs-
+  DocumentAgent migration, 3 of 4). Same shape as `portfolio_monitoring`'s pilot: one real,
+  document-derived case (`SOLMARA_BAY`), a fixed generic-filename convention
+  (`acord_28_property.md`/`acord_25_liability.md`/`statement_of_values.xlsx`/
+  `flood_determination.md`) `build_case_from_documents` assumed, and an upload flow that
+  *required* exact matches (worse than `cre_underwriting`'s "first .xlsx wins" guess — no
+  fallback at all, just a raw file-not-found-style error on any mismatch). New
+  `document_intake.classify_docs_dir` (4-class taxonomy, recursive scan) resolves the four
+  files by content; `build_case_from_documents` gained optional `acord_28_path`/`acord_25_path`/
+  `sov_path`/`flood_path` overrides (default unchanged — `cases.py`'s eager-import construction
+  is untouched, zero risk). The upload flow now classifies first and passes the resolved paths
+  through, falling back to the fixed-filename default for any class classification didn't
+  resolve. Extraction is unchanged — `parse_sov`/`parse_flood`/`parse_acord`'s regex parsers
+  still do the actual reading. Proven end to end: renaming all 4 real Solmara files to
+  non-conventional names, classification still resolves them and `build_case_from_documents`
+  reproduces the identical `InsuranceDiligenceCase` (certificate, collateral count, SFHA ids,
+  all 12 category statuses) the fixed-filename convention produces. Also tested against the
+  real, messy Solmara folder (which carries several decoy/revision files beyond the 4 core
+  docs, e.g. `SolmaraBay_UpdatedSOV_Rev2.pdf`) with a deliberately permissive fake classifier:
+  ambiguous classes come back omitted, never a silently wrong guess — the two classes with no
+  real-world decoys (ACORD 28/25) still resolve cleanly regardless. Local-cache import in
+  `ui/demo_page.py` switched from `docintel` to japes' `jazzx_sdk.tools.documents.local_cache`.
+  3 new tests; all 38 pre-existing `insurance_diligence` tests pass unchanged.
+- **`cre_underwriting` migrated onto `DocumentAgent` classification** (docintel-vs-DocumentAgent
+  migration, 2 of 4 — `portfolio_monitoring` was the pilot). Real shape here differs from that
+  pilot: `CREConductor` never touched documents at all, there's one real case (Mesa Verde) with
+  explicit hardcoded `spread_path`/`insurance_loe_path`, and the insurance LOE already extracted
+  via `jazzx_sdk.tools.extract` (the modern path) — so there was no conductor step to add. The
+  actual live gap, found by reading the code rather than assumed: `ui/property_case_page.py`'s
+  document-upload flow did `sorted(folder.rglob("*.xlsx"))[0]` and assumed it was the T-12 — no
+  classification at all, would silently pick the wrong file if a zip had more than one `.xlsx`
+  (a rent roll, an appraisal workbook), and never picked up an uploaded insurance LOE at all
+  (only `spread_path` got set from an upload). Fixed: new `document_intake.classify_docs_dir`
+  walks a deal folder recursively (real CRE folders nest — Mesa Verde's T-12 sits under
+  `Application Package/Financials/`, `DocumentAgent.process_dir` doesn't recurse, so this uses
+  `DocumentAgent.process()` per file instead) against a 2-class taxonomy (T-12, insurance LOE).
+  New `case.resolve_case_docs()` fills in `CRECase`'s `spread_path`/`insurance_loe_path` from
+  `docs_dir` classification when either is left `""` — `spread_path` gained a `""` default
+  (previously required) to support this; explicit paths still win entirely, matching
+  `portfolio_monitoring`'s pattern. The upload flow now resets both paths before resolving (the
+  old code left a stale `insurance_loe_path` from the base case leaking into an uploaded case
+  that might not carry one — a second real bug fixed alongside the classification gap).
+  Extraction is unchanged: `load_t12_spread`'s regex parser and `extract_insurance_loe`'s
+  schema-only LLM extraction both still do the actual reading. Proven end to end: a docs_dir-
+  only case classified against the real Mesa Verde documents resolves to the exact same two
+  paths the hardcoded case uses, and `case_spread()` on it produces identical NOI/DSCR/periods.
+  Local-cache import in `ui/property_case_page.py` switched from `docintel` to japes'
+  `jazzx_sdk.tools.documents.local_cache`. 7 new tests across 2 new files; all 64 pre-existing
+  `cre_underwriting` tests pass unchanged (Mesa Verde's own explicit-path construction is
+  untouched by the new default).
+- **`portfolio_monitoring` piloted onto japes' `DocumentAgent`/`document_ingest` classification**
+  (docintel-vs-DocumentAgent migration, pilot 1 of 4 — see `docs/plans/` for the full scope and
+  why this scenario went first). New `document_intake.classify_docs_dir` runs `DocumentAgent`
+  against a 4-class taxonomy (T-12, loan agreement, CCC, rent roll) over a relationship's
+  `docs_dir`; a new `sp.classify` conductor step resolves `PortfolioReviewContext`'s
+  `t12_file`/`loan_agreement_file`/`ccc_file`/`rent_roll_file` from it instead of assuming
+  fixed filenames. Extraction is unchanged — classification only decides *which* file is which;
+  the existing hand-tuned regex parsers (`load_t12_spread`/`parse_loan_agreement`/`parse_ccc`/
+  `parse_occupancy`) still do the actual reading, more reliable for numeric tables than a
+  general LLM pass (a deliberate scope decision, not a gap). An explicit `t12_file=`/etc.
+  override still works and skips classification for that slot entirely — a `_UNSET` sentinel
+  (not `None`) distinguishes "classify this" from `rent_roll_file=None`'s pre-existing, real
+  meaning ("no occupancy covenant for this relationship"); conflating the two was a real bug
+  caught before it shipped (would have silently triggered classification, and a real
+  `AgentExecutionService()`, for every relationship missing an explicit rent-roll override).
+  Proven end to end: `run_portfolio_review` with **zero** explicit filenames (classification
+  alone) against the real Grove Commons documents produces the exact same `PortfolioReviewCase`
+  as `cases.py`'s existing fixed-filename-built `GROVE_COMMONS`. The three retail relationships
+  (`demo_cases.py`'s `DEMO_CONTEXTS` — Cedar Grove, Shops at Worthington, Maple Run) keep
+  explicit overrides for all four fields (a real, repo-wide filename convention for
+  `loan_agreement_file`/`ccc_file` across every relationship, not just Grove Commons — removing
+  those two fields' old fixed defaults without preserving them here would have silently
+  triggered classification, and a real LLM call, for a caller that never wanted it). Local-cache
+  imports in `ui/demo_page.py` switched from `docintel` to japes' new generalized
+  `jazzx_sdk.tools.documents.local_cache`. `cases.py`'s monolithic `build_case_from_documents`
+  path (used at module-import time) is untouched — that's a separate, already-known eager-import
+  architecture question, not this pass's scope. 10 new tests across 3 new files; 2 pre-existing
+  test files (`test_portfolio_conductor.py`, `test_pm_retail_conductor.py`) updated for the new
+  `sp.classify` step id and the `_UNSET`-vs-`None` semantics.
+- **Two security findings from PR #5's automated review fixed** (both still current when
+  checked against the working tree, unrelated to anything else in this release). (1)
+  `Dockerfile`'s post-install `git config --global --unset` targeted
+  `url."https://github.com/".insteadOf`, but the credential rewrite rule set a few lines above
+  was written to `url."https://${TOKEN}@github.com/".insteadOf` — a different key. Git exited 5
+  (key not found), swallowed by `|| true`, so the token-bearing rule was never actually removed
+  and stayed live in the committed image layer's `/root/.gitconfig`. Fixed to target the same
+  key it set. (2) `.github/workflows/release-nightly.yml` passed `GITHUB_TOKEN`/`TOKEN` as
+  Docker `build-args` in both build steps *in addition to* the `secrets:` block a few lines
+  below — build-args are stored verbatim in the OCI image config and recoverable via `docker
+  history --no-trunc`/`docker inspect` by anyone with registry read access, while `secrets:`
+  already delivers the token safely via a BuildKit secret mount that the Dockerfile's `RUN
+  --mount=type=secret` already prefers. Removed both redundant build-arg lines; `COMMIT_SHA`/
+  `GIT_TAG` (non-secret) stay as build-args.
+- **The remaining 5 correctness findings from PR #5's automated review fixed** (all still
+  current when checked against the working tree). `validation.py`'s
+  `detect_cross_period_addback_inconsistency` caught `KeyError` around
+  `Severity(profile.get("cross_period_addback_severity"))`, but `dict.get()` never raises
+  `KeyError` — an invalid severity string raises `ValueError`, uncaught, crashing the whole
+  check; now catches `ValueError`. `document_packet.list_packets` raised an unhandled `KeyError`
+  from bare `payload["name"]`-style subscripts on any live packet doc missing one of 4 required
+  keys, aborting the entire listing (live packets silently vanish from the UI picker via the
+  `except Exception` fallback in `list_all_packets`); now caught alongside the existing
+  `json.loads` guard, skipping just the malformed entry. `docintel.py`'s
+  `read_kh_manifest_entry`/`record_kh_push` both `json.loads`'d `.kh_manifest.json` with no
+  error handling — a truncated/corrupt manifest (concurrent push, interrupted write) would
+  abort a folder push mid-loop or crash a read; both now go through a shared `_load_manifest`
+  helper that treats a corrupt file as empty (logged) rather than raising — see also this
+  session's note on `docintel.py`'s scope below. `pipeline.py`'s Phase-1 KG-write logging did
+  `len(ids)` on a value that could be `None` if `graph.add_entity` hits its error path,
+  `TypeError`-crashing into a misleading "non-blocking" log after triples were already
+  partially written/deleted; now `len(ids or [])`. `pipeline.py`'s Phase-0 document intake
+  added `doc_type` to `ingested_types` verbatim (case preserved from `doc_type_map`) while the
+  `structured_data` branch explicitly lowercased — no current pack config triggers it (all use
+  lowercase keys), but a future mixed-case `doc_type_map` would raise a spurious `DATA_GAP`
+  hypothesis for a type that was actually ingested; both branches now lowercase consistently.
+  `hooks.py`'s `TraceHooks` declared and accumulated `cache_creation_tokens` but never read
+  Anthropic's `usage.cache_creation_input_tokens` into it — always reported 0, understating
+  cost on any cache-writing run; now reads it the same tolerant top-level way
+  `jazzx_sdk.agents.anthropic_provider` already does (a no-op for OpenAI's differently-shaped
+  `Usage`, which has no such field). 12 new tests across 5 new test files.
+- **`docintel.py` scope question raised and settled**: its `.kh_manifest.json` bookkeeping
+  (`read_kh_manifest_entry`/`record_kh_push`/`ensure_local_cache`/`check_staleness`) solves a
+  different problem than japes' `jazzx_sdk.pipelines.document_ingest` (the new `DocumentAgent`-
+  based classify/extract/route pipeline) and isn't redundant with it. `document_ingest` assumes
+  you already have a document's bytes in hand; `docintel.py`'s manifest exists precisely for
+  when you don't — jaci vendors small stubs for its large sample docs (the YETI/MAA `.japes`
+  convention) and needs a committed, git-tracked filename→remote-doc-id mapping to resolve the
+  real content from a shared/mock Knowledge Hub without ever hashing bytes that aren't present
+  locally. `fabric.docs.ensure()`'s server-side content-hash idempotency (what `document_ingest`
+  and `document_packet.py`'s push path both lean on) can't do that lookup either, for the same
+  reason — it needs the content to hash. Conclusion: stays in jaci, fixed in place above, not
+  migrated. (`convert_document`'s synchronous conversion stub, used directly by
+  `cre_underwriting`/`portfolio_monitoring`/`insurance_diligence`'s hand-rolled T-12/ACORD/rent-
+  roll parsers rather than through `DocumentAgent`, is a separate and larger question — whether
+  those scenarios' intake should migrate onto `document_ingest`'s classify/extract flow at all —
+  not resolved here, flagged as a real follow-on if it comes up again.)
+
+- **`acra_dscr` A5: profile-literal vs `custom` twin drift lint** (`plan_JAPES_POLICY_IR_
+  AUTHORING_DEFECTS.md` P4a, G4). Eight `Expression` rules in `eligibility.yaml`
+  (`ACRA-LA-MIN`, `ACRA-LA-MAX`, `ACRA-STATE-INELIGIBLE`, `ACRA-HIGH-LTV-PROPERTY-TYPE`,
+  `ACRA-HIGH-LTV-RESERVES`, `ACRA-FICO-LT-620-RESERVES`, `ACRA-IO-MIN-LOAN`,
+  `ACRA-NO-RATIO-FICO`) annotated with `domain_extensions.profile_custom_key`, linking each
+  hardcoded literal to its `PolicyProfile.custom` review twin — matched by value and by rule
+  semantics against the real corpus, not by guessing a naming convention (the `custom` keys
+  don't follow one). New test asserts zero drift against the real corpus, plus a second test
+  guarding the 8 links themselves stay declared. Found along the way: three `custom` keys
+  (`fico_min_str`, `fico_min_io`, `seller_concession_max_pct`) have no consuming rule at all
+  today — noted in `ENCODING_NOTES.md`, not a drift bug. `ENCODING_NOTES.md`'s G3 (cap
+  composition) and G4 status both updated to reflect Phases 2.2/2.3 landing. Depends on new
+  japes `jazzx_sdk.fabric.canonical.policy_lint` and `AllOfCondition`/`AnyOfCondition` (G1),
+  both shipped upstream alongside two other IR fixes found authoring the corpus
+  (`RatioCondition.direction` over-typing, `Expression`'s float-cast breaking string equality,
+  matrix violations rendering as a bare `"matrix"` string).
 - **`acra_dscr` D3 rev 2 Phase 2.4 + 3.1-3.3.** Investigator/narrator/verifier prompts now each
   state the deterministic eligibility assessment is given, not inferred (reasoner/governor
   already had this from Phase 2.3), scoped to what each mode actually does with it —
@@ -26,22 +228,23 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
   Concepts tab's case-fleet view. Phase 3.4 (real appraisal-driven LTV, gated on decision G2)
   remains open; CLTV stays the `loan_amount / property_value` book proxy, labeled as such in
   the demo.
-
-## [0.20.0] - 2026-08-14
-
-- **`acra_dscr` A5: profile-literal vs `custom` twin drift lint** (`plan_JAPES_POLICY_IR_
-  AUTHORING_DEFECTS.md` P4a, G4). Eight `Expression` rules in `eligibility.yaml`
-  (`ACRA-LA-MIN`, `ACRA-LA-MAX`, `ACRA-STATE-INELIGIBLE`, `ACRA-HIGH-LTV-PROPERTY-TYPE`,
-  `ACRA-HIGH-LTV-RESERVES`, `ACRA-FICO-LT-620-RESERVES`, `ACRA-IO-MIN-LOAN`,
-  `ACRA-NO-RATIO-FICO`) annotated with `domain_extensions.profile_custom_key`, linking each
-  hardcoded literal to its `PolicyProfile.custom` review twin — matched by value and by rule
-  semantics against the real corpus, not by guessing a naming convention (the `custom` keys
-  don't follow one). New test asserts zero drift against the real corpus, plus a second test
-  guarding the 8 links themselves stay declared. Found along the way: three `custom` keys
-  (`fico_min_str`, `fico_min_io`, `seller_concession_max_pct`) have no consuming rule at all
-  today — noted in `ENCODING_NOTES.md`, not a drift bug. `ENCODING_NOTES.md`'s G3 (cap
-  composition) and G4 status both updated to reflect Phases 2.2/2.3 landing. Depends on new
-  japes `jazzx_sdk.fabric.canonical.policy_lint` (uncommitted-to-pushed, local commit only).
+- **Two small fixes found along the way.** `clinical_intake`'s demo page resolved its repo
+  root one directory too shallow (`parents[4]` instead of `[5]`) — `_PACK`/`_GOLD` pointed at a
+  nonexistent `<repo>/src/config`/`<repo>/src/tests`, so the persona picker silently returned
+  empty. `shared/fabric.py::build_fabric`'s throwaway `knowledge_hub_url="mock://local-kh"`
+  (needed only to satisfy japes' `FabricConfig.validate_for_mode()` when the actual client is
+  a Mock) is removed now that japes no longer requires a URL when a `kh_client` is already
+  supplied.
+- **`test_decision_type_all_values` fixed — was asserting a stale member count, not a
+  regression.** japes' `DecisionType` grew a 4th member, `ATTRIBUTION`, for the eval-service
+  contract convergence work (already used elsewhere in jaci's own
+  `test_eval_service_adapters.py`); this test still asserted `len(DecisionType) == 3` and never
+  got updated. Now asserts 4 and covers `ATTRIBUTION` explicitly. Full suite now genuinely
+  green (854 passed, 0 failed) — this was the one standing pre-existing failure carried in
+  status notes since June.
+- **`acra_dscr` promoted to the default (first-listed) scenario** in `ui/registry.py`'s
+  `SCENARIOS` — the list's own top comment ("the first entry is the default selection") makes
+  this a one-line reorder, no other registry fields changed.
 
 ## [0.19.9] - 2026-08-14
 
