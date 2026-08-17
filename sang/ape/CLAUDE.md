@@ -1,6 +1,6 @@
 # Claude Session Status
 
-**Last Updated**: 2026-08-10
+**Last Updated**: 2026-08-17
 
 ## Working Principles
 
@@ -14,9 +14,12 @@
 
 ## Current Session Context
 
-### Version Status: 2.3.6 (per `_version.py`); Adjudication chassis + eval-service convergence work uncommitted on top
+### Version Status: 2.4.1 (per `_version.py`, committed through `0476e81`); InteractiveAgent
+### reasoning-streaming work uncommitted on top (see the 2026-08-17 entry below). The Adjudication
+### chassis/eval-service-convergence/condition-evaluator bullets right below this line all landed
+### and are committed (squashed into `74cb161` v2.4.1 and `0476e81`) — left as history, not stale.
 - **jazzx_sdk/_version.py**: single source of truth (`__version__`); `pyproject.toml`'s
-  `version` must match — enforced by `tests/test_version_sync.py`. Currently `2.3.6`.
+  `version` must match — enforced by `tests/test_version_sync.py`. Currently `2.4.1`.
 - **AdjudicationAgent chassis (Phase 4 of `docs/plans/reasoner-chassis-analysis.md`) — built,
   uncommitted.** New package `jazzx_sdk/agents/adjudication/` (`workspace.py` P4
   `EvidenceWorkspace`/`Mount`; `partition.py` P8 DETERMINISTIC/LIVE `Rule` split;
@@ -247,6 +250,36 @@
   changed. 10 new tests in `test_condition_evaluator.py`. Full suite green (2925 passed, 3
   skipped); jaci's own suite re-run too (695 passed, 2 skipped, same pre-existing unrelated
   `DecisionType` failure) since `RatioCondition` is core policy IR.
+- **`InteractiveAgent` reasoning-streaming, 2026-08-17, uncommitted.** Prompted by an external
+  review of three specific gaps (un-hardcode `Reasoning.summary`, stream reasoning deltas from
+  `respond()`, forward nested skill sub-agent deltas via `as_tool`'s `on_stream`); verified each
+  against code before agreeing, then generalized rather than patching the three literally.
+  Core design: reasoning deltas join the same `publish_event` sink `ToolStreamHooks` already
+  uses, rather than a second generator-yield channel like `respond_stream()`'s text deltas — one
+  new `InteractiveAgentSpec.stream_reasoning: bool` flag governs both the parent run and every
+  skill sub-agent, mirroring `stream_tool_events`'s exact scope, just via a different SDK
+  mechanism per event kind (tool lifecycle = `AgentHooks`, works under `Runner.run` either way;
+  reasoning/text deltas only exist on the streaming path at all). `build_model_settings` gained
+  `reasoning_summary` (was hardcoded `summary="auto"`); `_respond_agentic` switches its internal
+  `_run_once` to `Runner.run_streamed` + full drain only when `stream_reasoning` is set (`respond()`'s
+  own return contract unchanged) — explicitly documented cost: `run_with_recovery`/context-window
+  fallback don't apply in that mode, the same tradeoff `_stream_agentic` already accepted for the
+  same reason (can't retry after publishing partial output); `_build_parent_tools` passes
+  `on_stream=` to `sub_agent.as_tool(...)` under the same flag. New shared classifier
+  `stream_hooks.reasoning_delta_text`/`publish_reasoning_delta` — one function serves both the
+  top-level `stream_events()` drain and the nested `on_stream` callback, since
+  `AgentToolStreamEvent["event"]` is the identical `RawResponsesStreamEvent` shape either way
+  (verified against the installed SDK, not assumed). Uses `common.core.streaming.ReasoningEvent` —
+  already reserved ahead of any producer in the `common` submodule (Veeru's own local, unpushed
+  commit `cffefc4`, checked out but not yet bumped into japes' recorded submodule pointer),
+  imported guarded like `FinalResultEvent` so an older pinned `common` degrades to a silent no-op
+  rather than an ImportError. **Real gap found, not papered over**: `ReasoningEvent` (and
+  `ToolStartEvent`/`ToolEndEvent`) carry no per-event agent attribution field — nested skill
+  reasoning publishes unattributed, same pre-existing limitation the whole event family already
+  has, not new to this change; fixing it needs a `common` schema change, out of scope for a
+  japes-side pass. Did not touch anything under `common/` (submodule, not japes' to edit here).
+  10 new tests (`test_reasoning_stream_hooks.py`, `test_agent_models.py`, `test_interactive_agent.py`).
+  Full suite green (2998 passed, 3 skipped).
 
 Design docs (gitignored, `docs/plans/`): `reasoner-chassis-analysis.md` (P1/P2/P6/P8 build
 sequence + Phase 4 chassis), `policy-ir-abstraction.md` (P8 detail),

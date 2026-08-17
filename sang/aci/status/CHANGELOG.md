@@ -9,8 +9,42 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ## [Unreleased]
 
-## [0.20.0] - 2026-08-14
+## [0.20.2] - 2026-08-15
 
+- **Acra DSCR gains 8 condo/entity/fraud policy gates**, sourced from a newly-supplied reference
+  doc (Acra's "Commercial DSCR Loan Process Flow," July 2026) rather than the DSCR Program
+  Summary the existing 19-rule corpus is built on — this doc has no CLTV/DSCR content, just
+  Stage 1 (duplicate-SSN check, NMLS verification, refinance-listing check), Stage 3B (HOA
+  reserve/litigation review, entity-is-Borrower-1, no-multiple-title-transfers, entity-document
+  completeness) gates. New rules: `ACRA-DUPLICATE-SSN-CLEARED`, `ACRA-NMLS-VERIFIED` (japes'
+  `AllOfCondition` combinator's first real consumer in this corpus — verifies both broker and
+  loan-officer NMLS credentials), `ACRA-REFI-LISTING-CHECK`, `ACRA-CONDO-HOA-RESERVES`,
+  `ACRA-CONDO-HOA-LITIGATION`, `ACRA-ENTITY-BORROWER-1`, `ACRA-ENTITY-TITLE-TRANSFERS`,
+  `ACRA-ENTITY-DOCS`. Policy version `1.1.0` -> `1.2.0`. 10 new `LoanApplication` fields, each
+  defaulted deliberately rather than uniformly: the three fields backing an affirmative human
+  attestation (SSN check, NMLS verification, entity docs) default fail-closed (`False`) since
+  `check_compliance` silently skips (never fails) a rule reading a missing/`None` field, which
+  would otherwise let an unset attestation quietly pass; the rest default to the "clean" value
+  since they're findings that are normally absent (title-transfer history, HOA litigation, HOA
+  reserve adequacy). No numeric HOA-reserve or owner-occupancy-ratio standard exists in either
+  source document — `ACRA-CONDO-HOA-RESERVES` is authored as a qualitative AM determination
+  (`hoa_reserves_adequate: bool`), and an owner-occupancy-ratio rule was deliberately not
+  authored at all rather than invented. Updated all 5 existing gold-case/demo fixtures
+  (`cases.py`, `tests/eval/gold_cases/acra_dscr/*.json`,
+  `test_acra_dscr_conductor_engine.py`'s `_trigger()`) to attest clean on the 3 fail-closed
+  fields so they stay "clean pass" rather than newly violating on fields they predate. Also
+  refreshed `ENCODING_NOTES.md`'s G1 note (composite `AllOf`/`AnyOf` applicability, previously
+  listed as an open platform gap) to reflect it landed japes-side and is no longer a gap.
+  Along the way, found and fixed a real, previously-latent bug surfaced by a live (non-mocked)
+  reasoner run: `LoanCondition.cell_value` was typed `Any`, which Pydantic renders as a
+  type-less `{}` JSON-schema node — invalid under OpenAI's strict structured-output mode
+  (`schema must have a 'type' key`), the same defect class as the `EvaluatorMode`/
+  `NarratorMode`/`VerifierMode` dict-field fixes earlier this session, just never caught by any
+  mocked test since none of them construct the real `AgentOutputSchema`. Retyped to
+  `float | str | None` (its real domain — a numeric CLTV percent or the literal `"NA"`,
+  matching `compose.py`'s own typing), dropping the now-unused `Any` import. 19 new behavioural
+  test cases (`tests/scenarios/acra_dscr/test_acra_eligibility.py`); full `acra_dscr` suite
+  47/47, full jaci suite 900 passed / 8 skipped / 4 xfailed / 1 xpassed, no regressions.
 - **`docintel.py` shrunk to conversion only — its KH-manifest half deleted, not just superseded.**
   Asked to delete `docintel.py` and its dead callers outright; checked first and found the
   premise didn't fully hold — `convert_document`/`convert_document_json` (the `.japes`-stub-
@@ -110,6 +144,9 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
   `jazzx_sdk.tools.documents.local_cache`. 7 new tests across 2 new files; all 64 pre-existing
   `cre_underwriting` tests pass unchanged (Mesa Verde's own explicit-path construction is
   untouched by the new default).
+
+## [0.20.0] - 2026-08-14
+
 - **`portfolio_monitoring` piloted onto japes' `DocumentAgent`/`document_ingest` classification**
   (docintel-vs-DocumentAgent migration, pilot 1 of 4 — see `docs/plans/` for the full scope and
   why this scenario went first). New `document_intake.classify_docs_dir` runs `DocumentAgent`

@@ -4,6 +4,31 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 ## [2.4.1] - 2026-08-13
 
+- **`InteractiveAgent` reasoning-summary streaming.** Prompted by an external review of three
+  specific gaps (hardcoded `Reasoning.summary="auto"`, `respond()` had no way to observe
+  reasoning deltas, nested skill sub-agents had no reasoning visibility at all); verified each
+  against code, then generalized into one consistent mechanism rather than three separate
+  patches. `build_model_settings` gained `reasoning_summary` (e.g. `"concise"`), threaded
+  through new `InteractiveAgentSpec.reasoning_summary`. New `InteractiveAgentSpec.
+  stream_reasoning: bool` mirrors `stream_tool_events`'s exact scope (parent run + every skill
+  sub-agent) via the mechanism each actually requires: `_respond_agentic` switches its internal
+  `_run_once` to `Runner.run_streamed` + a full `stream_events()` drain only when set (`respond()`'s
+  return contract is unchanged; `run_with_recovery`/context-window-fallback retry don't apply in
+  that mode — the same tradeoff `_stream_agentic` already documents, for the same reason), and
+  `_build_parent_tools` passes `on_stream=` to each skill's `sub_agent.as_tool(...)`. One shared
+  classifier, `stream_hooks.reasoning_delta_text`/`publish_reasoning_delta`, serves both call
+  sites — `AgentToolStreamEvent["event"]` is the identical `RawResponsesStreamEvent` shape the
+  top-level drain already handles (verified against the installed SDK). Reasoning deltas
+  publish through the same `publish_event` sink `ToolStreamHooks` already uses, not a second
+  generator-yield channel — using `common.core.streaming.ReasoningEvent` (already reserved
+  ahead of any producer in `common`'s own history), imported guarded like `FinalResultEvent` so
+  an older pinned `common` degrades to a silent no-op. Real, not papered over: neither
+  `ReasoningEvent` nor `ToolStartEvent`/`ToolEndEvent` carry a per-event agent-attribution
+  field, so nested skill reasoning publishes unattributed today — a pre-existing gap across the
+  whole event family, not new here; fixing it needs a `common` schema change, out of scope for
+  a japes-side pass. 10 new tests (`tests/test_reasoning_stream_hooks.py`,
+  `tests/test_agent_models.py`, `tests/test_interactive_agent.py`). Full suite green (2998
+  passed, 3 skipped).
 - **New `jazzx_sdk.tools.documents.local_cache`** — the local dev/demo document cache (a git-
   committed filename→remote-doc-id manifest that hydrates a stubbed local file from a shared
   Knowledge Hub on demand) generalized from a jaci-specific module. Nothing in the original was
