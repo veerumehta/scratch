@@ -2,8 +2,157 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
-## [2.4.1] - 2026-08-13
+## [Unreleased]
 
+- **`DocumentAgentSpec.classify_max_chars`** — a per-agent override for `classify_document`'s
+  text-sample cap, previously hardcoded at 8000 chars with no way for `DocumentAgent.classify()`
+  to raise it. Prompted by a real report: a healthcare document misclassified even after adding a
+  taxonomy class for it. Traced through the actual classify/extract contract to confirm two
+  separate things: (1) `DocumentAgentSpec.taxonomy` is genuinely domain-builder-supplied (defaults
+  to empty; `classify_document` raises if empty) — expected, not a bug; (2) extraction needs its
+  own caller-supplied schema independent of the taxonomy (`DocumentAgent.process(schema=None)`
+  skips extraction entirely) — a mismatched/generic schema there, not a japes bug, is the more
+  likely explanation for a separately-reported extraction-mislabeling case. But classification
+  itself had a real, confirmed gap: `classify_document`'s LLM call only ever sees the document's
+  first 8000 characters, and nothing in `DocumentAgentSpec` could raise that — a document whose
+  type-identifying content sits past the first few pages is architecturally invisible to the
+  classifier regardless of taxonomy quality. New `classify_max_chars: int | None = None` on
+  `DocumentAgentSpec`, threaded through `DocumentAgent.classify()`; unset behaves exactly as
+  before (classify_document's own 8000 default). 2 new tests (`test_document_agent.py`). Full
+  suite green (3035 passed, 3 skipped, no regressions).
+- **Per-skill `max_turns` now falls back to the parent's own resolved turn budget, not the SDK's
+  bare default of 10.** The other half of this session's earlier `InteractiveAgent` MaxTurns fix
+  — that one only raised the *parent* orchestrator's `Runner.run`/`run_streamed` default (10 →
+  30); a skill's own sub-agent run (`Agent.as_tool(max_turns=...)`) still passed an unset
+  `Skill.max_turns` straight through as `None`, landing on the SDK's bare 10. Surfaced by a real
+  consumer independently hitting it: their skill YAMLs each hand-set `max_turns: 50` with a
+  comment explaining the exact same gap, on every one of their skills. `_build_parent_tools` now
+  resolves a `default_skill_max_turns` once (mirroring `spec.max_turns` unset →
+  `_DEFAULT_AGENTIC_MAX_TURNS`, same as the parent) and a skill without its own `max_turns`
+  inherits that — same fallback shape `model` already uses. 2 new/updated tests
+  (`test_interactive_agent.py`). Full suite green (3033 passed, 3 skipped, no regressions).
+- **Dependabot: mlflow/sqlparse floors bumped, closing 5 open alerts (1 critical, 3 high, 1
+  medium).** `mlflow` floor `>=2.9` → `>=3.15.0` (fixes the critical unauthenticated SSRF in
+  webhook delivery — `_validate_webhook_url` bypassed via unvalidated redirects/DNS rebinding).
+  `sqlparse` — pulled in transitively by mlflow-skinny (`>=0.4.0,<1`, no upper cap) — gets a new
+  explicit floor `>=0.6.0`, closing 3 ReDoS/CPU-DoS alerts plus an unescaped-backslash SQL-breakout
+  one, matching the file's existing convention of pinning vulnerable transitive deps explicitly.
+  `poetry lock` resolves cleanly with no forced regression elsewhere (`cryptography` stays at
+  48.0.1 — the separate, already-documented, not-yet-fixable alert #98 is untouched). Verified
+  by actually installing the `mlflow` extra (not just trusting the lock solve) and confirming
+  `mlflow`/`mlflow-skinny` land on 3.15.1 and `sqlparse` on 0.6.0. Full suite re-confirmed against
+  this repo's real baseline dev extras (`finance` + `templating`; `mlflow`/`azure` are
+  genuinely absent by design — those tests exercise the extra-not-installed fallback path) —
+  3032 passed, 3 skipped, byte-identical to before the bump.
+
+## [2.4.2] - 2026-08-17
+
+- **`ConductorEngine` gains opt-in step-failure recovery (`on_step_error`); the reference chat
+  pipeline (`pipelines/chat.py`) wires a default one.** Follow-on to the `InteractiveAgent`
+  MaxTurns fix above: asked whether the reference chat pipeline shared the same class of
+  problem. It didn't share that *specific* bug (`answer_step` calls `agent.respond()` directly, so
+  it already inherited the fix for free) — but reading `ConductorEngine._run_step` found the same
+  *shape* of gap one layer up: a step component's exception was never caught anywhere in the
+  engine (only `SuspendRun`, a control signal, was special-cased), so any step failing propagated
+  raw out of `run()`/`resume()`. New `on_step_error` constructor param (`StepErrorHandler`, opt-in,
+  default `None` — every existing pipeline is byte-identical): on a step exception (never
+  `SuspendRun`), it's handed `(step, state, exc)`; its return value becomes the step's emitted
+  output exactly as if the step had returned normally, and the run continues (`ExecutedStep`/
+  `StepEvent` get a new `"errored"` status alongside `ran`/`skipped`/`halted`, so a recovered step
+  is distinguishable from a clean one in a trace). The handler re-raising propagates unchanged.
+  `pipelines/chat.py` wires this by default (`default_step_error`, overridable via
+  `run_chat_turn(on_step_error=...)`, `None` to opt out): a degraded `InteractiveResponse`
+  (reusing `incomplete`/`incomplete_reason`, the same fields the `InteractiveAgent` fix added)
+  instead of a crash. Caught a real correctness trap while designing this, not just implementing
+  it: a naive version that let the substitute value flow through normally would silently break
+  `chat_guards()`'s `_route`, which expects a `GateDecision` in `state.emitted["gate"]` — a gate
+  failure recovered that way would crash the *next* step's guard instead of the step itself. Fixed
+  by having `default_step_error` always set `state.halt = True`, so no downstream guard ever runs
+  against a substituted value regardless of which step failed; `run_chat_turn` falls back to
+  scanning `emitted` for the `InteractiveResponse` when `finalize` didn't get to run because of the
+  halt. 9 new tests across `test_conductor_engine.py`/`test_interactive_chat.py` (including one
+  that pins down the gate-failure/guard-crash trap as a regression case). Full suite green (3032
+  passed, 3 skipped, no regressions).
+- **`InteractiveAgent` agentic-path latency/robustness pass.** Prompted by a production report of
+  an assistant chat regularly taking >60s/query, then a direct question of whether "interactive"
+  had any architectural landmines. Audited retry scoping, model/effort tiering, tool-call
+  concurrency, fast-path routing, and MaxTurns handling against the actual code (not assumed);
+  most were already fine (tool calls already run concurrently via the SDK's own executor; a
+  nested skill's failure is already absorbed by the SDK's `as_tool` error handling, not a full
+  outer-run redo). Two real gaps, both fixed: (1) the agentic path had **no MaxTurns handling at
+  all** — `run_with_recovery` deliberately excludes `MaxTurnsExceeded` (rebuilding the agent isn't
+  its job), so an unset `spec.max_turns` fell through to the SDK's bare default of 10 (tuned for a
+  single-purpose agent, not one that may delegate through a nested skill sub-agent's own turns) and
+  a genuinely complex multi-tool turn raised `MaxTurnsExceeded` straight out of `respond()`
+  uncaught — a hard crash, not a slow answer. Now: an unset `spec.max_turns` defaults to 30
+  (matching `run_agent`'s own tuned default) instead of the SDK's bare 10, and `_respond_agentic`
+  catches `MaxTurnsExceeded` and returns a typed degraded `InteractiveResponse` (new
+  `incomplete`/`incomplete_reason` fields, same shape as the existing `blocked`/`block_reason`)
+  instead of propagating the raw SDK exception. (2) `Skill` had a per-skill `model` override but no
+  `reasoning_effort` override — a routing/classification-style skill or a deterministic-lookup
+  skill had no way to run cheaper/faster than the parent orchestrator without also switching
+  models. New `Skill.reasoning_effort: str | None`, threaded into that skill's sub-agent's own
+  `ModelSettings` (built fresh via `build_model_settings` when set; unset skills keep inheriting
+  the parent's `ModelSettings` unchanged). 3 new/updated tests in `test_interactive_agent.py`.
+  Full suite green (3024 passed, 3 skipped, no regressions).
+- **`MlflowTracer` self-sanitizes leaked OTLP env vars; new `enable_mlflow_agent_autolog()`.**
+  Surveyed a companion service's own tracing package (already using `InteractiveAgent`) for
+  japes evolution opportunities and found `sanitize_leaked_otel_env_vars` (added earlier — strips
+  the `OTEL_EXPORTER_OTLP_ENDPOINT` vars Azure Container Apps injects platform-wide, which
+  otherwise silently break MLflow's span exporter) was never actually called by anything in
+  japes, `MlflowTracer` included — confirmed via a full-package grep. Its own docstring claims
+  to spare every consumer from reinventing the guard, but two companion services had each
+  carried an independent copy anyway, since the one class that should self-apply it didn't.
+  Now wired into `MlflowTracer._mf()`, once, before the first real `import mlflow` is cached —
+  scoped exactly to the MLflow-tracing case the function's docstring already carves out (an
+  injected `mlflow_module`, e.g. tests, is untouched; OTel infra tracing is untouched). Second
+  gap from the same survey: no toggle for `mlflow.openai.autolog()` (nested-agent-call MLflow
+  tracing) existed in japes at all — every consumer wanting it had to hand-roll the idempotent
+  enable-once wrapper themselves. New `enable_mlflow_agent_autolog()` in
+  `observability.mlflow_env`, alongside the existing `flush_mlflow_async_trace_queue` (same
+  "process-level MLflow hygiene, call once" style) — idempotent, best-effort, never raises.
+  Both re-exported from `jazzx_sdk.observability` and the SDK root. 5 new tests
+  (`test_observability.py`, `test_otel_tracking.py`). Full suite green (3022 passed, 3 skipped,
+  no regressions).
+- **`ScorerResult` gains `findings: list[Finding]`.** Same `policy-workbench` survey, its third
+  candidate: `policy_evaluator`'s `EvaluationIssue` (phrase/issue/suggestion triplet, an LLM
+  flagging specific spans) is a recurring "list of flagged items" shape `ScorerResult` had no
+  first-class slot for — every consumer was left to invent its own triplet in the freeform
+  `metadata` bag. New `Finding` model (`subject`/`description`/`suggestion`/`severity`, all but
+  `subject`/`description` optional) + `ScorerResult.findings`, defaulting to `[]` (existing
+  callers unaffected). `CompositeScorer` and every built-in adjudication policy (`_adjudicated`)
+  now union `findings` from applicable (non-skipped) sub-scorer results into their own verdict —
+  same skip-exclusion rule the score/pass aggregation already uses. `AdjudicatorScorer` fills
+  `findings` from the inline sub-results only when a custom `adjudicate` callable left them
+  empty — never overwrites what the callable set itself. Kept the eval-service convergence
+  contract (`scorer_result_to_verdict_v1`, "lossless adapter", Phase 4 acceptance criterion #13)
+  actually lossless: `findings` didn't exist when that contract was negotiated and
+  `ScorerVerdictV1` has no dedicated wire field for it — extending that cross-repo contract is
+  out of scope for a japes-side change alone, so it's folded into `metadata["findings"]`
+  (a list of dicts) instead, verified round-trip in `test_scoring_execution_adapters.py`. Both
+  `jazzx_sdk.evaluation` and `jazzx_sdk.contracts` re-export `Finding` alongside `ScorerResult`.
+  12 new/updated tests across `test_scorers.py`/`test_scoring_execution_adapters.py`. Full suite
+  green (3017 passed, 3 skipped, no regressions).
+- **`fan_out` gains `skip_if` — resumable fan-outs.** Surfaced by surveying `policy-workbench`
+  (a real, independent multi-agent app, no japes awareness) for japes evolution opportunities:
+  its `policy_creator` agent hand-rolls exactly this via `_staged_jtbd_files`/
+  `_staged_section_files` — re-scanning a tmp/ staging dir on every call to know which
+  plan-items (sections) a prior partial run already finished, so a retry doesn't redo completed
+  work. `fan_out` itself had no such notion (single-shot, in-memory, verified by reading it
+  directly rather than assumed). `skip_if(item, index)` — sync or async, dispatched via the
+  existing `concurrency.call_maybe_async` — runs before `process`; a truthy result skips that
+  item entirely (`process` never called), its slot is `None` (same convention `degrade`'s
+  failure path already uses), and the skipped item still opens a tracer span (`inputs={...,
+  "skipped": True}`) so it reads as "known done" in a trace, not silently absent. `None`
+  default: byte-identical to before. Considered and deliberately did NOT build a bundled
+  "plan → dispatch → synthesize" pipeline primitive for the same survey's other candidate
+  (`policy_modifier`/`policy_creator` both hand-roll that shape too) — once `skip_if` exists,
+  the remaining pieces (`output_schema` for the structured plan, `run_with_recovery` for retry,
+  dict-based dispatch-by-field) are already a few lines of ordinary caller code over existing
+  primitives; a new abstraction for that would be premature (no second real japes-side
+  consumer asking for it, unlike `investigation_loop`, which unified 6 *existing* hand-rolled
+  loops within this codebase before being built). 7 new tests (`tests/test_fanout.py`). Full
+  suite green (3011 passed, 3 skipped, no regressions).
 - **`InteractiveAgent` reasoning-summary streaming.** Prompted by an external review of three
   specific gaps (hardcoded `Reasoning.summary="auto"`, `respond()` had no way to observe
   reasoning deltas, nested skill sub-agents had no reasoning visibility at all); verified each

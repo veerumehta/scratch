@@ -9,9 +9,53 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ## [Unreleased]
 
+## [0.20.3] - 2026-08-18
+
+- Settings page and `build_info()`/`GET /build.json` now also surface japes' own version and
+  commit hash, not just jaci's. New `jaci.build_info.dependency_commit_sha(package)` reads the
+  installed distribution's `direct_url.json` (a git-installed dependency's resolved commit),
+  falling back to a `git` call against the editable-install path (our own dev setup) — japes is a
+  git dependency, not part of this repo, so it has no `.git` here to check directly.
+- **`acra_dscr` scenario renamed to `dscr`**, plus a model-tier fix and the 13-state
+  prepayment-penalty rules. The scenario is meant to generalize beyond one client (Acra Lending
+  inspired it, doesn't define it), so everything that was our own naming choice moved: directory
+  (`src/jaci/scenarios/acra_dscr` → `dscr`), pack (`config/packs/acra_dscr_core` → `dscr_core`,
+  `pack_id` `acra-dscr-core` → `dscr-core`), prompts (`prompts/acra-dscr` → `prompts/dscr`),
+  classes (`AcraDSCRConductor` → `DSCRConductor`, `AcraToolRegistry`/`AcraHypothesisContent`/
+  `AcraContext` → `DSCR*`), policy/rule IDs (`ACRA_DSCR_ELIGIBILITY` → `DSCR_ELIGIBILITY`,
+  all 27 `ACRA-*` rule IDs → `DSCR-*`), UI (`key="acra_dscr"` → `"dscr"`, `label`/`display` →
+  `"DSCR"`/`"DSCR Eligibility"`). Acra Lending stays only where it's a real citation
+  (`source_refs.authority`, `institution_ref`, the DSCR Program Summary/Process Flow doc titles)
+  — trimmed the redundant "Acra Lending" out of `title:`/`description:` prose since `authority:`
+  already carries it. Caught and fixed an "an DSCR" → "a DSCR" grammar leftover from the phrase
+  rename across 6 files. Full suite green throughout (900 passed both before and after — pure
+  rename, zero behavior change), then two real fixes landed after it: (1) the conductor's five
+  mode-model defaults were still `gpt-4o`, unlike the other high-priority conductors
+  (`cre_underwriting`/`ci_spread`/`aml`, all `flex_gpt-5.4`) — bumped, and swapped the
+  scenario's own identity-mapping `model_tier_parser` for the shared `jaci.settings.
+  parse_model_tier` (the old one silently didn't strip the new `flex_` prefix — never exercised
+  against a prefixed model name before). (2) Authored the 13-state prepayment-penalty (PPP)
+  buyout rules (`DSCR-PPP-*`, ENCODING_NOTES.md §1b) — the item G1 (`AllOf`/`AnyOf`, resolved
+  japes-side 2026-08-14) was explicitly blocking; 14 rules (Illinois split into its two
+  independent triggers), 6 of them genuinely multi-predicate (state + entity type/amount/rate/
+  unit-count/purpose) via `kind: all_of` — G1's first real consumer in this corpus. New
+  `LoanApplication` fields: `prepayment_penalty_requested` (default `"no_prepay"`, so existing
+  loans can't trip these), `residential_unit_count`, `interest_rate`. "Residential 1-4" needed no
+  unit-count check (every existing `PropertyType` already tops out at 4 units); only Ohio/
+  Pennsylvania's "Residential 1-2" and Mississippi's "single unit" carve-outs did. Mississippi's
+  "5 Yr (step)/3 Year (3x3)/2 Yr (2x3)/1 Yr (1x3)" read as naming four already-catalogued
+  structures by shorthand rather than new ones — flagged as an interpretive call in
+  ENCODING_NOTES, worth confirming against Acra directly before a real Mississippi loan hits it.
+  Found in passing (not chased): `find_profile_literal_drift` doesn't recurse into `all_of`/
+  `any_of` children, so a `profile_custom_key` on these rules' literals would be decorative, not
+  lint-checked — a real japes-side gap, left for later. 33 new test cases (one VIOLATED + one
+  SATISFIED per rule, plus NOT_APPLICABLE spot-checks on every multi-predicate rule). None of the
+  5 existing gold cases needed updating. Full suite green (932 passed, 8 skipped, 4 xfailed, 1
+  xpassed — same skip/xfail/xpass counts as before, zero regressions).
+
 ## [0.20.2] - 2026-08-15
 
-- **Acra DSCR gains 8 condo/entity/fraud policy gates**, sourced from a newly-supplied reference
+- **DSCR gains 8 condo/entity/fraud policy gates**, sourced from a newly-supplied reference
   doc (Acra's "Commercial DSCR Loan Process Flow," July 2026) rather than the DSCR Program
   Summary the existing 19-rule corpus is built on — this doc has no CLTV/DSCR content, just
   Stage 1 (duplicate-SSN check, NMLS verification, refinance-listing check), Stage 3B (HOA
