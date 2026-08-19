@@ -4,6 +4,150 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 ## [Unreleased]
 
+- **Two document-ingest gaps closed, found while reviewing real client documents against the
+  pipeline.** (1) **`convert_document` gained `.pptx` support** — new `_pptx_to_markdown`
+  (`python-pptx`, new optional `pptx` extra), one `## Slide N` section per slide, text frames and
+  tables rendered in original shape (z-)order (no pandoc path: pandoc can write pptx but not read
+  it). (2) **`split_document`'s page-classification fallback (used when a combined PDF has no
+  outline/bookmarks) is no longer fully sequential.** It ran one `classify_document` LLM call per
+  page in a plain loop — for a real multi-hundred-page combined loan-document package with no
+  bookmarks, that's hundreds of sequential calls just to segment it before any extraction starts.
+  Now dispatched via the existing `jazzx_sdk.conductor.fan_out` (order-preserving, bounded
+  concurrency — same primitive `DocumentAgent.process_package`/`process_dir` already use for their
+  own fan-outs). New `split_document(..., concurrency: int = 8)`, and
+  `DocumentAgent.process_package`'s existing `concurrency` param now also bounds this pass, not
+  just its own post-split per-segment fan-out. 5 new tests (`tests/test_split.py`,
+  `tests/test_tools/test_conversion.py`). Full suite green (3115 passed, 3 skipped, no
+  regressions).
+
+- **Follow-on to the reasoning-summary streaming work above: closes the per-agent-attribution gap
+  it explicitly left open, plus three more issues from the same external review.** (1)
+  **Agent attribution.** `common.core.streaming.ReasoningEvent` gained `agent`/`agent_label`
+  fields (bumped `common` submodule pin) — the gap really did need a schema change there
+  (verified empirically before touching the submodule: constructing `ReasoningEvent(...,
+  agent=...)` against the unmodified class silently dropped the kwarg, pydantic's default
+  `extra="ignore"`). `publish_reasoning_delta` now takes `agent: str | None`; the top-level drain
+  passes the parent agent's own `.name`, and each skill's `on_stream` closure passes
+  `stream_event["agent"].name` — the OpenAI Agents SDK's own `AgentToolStreamEvent["agent"]`,
+  the actual emitting sub-agent, not assumed to equal the parent. Degrades silently against an
+  older pinned `common` (unrecognized constructor kwarg, same as `ReasoningEvent` itself being
+  absent). (2) **Per-skill `Skill.stream_reasoning: bool | None`** — overrides the parent
+  `InteractiveAgentSpec.stream_reasoning` for just that skill when set; `None` inherits
+  unchanged. (3) **The streamed reasoning path now gets the same retry `run_with_recovery`
+  already gives the non-streamed path** (`ModelBehaviorError` schema-validation retry,
+  `IncompleteOutputError` truncation retry, `APIStatusError` backoff) — turning on
+  `stream_reasoning` was silently trading this away, since `_respond_agentic` called
+  `_run_streamed_once` directly instead of wrapping it. Only the context-window-fallback tier
+  stays skipped (retries via forced session compaction, not meaningful mid-stream). (4) **New
+  `StreamPublisher(event_transformer=...)` hook** — runs on every event immediately before
+  publish (sync or async, via `concurrency.call_maybe_async`); return the event unchanged, a
+  modified one, or `None` to suppress. Fail-closed on a transformer exception: suppresses rather
+  than publishing the untransformed original, since a transformer may exist specifically to
+  redact. Closes a real gap: japes published `ReasoningEvent`s straight to Redis with no
+  interception point, so a consuming service couldn't humanize, redact, or gate reasoning content
+  reaching a UI. 11 new/updated tests across `tests/test_sse_streaming.py` and
+  `tests/test_interactive_agent.py`. Full suite green (3112 passed, 3 skipped, no regressions).
+
+- **New `jazzx_sdk.authority.resolve_authority` — closes a real gap in the RBAC/authority survey:
+  `fabric.canonical.policy.AuthMatrix`/`AuthorityEntry` (role, `action_scope`, threshold
+  `ceiling`, `escalation_target`, `delegation_chain`) was schema only — nothing in the SDK
+  actually walked it.** Distinct from `authority.resolver`'s `check_action`/`AuthorityMatrixV2`
+  (autonomy *ceilings* — how much an AI decision can act without a human, across
+  binding/overlay/profile layers): this resolves human **approval authority** — which role in a
+  compliance-style delegation chain (an L1 investigator escalating to L2, then to a BSA officer)
+  actually covers a decision's attributes, given the role attempting it. Walks
+  `escalation_target` from the starting role until a `ceiling` covers the case or the chain
+  refuses — numeric ceiling dimensions compare by magnitude; a non-numeric one (e.g. a
+  categorical `risk_tier`) needs a caller-supplied rank (`tier_orders`) since the SDK can't know
+  a domain's ordering, same discipline `authority.context.PermissionScope` already applies to its
+  own opaque resource selectors — and fails **closed** (escalates) rather than guessing when it
+  can't rank a value. Returns the resolving `AuthorityEntry` plus the `escalation_path` walked (an
+  audit trail, not just yes/no) or a typed `Refusal` — reusing the existing `RefusalClass` taxonomy
+  (`OUT_OF_SCOPE` for an unknown role/action, `AUTHORITY_EXCEEDED` when the chain dead-ends with
+  nowhere left to escalate, `POLICY_CONFLICT_UNRESOLVED` for a matrix bug — an escalation cycle or
+  a pathologically long chain), matching `check_action`'s own established return-shape convention
+  exactly. 17 new tests (`test_authority_delegation.py`). Full suite green (3103 passed, 3
+  skipped, no regressions).
+- **Three findings from surveying `kernel`'s recent history for japes evolution opportunities,
+  all built.** (1) `QueueProcessor.process_loop` no longer treats every dequeue error the same —
+  `kernel`'s `common` submodule grew a permanent/transient distinction after a real incident
+  (retrying a bad-credentials or missing-queue error forever at the same fixed poll cadence);
+  japes' own queue processor didn't have this independent of whatever `common` has. New
+  `dequeue_message` classification (via the already-existing `jazzx_sdk.failures.classify_failure`
+  taxonomy — status-code 401/403/5xx already covered there; 404 checked directly since a missing
+  queue is unambiguous, unlike `classify_failure`'s other, more general callers) sets
+  `last_dequeue_error` and tracks a consecutive-error streak; `process_loop` backs off
+  exponentially (`jazzx_sdk.concurrency.backoff_delay`, capped at 5 minutes) on any dequeue error
+  instead of `poll_interval` — a genuinely empty queue is unaffected, byte-identical to before.
+  (2) New `jazzx_sdk.failures.redact_for_zero_retention(value)` — the whole-value **substitution**
+  counterpart to `redact_fields`/`redact_code_blocks`'s content-**scanning** redaction (those scrub
+  known-sensitive substrings from a payload that's still stored; this is for a caller-declared
+  policy — "do not persist this tool's args/response at all" — replacing the whole value
+  regardless of content). `kernel` built a per-tool zero-data-retention flag doing exactly this;
+  japes had the scan-and-scrub half of this family but not the substitution half. Deliberately just
+  the mechanism, not a "which tools are ZDR" policy API — that's pack/service data japes doesn't
+  own. (3) `DbStore.get_session()`'s docstring now warns explicitly against manually driving the
+  generator outside a real DI framework's teardown guarantee — `kernel` just fixed the exact
+  incident this enables in production (an early return abandoning the generator mid-yield, pool
+  exhaustion since cleanup then only runs on GC): 47 files, 186 call sites. Japes' shape is
+  identical; the context-manager alternative (`DbStore.session()`, already the documented default)
+  was already correct, this closes the gap where the risky path wasn't warned against by name.
+  34 new tests (`test_queue_processor.py`, `test_failures.py`, `test_fabric_db.py`). Full suite
+  green (3086 passed, 3 skipped, no regressions).
+- **New `jazzx_sdk.fabric.db.session_guard` — catch a DB session held open across a slow call
+  ("transaction islands"), at the point of misuse instead of minutes later as a killed
+  connection.** A DB session/transaction left open while awaiting an LLM call, a tool/sub-agent
+  run, an MCP round trip, or an SSE yield ties up a connection (and, on Postgres, an open
+  transaction) for however long that call takes — under
+  `idle_in_transaction_session_timeout` the connection is killed out from under the caller,
+  typically losing whatever the call produced with no clear error at the point that caused it. A
+  subtle, load-dependent failure mode (SQLAlchemy autobegins a transaction on the first
+  statement, not on session-open, so it's easy to write by accident) that's hard to reproduce
+  outside production LLM latencies — surfaced by a real, well-evidenced incident in `juno`'s own
+  history (its postmortem-driven fix there: an enforced three-phase
+  prepare-with-db/run-without-db/finalize-with-fresh-db invariant). Checked `jazzx_sdk/fabric/db/`
+  first — no equivalent guard existed, and japes' own `DbStore`/`SqlConversationStore` are the
+  identical shape (a DB row read/written around a potentially long-running operation), so any
+  pack using them today has the same latent exposure. New `assert_no_open_db_session(label)` —
+  call immediately before the slow operation; raises `DbSessionHeldError` right there if a
+  session is still open, turning a load-dependent production incident into an immediate,
+  deterministic, testable failure. `DbStore.session()` and `SqlConversationStore`'s two session
+  paths (`fabric.db`-backed and the raw-sessionmaker fallback) now track their own lifetime via
+  `track_open_session()` automatically — no caller-side change needed for the assertion to see
+  them; per-task via `contextvars` (concurrent tasks never see each other's open sessions) and
+  nesting-safe. 10 new tests (`test_session_guard.py`, `test_fabric_db.py`,
+  `test_fabric_conversation.py`). Full suite green (3077 passed, 3 skipped, no regressions).
+- **New `jazzx_sdk.concurrency_guard.ConcurrencyGuard`** — a Redis `SET NX EX` lock keyed by a
+  caller-extracted business key, wired as an optional `QueueProcessor(concurrency_guard=...)`
+  param (mirrors how `idempotency_store` is already wired). Distinct problem from
+  `automation.idempotency.IdempotencyStore`: that answers "have I already processed *this exact
+  message*" (same message id, redelivery/retry dedup); this answers "is a run already in
+  progress for *this business key*" — two genuinely different messages (a double-submit, a
+  legitimate re-invocation) that both target the same downstream resource (a case, a loan, a
+  conversation) can race even though neither is a redelivery of the other. Generalized from a
+  design built for one caller's own hardcoded key (`loan_collection_id`, gated on a specific
+  routing target) into a caller-parameterized primitive: `key_extractor(message) -> str | None`
+  decides both which messages need guarding at all and what key identifies "the same resource"
+  — the mechanism (owner-safe Lua-script release/extend so one worker can never touch another's
+  lock, TTL matched to typical queue visibility timeouts, fail-open on a Redis error rather than
+  stalling all queue processing on one dependency) is the platform's; the key policy is the
+  caller's. Motivated by the same structural risk showing up anywhere a queue-driven, case-keyed
+  conductor run exists — `AdjudicationAgent`-shaped scenarios included, not just the original's
+  single caller. Checked the one live production consumer this generalizes from directly (its
+  own worker code, not just the stale, never-merged design it came from) and found two follow-on
+  gaps worth closing in the same pass, not deferred: (1) no backend existed for tests/single-
+  worker dev without standing up real Redis — new `InProcessConcurrencyGuard` (an `asyncio.Lock`
+  per key, explicitly documented as carrying no cross-process guarantee at all), with both
+  implementations now formalized behind a `ConcurrencyGuardProtocol` `QueueProcessor` accepts,
+  matching the `IdempotencyStore`-family Protocol convention already used elsewhere in this SDK.
+  (2) The module docstring now explicitly warns against scoping `key_extractor` to a resource id
+  alone (e.g. just a loan id) — two *unrelated* operations sharing a resource (an ad-hoc Q&A
+  query and a scheduled job for the same loan) aren't duplicates and would be wrongly serialized;
+  recommends `(resource, operation)` instead, matching what the original single-caller design
+  was itself careful about (gated on a specific routing target, not the resource id alone) —
+  care a naive generalization could otherwise have quietly dropped. 32 new tests
+  (`test_concurrency_guard.py`, `test_queue_processor.py`). Full suite green (3067 passed, 3
+  skipped, no regressions).
 - **`DocumentAgentSpec.classify_max_chars`** — a per-agent override for `classify_document`'s
   text-sample cap, previously hardcoded at 8000 chars with no way for `DocumentAgent.classify()`
   to raise it. Prompted by a real report: a healthcare document misclassified even after adding a
