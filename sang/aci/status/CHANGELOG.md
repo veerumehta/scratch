@@ -9,6 +9,14 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ## [Unreleased]
 
+- Fixed `ci_spread`'s YETI borrowing-base excess-availability calc: a missing `indicative_bbc`/
+  `requested_line` no longer silently zeros to a fabricated "breach"; reports `"n/a"` instead,
+  matching the SDK's own missing-data convention (`ratio_evaluator.evaluate_value`).
+- Added `dscr` real document-derived evidence: `DocumentAgent.process(schema=AppraisalExtraction)`
+  via new `scenarios/dscr/document_intake.py`; `DSCRConductor.run_review(appraisal_path=...)`
+  attaches the extraction as evidence with real `PageLocator` provenance (japes locator-wiring
+  plan Phase 1's first live jaci caller). Optional param, no change when omitted.
+
 ## [0.20.3] - 2026-08-18
 
 - Settings page and `build_info()`/`GET /build.json` now also surface japes' own version and

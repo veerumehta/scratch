@@ -4,6 +4,163 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 ## [Unreleased]
 
+- **Images (`.png`/`.jpg`/`.jpeg`/`.tif`/`.tiff`) are now a supported `convert_document` type** —
+  previously "Unsupported document type" (no branch existed at all). Always routed to the
+  `DocumentIntelligenceProvider` (the same `prebuilt-layout` call already handles images, not
+  just PDFs) — there's no digital-text path for a raw image. `require_readable=True` refuses one
+  outright, matching the existing scanned-PDF behavior.
+- **New DocIntel page/cost accounting** — `reset_di_page_count()`/`get_di_page_count()` tally
+  pages sent to a `DocumentIntelligenceProvider` (whole-document scanned, per-page mixed-mode, or
+  image), per `asyncio` task via a `ContextVar` (confirmed empirically that concurrent tasks each
+  get an isolated counter — no shared-state race in `process_dir`'s `fan_out`). `DocumentAgent.
+  process()`'s `"convert"` tracer span now carries a `di_pages` attribute; `process_dir` sums
+  every file's own count into a new `DirectoryResult.di_pages_processed` (zero for a run where
+  nothing needed DocIntel, and zero for a file whose conversion was skipped via cached `.md`
+  reuse or an already-current manifest entry, since no conversion ran that time). No OTel metric
+  emission added — the repo has no metric plane yet; that's its own item.
+- 18 new tests (`tests/test_tools/test_di_page_accounting.py` new, `tests/test_document_agent.py`,
+  `tests/test_tools/test_conversion.py`, `tests/test_doc_pipeline_gaps.py` — the last one's
+  existing `strict_inventory` fixture also updated: `.jpg` moved from `unsupported_type` to
+  `excluded_by_pattern` now that images are supported). Full suite green (3201 passed, 3 skipped,
+  no regressions). jaci audit: zero references to images or the new accounting functions
+  anywhere in jaci; `docintel.py`'s real `.pdf` path still bypasses this module's routing
+  entirely (confirmed earlier this session) — no behavior change for any existing caller.
+
+- **Mixed-mode PDFs (some digital pages, some scanned) now route per page, not by one whole-
+  document verdict.** `is_scanned` was a single document-wide average (`chars_per_page < 50`) —
+  a 200-page package with 10 scanned pages stayed "digital" at that average, so those 10 pages
+  contributed empty content, silently. `SimplePDFProcessor.process()` now also returns
+  `page_texts` (per-page text, no extra file read) and a new `is_page_scanned` classmethod
+  classifies each page independently. `convert_document`/`convert_document_and_structure`: fully
+  digital or fully scanned stays the existing single-path behavior (no per-page cost for a
+  uniform document); a genuinely mixed document extracts each scanned page as its own single-page
+  PDF and sends it to the provider individually — cheaper than sending the whole document (only
+  the scanned pages are billed) — merging back into one markdown string and one page-structured
+  JSON, in page order and correctly renumbered. `require_readable=True` still refuses a mixed-mode
+  document outright, as it already did for a fully-scanned one. 7 new tests (`tests/test_tools/
+  test_pdf_mixed_mode.py`). Full suite green (3190 passed, 3 skipped, no regressions). jaci
+  caller audit: the real `.pdf` path (`docintel.py`) never reaches this — it calls
+  `SimplePDFProcessor().process()` directly with its own whole-document check, not
+  `convert_document`/`convert_document_and_structure` — zero behavior change for any existing
+  caller.
+
+- **New `jazzx_sdk.tools.documents.workbook` — a full-fidelity workbook reader, the evidence-side
+  counterpart to `conversion._xlsx_to_markdown`'s LLM-input flatten.** That function is lossy on
+  purpose for markdown (formulas discarded, blank rows dropped, no merged ranges, no number
+  formats) — fine for LLM input, not for citing where a value came from. `read_workbook(path)`
+  keeps all of it: formula string *and* cached value together (confirmed empirically that
+  `openpyxl`'s `data_only` flag is exclusive — a single load never gives both, so this opens the
+  file twice and correlates by coordinate), merged-cell ranges, every row preserved (blank rows
+  included, so a row index always matches the real sheet), and each cell's raw number format
+  string verbatim (faithful, not interpreted — scale/sign/date semantics are a downstream
+  decision, not this reader's). New `locate_cell_for_value` resolves a value to its `(sheet,
+  cell)`. `DocumentAgent._resolve_locator` gained a `workbook` parameter (alongside the existing
+  `structured` one from `PageLocator` resolution): an `.xlsx`/`.xlsm` processed with a `schema`
+  now resolves each admitted field to a real `CellLocator` when found on a sheet, the existing
+  `SectionLocator` fallback otherwise. `DocumentResult.had_workbook_view` + `assert_
+  provenance_complete(strict_locators=True)` extended the same way the `PageLocator` gate already
+  was. Namespace: `tools/documents/workbook.py`, not `finance/workbook.py` (that one's the write-
+  side governed-export reporter — different package, different direction of data flow, no real
+  collision despite the shared base name). 21 new tests (`tests/test_tools/test_workbook.py` new,
+  `tests/test_document_agent.py`). Full suite green (3183 passed, 3 skipped, no regressions). jaci
+  caller audit: the one real `schema=`-passing call site only ever hands it PDFs, never an
+  `.xlsx` — zero behavior change for any existing caller; this capability has no live consumer
+  yet, same as the `PageLocator` work before its own first real caller was built.
+
+- **Added `.csv` support to `convert_document`** — previously absent entirely (`Unsupported
+  document type`). Dialect-sniffed (delimiter/quoting, via `csv.Sniffer`) and encoding-fallback
+  (utf-8 first, `latin-1` as the practical floor — it never actually fails to decode). Raises
+  rather than guessing when the dialect can't be confidently detected from the file's own first
+  lines. Renders under a synthetic `Sheet1` heading, same table-preserving markdown shape as the
+  existing `.xlsx` route. New `csv_to_rows(path)` exposes the parsed grid directly — row/column-
+  addressable, blank rows preserved (not dropped, unlike `.xlsx`'s current conversion) so a row
+  index always matches the file's real row count. Purely additive: a `.csv` that used to raise
+  now parses; nothing else changes. 6 new tests (`tests/test_tools/test_conversion.py`). Full
+  suite green (3167 passed, 3 skipped, no regressions).
+
+- **Breaking (behind `strict_inventory`, defaults off)** — `DocumentAgent.process_dir` used to
+  silently omit any file that didn't match `pattern` (default `*.pdf`) — an `.xlsx`/`.csv`/image
+  in the folder appeared in neither `processed`, `skipped`, nor `failed`. New `FileDisposition`
+  enum (`processed`/`skipped_unchanged`/`failed`/`encrypted`/`unsupported_type`/
+  `excluded_by_pattern`) + `DirectoryResult.dispositions: dict[str, FileDisposition]`.
+  `strict_inventory=True` walks every file directly under the base path (non-recursive, matching
+  `pattern`'s own scope) instead of just the glob match, so nothing is invisible. Default off:
+  `False` is byte-for-byte the pre-existing scan scope.
+- **Fixed, unconditional (not behind a flag) — `SimplePDFProcessor` no longer fabricates
+  placeholder content on a corrupt or unreadable PDF.** It used to catch any read failure
+  (missing PyMuPDF, corrupt file) and return a string like `"PDF file: x.pdf (error: ...)"` as
+  the document's *successful* content — `convert_document`/`DocumentAgent.process` then
+  classified and extracted from that fabricated string with no signal anywhere that it wasn't
+  real. Now raises `DocumentConversionError` (or its new `DocumentEncryptedError` subclass for a
+  password-protected PDF, detected via `needs_pass` before any page is read, not a downstream
+  read failing opaquely). `DocumentAgent.process` propagates it; `process_dir` catches it
+  per-file (existing `degrade` semantics) and records the right `FileDisposition` — `encrypted`
+  gets its own reason, not lumped into generic `failed`. `is_readable()` catches the same error
+  and returns `False` (a `bool`-only contract, unchanged) rather than raising.
+- 12 new tests (`tests/test_tools/test_pdf_processor.py` new, `tests/test_doc_pipeline_gaps.py`,
+  `tests/test_tools/test_conversion.py`, `tests/test_document_agent.py`). Full suite green (3161
+  passed, 3 skipped, no regressions). jaci caller audit: one real `process_dir` call site
+  (`portfolio_monitoring`), already uses `pattern="*"` — `strict_inventory`'s full-walk is a
+  no-op there since that pattern already sees everything; the refusal fix is a pure correctness
+  improvement, not a behavior change, for that caller.
+
+- **Four phases of `plan_JAPES_2_5_0_LOCATOR_AND_INVENTORY_DISCIPLINE.md` landed (Phases 2, 6, 8,
+  1 — the fully unblocked ones; Phase 4's inventory/refusal work, Phase 3's workbook/CSV work,
+  Phase 5's routing-honesty work, and Phase 7's fail-loud floats remain, each gated on either a
+  caller audit or an open design decision per the plan).**
+  - **Phase 2 — `formula_version`/`approval_status` on `MetricDerivation`.** `evaluate()` now
+    copies `MetricDefinition.version`/`.approval_status` onto every `MetricResult.derivation` it
+    produces; `VersionBundle` gained an optional `metric_catalog_version`. (jaci-side mirroring —
+    `MetricDerivation`, `metrics.yaml` explicit `version:` values — is separate, unstarted work.)
+  - **Phase 6 — wired `check_completeness` onto `process_dir`.** New `required: Iterable[str] |
+    None` param; when given, `DirectoryResult.completeness` carries the `CompletenessReport`
+    reconciling this run's classifications against the checklist (`None` when omitted, unchanged).
+  - **Phase 8 — `require_approver` on the suspension store.** `InProcessSuspensionStore`/
+    `DbSuspensionStore(require_approver=True)` makes `mark_resumed` raise without an
+    `approver_ref`. Found and fixed a real ordering gap while implementing this: `ConductorEngine.
+    resume_durable` claims and runs the tail *before* calling `mark_resumed` — a store-level-only
+    guard would have let an unapproved resume's side effects run before failing at the very last
+    step. `resume_durable` now checks the same flag itself, before claiming anything.
+  - **Phase 1 (P0) — `PageLocator` wiring, "ship page alone first".** Every extracted field's
+    `SourceCoordinate` pointed at a filename + the field's own name (`SectionLocator(path=name)`)
+    even though `PageLocator`/`CellLocator` have existed, unconstructed, since the evidence schema
+    was authored. New `DocumentIntelligenceProvider.convert_both` (one `analyze()` call for both
+    markdown and page-structured JSON — `AzureDocIntelligenceProvider` overrides it to actually
+    share the call; avoids doubling Azure spend for a caller wanting both views) and
+    `convert_document_and_structure` (the structure-carrying sibling of `convert_document`).
+    `DocumentAgent.process` now resolves each admitted field to a `PageLocator` via a new
+    `locate_page_for_value` (a value→page text search — deliberately simpler than the anchor/
+    template locators in `tools.extraction`, since the generic schema-extraction path has no
+    anchors to locate against) when a structured view exists and the value is found on a page;
+    falls back to the pre-existing `SectionLocator` otherwise (unchanged default). `region` is
+    deliberately left unset — the open region-shape decision doesn't block page-level precision.
+    `assert_provenance_complete` gained `strict_locators: bool = False`: when true, fails on a
+    `SectionLocator` field where a structured view was available (`DocumentResult.
+    had_structured_view`, new); `doc_type` is exempt (a whole-document classification has no
+    single page even when a structured view exists). 34 new tests across `tests/
+    test_locate_page_for_value.py` (new), `tests/test_document_agent.py`, `tests/
+    test_docintel_azure.py`, `tests/test_doc_tier_routing.py`. Full suite green (3149 passed, 3
+    skipped, no regressions) — including a real bug the refactor surfaced and fixed in the
+    process: `test_document_agent.py`'s `_stub_convert` fixture was silently patching the wrong
+    (now-unused) function, so several `process()` tests were passing by accident (a fake-PDF
+    fabricated-error-string plus a classify fake that ignores its input masked it).
+
+- **Two fixes from an external review of `ToolStreamHooks`/tool-arg streaming.** (1)
+  **`InteractiveAgentSpec.stream_tool_events=True` used to silently discard a caller-supplied
+  `hooks=`** — `_agent_hooks` picked `_tool_stream_hooks` over `hooks` outright, so a caller
+  wanting both tool-event streaming and their own `AgentHooks` had no way to get both short of
+  reimplementing `ToolStreamHooks` themselves. New `CompositeAgentHooks` runs both for every
+  `AgentHooksBase` callback instead of one discarding the other. (2) **New `InteractiveAgentSpec.
+  stream_tool_args: bool = True`** — `False` publishes `ToolStartEvent.tool_name` only, no
+  arguments at all, for a caller that doesn't want raw tool args (which can carry an internal
+  search pattern, a storage filename, an internal finding key) reaching a stream consumer.
+  Field-level redaction (vs. this all-or-nothing cutoff) already has a home:
+  `StreamPublisher(event_transformer=...)`, shipped this same release — runs on the constructed
+  event right before publish, with access to whatever per-turn state the caller closes over
+  (e.g. `get_streaming_id()` to key into a per-turn display-name map). 7 new tests
+  (`tests/test_tool_stream_hooks.py`, `tests/test_interactive_agent.py`). Full suite green (3120
+  passed, 3 skipped, no regressions).
+
 - **Two document-ingest gaps closed, found while reviewing real client documents against the
   pipeline.** (1) **`convert_document` gained `.pptx` support** — new `_pptx_to_markdown`
   (`python-pptx`, new optional `pptx` extra), one `## Slide N` section per slide, text frames and

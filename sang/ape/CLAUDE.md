@@ -12,6 +12,36 @@
 - The user WANTS critical thinking, not agreement
 - If uncertain, present options with pros/cons and let user decide
 
+## Sibling Repos (local checkouts)
+
+All JazzX repos are checked out as siblings of this one, at `/Users/sangit/src/<name>` (i.e.
+`../<name>` from here) — check there before assuming a repo needs GitHub API access or isn't
+available locally. Branch shown is what's currently checked out (drifts over time; re-check with
+`git -C /Users/sangit/src/<name> branch --show-current` rather than trusting this list blindly).
+
+| Repo | Branch (as of 2026-08-20) | What it is |
+|---|---|---|
+| `jaci` | dev | Primary real-usage consumer of japes; PoC-stage, only-we-use-it repo (per user, 2026-08-20) |
+| `jazzx-assistant` | dev | JazzX Assistant for chatting with a loan — **the most real usage of japes today** (per user, 2026-08-20), distinct from `assistant` below |
+| `assistant` | main | Separate "Assistant Repo" — confirm scope/relationship to `jazzx-assistant` before assuming which is meant |
+| `juno` | main | Builder Studio copilot on OpenAI Agents SDK; jazzx_sdk footprint historically minimal |
+| `kernel` | main | The GenAI kernel powering JazzX; deprecating in favor of japes patterns (absorb, don't dismiss) |
+| `kernel-lab` | dev | — |
+| `knowledge_hub` | main | Knowledge Hub service (KH) |
+| `eval-service` | main | Eval service; contract convergence work with japes' own `jazzx_eval_contracts` |
+| `common` | main | Shared submodule (also vendored into japes as a git submodule — see the common-submodule note below) |
+| `client-api` | main | — |
+| `macer` | main | MACER — deprioritized, don't resume unasked (see memory) |
+| `macer-japes` | japes | — |
+| `k9` / `k9-ui` | dev | — |
+| `policy-workbench` | main | Live example for the InteractiveAgent openai-agents-SDK vs claude-agent-SDK generalization question |
+| `commercial-lending-demo` | lovable-demo | — |
+| `flowable-core` | fix/macer-response-nested-tracking | — |
+| `jazzx-cli`, `jstack`, `ontofun`, `mortgage-*`, `anthropic-fs-ref` | various | Lower-priority/reference repos |
+
+Don't assume a repo's role from its name alone (`assistant` vs `jazzx-assistant` is a real trap) —
+skim its own README/CLAUDE.md when working in it for the first time in a session.
+
 ## Current Session Context
 
 ### Version Status: 2.4.1 (per `_version.py`, committed through `0476e81`); InteractiveAgent
