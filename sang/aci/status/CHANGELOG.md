@@ -9,6 +9,107 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ## [Unreleased]
 
+- **Model-data overlay** (`jaci.sdk.model_overlay`): registers the Claude 5 family
+  (`claude-opus-5`, `claude-sonnet-5`, `claude-fable-5`) with the SDK at package import, ahead of
+  JAPES shipping them. Prices and limits transcribed from Anthropic's own pages (verified
+  2026-08-23), not from memory or a summary. Without it these models are unknown to JAPES: costing
+  worst-cases at `DEFAULT_PRICING` (a 1M-in/100k-out Opus 5 call reports $37.80 instead of $7.50),
+  the context window is unknown so compaction falls back to a fixed threshold, and `thinking_shape`
+  defaults to the legacy `enabled` request shape, which these models reject outright.
+
+  The overlay only ever **adds** — each entry is skipped when JAPES already knows the model, so it
+  becomes a no-op and can be deleted once the SDK ships these rows. Guarded by a test, because
+  `register_model_card` overwrites unconditionally: if the overlay stopped checking first it would
+  silently outrank the SDK's own data.
+
+## [0.20.5] - 2026-08-22
+
+- Dependency refresh: japes 2.4.4 → 2.4.6, litellm 1.98, plus scipy/ruff/narwhals bumps and the
+  boto3 stack litellm now pulls. **anthropic held at <1.0.0** (a deliberate upper cap, against the
+  usual ">= floors" rule, documented inline): 1.0.0 removes `temperature` from
+  `messages.create()`, which japes' Anthropic providers still pass, so a live Claude call raises
+  `TypeError`. Neither suite catches it — every anthropic test on both sides mocks the client, so
+  japes was fully green with the real path broken; only a live smoke call surfaced it. Lift the cap
+  once japes migrates to the 1.0 API (`temperature` has no direct equivalent; the nearest concept
+  is the new `output_config.effort` tier).
+
+- Consolidated ci_spread's two spreading orchestrations into one. The scenario declared its own
+  five-step `spread` pipeline and a `CIConductor.run_spread` to execute it, while every spread
+  button in the demo actually ran the commercial-lending capability's `run_cl_spread`. The
+  scenario-local one had no caller at all -- but its *descriptor* was what the Concepts tab
+  diagrammed as the demo focus, so the diagram showed a pipeline nothing executed. The Concepts
+  focus now points at `CL_SPREAD_PIPELINE` (the live path), and `run_spread`, its components, the
+  `CI_SPREAD_PIPELINE` descriptor and the pack's `spread` entry are gone.
+  **Retired with it** (they only ever ran in that dead path, and are not in `run_cl_spread`):
+  entity-extraction/KG during the spread phase, and canonical persistence of the spread. If either
+  is wanted they belong as deliberate steps on the live pipeline, not a second orchestration.
+  Note a third, thinner path remains by design: `spread_filings()` direct from
+  `render_spreading_tab`, which serves the multi-filing 10-K tab for both C&I and CRE and needs no
+  metrics/validation.
+
+- Spreading and validation now delegate to the SDK. `spreader`, `spread_package` and `validation`
+  are thin shims over `jazzx_sdk.pipelines.financial_spread` and `jazzx_sdk.finance.{package,
+  validation}`, keeping every public name and signature so no caller changed. What stays behind is
+  genuinely this pack's: the per-segment anchors, the chart of accounts, `CONTROL_KEYS` naming the
+  canonical lines the arithmetic controls read (previously hardcoded inside each detector), and
+  `detect_undisclosed_obligations`, which reads back through our own metric engine and so carries
+  an open `code` rather than an SDK enum member.
+- `ci_spread`'s declared five-step `spread` pipeline actually executes now. Its step ids
+  (`document_intake` → `entity_extraction` → `spread_financials` → `validate_spread` →
+  `persist_spread`) had never been bound — describe/UI metadata only, while `run_spread` ran the
+  sequence imperatively. Deliberately preserved: the phase never aborts (an `on_step_error` hook
+  replaces the per-phase try/except), and `checks` stays the caller's own ground-truth comparison
+  with structural findings under their own key. The spread pipeline gets its own component map
+  rather than sharing one flat dict, since both declared pipelines name `document_intake`/
+  `entity_extraction`. First tests this method has ever had.
+- New characterization test pinning spread + validation output against the real YETI and MAA
+  filings; it held byte-identical through every phase above. Requires japes `dev` past `bbef95e`.
+
+- Document-classification taxonomies for `dscr`, `cre_underwriting`, and `insurance_diligence`
+  moved from hardcoded Python constants to `config/packs/<pack>/document_agent.yaml`
+  (`DocumentAgentSpec.from_dir`), and are now editable from a new "🗂️ Domain" tab in each
+  scenario's UI (`src/jaci/scenarios/shared/domain_tab.py`, new shared `st.data_editor`
+  component, save via japes' new `DocumentAgentSpec.save_taxonomy`). `insurance_diligence` got
+  its own new `config/packs/insurance_diligence_core/` pack dir (it previously had none, only
+  reusing `cre_underwriting_core`'s `pack_id` for unrelated config). Requires japes `dev` past
+  commit `ea8c8d9`. Verified: existing intake tests pass unchanged (YAML load produces the same
+  taxonomy the hardcoded constant did) plus a real end-to-end check via Streamlit's `AppTest` —
+  ran each scenario's actual demo page (no exceptions, correct tabs render) and clicked the real
+  "Save taxonomy" button, confirming it persists through the full widget tree, not just a direct
+  function call. No browser click-through was possible in this environment (no browser-automation
+  tool available) — that verification still needs a human pass before calling this fully done.
+
+- `dscr`'s `extract_appraisal`, `cre_underwriting`'s `classify_docs_dir`, and
+  `insurance_diligence`'s `classify_docs_dir` now go through japes' `document_ingest` reference
+  pipeline (single-file / collection route) instead of calling `DocumentAgent` directly — same
+  public signature/return shape for all three, no caller changes needed
+  (`conductor.py`/`case.py`/`ui/demo_page.py` unaffected). `cre_underwriting`/
+  `insurance_diligence`'s folder walk is now `pattern="**/*"` (real deal folders aren't flat)
+  instead of a hand-rolled `rglob` loop.
+- **Requires japes `dev` past commit `f76f205`** (unpushed as of this entry) — that commit fixes
+  a real `process_dir` bug the `**/*` migration above would otherwise have hit: a recursive
+  pattern previously keyed by bare filename into one flat output dir, so two same-named files in
+  different subfolders (a real shape in a nested deal folder) would silently overwrite each
+  other's artifacts. Verified live against the real Mesa Verde (cre_underwriting) and Solmara Bay
+  (insurance_diligence) gold document fixtures — full suite green (946 passed, 8 skipped, 4
+  xfailed, 1 xpassed, matching the pre-change baseline exactly).
+
+
+- `dscr`'s `cltv_pct` computation (`eligibility/context.py`) now goes through japes'
+  `finance.metrics.pct(..., strict=True)` instead of raw division — a zero/missing
+  `property_value` previously crashed with a bare `ZeroDivisionError`, now raises a typed,
+  catchable `MetricRefusal`.
+- Every definition in `config/packs/ci-spread-core/metrics.yaml` now carries an explicit
+  `version` (japes' metric-definition validation now requires one). `MetricDerivation`
+  (`metric_result.py`) gains `formula_version`/`approval_status`, populated on the DSL path
+  (`dsl_catalog.py`'s `_to_jaci_result`) from the source `MetricDefinition`; the legacy
+  Decimal-arithmetic path leaves both `None`.
+- **Requires japes `dev` past commit `8192574`** (unpushed as of this entry) — verified live
+  here only through the local editable install; a fresh `uv sync`/`poetry install` elsewhere
+  won't see this SDK surface until japes' `dev` is pushed.
+
+## [Unreleased]
+
 - Fixed `ci_spread`'s YETI borrowing-base excess-availability calc: a missing `indicative_bbc`/
   `requested_line` no longer silently zeros to a fabricated "breach"; reports `"n/a"` instead,
   matching the SDK's own missing-data convention (`ratio_evaluator.evaluate_value`).

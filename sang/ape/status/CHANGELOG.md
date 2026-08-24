@@ -2,7 +2,908 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+## [Unreleased] - Plato
+
+- **Two assistants, different manifests and personas, served from one running instance by writing
+  configuration.** This is phase 1's whole claim and it now has a test that makes it: a second
+  assistant is published into the durable store mid-test and the same process serves it, with no
+  route added, no agent constructed by hand and nothing redeployed. Before the publish that
+  assistant is a 404 on the same instance.
+
+  `plato/runtime.py` is the piece `server/app.py` never had. It resolves `(tenant, assistant_id)`
+  to a bound `InteractiveAgent` through `build_from_manifest`, and caches it on a key that carries
+  `release_id` from the start even though nothing populates it until phase 2: adding a field to a
+  live cache key later invalidates nothing and quietly keeps serving the old shape. The manifest
+  itself is read every request, so a new release is noticed rather than waiting for a restart, and
+  `invalidate()` exists for the write path that makes a bound agent stale. Registries are supplied
+  per tenant through a callable, which is the seam phase 2 replaces with a lookup against released
+  configuration.
+
+  `plato/assistants_api.py` serves chat, durable streaming and sessions under
+  `/v1/assistants/{id}`, on `GovernedRouter` like the rest of the server tier. Streaming is the
+  existing `runs/` machinery rather than a second SSE implementation: a turn is submitted as a
+  `TurnRun` and the response streams its journal, so a dropped connection resumes from a sequence
+  number and a stop is a durable flag any replica can set. The stream names its run id before the
+  first delta, because a client whose connection drops on that delta still needs something to
+  reconnect with. The run store is not tenant-scoped, so ownership is recorded on the run at
+  submission and checked on resume and stop; without that, a run id from any tenant streams to any
+  other. A missing assistant, another tenant's assistant, and another tenant's run are all 404,
+  never 403, since distinguishing them answers the question an unauthorised caller was asking.
+  Continuing a session the sweeper already expired is a typed `Refusal` at 412, not a 500: the
+  caller needs to know it may start a new session rather than retry something that cannot succeed.
+  The streaming routes are absent, not broken, when no run store is wired, rather than advertising
+  durability a deployment does not have.
+
+  `plato/app.py` composes `create_app` through `extra_routes` rather than forking it, so CORS,
+  identity middleware, health and the security headers stay in one place. It defaults
+  `require_identity` on and runs the posture check even when a caller supplies its own settings, so
+  opting out is not something a settings object can do quietly. `/invoke` refuses with a named
+  reason and a pointer to the assistant routes rather than running something no configuration
+  described.
+
+  `plato/wiring.py` is the one seam a deployment fills: `PLATO_WIRING` names a `module:callable`
+  returning a `PlatoWiring`, and every role in the image reads the same variable, so a sweeper job
+  and a replica cannot disagree about which database they are on. A role that cannot resolve it
+  exits non-zero rather than starting. `plato/jobs.py` runs the session sweep as a `job:*` role
+  that completes and exits: as a background task in a replica it would run once per replica, so
+  scaling out multiplies the sweeps and scaling to zero stops them. One tenant's failure does not
+  end the sweep, and a sweep over no tenants warns rather than reporting success for doing nothing.
+
+- **The durable stores are tenant-scoped, and the image no longer leaks its build credential.**
+
+  Plato's phase 1 requires a request for another tenant's assistant to return 404 rather than that
+  tenant's data, and `assistant_manifest_record` had no tenant column at all: Plato's own tenancy
+  guard would have rejected it. Both durable stores gained `tenant_id` in a unique constraint
+  rather than as a plain column, since a column is a filter a query can forget while a key is a
+  constraint the database applies regardless. The scope is fixed at construction rather than passed
+  per call, so a caller cannot omit it. A `DEFAULT_TENANT` keeps every existing caller working
+  unchanged, and the column is present from the first migration, which is the only point at which
+  adding it is free.
+
+  Isolation is asserted rather than assumed: the same assistant id under two tenants holds
+  different content and neither `put` demotes the other's head, a rollback cannot reach across, two
+  tenants can hold the same caller-supplied session id, and one tenant's reaper leaves another's
+  sessions alone. Both tables now check themselves against the tenancy rule directly.
+
+  The Dockerfile took the shape kernel already proved. It had passed the GitHub token as a build
+  argument, which is recorded in image history and readable by anyone who can pull the image; it is
+  now a BuildKit secret, present only for the step that needs it. The build is two-stage, so no
+  compiler, git or credential reaches the runtime image. `POETRY_INSTALLER_MAX_WORKERS=1` replaces
+  the retry loop the estate has been carrying for the client-api double-clone failure: serialising
+  the installer makes that race impossible rather than retried. A healthcheck runs the entry
+  point's own `--check`, so a container without a runtime reports unhealthy instead of looking
+  fine.
+
+- **Queue dedupe is now asserted across a restart, not just across replicas.** The existing
+  coverage shares an `InProcessQueueExecutionStore` between two runtimes, which demonstrates two
+  replicas of one process. Azure Storage Queue is at-least-once, so the case that actually costs
+  something is a worker that takes a message, dies, and comes back to find it redelivered with no
+  memory of having run it. The new tests build a separate store per simulated worker over one
+  database, with nothing shared in memory, and confirm the handler runs once. Verified by mutation:
+  giving the second worker its own database makes it fail.
+
+- **Plato verifies inbound tokens itself, and enforces tenancy before it has tables.**
+
+  Nothing in this estate verified an inbound token. Every JWT reference across `japes` and
+  `common` was outbound, a token being *sent*, and identity arrived as headers a gateway injected
+  after doing the verifying elsewhere. UAF item 7 left "who verifies the token" to the service
+  boundary; Plato is that boundary, and answers it in the direction that does not assume a trusted
+  gateway sits in front.
+
+  `plato/oidc.py` validates a bearer token against the issuer's published signing keys. No new
+  dependency: `pyjwt` and `cryptography` are already core. Signing keys are cached, because a fetch
+  per request makes the identity provider a hard dependency of every call, and rotation is handled
+  by refetching when a token names a key the cache does not hold, which is the event that actually
+  signals rotation rather than a timer guessing at it. That refetch is rate limited so an
+  unrecognised key id cannot be used to hammer Keycloak, and one unusable key in a JWKS document
+  does not void the rest. Verified claims map to the same shape `x-security-context` carries, so a
+  verified token and a gateway-injected header produce the same identity and nothing downstream
+  needs to know which path a request arrived by. Header-borne identity keeps working: verification
+  turns on by configuring an issuer, and an unconfigured verifier refuses rather than accepting
+  everything.
+
+  Tested with real RSA keys and real signed tokens rather than a mocked verifier, which would
+  prove the calling code works and say nothing about whether a forged token is rejected. Covered:
+  a well-formed token from the wrong signer, an expired one, a wrong issuer, a token minted for a
+  sibling service by the same realm, an unknown key id, and rotation.
+
+  `plato/tenancy.py` requires `tenant_id` in a primary key or unique constraint rather than merely
+  as a column: a column is a filter a query can forget, a key is a constraint the database applies
+  whether or not the query remembered. The guard lands before any table exists, because
+  retrofitting tenancy is not a schema change but a backfill against rows whose owner nobody
+  recorded. It reports every offender at once, and its check against the live registry is vacuous
+  today and committed deliberately, since it starts failing the moment a Plato table forgets.
+
+  Keto wiring is deferred rather than written unverified: `keto_client` is not installed, so
+  `common.core.keto` cannot be imported or tested here, and there are no routes to attach a
+  permission check to until Phase 1. It is genuinely wiring when that time comes, since
+  `Namespace.Assistant` already exists and `check_permission` is generic.
+
+- **`scripts/run_tests.sh`** runs the suite and prints the failures plus the counts line, keeping
+  the full output at a path. The suite is now large enough that a plain run buries its own result
+  in the warnings summary, so the usual invocation had become pytest plus a redirect plus a tail,
+  retyped slightly differently every time.
+
+- **Plato refuses to boot deployed without identity enforcement.** `ServerSettings.require_identity`
+  defaults to off in the SDK, which is right there: a library cannot know whether its consumer's
+  callers send identity headers yet, and flipping it on would break them. It is not defensible for
+  a multi-tenant service that serves assistant configuration and traces, so Plato decides otherwise
+  for itself rather than asking the SDK to change its default.
+
+  The failure this prevents is silent. `authority.context.admit_hop` fails open when no
+  `InvocationContext` is ambient, so a deployment that never enabled identity admits every
+  unauthenticated caller and reports healthy while doing it. `plato/posture.py` checks at startup
+  and refuses with exit code 3, distinct from the unknown-role exit so the two are not confused,
+  and the refusal names the setting, the reason and the escape hatch. `--check` is gated too, so
+  the failure lands in a readiness probe rather than on the first request. Nothing is enforced
+  outside a deployed posture, which is what keeps the check from being switched off out of
+  annoyance, and a settings object lacking the attribute is treated as off rather than compliant.
+
+  Also records the five database schemas and, more importantly, the rule attached to
+  `plato_projection`: a JAPES service may hold a read projection of another system's facts and may
+  not become a second writable copy of them. Naming the schema is what makes a write into it look
+  wrong in a diff. No migration yet, deliberately: there are no tables, and five empty namespaces
+  would be ceremony. The first table migration creates the schema it names.
+
+  **`queue_processor`'s in-memory message dedupe, which the Plato plan lists as a latent
+  correctness bug to fix here, no longer exists.** It was replaced by a durable claim in
+  `QueueExecutionStore` keyed on `header.message_id`, with a lease and a
+  `duplicate_invocation_skipped` response, which is a stronger answer than the plan proposed. No
+  work was needed.
+
+- **Durable session and manifest stores (Plato phase 0b).** `AssistantManifestStore` and
+  `SessionStore` shipped as abstractions with in-process implementations only, which is right for
+  a library and unusable for a service: two replicas behind a load balancer do not see each
+  other's sessions, so a resume lands wherever the balancer sends it and finds nothing, and
+  `history()` and `rollback()` were promises the process could not keep past its own lifetime.
+
+  `DbSessionStore` and `DbAssistantManifestStore` supply the durable half on `fabric.db`,
+  following `audit/events_db.py` and `prompt_registry_db.py` rather than inventing a third
+  persistence idiom: typed columns over a JSON blob, `metadata` registered in `__init__` for the
+  consuming service's alembic, and DDL left to that service. They live beside their protocols in
+  `jazzx_sdk` for the same reason the existing two do, so a consumer other than Plato can use
+  them; Plato owns the schema and the migrations.
+
+  Both preserve the in-process semantics exactly, which is the point of a second implementation:
+  `touch` never revives an expired session, `expire` is a new state rather than a delete, a
+  rollback appends a new record rather than resurrecting an old one, and a `put` that fails
+  validation leaves nothing behind. 22 of the session tests run against **both** implementations
+  through one parametrized contract, so a divergence is caught here rather than in a replica.
+
+  Found while testing: **sqlite discards tzinfo regardless of `DateTime(timezone=True)`**, so a
+  round-tripped timestamp came back naive and could not be compared with the aware value its
+  record was built from. Both stores now re-attach UTC on read, since every column is written in
+  UTC and the store's contract should not depend on which backend is under it.
+
+  Two claims in the Plato plan were wrong and are corrected here rather than carried: a durable
+  `ConfigAuditStore` already exists (`audit/events_db.py`), so two abstractions needed backing
+  rather than three; and `tenant_id` is not absent everywhere, since `ConfigAuditEvent` and its
+  row already carry it.
+
+- **Plato (Platform Two) Phase 0a: the package, the boundary, and the deployable skeleton.**
+  `plato/` is a new top-level package, a sibling of `jazzx_sdk/` rather than a subpackage of it,
+  that will host the SDK as a service (`japes-plato`). Nothing runs yet: this phase lays the
+  boundary and the deployable skeleton so later phases have somewhere defensible to build.
+
+  The dependency runs one way. `plato` imports `jazzx_sdk` and `common`; the reverse never
+  happens, and `.importlinter` enforces it in CI on every push and pull request. That check
+  landed in the same change as the package, because a boundary added after the first violation is
+  a refactor rather than a rule. A second contract keeps `common` from importing either, since it
+  is vendored into other repositories and a dependency back into this one would make it
+  unvendorable there. The contract was verified by planting a violation: it exits 1 and names the
+  importing line.
+
+  **The repository gains its first Dockerfile and its first alembic tree.** One image, with the
+  role selected at run time by `JAPES_RUN_MODE`, so a deployment promotes a single digest.
+  Migrations are a job, never a container-start step, because a replica that migrates on boot
+  races every other replica in the same rollout. The alembic tree belongs to `plato/` and targets
+  Plato's metadata only: every `*_db.py` store in `jazzx_sdk` says DDL belongs in the consuming
+  service's alembic, and Plato is that service, so `jazzx_sdk` still ships no migrations. It
+  resolves its engine through `fabric.db`, whose `engine()` docstring already names alembic as
+  the caller, and carries no connection string. Autogenerate is filtered to `plato_*` schemas:
+  the database sits on a shared server, and reflecting without that filter produces a migration
+  that drops another service's tables while looking entirely plausible.
+
+  `python -m plato` resolves and reports its role, and **refuses to serve**. The runtime lands in
+  Phase 1, and a container that boots into a stub reports healthy to an orchestrator, which is
+  worse than one that fails.
+
+  Costs a plain consumer nothing: `fastapi`, `sqlalchemy` and `asyncpg` are already core, so the
+  `plato` extra adds only `alembic`. 18 tests cover the boundary, the packaging, the alembic
+  scoping and the entry point.
+
 ## [Unreleased]
+
+- **The suite now runs in CI, so a pull request arrives with signal rather than an assertion.**
+  Nothing ran pytest outside the machine of whoever wrote the change, which made "tests pass
+  locally" a claim about an environment nobody else had. `.github/workflows/tests.yml` runs it on
+  every pull request and on pushes to `dev`, `main` and `plato`, with a concurrency group so a
+  branch pushed three times does not hold three runners and leave the reviewer reading whichever
+  finished last.
+
+  The extras are matched to what the suite is actually verified against rather than chosen for
+  breadth: installing more would run tests nobody has seen pass, and installing fewer would drop
+  coverage the local run has. `pandoc` is installed because it is a system binary several document
+  tests skip silently without, and silent skipping is the failure this job exists to remove; `-rs`
+  prints every remaining skip with its reason, so a test that stopped running for an environmental
+  reason is visible instead of absorbed into the counts. The live-LLM smokes stay skipped: a suite
+  that spends money and fails on someone else's rate limit stops being trusted within a week. The
+  private-dependency credential is passed through `GIT_CONFIG_*` for the one step that needs it,
+  not written to `~/.gitconfig`, where a failing install would skip the cleanup and leave it for
+  everything after.
+
+- **Every poetry pin in the repository was too old to read the repository's own lockfile.**
+  `poetry.lock` is `lock-version = "2.1"`, written by poetry 2.2.1, and both example images pinned
+  1.8.3, which refuses to read it. Every image build would have failed at the install step. The
+  pins are now 2.4.1, and `tests/test_dockerfiles.py` derives the floor from the committed
+  lockfile rather than restating it, so relocking with a newer poetry fails the check instead of
+  silently invalidating a pin nobody revisits. It covers the workflows for the same reason.
+
+- **Both example images were unbuildable, and one leaked its build credential into every running
+  container.** They copied `jazzx_runtime_sdk/`, a package renamed long enough ago that nothing
+  remembered, so the `COPY` failed and the build stopped there. Nothing caught it because nothing
+  in the suite reads a Dockerfile and neither image is built in CI. The basic sample was worse off
+  still: it pinned python 3.11 against a project floor of 3.12 and called `poetry install --no-dev`,
+  an option poetry removed, so it could not have installed even with the paths right.
+
+  The credential handling was the more serious half. `ARG GITHUB_TOKEN` is recorded in image
+  history and readable with `docker history` by anyone who can pull the image, and the document
+  analyzer additionally promoted it to `ENV GIT_TOKEN`, where it was readable inside every running
+  container. Both now take it as a BuildKit secret, mounted only for the step that needs it.
+
+  Both images took the two-stage shape, so no compiler, git or credential reaches the runtime
+  image, and `POETRY_INSTALLER_MAX_WORKERS=1` replaces the retry loop that worked around the
+  client-api double-clone failure: serialising the installer makes that race impossible rather
+  than retried. The healthcheck was `python -c "import sys; sys.exit(0)"`, which reports healthy
+  for a container that cannot start and so guarantees an orchestrator never restarts it; it now
+  imports what the entry point imports. The separate `pip install -r requirements.txt` step is
+  gone, since `openai-agents` has been a core dependency for some time.
+
+  The publishing workflow moved with them. It passed `build-args: GITHUB_TOKEN=...`, which no
+  Dockerfile reads any more, so the build would have failed at the poetry install with an
+  authentication error naming nothing useful; it now passes a `secrets:` entry and sets up Buildx
+  explicitly rather than relying on the runner's default builder, since `--mount=type=secret` is a
+  BuildKit feature and the fallback is silent.
+
+  `tests/test_dockerfiles.py` is the part that stops this recurring: every `COPY` source must
+  exist, no `ARG` may name a credential, and no base image may sit below the project's python
+  floor. A rename is exactly the change that leaves a `COPY` behind. Verified by mutation:
+  restoring the old path fails the check. `common/` is excluded as a submodule, and its
+  devcontainer image does pass `ARG GITHUB_TOKEN`, which is a fix for that repository to make.
+
+- **`DbConfigAuditStore` returned timestamps that could not be compared with the ones it was
+  given.** sqlite has no timestamp type and hands back a naive datetime whatever the column
+  declares, so an audit event written with an aware `occurred_at` read back naive: the event did
+  not equal itself across a round-trip, and `history()` could not be ordered against a caller's own
+  timestamps. Postgres `timestamptz` masks this, so it only bit the sqlite path. UTC is now
+  re-attached on read, which restates how the column is written rather than guessing.
+
+  The shared exercise both audit-store implementations already run through now asserts the
+  timestamp contract, so the durable and in-process stores cannot disagree about it. Verified by
+  reverting the fix: the durable store fails and the in-process one passes.
+
+- **`scripts/run_tests.sh`** runs the suite and prints the failures plus the counts line, keeping
+  the full output at a path. The suite is large enough that a plain run buries its own result in
+  the warnings summary.
+
+## [2.4.7] - 2026-08-23
+
+- **Model data is versioned, and overlays leave a trace.** Per-row `Provenance` says where a rate
+  came from; `MODEL_DATA_VERSION` says *which snapshot of the file* answered a call, so a cost
+  figure can be tied back to the rates that produced it. `register_model_pricing` /
+  `register_model_card` now record an `OverlayRegistration` (model, kind, source, whether it
+  overwrote) instead of writing silently. A consumer carrying data ahead of the SDK, as jaci does
+  for the Claude 5 family, previously left nothing behind, so two processes on the same release
+  could answer differently with nothing to explain why. `overlay_registrations()` exposes the log;
+  `model_data_version_tags()` shapes it for a run.
+
+  `ensure_run` stamps those tags on every run japes opens, so all five reference pipelines carry it
+  without each remembering. Tags rather than a trace-schema field on purpose: `VersionBundle` is
+  frozen under the Spec-v1.5 contract, so extending it is a cross-team change while tags are the
+  sanctioned hatch.
+
+- **`jazzx_sdk.digest.content_digest`**: the content hash as a primitive with no dependencies.
+  `evaluation.prompt_registry.content_version` has been the de-facto one, and `fabric.guidance` and
+  `manifest.store` already import it from there; but `llm` sits *below* `evaluation` (nine imports
+  one way, none the other), so nothing under `llm` could reach it without inverting the dependency.
+  `content_version` now delegates and returns a byte-identical hash: same name, same length, same
+  callers. Accepts dicts via canonical JSON, so a reformat that changes no value is not a new
+  version.
+
+- **Response security headers** (`server.security_headers`): CSP, X-Frame-Options,
+  X-Content-Type-Options, Referrer-Policy, applied by `create_app` with an API-shaped default of
+  `default-src 'none'`. japes set none of these, which is defensible for a service-to-service API
+  and not for `ServerSettings.static_dir`, which serves a SPA from the same origin. **HSTS stays
+  off unless asked for**: a browser *caches* it, so one response from a plain-HTTP dev origin pins
+  that host to HTTPS locally with no convenient undo. `spa_csp()` builds the same-origin policy a
+  served bundle needs, and a route setting its own header keeps it.
+
+- **Settings writes get concurrency control and an audit line.** `GET {prefix}` returns an `ETag`
+  over the stored values, not the masked catalogue, since two different secrets both render as the
+  mask and must not look like the same state, and PATCH honours `If-Match` with a 412. Optional,
+  because requiring it would break every existing caller. Each write logs `settings.write` with the
+  actor and the **key names only**: this endpoint writes secrets, and an audit trail that quotes
+  what was written is a second copy of the secret in the log. (The deployed-posture refusal for
+  unauthenticated writes already existed.)
+
+  Fixing this surfaced a trap worth recording: `settings_api` imports fastapi function-locally so
+  the module stays importable without the server extra, but under `from __future__ import
+  annotations` FastAPI resolves handler annotations against **module globals**: a function-local
+  `Response`/`Header` is invisible there and the parameter is treated as a request field, 422 on
+  every call. Those two imports are now module-level behind an ImportError guard.
+
+- **A read-only console view** (`server.console_api`, opt-in via `extra_routes`): three GETs on a
+  `GovernedRouter` exposing the platform catalog, the full model-data picture (rates, tiers, cards,
+  provenance, unreviewed rows, overlays, data version) and registry contents via the existing
+  `describe()` convention. All of it is already computed in-process with no way out; answering "why
+  did this turn cost that" otherwise means reading someone's logs or their source. A registry
+  without `describe()` reports that rather than vanishing, since omitting it would read as "empty".
+
+- **Added `gpt-5.5`** ($5.00/$30.00, cached $0.50) with its long-context tier above 272,000 input
+  tokens ($10.00/$45.00), the last OpenAI model the vendor tiers that japes did not carry. Priced
+  only: the row's `(<272K context length)` annotation marks the tier boundary, not the context
+  window, so a card needs a human to source the real limits.
+
+- **Reconciled all three vendor pricing pages; three write guards added after the run proposed
+  corrupting data.** A live fetch found no real rate drift, but `--write` would have applied 13
+  changes, of which 10 were wrong:
+  - **7 un-deprecations.** A pricing page carries rates, not lifecycle: a retired model still
+    listed there is not thereby current, and the deprecation flags came from the vendor's separate
+    deprecations page, which this script never reads. It read absence-of-a-notice as `deprecated:
+    false` and would have silently un-retired `gpt-4o`, `gpt-4o-mini` and five o-series models. A
+    pricing page can now only ever flag a model as *newly* deprecated, never un-deprecate one.
+  - **An 8x price jump.** `gpt-4o-mini` was proposed at $1.25/$5.00 against its real $0.15/$0.60.
+    the page lists that model under standard, batch, fast-mode *and* fine-tuning tables at once,
+    and the extractor mixed them. A change beyond 3x is now reported and skipped rather than
+    written, since real rate moves are incremental.
+  - **A storage price read as a cache-write price.** Gemini has no per-token cache-write rate; it
+    lists "$1.00 / 1,000,000 tokens per hour" of cache *storage*. The extraction prompt now names
+    that trap explicitly.
+
+  Applied from the run: `cache_creation` for the three `gpt-5.6` models ($5.00 / $2.50 / $0.25),
+  which had been entered without it, each confirmed as 1.25x its input rate before writing. All
+  three provider `verified` dates bumped, so the weekly staleness job now passes instead of
+  arriving red.
+
+- **Changing a rate clears that row's sign-off.** A review vouches for the numbers a person
+  actually saw and cannot survive them changing, or the row keeps asserting a human checked a
+  value written after they looked. The three `gpt-5.6` rows went back on the review list for
+  exactly this reason: their cache-write rate was added after they were signed off.
+
+- **Per-row pricing provenance, and a review step for a human.** `PricingSource` answers "when did
+  anyone last look at this vendor's page": right for a staleness sweep, wrong for an audit. Rows
+  are transcribed one at a time, from different pages, on different days. New `Provenance`
+  (`source`, `retrieved`, `reviewed_by`, `reviewed_on`, `note`) records that per row, read via
+  `model_provenance(model)`, which falls back to the provider sweep for rows carrying none,
+  honest rather than blank, since that genuinely is all that is known about them.
+
+  `reviewed_by`/`reviewed_on` record a **human** confirming a transcription, deliberately separate
+  from retrieving it. A rate cannot be validated by a test: it is plausible whatever column it came
+  from, and vendor pages put standard beside long-context, preview beside GA, free beside paid. So
+  a machine-read rate stays unreviewed until a person says otherwise, and a provider-wide sweep
+  never counts as a per-row confirmation.
+
+  `update_model_pricing.py --review` prints every rate grouped under the URL it was read from:
+  base rates, tier, retrieval date and note, so the check is a comparison rather than an
+  excavation; `--mark-reviewed 'Name' --models a,b` records the sign-off. It refuses a row with no
+  provenance, since there would be no source to have checked it against. `unreviewed_models()`
+  exposes the work list.
+
+  Provenance resolves through an alias the same way pricing does. An alias answers with its
+  target's numbers, so it was read from the same page on the same day and confirmed by the same
+  person; reporting it as unsourced would misdescribe rates that have both. Caught because the two
+  pending counts disagreed: `unreviewed_models()` walks pricing keys (aliases included) while the
+  review tooling walks JSON rows, and a sign-off that can never complete is worse than none. An
+  invariant test now asserts the two agree.
+
+  The 13 rows read from vendor pages on 2026-08-23 are signed off by Veeru; 32 rows carried over
+  from earlier sweeps remain unreviewed, which is accurate.
+
+- **`gemini-3-flash` re-verified and left unchanged at $0.50/$3.00/$0.05.** It had been flagged as
+  possibly understated against a $0.75/$3.75 figure; a focused re-read of the vendor page shows no
+  GA row for that id at all, only `gemini-3-flash-preview` at the rates already recorded. The
+  $0.75 came from a broad "list every price" extraction, the same unreliable shape that produced a
+  wrong figure for this exact model once before. Its provenance note now carries that warning so
+  the next reader doesn't "correct" it a third time.
+
+- **Added `gemini-3.5-flash`** ($1.50/$9.00/$0.15), the model `gemini-3-flash` keeps getting
+  conflated with, and genuinely missing, so it was worst-casing at $21/$168: a 1M-in/100k-out call
+  reported $37.80 instead of $2.40. Priced only, with the conflation warning in its note; its
+  context window and capabilities need a person before a card is written.
+
+- **MLflow spans no longer go through the fluent API.** `_MlflowRun` already documented why runs
+  are addressed by explicit `run_id` through `MlflowClient`: the fluent API keys off a
+  **thread-local** active run while every call here is offloaded to the event loop's shared thread
+  pool. `MlflowTracer.span` had never been given the same treatment: it called `mlflow.start_span`
+  and `mlflow.update_current_trace`, so a span could be opened on one pool thread, tagged from
+  another and ended on a third, each consulting a different (usually empty) thread-local stack.
+  Under concurrent turns on one loop that interleaves: spans orphaned into no trace, or a stage
+  tag landing on another turn's. The sibling had the fix and this one didn't.
+
+  Spans now use `MlflowClient.start_trace` / `start_span(trace_id, parent_id)` / `end_span` /
+  `end_trace` / `set_trace_tag`, all addressed by explicit id, so the executing thread is
+  irrelevant. A root span *is* its trace, so its stage tag is set at creation and is present even
+  if the turn dies before anything tags it; a nested span tags its trace by id rather than
+  "whichever trace this thread thinks is current".
+
+  Nesting comes from a new `_ACTIVE_SPAN` ContextVar. That is sound here in a way it deliberately
+  is not for runs (see `ensure_run`): a span is always opened and closed by one `async with` in a
+  single task, so the set/reset pair can never split across tasks or be observed after the block,
+  and `conductor.fan_out`'s tasks copy the context at creation so concurrent children correctly
+  see the enclosing span as parent. Because a fake accepts any signature, a boundary contract test
+  binds all seven call shapes against the installed `MlflowClient`, skipped when the extra is
+  absent. That is the failure a mocked suite would otherwise carry green into a deployment.
+
+- **An uncarded model now announces itself.** Costing has warned since it gained
+  `register_model_pricing`, but facts were silent: `context_window_for` answered `None` and
+  `unsupported_request_params` answered "nothing is blocked", and a caller could not tell a real
+  fact from a stand-in. New `is_carded()` (mirroring `cost.is_priced`) plus a warn-once that names
+  the consequence rather than just the absence. 34 of 42 model rows are priced-but-uncarded, so
+  this is a live condition, not a theoretical one. The deliberate o-series fallback stays silent:
+  it is an authored fact, not a guess.
+
+- **Compaction sizes itself from the model's context window.** `ModelCard.compaction_threshold`
+  existed for exactly this and had no callers, while `build_responses_compaction_session` took the
+  model *and* a separate hardcoded `200_000`. That number is wrong for all eight carded models:
+  20% of the window on the 1M-token cards (compacting constantly for nothing) and equal to the
+  whole window on `claude-haiku-4.5`, where compaction could only fire once the context was
+  already full. New `resolve_compaction_threshold(model, explicit=, fraction=)` derives it at 80%
+  of the real window; an explicit value still wins, and an uncarded model falls back to a named
+  constant with a warning instead of a bare literal.
+
+- **GPT-5.6 family registered**: `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, with `gpt-5.6`
+  as an alias of Sol. 1,050,000-token context, 128,000 max output, reasoning-tier params stripped.
+  Prices verified against the vendor's own pricing page after two aggregators disagreed on Sol:
+  they were quoting its **long-context** output rate ($30) as if it were standard ($20).
+
+- **Long-context pricing tiers are modelled.** Several vendors charge more once a prompt crosses a
+  size threshold, and japes billed every such call at the short-context rate, so an oversized
+  request **understated** spend, and an understated figure is indistinguishable from a correct
+  one. The premium applies to the *whole* request, not the tokens past the threshold, so cost
+  steps rather than ramps: a 273k-token prompt on `gpt-5.6-sol` costs nearly double what billing
+  the overage alone would suggest.
+
+  New `LongContextPricing` (threshold + its own rates) hangs off `ModelPricing.long_context`, with
+  `for_prompt_size()` selecting the tier and `compute_cost` applying it. Threshold semantics are
+  explicit: it counts *everything sent* (uncached input, cache reads and cache writes alike)
+  because a vendor sizes the request by the whole prompt, and counting only the uncached remainder
+  would keep a heavily-cached 500k prompt on the cheap tier indefinitely. Output tokens don't
+  count. `for_prompt_size` returns rates carrying no tier of their own, so resolving twice can't
+  compound the premium.
+
+  Tiers declared in `model_data.json` (data, not code) after sweeping **every** priced model
+  against its vendor's table rather than only the ones in hand: OpenAI `gpt-5.4` and the three
+  `gpt-5.6` models above 272,000 input tokens (2x input, 1.5x output; multipliers that reproduce
+  the vendor's long-context columns exactly, which is what confirmed the reading), and
+  `gemini-3-pro`, `gemini-3.1-pro-preview` and `gemini-2.5-pro` above a 200,000-token prompt. A
+  300k-token `gemini-2.5-pro` prompt was being billed at half its real rate.
+
+  **Absence is a checked fact, not an unfilled gap**: the two look identical in the data, so
+  "nobody transcribed it yet" would otherwise pass for "flat". Sixteen models are asserted
+  single-rate, including every current Anthropic model: 4.6 and later carry the full 1M window at
+  standard pricing, and everything earlier (Sonnet 4.5 included) is a 200k-context model. The 1M
+  beta that once charged a premium no longer exists. The vendor states 1M needs no beta header
+  and bills at standard rates, so a tier there would invent a charge and *overstate*.
+
+  The cost-optimized (batch/flex) discount now scales *through* the tier via a new
+  `ModelPricing.scaled()`; the old inline rebuild would have dropped it, silently putting every
+  oversized batch call back on the cheap rate. `update_model_pricing.py` maintains the base tier
+  only and leaves a declared `long_context` block untouched, stated in the script so the
+  hand-maintained part is a known limit rather than a discovered one.
+
+  Removed the duplicated `gemini-3-pro-preview` pricing row: it copied `gemini-3-pro`'s rates
+  under the alias id, and aliases now resolve to their target, so the copy was exactly the drift
+  hazard aliases exist to avoid. Also found while transcribing: `gpt-5.4` had an unmodelled tier
+  too, not just the newly-added 5.6 family.
+
+- **`register_model_card` no longer overwrites by default**, matching `register_model_pricing`'s
+  long-standing `overwrite=False`. The two halves of the same registration seam disagreed: a
+  consumer registering a rate was protected from silently re-rating a shipped model, while the
+  same consumer registering a card silently re-spec'd one.
+
+  The default is what makes the overlay pattern safe: a consumer carrying model data ahead of an
+  SDK release has to *stop* outranking the SDK once the real card ships, or it keeps serving a
+  stale copy nobody remembers is in play. Pass `overwrite=True` to deliberately re-spec a model.
+  Each key is considered on its own, so an alias already claimed by a different card is not
+  stolen: the primary id registers and the alias stays where it pointed.
+
+- **Pricing staleness is now a gate, not just a printout.** `update_model_pricing.py --check`
+  reported how old each vendor source was and always exited 0, so nothing could act on it. It
+  gains `--max-age-days N`, which exits 1 when any provider is overdue; without the flag it only
+  reports, so interactive use is unchanged. A weekly workflow runs it. Staleness is the condition
+  that precedes every concrete failure this data has: a model published after the last check has
+  no row at all, worst-cases on price, and answers with stand-ins for its limits. All three
+  sources were 46 days old when this landed, and GPT-5.6 had shipped in the gap.
+
+  The script also stopped importing the package to read one path constant. `import
+  jazzx_sdk.llm._model_data` runs `jazzx_sdk/__init__.py` first, which eagerly pulls the runtime,
+  the queue processor and the `common` submodule, so `--check` needed azure-storage-queue
+  installed to read a filename. It now loads `_model_data.py` by path, safe precisely because
+  that module documents itself as depending on nothing else in the package, and the two
+  fetch-path imports became lazy, so `--check` runs on a bare interpreter.
+
+- **Corrected max output for Claude Opus 4.8 and Sonnet 4.6**: both were recorded as 64,000 when
+  the vendor publishes 128,000, understating the real limit by half. Found while transcribing the
+  Claude 5 family's limits from the same table.
+
+- **An alias now resolves for pricing, not just for cards.** Registering GPT-5.6 exposed it
+  immediately: `gpt-5.6` resolved to Sol's card but had no price, so it worst-cased at $21/$168,
+  a 5x overstatement of a model that costs $4/$20. Aliases were only working for pricing where the
+  rate had been *duplicated* under the alias id, which is the drift hazard aliases exist to avoid
+  (two ids answering with different money, invisibly). Rates are declared once and aliases resolve
+  to them; an alias carrying its own explicit rate is left alone, since a separately-priced id is
+  not an alias. A new invariant test asserts every alias prices identically to its target and
+  resolves to the same card object.
+
+- **Per-turn observability runs are wired into the reference pipelines.** `RunTracer.run()` had
+  been fully built since the runtime-observability work but had **zero production call sites**:
+  the same "capability present, never wired" shape zero-data-retention had in 2.4.6.
+  `ConductorEngine` opens per-stage *spans* but never a *run*, so there was no container for a
+  turn's params/metrics/artifacts and no binding to the inbound trace id. A downstream service had
+  consequently grown its own tracing module whose run-tagging was a verbatim re-derivation of
+  `build_run_tags`.
+
+  New `jazzx_sdk.observability.ensure_run(tracer, *, run=, name=, tags=)` yields
+  `(handle, owned)`. A caller already inside a run passes its handle as `run=` and it is
+  **borrowed**, used as-is, never terminated and never status-changed, because a run's status is
+  its opener's to decide. Otherwise a run is opened for the turn. `tracer=None` resolves to
+  `NoOpTracer`, whose handle is free, so call sites wrap work unconditionally with no branching.
+
+  `run_chat_turn`, `stream_chat_turn`, `run_document`, `run_investigation` and
+  `run_spread_pipeline` each gained `run=`/`run_name=`/`run_tags=` and now log latency, usage and
+  outcome: every reference pipeline, so the shape is uniform rather than something a consumer has
+  to check per entry point. Defaults are unchanged: with no tracer the whole mechanism no-ops and
+  every return value is what it was.
+
+  What each pipeline reports is chosen for what its failures actually look like. Spreading logs
+  the **locate → structure → assemble funnel** rather than only the final spread, because a region
+  that never located and one that located but wouldn't structure are both simply absent from the
+  result and only the stage counts separate them; it also carries `vocabulary_gaps`, the pack's
+  chart of accounts failing to cover what the document reported. An investigation logs *how the
+  loop exited*: converging in three iterations and giving up at max-iterations both produce a
+  "complete" run, so the exit reason is the aggregatable fact, split into flags since metrics are
+  numeric.
+
+  An ambient (ContextVar) variant was designed and **rejected on evidence**. Async generators have
+  no private `Context` (PEP 568 was never implemented), which was verified rather than assumed:
+  a `set()` inside `stream_chat_turn` executes in the *consumer's* context during `__anext__` and
+  escapes to it; two streams multiplexed in one task overwrite each other and leave the context
+  pinned to a terminated run; and a cross-task `reset()` raises, which inside the tracer's
+  `finally` would leave the run RUNNING forever. Notably `gather`/`create_task` *do* isolate, so
+  the ambient design would have passed ordinary tests and failed only under a real SSE fan-out.
+  Explicit `run=` delivers the same "don't double-open" guarantee with no ambient state.
+
+  Three details that a straightforward implementation gets wrong, each covered by a test:
+  - **Metric keys are namespaced per pipeline** (`chat.latency_ms`, `document.latency_ms`, …).
+    A metric is an append-only *series*, not a value, so two pipelines sharing a borrowed run
+    would otherwise interleave into one unreadable series. Params are logged only by the run's
+    owner, since a conflicting `log_param` is rejected by the backend and silently, `log_*` being
+    best-effort background writes.
+  - **A degraded turn is a metric, not a failed run.** `default_step_error` returns a substitute
+    reply *without raising*, so the run genuinely completed; it records `chat.failed=1` and leaves
+    status alone. `set_status(False)` is never called: on a borrowed run it would mark the
+    caller's run failed.
+  - **Streaming reports `ttft_ms`/`stream_ms`, not wall-clock**, which on a generator measures how
+    fast the consumer drained it. Terminal logging hangs off `_notify_turn_complete`, the one
+    funnel all six terminal paths already pass through, rather than the run context manager,
+    since `break` out of an `async for` runs no finaliser. An abandoned stream records
+    `chat.abandoned` and closes FINISHED; a disconnect is not a failure.
+
+  Token usage is normalized to one canonical key set. `InteractiveResponse.usage` is
+  path-dependent: the single-shot path reports a cost and no breakdown, the agentic path the
+  reverse, so emitting it verbatim gave one run name two metric schemas and split every
+  aggregate silently. All keys are always present and zero-filled, with `cost_usd_known`
+  separating "cost nothing" from "cost wasn't reported". Cost is never *derived*:
+  `InteractiveResponse` carries no model name, and inferring one is how a cost figure lands orders
+  of magnitude off. 28 new tests, including the interleaved-generator case the rejected ambient
+  design failed.
+
+## [2.4.6] - 2026-08-22
+
+- **`build_source_tools`** — directory tools bound to one directory, so isolation is a property
+  of the tools rather than a rule the model is asked to follow. `build_directory_tools` keys its
+  directories by a runtime `source` argument, which can express "these directories" but never
+  "not that one": an agent holding those tools can read any registered directory. With the
+  directory closed over at build time, `source` doesn't exist in the schema the model is given, so
+  a loan agent built with only its own documents has no way to name the guidelines corpus.
+  `prefix=` renames the tools (`list_loan_documents`, …) for an agent holding several bound sets;
+  omit it for the common one-set-per-sub-agent case. Wrappers invoke the shared tools through
+  their real `on_invoke_tool` path, so they inherit the same validation and path-traversal
+  refusal rather than growing a second, divergent one. japes' heaviest consumer rebuilt ~792 lines
+  of these tools, chiefly to get this binding. 6 new tests.
+
+- **Zero-data-retention is wired to real boundaries.** `redact_for_zero_retention` had been
+  exported since 2.1 with **zero call sites** — a governance surface japes claimed but didn't
+  have. New `jazzx_sdk.tools.retention.RetentionPolicy` makes the decision once and answers it per
+  destination (`args_for_persistence`/`args_for_span`/`args_for_stream`/`response_for_*`/
+  `error_for_persistence`/`allows_blob_offload`/`log_detail`/`include_exc_info`/`describe_call`),
+  so a call site reads as what it is about to write rather than as a policy test — deciding
+  independently at each boundary is how one of them quietly keeps what the others dropped. Tools
+  opt in at `register_tool(..., zero_data_retention=True)`; the SDK never infers it, and an
+  undeclared tool is unrestricted. `RetentionPolicy.from_flag` reconstructs a policy from a
+  persisted flag so a **replay** redacts identically without the original registration — the case
+  where naive re-derivation silently un-redacts. `redact_tool_results_in_history` walks a replayed
+  conversation so withheld payloads can't return to the model in the next request, and
+  **over-redacts when it can't match results to calls**: withholding a result that could have been
+  kept is cosmetic, keeping one that shouldn't have been is the failure this exists to prevent.
+  Wired into the stream boundary (`ToolStreamHooks(registry=...)`), where a per-tool commitment
+  now outranks the caller's `stream_tool_args` display preference. 18 new tests. Found surveying
+  kernel.
+
+- **`gather_degrading(on_progress=...)`** reports which sources are still in flight as each lands,
+  for a caller showing "still fetching X, Y" during a long fan-out. Snapshot and delivery happen
+  under one lock, so two sources finishing together can't deliver out of order and make `active`
+  appear to *grow* — a consumer rendering a shrinking checklist can rely on that. A hook that
+  raises is logged, never disturbing the gather. japes' heaviest consumer hand-rolls exactly this
+  (a lock, a shrinking set, per-thunk wrappers) today. 5 new tests.
+
+- **`MlflowTracer` addresses its run by explicit `run_id` through `MlflowClient` instead of
+  MLflow's thread-local fluent API.** `set_experiment`/`start_run`/`log_*`/`end_run` all key off a
+  *thread-local* active run, but the tracer offloads every call to the event loop's shared default
+  executor — so a run could start on one pool thread, log from another, and terminate on a third,
+  each consulting a different (usually empty) stack, and two concurrent runs on one loop could
+  stomp each other. Kernel hit exactly this and measured it: 40/100 concurrent calls lost their
+  root span. `run()` now resolves the experiment to an id (creating it once if absent), calls
+  `create_run`, and passes `run_id` explicitly to every `log_param`/`log_metric`/`log_dict`/
+  `set_terminated` — which pool thread executes them stops mattering. The injected
+  `mlflow_module=` test seam now supplies `MlflowClient()`. 2 new tests, including a concurrency
+  guard verified to fail when runs share an id. Found surveying kernel.
+
+- **Completion webhooks are delivered at most once across queue redeliveries.** Azure Queue
+  Storage is at-least-once, and a crash between response-enqueue and input-delete replays the
+  message through the DELIVER claim — re-enqueuing the response is fine (the response queue is
+  idempotent by contract) but the webhook is an outbound call the caller *sees*, and it was
+  re-firing on every pass with no persisted marker anywhere in the SDK. `QueueExecution` gains
+  `webhook_delivered_at` and the store a `mark_webhook_delivered(key)` (both implementations;
+  nullable column, no migration needed to start reading), threaded through
+  `QueueProcessingResult.webhook_already_delivered`/`on_webhook_delivered`. Deliberately a
+  *persisted* marker rather than "suppress on replay": a run that crashed before delivering still
+  sends on the replay instead of losing the notification. A delivery that raises is not marked, so
+  it retries. `send_response()` — a direct-send API with no execution record, and no production
+  caller — documents that it carries no guard. Found surveying the assistant repo. 6 new tests.
+
+- **Unpriced models no longer overstate cost silently.** `get_model_pricing` falls back to
+  `DEFAULT_PRICING` — deliberately the most expensive card, so unknown spend over-reports rather
+  than under-reports — but the fallback was silent, so a cheap unpriced model's cost read like
+  real data while being ~40-120x too high (measured: $189.00 vs $2.25 for the same 1M/1M tokens).
+  It now warns once per model, naming the overstatement. New `register_model_pricing(name,
+  pricing, *, overwrite=False)` is the supported way to price a model the SDK doesn't card —
+  japes' heaviest consumer was mutating `MODEL_PRICING` by `setdefault` at import to work around
+  its absence — and `is_priced(name)` tests for the fallback without triggering the warning.
+  `compute_cost()` called with neither `model_name` nor `pricing` warns for the same reason.
+  Found surveying jazzx-assistant. 8 new tests.
+
+- **Financial spreading becomes a reference pipeline, and the validation engine joins the SDK.**
+  Three related moves, driven by asking whether spreading wanted a platform agent (it didn't — all
+  three platform agents own an LLM loop, and spreading's only LLM step was already an SDK
+  primitive):
+  - **`jazzx_sdk/pipelines/financial_spread.py`** — japes shipped every spreading primitive
+    (region location, `structure_statement`, the vocabulary resolver, the spread schema, export)
+    and *zero* orchestration: `structure_statement` had no caller anywhere in the SDK. This is the
+    wiring — locate → structure (fan-out per statement) → assemble per source → merge — following
+    the `document_ingest` convention (`SpreadTurn` + build/run trio + `on_step_error`/
+    `on_complete`), registered in `pipelines/catalog.py`. Anchors, vocabulary and the LLM are
+    injected; the pipeline never reads a pack file. `merge_spreads` moves in beside the schema it
+    operates on, verified byte-identical to the previous implementation on real multi-year filings.
+  - **`finance/package.py`** — `SpreadPackage`/`SpreadLineItem` and their `FinancialSpread`
+    round-trip: the governed twin of a spread, carrying per-cell provenance and confidence. It had
+    no dependency on its previous home; every type it referenced was already here.
+  - **`finance/validation.py`** — the validation engine. japes could already *render* findings
+    (`workbook.GovernedFinding` and its findings sheet) without being able to *produce* one; this
+    is the missing half, and `ValidationFinding` satisfies that protocol structurally so the
+    protocol stays untouched. Domain content stays with the pack: a control needing named
+    canonical lines reads them from `ControlKeys` and **does not run at all when they're unset**,
+    rather than inventing a key or letting an unevaluable control read as a silent pass.
+    `SeverityPolicy` replaces a hardcoded severity map (there was no override seam at all), and
+    findings carry an open `code` so a pack can emit a defect class the SDK has no member for.
+  Verified finding-for-finding and spread-for-spread against the previous implementation on real
+  YETI (C&I) and MAA (CRE) filings — two segments, since the same engine serves both. 34 new tests.
+  Full suite green (3395 passed, 5 skipped).
+
+- **`DocumentAgentSpec.save_taxonomy(path, taxonomy)`** — the write counterpart to `from_dir`'s
+  read: a read-modify-write over the same `<path>/document_agent.yaml`, preserving any other
+  fields already there (e.g. `admission_floor`). Every `Spec.from_dir` in japes (Document/
+  Adjudication/Interactive) was read-only until now — this is the first write-back, scoped
+  narrowly to `taxonomy` (not a general save-any-field mechanism), for a jaci scenario UI that
+  needs to edit a document taxonomy from a "Domain" tab rather than a code change. 6 new tests
+  (`test_document_agent_spec_yaml.py`). Full suite green (3361 passed, 5 skipped).
+
+- **`DocumentAgent.process_dir` is now safe for a recursive `**` pattern**, closing a real gap
+  found while migrating jaci scenarios onto `document_ingest`: a nested match (e.g. a real,
+  non-flat deal folder) was keyed by its bare filename and written into the same flat
+  `output_dir` regardless of subdirectory — two same-named files in different subfolders would
+  silently overwrite each other's `.md`/`.result.json` artifacts and collide on the manifest
+  key. A nested match now keys by its path relative to `folder` and mirrors that subdirectory
+  under `output_dir`, matching the convention the zip-unpack branch already used. A flat,
+  top-level match (the default, non-recursive case) is byte-for-byte unchanged — verified with
+  a dedicated regression test alongside a new same-filename-collision test. 2 new tests
+  (`test_doc_pipeline_gaps.py`). Full suite green (3355 passed, 5 skipped).
+
+- **`classify_document` pins `temperature=0.0`**, closing a real non-determinism gap found while
+  re-validating the Acra packet split: the same page's real text classified differently across
+  two otherwise-identical `split_document` runs (confirmed live, not assumed) because the
+  provider default (~0.1) was never overridden — a page-classification/splitting mechanism whose
+  entire job is consistent document boundaries had no repeatability guarantee at all. Checked
+  this doesn't collide with the existing reasoning-tier parameter guards (OpenAI temperature/
+  reasoning_effort conflict) before pinning it: `classify_document`'s default `AgentExecutionService()`
+  (no `llm_manager`) always reaches `OpenAIProvider`'s tool-calling path, which already strips
+  `temperature` unconditionally for any model whose card lists it unsupported, regardless of
+  `reasoning_effort` — and this call never sets `reasoning_effort` in the first place, so it never
+  hits the narrower `temperature`+`reasoning_effort` 400 the other (`LLMManager`-path) guard exists
+  for. Re-ran the real page-7 classification twice against the live API after the change — label
+  and confidence now match exactly run to run (only the free-text rationale wording varies, which
+  nothing downstream depends on). 1 new test (`test_classify.py`). Full suite green (3353 passed,
+  5 skipped).
+
+- **`split_document` gains an opt-in `ocr_fallback`**, closing a real gap found while validating
+  against a real, large Acra DSCR closing packet (not a toy fixture): a combined PDF is often
+  *mixed* — some constituent documents digital, others scanned (a stamped title-company exhibit,
+  an appraisal) — and a scanned page has no text at all, so page-classification alone can't split
+  or label it; it just comes back `unknown` regardless of taxonomy quality, confirmed by manually
+  rendering and reading the actual scanned pages of a real 429-page packet. `ocr_fallback=True`
+  (default `False` — no behavior or cost change for any existing caller) OCRs just the scanned
+  pages individually via a `DocumentIntelligenceProvider` (billed one page at a time, reusing the
+  same per-page routing `conversion.py`'s mixed-mode path already does for whole-document
+  conversion — new shared `ocr_scanned_page_texts` helper) before classifying. `DocumentAgent.
+  process_package` gained the matching `ocr_fallback` param (`None` → `DocumentAgentSpec.
+  split_ocr_fallback`, default `False`) plus forwards the agent's own `di_provider` — a pack turns
+  this on globally via spec config, or overrides per call; real per-page Azure Document
+  Intelligence spend either way, so it stays opt-in rather than a silent default. 4 new tests
+  across `test_split.py`/`test_document_agent.py`. A local-only (gitignored) regression fixture —
+  real extracted segments from the Acra packet, never committed (real borrower PII) — lives at
+  `tests/fixtures/local/acra_godocs_mixed/` for manual re-testing. Full suite green (3352 passed,
+  5 skipped).
+
+- **`pipelines.document_ingest.run_document` and `pipelines.investigation_loop.run_investigation`
+  gain `on_step_error`/`on_complete`**, closing a real symmetry gap against `pipelines.chat.
+  run_chat_turn` (the only one of the three reference pipelines that had them). Both new params
+  default to `None` — today's propagate-uncaught behavior is unchanged for every existing caller.
+  Each module also exports an opt-in `default_step_error` with domain-appropriate recovery, not a
+  copy of chat's: `document_ingest.default_step_error` degrades a failing step to a typed
+  `Refusal` (the same shape `refuse_step()` already produces); `investigation_loop.
+  default_step_error` halts the run cleanly with no fabricated decision (mirrors the module's own
+  existing `halt_on_reasoner_failure` precedent — a credit/compliance investigation must never
+  synthesize a decision on an unknown failure). `on_complete` fires once, best-effort, with the
+  finished `ConductorRun`, same contract as `ConductorEngine.on_complete`. Confirmed no base-class
+  refactor is warranted: all three pipelines are already thin `ConductorPipeline` wrappers
+  composing over the shared `ConductorEngine` primitive, and the remaining duplication across
+  their `run_X()` wrappers is a few lines, not worth a new abstraction layer. 8 new tests across
+  `test_document_pipeline.py`/`test_investigation_loop.py`. Full suite green (3348 passed, 5
+  skipped).
+
+- **`ResilientRunner.execute`'s new `stream_factory` param** closes the real gap behind "queryable
+  last-turn status without holding a stream open": `TurnRunStore` already had exactly that
+  (`latest_run(conversation_id)`, `has_active_run`, write-time status stamping, durable journal,
+  cooperative stop, resume-from-cursor) via `ResilientRunner` — but `execute()` always called
+  `agent.respond_stream(...)` directly, bypassing `pipelines.chat`'s routing (gate/escalate/refuse)
+  entirely. A durable/resumable turn and a *routed* turn were two separate, non-composable paths.
+  `stream_factory` (optional, defaults to today's exact behavior) lets a caller supply
+  `stream_chat_turn(...)` — or any `InteractiveStreamEvent` async generator — in place of the
+  direct call, with zero new coupling (`runs/runner.py` still doesn't import `pipelines.chat`).
+  A turn refused by the gate is now durably journaled and shows up in `latest_run` like any other
+  turn. 2 new tests proving the composition end-to-end. Full suite green (3340 passed, 5 skipped).
+
+- **`ConductorEngine.on_complete`, `pipelines.chat`'s own `on_complete`, and
+  `channels.notify.notify_on_conductor_complete`** — a run/turn-completion hook, generalized at
+  the layer it actually belongs: `ConductorEngine` (every conductor-based pipeline — CRE, AML,
+  KYC, document processing, chat) gains `on_complete: Callable[[ConductorRun], ...]`, fired
+  best-effort after `run()`/`resume()`/`resume_durable()`, same never-affects-the-run contract as
+  `on_step`. `pipelines.chat.run_chat_turn`/`stream_chat_turn` gain their own `on_complete`
+  (fires with the resolved `InteractiveResponse`, not the raw `ConductorRun` — `stream_chat_turn`'s
+  inner engine only covers validate→gate, so its own completion isn't the turn's). New
+  `channels.notify.notify_on_conductor_complete(channel, *, when=, to_message=)` bridges either
+  level to the *existing* `Channel` abstraction `notify_on_complete`/`deliver_completion_hook`
+  already use, instead of a second notification transport. 20 new tests across
+  `test_conductor_engine.py`/`test_interactive_chat.py`/`test_notify_on_complete.py`. Full suite
+  green (3338 passed, 5 skipped).
+
+- **`pipelines.chat.structured_classifier_gate`** — a reusable `classify` builder for
+  `gate_step`/`build_chat_components`: one deterministic (`temperature=0`), structured LLM call
+  classifies the turn into a caller-supplied verdict schema, then a pure `verdict_to_route(verdict)`
+  mapper decides direct/escalate/refuse. Every non-trivial chat gate ends up re-deriving this exact
+  shape by hand (schema-only classifier agent, pinned temperature, dict-or-instance output
+  coercion, wrap-a-bare-route-string-in-GateDecision) — this factors it out so a pack supplies
+  only the schema and the mapping function. Precedence across multiple verdict signals stays an
+  ordinary if/elif chain in the mapper (domain-specific per schema, not something a shared helper
+  should generalize). 7 new tests. Full suite green (3318 passed, 5 skipped).
+
+- **`InteractiveResponse.truncated`** — the truncation signal already threaded from
+  `ProviderResult` through `LLMResult`/`AgentExecutionTrace` earlier this cycle stopped one hop
+  short of the thing every real caller (`jazzx_sdk.pipelines.chat`, jazzx-assistant, jaci)
+  actually consumes: `InteractiveAgent.respond()`'s returned `InteractiveResponse` had no field
+  for it, so a single-shot reply cut off at the model's output-token limit carried no signal a
+  caller could check. `_respond_single_shot` now reads `trace.truncated` and sets it. Agentic
+  (skills-present) path unaffected — its equivalent condition already raises
+  `IncompleteOutputError` inside `RetryingModel` rather than returning a silent value. 2 new
+  tests. Full suite green (3311 passed, 5 skipped).
+
+- **`expressions.validate()` flags a `MetricDefinition` with no explicitly-authored `version`**
+  (closes the last gap in Phase 2 of `plan_JAPES_2_5_0_LOCATOR_AND_INVENTORY_DISCIPLINE.md`).
+  Uses `model_fields_set` to distinguish "author wrote `version: 1`" from "never set it" —
+  both produce the identical `"1"` string once constructed, so the field's default value alone
+  can't tell them apart. New `missing_version` issue code. 2 new tests; existing
+  `test_expressions_validate.py` fixtures updated to pass an explicit version (the omission was
+  never the point of those tests).
+
+- **`finance/metrics.py` strict mode (Phase 7 of `plan_JAPES_2_5_0_LOCATOR_AND_INVENTORY_DISCIPLINE.md`,
+  SDK side only).** Every helper (`safe_div`/`pct`/`days`, the scalar formulas, and the
+  `credit_metrics`/`working_capital_days` batch entry points) gains `strict: bool = False`.
+  Default unchanged — a missing input or zero denominator still yields `None`. `strict=True`
+  raises `MetricRefusal` instead, carrying the same typed `Refusal` shape
+  `jazzx_sdk.expressions.evaluate` raises on the identical condition. **No pack sets it yet** —
+  the plan's chosen adopter (a greenfield `cremf` pack) turned out not to exist; CREMF is the
+  multifamily case inside the already-shipping `cre_underwriting` scenario, which still has
+  legacy permissive-float code (`operating_spread.py`'s `or 0.0` accumulation,
+  `analytics.py`'s float `_div`/`_pct`) that a real adoption would need to retire first. SDK-side
+  plumbing landed regardless, adopter choice left open. 6 new tests in `tests/test_financial.py`.
+  Full suite green (3307 passed, 5 skipped).
+
+- **Config-versioning Phase 2: append-only `ConfigAuditEvent` audit trail.** New
+  `jazzx_sdk.audit` (protocol + `InProcessConfigAuditStore` + `fabric.db`-backed
+  `DbConfigAuditStore`, mirroring `evaluation.prompt_registry`'s three-file shape) — answers *who
+  changed this, when, and what did it look like before/after*, which an actor column alone
+  (Phase 1) can't. Wired into `PUT /agents/{name}` (optional `audit_store=` param, no-op when
+  omitted): each write appends one `create`/`edit` event carrying the resolved actor, the active
+  OTel trace id (`observability.get_current_trace_id()`), and before/after content digests (a
+  local SHA-256 over the definition's meaningful fields — not `content_version()`, which stays
+  gated on Phase 3's D2 decision). Append-only is asserted by test (the protocol exposes only
+  `record`/`history`; source-text checks confirm no update/delete path exists), not by
+  convention. 9 new tests. Full suite green (3301 passed, 5 skipped).
+
+- **Config-versioning Phase 1: actor attribution + optimistic concurrency on
+  `PUT /agents/{name}`.** First slice of `docs/plans/plan_JAPES_2_6_0_CONFIG_VERSIONING_AND_AUDIT.md`
+  — closes a real, live data-loss path: the endpoint was last-write-wins, authenticated, with real
+  consumers, and every day it stayed that way was a day of unrecoverable overwrites. (1) **F7**:
+  `AgentDefinition.agent_id` was a computed `@property` recomputed from `spec.agent_id or spec.name`
+  on every access, never persisted — a `PUT` that later filled in a previously-unset
+  `spec.agent_id` silently changed the row's own identity, 404-ing any existing `GET
+  /agents/by-agent-id/{old}` lookup with no error anywhere. Now a stored field (a
+  `model_validator` derives it once, only when unset); the write path compares old-vs-new and
+  refuses a drift with 422. (2) **F5**: `AgentDefinition` gains `created_by`/`updated_by`,
+  resolved from `CallerIdentity.from_context()` — never request JSON — via a new shared
+  `_stamped_for_write` helper both `InProcessAgentDefinitionStore` and `DbAgentDefinitionStore`
+  call (the latter bypasses `fabric.db`'s `Repository`/`_stamp_created` entirely via `s.merge()`,
+  so it had no audit-stamping path to inherit). `created_by` is set once and never overwritten;
+  `updated_by` changes on every write. (3) An authenticated-but-unattributed write (e.g. a static
+  API key with no identity headers) in a deployed posture now fails closed (403) instead of
+  silently storing NULL actor columns. (4) **F3**: new `AgentDefinition.revision: int` +
+  `jazzx_sdk/server/concurrency.py` (`check_if_match`, new optimistic-concurrency machinery —
+  there was no precedent for it anywhere in `jazzx_sdk` before this) — `PUT` reads `If-Match`;
+  a stale revision is `409`, a missing header on an existing row is `428`. Gated behind
+  `strict_concurrency` (default `False` for one release, breaking-change discipline; on in
+  japes' own CI immediately) so an existing caller that never sends `If-Match` is unaffected.
+  19 new/updated tests in `tests/test_agent_config_api.py`, parametrized across both
+  `InProcessAgentDefinitionStore` and `DbAgentDefinitionStore`. Full suite green (3292 passed,
+  5 skipped). Phases 2-7 (audit-event log, versioned skill/profile stores, release resolver,
+  aliases/promotion, runtime pinning, retiring mutable writes) remain, each behind its own gate
+  per the plan.
+
+- **UAF Phase 9 lands — 13/13 shipped.** `common` PR #212 ("reserve the `reasoning`/thinking-mode
+  stream event type," `StreamEventType.reasoning` + `ReasoningEvent`) reviewed, approved, and
+  merged to `common`'s `main`. japes' submodule pointer bumped to match. The japes-side producer
+  (`InteractiveAgent.stream_reasoning`, `jazzx_sdk/agents/interactive/stream_hooks.py`) was already
+  built and shipped in v2.4.2/2.4.3 against the unreviewed feature branch; live-verified
+  `ReasoningEvent` now resolves through `jazzx_sdk.streaming.ReasoningEvent` with its `agent`/
+  `agent_label` attribution fields intact. `docs/plans/plan_uaf_phase1_additive.md` moved to
+  `docs/status/done_JAPES_2_4_0_UAF_PHASE1_ADDITIVE.md`.
+
+- **Reasoning-model parameter guards, truncation-signal propagation, DB-session boundary
+  checks.** Fixed OpenAI's temperature/reasoning_effort conflict (Responses and Chat Completions
+  APIs both reject `temperature`/`top_p`/etc. once `reasoning_effort` is set) and Anthropic's
+  thinking-shape/temperature-value constraints (Claude 4.7+ needs the `adaptive` thinking shape;
+  `temperature` must be pinned to 1 when thinking is enabled) via new `model_cards` fields
+  (`unsupported_request_params`, `thinking_shape`), applied precisely (gated on
+  `reasoning_effort` actually being present, not blanket-on-model) at every raw-provider and
+  Agents-SDK call site. Fixed `InteractiveAgent`'s agentic (skills-present) path never applying
+  `spec.temperature` at all. Wired `fabric.db.session_guard.assert_no_open_db_session` into
+  every LLM-call boundary (`InteractiveAgent`, `ConductorEngine` steps) so a DB session held
+  across an LLM call fails loudly instead of risking a killed connection under
+  `idle_in_transaction_session_timeout`. Propagated `ProviderResult.truncated` through
+  `LLMResult` and `AgentExecutionTrace`, previously dropped silently at both construction
+  boundaries. Fixed inconsistent truncation handling in the tool-calling agent providers
+  (Anthropic raised a bare `ValueError`; OpenAI had no detection at all — built a raw
+  `OpenAIResponsesModel` instead of the retry-wrapped model its own fast path already used).
+  38 files changed, full suite green (3280 passed, 5 skipped).
 
 - **Images (`.png`/`.jpg`/`.jpeg`/`.tif`/`.tiff`) are now a supported `convert_document` type** —
   previously "Unsupported document type" (no branch existed at all). Always routed to the

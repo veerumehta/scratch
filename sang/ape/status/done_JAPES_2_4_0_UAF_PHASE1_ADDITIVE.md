@@ -1,12 +1,11 @@
 # Plan: UAF Phase 1 — the uncontroversial additive deltas
 
-> **Status (2026-08-13): 12/13 phases shipped, in v2.4.0 (pushed).** Phases 1-8, 10-13 complete
-> (guardrail floor, skill catalog, manifest lifecycle w/ versioning+rollback, session lifecycle,
-> router/guardrail tracing, PassBar >=95% gate generalized onto manifests). **Phase 9 (reserve the
-> `reasoning`/thinking-mode stream event type) not done** — blocked externally: the `common`
-> submodule change it needs exists only as an unreviewed local commit (`cffefc4`, "Reserve
-> reasoning/thinking-mode stream event type"), not pushed upstream; needs human review + a push
-> before japes' own submodule pointer can move. Staying as a `plan_` file until Phase 9 lands.
+> **Status (2026-08-20): 13/13 phases shipped.** Phases 1-8, 10-13 landed in v2.4.0; Phase 9
+> (reserve the `reasoning`/thinking-mode stream event type) was blocked on a `common` submodule
+> change sitting as an unreviewed local commit — that PR (`common` #212) is now reviewed, approved,
+> and merged to `common`'s `main` (`1fc3a7b`), and japes' own submodule pointer is bumped to it
+> (`b77e7a7`). japes' producer side (`InteractiveAgent.stream_reasoning`) was already built and
+> shipped in v2.4.2/2.4.3. Moved to `done_`.
 >
 > Scoped from the Notion PRD *Unified Assistant Framework —
 > Platform v2.0* (fetched 2026-08-12) read against this working tree (HEAD `90475da`, 2.3.6+).
