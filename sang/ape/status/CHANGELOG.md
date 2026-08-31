@@ -2,7 +2,1995 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+- **Entity write provenance verified against the landed Knowledge Hub contract.** KH `93ea215`
+  ("add metadata JSONB column") added an optional, free-form, client-owned `metadata` JSONB column
+  on `entity`, exposed on `EntityCreate`/`EntityUpdate`/`EntityRead` under the wire name `metadata`.
+  That confirms the key this client already wrote to, so `WRITE_METADATA_KEY` stops hedging about a
+  spelling it had to guess. It still rides on `additional_properties` because japes' vendored
+  `EntityCreate` predates the change; the serialised body is byte-identical to what a regenerated
+  client produces, so regenerating `client-api` is a drop-in rather than a migration.
+
+  **Updates merge, they do not replace** (KH's `_merge_metadata_on_update`): adding
+  `updated_by_process_id` leaves `created_by_process_id` in place. The mock now merges on both
+  update paths, and the docstring that claimed the opposite -- written when the contract was still
+  unknown -- is corrected. Omitting the key leaves the column untouched; this client sends omission
+  for an empty dict too, so KH's explicit-null "clear the column" case is deliberately not
+  expressible, the safe default being to say nothing.
+
+  The test that pinned the old behaviour reused a single metadata key, where merge and replace give
+  identical results and the assertion proved nothing. It now uses distinct
+  `created_by_process_id` / `updated_by_process_id` keys, covers a repeated update (the rerun case),
+  and fails if the mock reverts to overwriting.
+
+  **`update_entity_json` no longer takes `metadata` at all.** KH's json-patch endpoint accepts only
+  `path`/`value`/`updates` plus the `x-user-id` header, and its body has no `metadata` field now or
+  after client regeneration -- so the parameter was accepted and dropped on every call. An earlier
+  revision of this work argued the opposite (that omitting it would make json-patch "the one write
+  that records nothing"); checking the endpoint rather than reasoning by symmetry showed the
+  parameter itself was the thing recording nothing. A parameter that silently discards what it is
+  given is worse than its absence, so it is gone and the docstring says why.
+
+  japes does not interpret the object's contents: the process-id keys belong to the caller, so KH
+  and its callers can add keys without japes changing.
+- **Fixed: a successful `create_triple` could not return.** `create_entity` returns the entity dict,
+  or None when the write failed -- never an HTTP `Response`. `create_triple` checked
+  `hasattr(response, "parsed")` and then read `response.status_code`, so a *successful* create
+  failed the first probe, fell into the error branch, and raised `AttributeError: 'dict' object has
+  no attribute 'status_code'`. The success path could not return at all. Nothing exercised it, so
+  the bug sat behind a green suite; a failure now raises naming the triple that failed.
+
+- **Fixed: the MCP `knowledge_hub_create_entity` tool reported failures as successes.** The same
+  shape confusion, found by checking the family rather than the one instance. Both the `parsed` and
+  `status_code` probes were False on failure, so the tool fell through to `json.dumps(None)` and
+  answered the literal string `null` -- an ordinary successful result, as far as whatever drives the
+  MCP session can tell. It now returns an error object naming the entity and collection.
+
+  The existing test asserted `status_code == 201` against a Response-shaped `MagicMock` the real
+  client never returns, so the fixture had encoded the bug rather than catching it. It now returns a
+  dict, and a failure-path test was added. `test_policy_store.py` had the same drift -- a
+  Response-shaped `create_entity` beside a dict-returning `create_collection` in one fixture -- so
+  it exercised only the canonical store's tolerance arm and never the path production takes.
+
+- **Fixed: `check_kh_connection.py` reported a successful entity create as skipped.** The same
+  shape confusion in the script whose entire job is saying whether KH works. It read
+  `response.parsed` off the dict `create_entity` returns, raising `AttributeError` straight into a
+  bare `except` that logged "create_entity (person_result) skipped" -- so a healthy KH looked
+  degraded, and the HTTP-status branch below it was unreachable.
+
+  The canonical stores keep their `.parsed` arm deliberately: `KnowledgeHubLike.create_entity` is
+  declared `-> Any`, so unlike the concrete client there is no contract there saying a Response
+  cannot arrive, and the arm is tolerance across an untyped protocol boundary rather than dead code.
+
+- **`KernelLLMModel` conformed to the protocol the runner actually calls — both halves were
+  broken.** Found while using it as the template for the native Anthropic model, and broken in the
+  same way twice: the adapter returned what read like a reply rather than what `agents.Model`
+  defines.
+
+  `get_response` built its `ModelResponse` from `content=` / `raw_response=`, neither of which is a
+  field on it — required are `output`, `usage`, `response_id`. Every call raised a pydantic
+  `ValidationError` before the runner ever saw a reply, so the Kernel path could not have been
+  exercised through `Runner` at all. It now returns real output items and a real `Usage`, with a
+  reply that reports no usage counting zero rather than `None`: the turn still happened, and a cost
+  tracker summing `None` crashes where summing zero is a known gap.
+
+  `stream_response` carried `# TODO`s and did `yield response` — a `ModelResponse` where a stream
+  event belongs, so the type error surfaced somewhere downstream in a caller with no way to know
+  why. Kernel's LLM API has no streaming endpoint, so it now runs the blocking call and emits the
+  sequence the runner expects around the result: created, one text delta, completed. Not
+  token-incremental, and the docstring says so — but a stream of the right shape, and an empty
+  answer still opens and closes it rather than hanging a consumer waiting on `completed`.
+
+- **An assertion now carries where it came from, typed: `Triple.coordinate`.**
+  `source` and `section` are strings a reader has to re-parse and a machine cannot navigate --
+  "page 4", "4" and "p.4" mean one place and none of them resolves back to it. The document stack
+  already resolved a real `SourceCoordinate` per field (a Page/Section/Cell locator plus a content
+  hash), and `emit_assertions` was flattening it to those two strings at the moment the assertion
+  was built: the typed value existed and was discarded one layer before anything could use it. It
+  is now carried, not re-derived. `source`/`section` are untouched, for display and for every
+  caller already reading them; the field is optional because a merged triple has several origins
+  and an asserted one may have no document at all.
+
+  Verified across every hop that could quietly drop it -- `CaseGraph.build`, `model_dump` +
+  revalidation, and `merge_subjects` -- because a flag is worth its weakest hop, and this is the
+  boundary that ate `truncated` and then `cost_is_upper_bound`.
+
+  **Where the chain stops is documented rather than left to be discovered.** The Knowledge Hub
+  write contract (`create_triple`/`bulk_create_triples`) is a flat six-field projection, so
+  persisting through `KGStore` drops the coordinate silently. Closing that needs the KH API to
+  accept it -- a cross-service change, not one this layer can make alone -- so `add_triples` now
+  says so in the place someone would be about to rely on it.
+
+  `triple.py` called itself a leaf module with "no fabric/runtime imports"; it now imports
+  `fabric.canonical.evidence`, which is stdlib-and-pydantic only. The docstring says what the one
+  dependency is and that the real constraint -- no store, client or runtime import -- still holds,
+  rather than leaving a claim that had quietly become false.
+
+  In the policy pipeline this closes the deferral its own docstring recorded: `ClauseSegment` now
+  resolves a `SectionLocator`-based coordinate (a clause's address is its section marker; the page
+  it falls on is typesetting), an extracted rule cites its clause through `Rule.citations`, and a
+  proposal carries the clause text as its `excerpt` -- because a reviewer ruling on an extracted
+  rule needs the sentence it came from, which is the only question being asked of them.
+
+- **`lint_pack` no longer reports a pass because it had nothing to check with.**
+  A pack with no ontology got a `no_ontology` *warning* and an immediate return -- before its
+  policies were counted or examined. So a pack whose every rule was unverifiable came back
+  `ok=True, rules=0`: rules reported as *absent* rather than as *unchecked*, and a clean bill on a
+  governance asset nobody had looked at.
+
+  Found by pointing the machinery at a real pack rather than by reading it. jaci's `dscr-core` has
+  41 authored eligibility rules and declares no ontology, and the report said `ok=True, rules=0`.
+  It now counts what it was handed and raises `unverifiable_rules` as an **error**, so `ok` is
+  False and the count is 41. A pack with no ontology *and* no policies stays a warning: nothing was
+  asked of the lint, so nothing went unanswered.
+
+  This is the failure `pipelines.policy_extract`'s own `lint_step` was written to avoid -- "a lint
+  that passes because it had no vocabulary is the most misleading result available" -- present in
+  the function underneath it. The pipeline guarded the case; the primitive did not.
+
+- **A policy corpus becomes a pack's rules: `pipelines.policy_extract`, and `Proposal` learns to
+  carry one.** The vocabulary pipeline turns a corpus into what a domain *can say*; this turns one
+  into what a domain *requires*, and they are halves of one arc -- an extracted rule is only worth
+  having if the vocabulary can supply what its condition reads.
+
+  **`Proposal` was the blocker.** `kind` was `Literal["concept", "relationship"]`, so a rule could
+  not enter the queue at all. Widening it to `"rule"` makes the whole existing lifecycle -- admission
+  thresholds, the persisted `ProposalStore`, the review surface, the audit trail -- apply to rules
+  unchanged, rather than growing a second curation system beside the first. `Rule` is
+  forward-referenced and resolved by a `model_rebuild` at the end of policy.py: `fabric.canonical.
+  policy` reaches `tools/__init__` -> `graph.triple` and back into `fabric.graph`, so a module-scope
+  import is a real cycle (the same one that keeps `check.py` out of `graph/__init__`), and the
+  pattern mirrors periods.py -> profiles.py.
+
+  **A Proposal is deliberately not the answer for a case graph.** A proposal changes what is true
+  for every future case; a case-level finding changes what is true for one. A loan's own facts are
+  never proposed -- they are asserted with evidence or refused, and their machinery is
+  `Assertion.confidence`/`admit`, `Contradiction`, `Coverage`, `Refusal`, and
+  `agents.adjudication` where a person must decide. Accepting a proposal writes to a *shared*
+  artifact, so admitting one case's income would change the pack on the strength of a single
+  document. Evidence still flows case graph -> `FrequencyAccumulator` -> proposal; the accumulator
+  crossing a threshold is the boundary, and it is what keeps the two apart. Written into the type's
+  own docstring, because this is the distinction the next person will be tempted to collapse.
+
+  **Lint is a stage, not a lint.** `lint_pack`'s `unreachable_input` check already catches the
+  failure that matters -- it found `FCCR` reading `taxes` where the ontology declares `tax_expense`.
+  An *extracted* rule is far likelier to invent a name than an authored one, so the periodic audit
+  becomes a gate: the gap is reported on the run that proposed it, beside its evidence, while
+  somebody is still looking. It reports and never repairs; binding `taxes` to `tax_expense` on a
+  name-similarity guess would be a wrong auto-binding on a policy input, which is worse than an
+  honest gap. Without a pack the stage reports nothing rather than passing -- a lint that "passes"
+  because it had no vocabulary is the most misleading result available.
+
+  **Conditions come out `natural_language`, deliberately.** A one-shot parse from prose into an
+  `expression` is where extraction quietly invents thresholds. Promotion to a deterministic kind is
+  a separate reviewable act once the thresholds are actually identified, so a half-understood rule
+  degrades to "stated but stochastic" rather than to a confident wrong number. Extraction itself is
+  a seam (`ObligationExtractor`) -- the pipeline owns the governance around it, which is the part
+  that is the same whatever the extractor is. `ModalClauseExtractor` is a labelled floor for tests,
+  and declares `reads=[]` rather than guessing field names it cannot identify.
+
+  Segmentation is clause-level, not page-level: a rule's boundary is a section marker, and the page
+  it falls on is an artifact of typesetting. Text with no markers comes back as one segment rather
+  than none -- an unmarked policy is still a policy. "should" is not an obligation; admitting
+  advisory language as a rule would overstate what the document requires.
+
+- **The remaining three signature annotations that resolved nowhere.** `Path` (twice) and
+  `DirectoryResult` in `agents/document/agent.py` -- the same defect as the five closed in 2.4.9,
+  left with this release because the module carries the KG `emit_assertions` work.
+  `DirectoryResult` joined the existing `document.schema` import rather than opening a second one
+  from the same module.
+
+- **An unpriced cost now says it is a ceiling: `cost_is_upper_bound` on both tiers.**
+  An uncatalogued model costs at `DEFAULT_PRICING`, which is deliberately the *most expensive*
+  card, so the figure over-reports rather than under-reports. `compute_cost` warns once per model
+  at the point it happens, but a warning is not carried on the result: everything downstream saw a
+  float indistinguishable from measured spend. On 100k/50k tokens that float is $10.50 where
+  `gemini-2.5-flash` is $0.155.
+
+  The flag rides beside the number on `AgentExecutionTrace`, `ProviderResult` and `LLMResult`, and
+  says what is true of it: `DEFAULT_PRICING` being the top card makes the cost a genuine upper
+  bound, safe to budget against but not to bill, report as spend, or average into a rate. The point
+  is the aggregate — one unpriced model in a run makes the whole total a ceiling, and a consumer
+  can now notice that instead of publishing it.
+
+  It is set through one `record_cost(trace, model, **buckets)` helper rather than a second line at
+  each of the four provider sites, because the pair must not come apart: a `cost_usd` written
+  without its provenance is a guess wearing the costume of a measurement. The buckets differ by
+  provider (OpenAI's `reasoning_tokens`, Anthropic's `cache_creation_tokens`) and pass straight
+  through. On the LLM tier the flag is derived from the name that was actually costed — the
+  tier-adjusted one for a `flex_`/`batch_` call — so it cannot disagree with the number beside it.
+
+  **Propagated through `LLMResult`, not left at the provider.** `LLMResult.truncated`'s own
+  docstring records this failure already: computed correctly by every provider, then dropped at
+  exactly that dataclass boundary. A flag is worth its weakest hop, so a test asserts every
+  `LLMResult` construction in the manager carries it — the primary path and the fallback path —
+  rather than pinning one instance.
+
+  Five test doubles hand-rolled `SimpleNamespace` in place of `ProviderResult` and broke on the new
+  field. They now construct the real dataclass, which is the actual fix: a lookalike double stops
+  matching the contract silently, so the next field added breaks the tests instead of the code
+  under test. That is the second time this shape has bitten, after `truncated`.
+
+- **Gemini reaches the agent tier: `AgentExecutionService.gemini`, and a real tool loop behind it.**
+  AES already *inferred* `gemini` from a model name and then refused it, with a hint saying to use
+  OpenAI or Anthropic for anything with tools. That was the last asymmetry in the provider story —
+  three backends, two of which could run an agent and one that could only answer.
+
+  `agents/gemini_provider.py` implements the same `run` contract its siblings satisfy: same
+  arguments, same `AgentResult`, same `AgentExecutionTrace`, same shared `compute_cost`. A caller
+  writing against the generic tier cannot tell which provider answered from the shape of what comes
+  back, which is the entire promise of a generic tier. The one place the loops genuinely differ is
+  that Gemini matches a tool result to its call by **name** rather than by a call id.
+
+  A failing tool is reported to the model as its result rather than raised — the model asked for
+  something that did not work, and telling it so is what lets it recover, where raising ends a turn
+  it could have finished. Usage accumulates across rounds, because a turn's cost is every round it
+  took; `thoughts_token_count` counts toward output because it is billed.
+
+  All three refusal paths now share one message — `Unsupported provider: X. Supported: openai,
+  anthropic, gemini.` — where a third site had been raising its own hardcoded string, so a caller
+  who named a bad provider *with* a model got different words than one who named it without. The
+  message names the supported set and stops there, and that is the SDK-level stance rather than a
+  tidying preference: reaching a model is the smallest part of running one usefully. Pricing,
+  guardrails and the per-model request quirks (`unsupported_request_params`, caching, reasoning
+  settings) are all keyed by model family, so a model japes does not know is a model it cannot cost
+  or constrain — an uncatalogued one falls back to `DEFAULT_PRICING` and bills 100k/50k tokens at
+  $10.50 where `gemini-2.5-flash` costs $0.155. Knowing the family is the precondition for the rest
+  of the SDK doing its job, and an adapter added on purpose when something is actually needed is
+  worth more than a passthrough that makes every provider look half-available. Existing tests used **gemini**
+  as their example of an unsupported provider — the set that message rejects is exactly the set
+  with no adapter, and it shrinks by one each time an adapter is written, so they moved to
+  `kimi-k3` and `vertex`.
+
+  The LLM tier's own refusal was misdirecting in the same way, and worse: `_get_provider` reported
+  `Provider kimi-k3 not enabled` for a provider it has no adapter for, sending someone to look for
+  a switch that does not exist, while the `Unknown provider` line beneath it was unreachable —
+  `_provider_config` holds exactly the four constructible names, so the enabled-check caught
+  everything first. Those are two different problems (**unsupported**: nothing you can do;
+  **supported but disabled**: `local` with `enable_local=False`, genuinely a switch) and they now
+  say so separately, with the supported set read off the config so it cannot drift. The dead branch
+  became the wiring assertion it actually is: a provider configured with no constructor.
+
+  **Providers are strict, models are not, and that asymmetry is deliberate.** The two are
+  distinguishable — `provider_for_model()` resolves a family by pattern, `is_priced()` says whether
+  the catalogue knows a specific model — and they are treated differently on purpose. Provider
+  support is a fact about code japes has written, so an unsupported one is a hard error. Model
+  support is a fact about a catalogue that is always behind: `gpt-5.4-mini` is priced,
+  `gpt-5.9-turbo-preview` is not, and both route to OpenAI correctly because the pattern matches
+  the family rather than an enumerated list. Gating on the catalogue would break every new model on
+  the day it ships, so nothing does. The real cost of an uncatalogued model is not a refusal but a
+  silent one: it prices at `DEFAULT_PRICING` and overstates by orders of magnitude, which
+  `compute_cost` already warns about at the point it happens.
+
+  **The provider story, whole:** four backends (OpenAI, Anthropic, Gemini, Kernel) behind two
+  layers japes owns — `AgentProvider` for the agent tier's loop, `agents.Model` for the Agents SDK
+  runner — with `resolve_model` dispatching and `RetryingModel` decorating any of them. What LiteLLM
+  offered was one interface over many providers; what it cost was a dependency pinning
+  `openai<3.0.0` and translating in a layer japes did not own. The equivalence a LiteLLM user should
+  check is exactly this: one `run` contract, one trace shape, one cost model, and per-provider
+  quirks handled where they are visible.
+
+- **`GeminiNativeModel`: the last provider off LiteLLM.** `google-genai` was already an optional
+  dependency here serving `GeminiProvider`, so the layer being removed was never fetching anything
+  the SDK could not fetch itself — it was translating, and this does the same translation one hop
+  closer in. Blocking, streaming and a real tool call all verified against the live API.
+
+  **Two mismatches that fail silently rather than loudly, which is why they are pinned.** Gemini's
+  assistant role is `model`; sending `assistant` does not error, it makes the model read its own
+  previous turns as the user's and answer accordingly. And Gemini identifies a tool result by the
+  function's **name** where Responses uses the `call_id` of the call it answers — nothing in a
+  `function_call_output` carries that name, so the mapping walks the input in order and remembers
+  what the earlier `function_call` was called.
+
+  Gemini streams whole parts rather than opening and closing a block the way Anthropic does, so the
+  item lifecycle is synthesised: the first chunk carrying text opens the item, later chunks delta
+  into it, and it closes when the stream ends. A consumer sees one shape whichever provider
+  answered, which is the point of doing this at the model layer.
+
+  Usage needed care: Gemini counts `thoughts_token_count` inside `total_token_count` but **outside**
+  `candidates_token_count`, so output is the sum of the two — reporting candidates alone understates
+  what the turn produced. Verified against a live response reporting 9 / 1 / 24 / 34.
+
+  **LiteLLM now serves one thing only:** an explicit `litellm/<provider>/<model>` name — a genuine
+  passthrough for a provider japes has written no adapter for, including Vertex AI's
+  project/location routing, which a bare model name cannot express. Dropping the extra is now a
+  question about that passthrough rather than about Claude or Gemini, and dropping it lifts the
+  openai-agents ceiling its `openai<3.0.0` pin imposes.
+
+- **The Claude catalogue, rebuilt from the API rather than from memory.** Five models added
+  (`claude-opus-5`, `claude-sonnet-5`, `claude-opus-4.7`, `claude-opus-4.6`, `claude-fable-5`) and
+  two existing rows given the cards they lacked (`claude-opus-4.5`, `claude-sonnet-4.5`). Limits and
+  capabilities come from `GET /v1/models`, which reports `max_input_tokens`, `max_tokens` and a
+  capability object per model; rates from the pricing page. Nothing was recalled — the one existing
+  row that overlapped, `claude-opus-4.8`, matched the fetched rates exactly, which is what made the
+  field mapping trustworthy.
+
+  Provenance records the sources and the date and deliberately claims **no human reviewer**: these
+  are machine-read and unreviewed, and signing them off as reviewed would be the kind of false
+  attribution the block exists to prevent. `claude-fable-5` is documented as current but 404s on the
+  account used to probe, and its provenance says so.
+
+- **`temperature` is rejected by Claude's adaptive-thinking models, and we were sending it.** Found
+  by probing every catalogue id live: `claude-opus-5`, `claude-sonnet-5`, `claude-opus-4.8` and
+  `claude-opus-4.7` answer a request carrying `temperature` with a 400 — *"`temperature` is
+  deprecated for this model"* — while 4.6 and earlier accept it. Four of the nine reachable models,
+  including the two newest, failed every call the native path made.
+
+  This is the same class of thing OpenAI's reasoning tier does and which
+  `unsupported_request_params` already describes per model, so the fix reuses it rather than
+  hard-coding a list: the four cards declare it, and `AnthropicNativeModel` strips what the card
+  names. A future model needs a card edit, not a code change. All nine reachable models now
+  round-trip live.
+
+- **A live smoke test found what a faked stream could not: our own Claude ids 404.** The catalogue
+  writes a version as `claude-haiku-4.5`; Anthropic's API wants `claude-haiku-4-5` and returns a
+  flat 404 for the dotted form. Nothing caught it because the LiteLLM path never sent our id
+  straight through and a faked SSE answers to any string. One real call found it.
+  `AnthropicNativeModel` now normalises on the way out; dated ids carry no dots and pass unchanged.
+
+  Probing every Claude id in the catalogue against the live API turned up a second, separate
+  problem this does **not** fix: five of the ten are models the account cannot reach at all —
+  `claude-opus-4.1`, `claude-opus-4`, `claude-sonnet-4`, `claude-3.5-haiku`, `claude-3-haiku` — and
+  the live list carries four we do not have (`claude-opus-4-6`, `claude-opus-4-7`, `claude-opus-5`,
+  `claude-sonnet-5`). That is catalogue currency, and each row needs pricing nobody should invent,
+  so it is reported rather than guessed at.
+
+  The live tests are opt-in beside the existing ones (`RUN_LIVE_LLM=1` plus the key), cheap, and
+  cover blocking, streaming, and a real tool call — the last being the half a fake vouches for
+  least, since it is where Anthropic either accepts the tool schema we build or does not.
+
+- **`AnthropicNativeModel`: Claude through the Agents SDK without LiteLLM in the middle.** One
+  dependency sets the ceiling on the whole SDK — LiteLLM pins `openai<3.0.0` while openai-agents
+  0.21+ needs `openai>=3.0.0` — for an extra exactly one consumer installs. This is the same model
+  without that layer: japes' own Anthropic client wired straight to the `agents.Model` protocol.
+
+  **Both halves are native.** `get_response` sends one request; `stream_response` reads Anthropic's
+  SSE and translates it into the Responses events the runner expects. Two streams describing the
+  same thing in different vocabularies — Anthropic opens a content block and deltas into it, the
+  Responses API adds an output item and deltas into it — and that translation is precisely what
+  LiteLLM was performing one hop further out, which is why doing it here removes the layer rather
+  than duplicating it.
+
+  Text and tool arguments both stream. Arguments arrive as JSON fragments where only the
+  concatenation parses, so the call is assembled once at the block's end rather than re-parsed per
+  delta; `sequence_number` increases monotonically across every branch, because a consumer ordering
+  by it must never see two events claim the same slot. A `ThinkingDelta` is deliberately not
+  emitted: the Responses vocabulary has no event for it here, and inventing one would put Claude's
+  reasoning trace into a stream a UI renders verbatim. Anthropic reports input tokens at the start
+  and output tokens at the end, so usage is merged across both — reading either alone reports a
+  turn that cost nothing to send or nothing to receive.
+
+  **Unmapped input shapes raise.** An item silently dropped is a tool result that never reached the
+  model, or a turn of history that vanished — both of which read as the model behaving badly rather
+  than as a missing branch. A `NotImplementedError` naming the item type is the failure that gets
+  the branch written. Handoffs raise for the same reason. Malformed tool arguments do *not*: the
+  model wrote them, so they surface as an empty call for the tool to reject, not an exception
+  inside the request path.
+
+  **Native is now the default.** Claude used to raise `ImportError` without the extra, leaving a
+  consumer who never wanted LiteLLM unable to reach Claude at all. The remaining argument for
+  keeping LiteLLM in front was that it had carried Claude in production — it has not, since the one
+  consumer installing the extra is a proof of concept. `JAPES_ANTHROPIC_LITELLM=1` forces the old
+  path back. The extra still serves everything else it did (Gemini, any explicit
+  `litellm/<provider>` name), so this narrows what depends on it; dropping it entirely is what
+  lifts the openai-agents ceiling its `openai<3.0.0` pin imposes.
+
+- **`preserve_raw_usage`: a provider's own usage payload survives normalisation.** Not what it
+  looked like from the outside. It does **not** replace the extractor's field-by-field reading —
+  the snapshot it keeps is rawer, not tidier, and still has to be parsed. What it does is make a
+  count survive that `Usage` has no field for.
+
+  `Usage` models `cached_tokens` and `cache_write_tokens` and nothing else about caching, so a
+  provider's own `cache_creation_input_tokens` reaches the cost tracker today only because the
+  object handed over happens to still carry the attribute — an accident of which path produced it,
+  not a guarantee. With this on, the SDK keeps a snapshot of the provider payload taken before it
+  normalises, and `extract_token_usage` prefers it for exactly the fields normalisation drops.
+
+  Read at the top level *and* one nesting down, because a snapshot is unnormalised by definition and
+  the same count sits beside its siblings in one provider's payload and under a details object in
+  another. A non-numeric value counts as absent rather than raising: a usage figure is telemetry,
+  and a malformed one must not take down the call it describes. The snapshot never lowers a count
+  already reported, and with no snapshot the extraction is byte-identical to before.
+
+- **`prompt_cache_options`: a pack can say how its prompts should be cached, not just where.**
+  japes already had `build_prompt_cache_key`, and cached tokens were already *measured* in the
+  usage extractor and the cost tracker — but nothing could influence whether a hit happened.
+
+  The two are complementary and the distinction is the point. `prompt_cache_key` decides **which**
+  cache a turn routes to, and stays in `extra_args` because the SDK still has no field for it —
+  checked, not assumed. `prompt_cache_options` decides **how** caching behaves:
+  `{"mode": "explicit"}` opts a call in deliberately rather than relying on implicit prefix
+  matching, and `{"ttl": "30m"}` holds the entry far longer than the implicit window. A persona plus
+  a knowledge block plus a tool catalog is a long static prefix repeated on every turn of a session,
+  where the gap between a hit and a miss is most of the prompt.
+
+  Named on `build_model_settings` rather than falling through `**extra`, for the reason already
+  stated there for `reasoning_summary` and `response_include`: it is a `ModelSettings` field, not a
+  raw provider arg. Passed only when asked for — sending `{"mode": "implicit"}` explicitly is not
+  the same request as sending no options at all — so a spec that does not set it still builds no
+  settings object, unchanged.
+
+- **`InteractiveAgentSpec.tool_name_collision`: a pack can refuse a run whose tools collide.**
+  The agent composes its catalog from several independent sources — a skill registry, knowledge
+  bindings, and MCP servers — none of which knows what the others named their tools. `parent_tools`
+  is a plain list, so two tools sharing a name both reach the model and one of them wins; what the
+  model then calls is not what it meant to call, silently.
+
+  Set to `"error"` and the run is refused instead. The default stays the SDK's own `"warn"`, so an
+  existing pack with a benign duplicate is unaffected and raising the bar is opt-in rather than a
+  migration. Threaded through all three `Runner` call sites — blocking, reasoning-stream, and token
+  stream — because a collision does not become acceptable because the caller wanted tokens.
+
+  **Delegated to the SDK rather than checked here, and that is the finding**: MCP tool names are
+  fetched from the server at run time, so the cross-source collision that matters most is invisible
+  to anything japes could inspect while building the agent. A build-time diagnostic naming which
+  sources clashed would have missed exactly the case worth catching. The `RunConfig` is built only
+  when the policy differs from the default, so a pack that never sets it gets byte-identically the
+  `Runner` call it got before.
+
+- **openai-agents floor raised 0.17.0 → 0.20.0.** Eight releases behind, and the suite passes on
+  the new one unchanged — 4000 tests, no code change needed. `Model.get_response`/`stream_response`
+  are untouched across the range, which is why `kernel_model`, `anthropic_model` and
+  `openai_provider` are unaffected.
+
+  **The ceiling is 0.20.x, and the wall is litellm rather than us.** 0.21+ requires
+  `openai>=3.0.0`; every litellm release through 1.98.0 pins `openai<3.0.0`. Verified against PyPI
+  metadata rather than assumed. Worth knowing precisely, because litellm is an *optional* extra:
+  the suite also passes on **0.22.0 with openai 3.6.0**, so nothing in japes blocks the newest — a
+  consumer who does not install the litellm extra can resolve straight past it, which the `>=` floor
+  deliberately permits. The floor is not capped; only the lock sits at 0.20.0, because the lock
+  resolves every extra together.
+
+  What 0.20 brings that we can now reach: `ModelSettings.prompt_cache_options` (we already *measure*
+  cached tokens without being able to steer them, and a pack's static instruction block is exactly
+  the long-prefix case), `preserve_raw_usage` (instead of scraping provider usage field by field),
+  `ToolNameCollisionPolicy` (`InteractiveAgent` composes tools from a skill registry, KH and MCP
+  servers, where a clash is currently undefined), and `FunctionTool.allowed_callers` — a native hook
+  for the boundary the tool zero-data-retention note describes. All verified present, none wired up
+  yet.
+
+  Also: the document-analyzer example still floored at `openai-agents>=0.1.0`; raised to match.
+
+- **A chat turn can be stopped, and stopping is not failing.** `chat.py` had no vocabulary for "a
+  turn in flight was told to stop" — the closest was `GeneratorExit`, which means something else
+  entirely: the reader left, nobody stopped the turn. `InteractiveResponse` gains `cancelled` /
+  `cancel_reason` as a third terminal state beside `blocked` and `incomplete`, and `chat.cancelled`
+  is its own metric rather than folded into `chat.failed`, so a deploy that drained cleanly does not
+  read as an outage.
+
+  **Two mechanisms, because there are two real ones.** `ChatTurn.cancel` is anything with
+  `is_set()`, checked before the turn starts, before the gather, and between deltas — cooperative,
+  so a barge-in closes the stream with a terminal event rather than just stopping, since a stream
+  that stops is indistinguishable from a crashed one. `asyncio.CancelledError` is the hard path: it
+  is recorded and then **re-raised**, never swallowed. Swallowing it would leave `task.cancel()`
+  unable to stop the task, which is the one thing the caller asked for; letting it propagate
+  unrecorded would file a deliberate stop as an unexplained failure.
+
+  How a cancel *request* reaches the turn is deliberately not modelled — a second HTTP call, a
+  pub/sub message to the owning worker, a shutdown handler are all the runtime's business. japes
+  owns the state and the guarantees around it: the workspace is released, `on_complete` fires, and
+  the metrics say what happened.
+
+- **`chat.py` gains a pre-answer `ground` step and a per-turn workspace.** The reference chat
+  pipeline was introduced as the substrate for exactly the consumers that then did not adopt it,
+  and reading their turn flows says why: both do real work between routing and answering that
+  `validate → gate → answer → refuse → finalize` has no place for.
+
+  **`ground`** gathers what the turn needs before the model is asked anything.
+  `InteractiveAgent` grounds itself from its knowledge bindings, and for a pack whose context is a
+  retrieval query that is the whole story — it is not, when the context is several independent
+  fetches from different systems, any of which can fail alone. The bindings have no way to say
+  "four sources at once, and a missing one degrades rather than sinking the turn", so a consumer
+  needing that orchestrates it outside the pipeline, where it stops being traced, stops being a
+  stage, and stops being visible to progress. Sources are declared on `ChatTurn` as
+  `label -> (thunk, default)`; `gather_degrading` already did the hard part, including its own
+  in-flight progress hook at a finer granularity than the engine's per-step events. Off by default,
+  and skipped for a turn declaring no sources.
+
+  **`workspace`** holds a per-turn resource for the length of the turn and releases it however the
+  turn ends. Two consumers converged on this from different domains — a scratch directory the
+  retrieval and the answer both read, and a checked-out working copy reconciled afterwards — and
+  neither fits a step: the resource outlives the stage that creates it, and release has to run on
+  the failure and abandonment paths too. On the streaming route it is released even when the
+  consumer walks away mid-stream, which is the case a plain `async with` around a yield misses and
+  the one that strands a directory or a checkout.
+
+  Both are additive: a pack that passes neither sees no change.
+
+## [2.4.9] - 2026-08-28
+
+Mostly about the reference chat pipeline learning to host a real consumer's turn. `chat.py` was
+shipped as the substrate for exactly the consumers that then did not adopt it, and reading their
+flows says why: both do work between routing and answering that `validate → gate → answer → refuse →
+finalize` had no place for. It gains a pre-answer `ground` step, a per-turn `workspace`, and a
+vocabulary for a turn being stopped; `respond_stream` gains the output schema that made a caller run
+every structured turn twice. Alongside that, package splitting stops reading one page at a time.
+
+Also here: a pack's rules can live entirely in YAML its manifest already names, which removes the
+Python module a YAML-only pack had to keep alive purely to hold a list, and closes two ways a pack
+could lose its policies without a sound.
+
+Everything is additive — every default reproduces the previous behaviour — and the commits behind
+these entries were squashed on the way in, so the reasoning lives here.
+
+- **Consumer names removed from the SDK's published schema.**
+  A first pass stripped every mention of a consumer repo from the tree, which was too much: a README
+  or ARCHITECTURE naming its consumers is doing its job, and a comment or test may reasonably cite
+  the caller a behaviour came from. That pass was reverted whole. What stays fixed is the line that
+  is not a matter of taste.
+
+  Pydantic puts a model's **class docstring** into `model_json_schema()["description"]` and each
+  `Field(description=...)` into the property beside it, so those strings are not comments -- they
+  are the SDK's public contract, and they reach generated API docs, client generators and anything
+  that introspects a model. Scanning every `BaseModel` under `jazzx_sdk/` found **30 classes whose
+  published schema carried a consumer's name** across 16 distinct lines: `"Semantic slug (not
+  UUID). e.g., 'jaci-aml'"` on `DomainPack.pack_id`, `"Target handler ID (e.g., 'macer',
+  'macer-agent')"` on `MessageSource` (inherited by three more schemas), a gitignored plan filename
+  in `ValidationFinding`'s severities, and a dozen more. All 16 now name a role rather than a repo,
+  and the scan reports zero.
+
+  The distinction worth keeping: prose about *why* something exists may cite who needed it; a string
+  the SDK publishes may not.
+
+- **The SDK no longer reaches into a consumer package.**
+  `GovernorMode` did `from jaci.pack.policy_registry import RULE_INDEX` inside a `try/except
+  ImportError`, to warn when a decision cites a sunset or deprecated clause. That is the dependency
+  the wrong way round -- an SDK importing a downstream pack by name -- and because the failure was
+  swallowed, the check was dead in every installation but one while looking wired. It now reads an
+  injected `policy_registry`, alongside the `authority_matrix`/`client_overlay`/`execution_profile`
+  the constructor already takes, so any pack gets the check rather than one. It reads `rule_index`
+  rather than `current_rules`, since the latter drops exactly the legacy aliases the sunset warning
+  exists to find, and a registry of an unexpected shape is logged and skipped rather than allowed
+  to fail a governance turn.
+
+  `tests/conftest.py` faked `jaci.schemas`, `jaci.utils.prompt_loader` and `jaci.settings` in
+  `sys.modules` before collection, so the modes' lazy imports would resolve. Nothing under
+  `jazzx_sdk/` imports a consumer package any more, and the suite passes unchanged with the stubs
+  removed -- so `tests/mocks/` is deleted and the file says why its former contents are gone. An
+  SDK that needs its consumer stubbed to be testable has the dependency inverted; the absence is
+  the point.
+
+  Three docstring examples named a consumer's module path (`from jaci.pack.policy_registry import
+  ...`) and now use a neutral `mypack`. Prose and provenance mentions elsewhere are untouched and
+  counted separately.
+
+- **Two more review findings, both invisible to a test run by construction.**
+  `_windows(0, size>1, ...)` returned `[(0, -1)]` -- one window over an empty slice, costing a
+  classification call on `""` where the per-page path made none. Guarded at the top now. The
+  coverage sweep added alongside the stride fix swept `n in range(1, 24)`: it started at 1, so it
+  excluded the exact input that breaks. It starts at 0.
+
+  `tests/test_pack_policy_files.py` hardcoded an absolute workstation path, `skipif`-guarded, so it
+  ran on one machine and silently did nothing everywhere else -- a test that cannot fail is not
+  coverage. It is driven by `JAPES_REAL_PACKS_DIR` now, and its skip reason says how to run it.
+
+  Neither was catchable by the pre-push hook as it stood: one is an input nothing tested, the other
+  a test that never ran. The second is mechanically detectable though, so the hook grew a check for
+  absolute home paths in *tracked* files (`scripts/local/` is gitignored and is exactly where such
+  a path belongs) -- verified against the offending line before it was fixed.
+
+- **Two review findings on the 2.4.9 PR, both real, one worse than reported.**
+  `split_document` accepted a `window_stride` wider than `window_pages`, which skips pages outright:
+  the trailing guard covers a document's tail and cannot cover the interior gaps a wider stride
+  opens between every pair of windows. `n=10, size=2, stride=4` leaves pages 2, 3, 6 and 7 uncovered;
+  `n=20, size=4, stride=8` loses eight. An uncovered page collects no votes and lands as `"unknown"`
+  with zero confidence, so it reads downstream as a page nothing *recognised* rather than a page
+  nothing *looked at* -- and only one of those is a real finding. Unreachable by default, where
+  stride equals window size; now refused rather than clamped, because clamping runs something other
+  than what was asked for and this is a configuration error, not a hard document.
+
+  The grounding finding was directionally right and its premise was wrong, which made the bug
+  bigger. `ground` declares `when="route != refuse"`, but `when` is descriptive -- `chat_guards()`
+  is its executable side, and it had no `ground` entry, so an unguarded step ran for every route.
+  The blocking path was not "getting this right": **both** paths grounded a refused turn. A refused
+  turn was fanning out to retrieval and discarding the result -- latency and cost for an answer
+  nobody sees, and an out-of-scope question still reaching systems the gate had declined to consult
+  on its behalf. The guard now exists, and the streaming path grounds after the refuse return
+  rather than before it. Placed above the escalate branch, because the guard excludes only
+  `refuse`: an escalated turn still grounds, and the two paths have to agree.
+
+- **A pack's rules can live entirely in YAML the manifest already names.**
+  `load_policies` and `from_policy_dir` could turn policy YAML into a working registry, and real
+  manifests were already writing `core: policies/core.yaml` and
+  `overlays: [{path: policies/overlays/rb_ci.yaml}]`. Nothing joined the two: `Pack.policy_registry`
+  read only the `registry:` dotted pointer into consumer Python, so those declared paths were
+  inert and a pack whose rules were entirely in YAML still needed a Python module alive purely to
+  hold a list. `PackManifestLoader.policy_files()` now resolves them, in precedence order, and
+  `Pack` builds a `PolicyRegistry` from what it finds.
+
+  So the hop uses keys packs are already writing rather than a new one -- `dir:` is additionally
+  honoured for a folder a manifest would otherwise enumerate file by file, which is the shape an
+  extraction pipeline writes into. Measured on a real authored pack: `clinical-intake-core`
+  declares `core:` and no pointer, and `Pack.policies` was empty for it before this.
+
+  **The `registry:` pointer still wins where a pack has one.** Every existing pack uses it, and a
+  registry quietly assembled from YAML behind its back would be a different set of rules under the
+  same accessor. `checklist:` is excluded by name -- it is declared in the same manifest block and
+  is not a policy document -- and a `dir` skips non-policy assets through `is_policy_document`
+  rather than failing the load or, as before, contributing nothing silently. A declared file that
+  is missing warns and is skipped: real manifests point at overlays that are not on disk, and
+  losing a whole registry over one of them is worse than loading what is there.
+
+  A stub loader in the existing pack tests broke on the new contract method -- the third instance
+  this cycle of a hand-rolled double drifting from the interface it stands in for. Fixed on the base
+  stub rather than by making `Pack` defensive, since the loader contract is the thing being tested.
+
+- **Two silent-failure fixes in the policy loader, found by testing the round-trip.**
+  `Policy -> model_dump -> YAML -> load_policies` was verified against real authored packs (9
+  policies, 60 rules, 5/5 clean) since the pipeline's output contract is "emit YAML `load_policies`
+  validates" -- proven for `expression`, `matrix`, `ratio` and `all_of`; `natural_language`, `dsl`
+  and `any_of` have no authored coverage and remain untested.
+
+  `load_policies` answered a non-policy YAML with `[]`, which is indistinguishable from an empty
+  policy set -- the same principle `get_condition_evaluator` already applies to an unregistered
+  kind: a real, deliberate failure, not a silent skip. It now raises and names what it found.
+  `DefaultPolicyExpert.from_policy_dir` consequently skipped such a file without a sound (pointed at
+  a real pack it loaded 6 policies and contributed 0 from the checklist beside them); it now uses
+  the new `is_policy_document` to skip non-policy assets **by name**, and logs which. A pack's
+  policy folder legitimately holds other assets; losing rules to a malformed emission is the failure
+  this closes, and it is exactly the trap an extraction pipeline writing into that folder would fall
+  into.
+
+- **Five signature annotations that resolved nowhere now resolve.**
+  Audited rather than bulk-fixed. `CanonicalEvidenceObject`, `CanonicalDecision`,
+  `ImprovementSignal`, `EvaluationReporter` and `DiscoverySourcesConfig` named real, importable
+  types that were simply never imported, and `KGStore.get_ontology` annotated `Optional[dict]`
+  without importing `Optional`. Nothing broke at runtime -- the annotations are strings that are
+  never evaluated -- but `typing.get_type_hints()` raised on the public callables carrying them, so
+  they were unreadable to a type checker and a trap for any consumer using pydantic
+  `@validate_call`, FastAPI, or signature-derived tool schemas.
+
+  **Real imports, not `TYPE_CHECKING` ones**, which was the first attempt and the wrong one:
+  `TYPE_CHECKING` is false at runtime, so it satisfies a linter while `get_type_hints()` keeps
+  raising -- it fixes the appearance of the problem and not the problem. No module imports back, so
+  there is no cycle to dodge, and import cost is unchanged.
+
+  `fabric/canonical/profiles.py` is correct as written and marked `# noqa: F821` rather than
+  "fixed": its forward reference breaks an import cycle and `periods.py`'s `model_rebuild()`
+  resolves it, verified against a fresh interpreter. Importing it would hide that the runtime
+  rebuild is doing real work.
+
+  Also audited and deliberately left alone: all 15 `F811` findings, which are one pytest fixture
+  (`rb_appendix_d`) imported into a test module and then used as a parameter name by 15 tests. Ruff
+  reads each parameter as shadowing the import; the tests run. One `# noqa` cannot cover it because
+  F811 fires at each use site, and the real fix is moving the fixture to a `conftest.py`.
+
+- **`respond_stream` can produce the object as well as the tokens.** It took no `output_schema`, so
+  a caller wanting both streamed text and a parsed result had to run the turn twice — and the
+  second, separately-sampled run need not agree with what was streamed. The plumbing already
+  existed: `_stream_agentic` accepted a schema and shaped the run with it, but `respond_stream`
+  passed a hardcoded `None` and the final object was dropped on the floor. It is now threaded
+  through and lands on the done event's `response.output`.
+
+  The result is captured per turn rather than stashed on the agent: an agent is shared and a turn is
+  not, so two concurrent streams would overwrite each other's output. Read only once the stream is
+  exhausted, since `final_output` is not populated before the run completes.
+
+  **Only the agentic path can do this**, and passing a schema to a skill-less agent raises rather
+  than returning `output=None` — which a caller would read as "the model produced nothing" instead
+  of "this path cannot do that at all". The constructor's own `output_schema` default is still
+  ignored on the single-shot path, exactly as before, so nothing existing changes behaviour.
+
+- **The streaming chat route forwards `ChatTurn.output_schema` too.** It was honoured on the
+  blocking route and dropped on the streaming one, so the same field meant different things
+  depending on which way the gate happened to route a turn. It was dropped because
+  `respond_stream` could not take a schema; now that it can, both routes agree.
+
+- **`DELETE /agents/{name}` honours `If-Match`, like `PUT`.** `strict_concurrency` was wired through
+  `check_if_match` on the write path and ignored on the delete path, so a client could remove
+  whichever revision happened to be current — including one written after its last `GET`. Gated by
+  the same flag, so a caller that never sends the header is unaffected; a stale one gets 409 and a
+  missing one under strict mode gets 428, keeping "you forgot a precondition" distinct from "someone
+  else won the race".
+
+- **Package splitting reads a window of pages, not one page at a time.** A page classified alone is
+  often unlabelable — page four of a form has no letterhead and no signature block, and the taxonomy
+  has nothing to match, so it came back `unknown` and was swallowed into whichever run it fell in.
+  `split_document` gains `window_pages`, which gives the classifier the continuity a reader has, for
+  *fewer* calls rather than more. `window_pages=1` is exactly the per-page behaviour it had before.
+
+  **The seam is the hard part, and it is solved by weighting rather than a second pass.** A window
+  straddling a boundary sees two documents. `window_stride` makes windows overlap so each page is
+  voted on by several, and a vote carries two weights: **confidence**, so two unsure windows
+  agreeing on `unknown` cannot outvote one that recognised the document; and **centrality**, so a
+  window speaks loudest about the pages at its middle. Without the second weight a page sitting at
+  one window's edge and another's centre ties, and the tie breaks arbitrarily — landing the boundary
+  in the wrong place, at exactly the seams overlap exists to resolve. Centrality is free and needs
+  no extra classification round.
+
+- **`absorb_below` folds a short unrecognised run into its longer neighbour**, which
+  `smooth_max_gap` could not: that only closes a gap between two runs of the *same* label, so a
+  stray page between two different documents stayed its own segment. **Length alone is not the
+  test** — a one-page bank statement is a whole document, and absorbing it for being short would
+  destroy a correct classification. Only `absorb_labels` (default the classifier's own `unknown`)
+  are eligible, absorption recomputes after each fold rather than deciding everything against a
+  stale run list, and a document that is nothing but short runs is left alone rather than collapsed
+  toward whichever end came first.
+
+- **`families` merges contiguous runs whose labels belong together**, e.g.
+  `{"Property File": ["Title", "Survey"]}`. Only adjacent members merge: the same labels appearing
+  again later stay a separate segment, because a second occurrence is a second document. Which
+  labels form such a set is domain knowledge, so a pack declares it rather than this inferring it.
+
+- All four are also on `DocumentAgentSpec` (`split_window_pages`, `split_window_stride`,
+  `split_absorb_below`, `split_families`), beside the `split_ocr_fallback` that was already there —
+  a knob a pack cannot set is a knob a pack cannot use. Every default reproduces the previous
+  behaviour exactly.
+
+## [2.5.0] - 2026-08-28
+
+**`KGAgent` is the new platform agent and `pipelines.vocabulary_build` the pipeline that feeds it.**
+A corpus of documents becomes typed assertions, those accumulate into proposals against a pack's
+vocabulary, and what a reviewer or an admission policy accepts is merged into a new version. The
+agent owns exactly one question — *should this enter the domain's vocabulary* — and composes the
+answers to the rest, because extraction already had a chassis and this was the half that did not.
+
+Around that sit the other three capabilities the graph work names: **grounding** a model in a
+vocabulary as context or as a queryable tool, and recording which way it reached the model;
+**asserting** case facts with provenance back to a page and section; and **checking** those facts
+against a pack's policy into citable findings. A pack's authored ontology is read as the same
+`Vocabulary` the loop grows, so construction and execution meet on one object rather than two.
+
+Everything is additive — no existing behaviour changes — and the commits behind these entries were
+squashed on the way in, so the reasoning lives here.
+
+- **An audit backend going down no longer reports failure for a write that succeeded.**
+  `agent_config`'s `PUT` appended its audit event after `store.put` had already committed, and let
+  the append raise. The client got a 500 for a definition that was in fact written, and the natural
+  retry then collided on `If-Match` against a revision that had moved — a 409 for a request that
+  worked. The review surface had the same shape one step further along: a reviewer would click
+  approve again and find the trigger illegal from the new state.
+
+  `audit.record_best_effort(store, event)` is now the one place that behaviour lives, and both
+  surfaces call it rather than each carrying its own `try`. It logs the unrecorded event at `error`
+  with its full payload and returns whether it was recorded: an audit trail whose backend is down
+  should degrade to a line that can be reconciled later, not vanish, and a caller that genuinely
+  must refuse an unaudited change can still act on the return value. A store that must never miss
+  an event belongs in the same transaction as the change it audits, not behind this helper.
+
+  Only two call sites exist in this family and both are fixed.
+
+- **`DELETE /agents/{name}` now audits, and is held to the same attribution bar as `PUT`.** A
+  deletion was the one write on that surface leaving no trace: an edit was recorded and a removal
+  was not. `before_digest` carries what was removed, which is the whole value of auditing a delete
+  — the row is gone, so the digest is the only remaining evidence of what it had been, and
+  `after_digest` is null. A 404 records nothing, since an attempt is not a change and a trail that
+  logs attempts stops being a record of what happened.
+
+  `ConfigAuditAction` gains `delete`. Mapping a hard delete onto the existing `retire` would have
+  described the wrong event: retiring takes a definition out of service while its row and history
+  remain, deleting removes the row. Nothing matches exhaustively on the action and the column is a
+  plain string, so widening it needs no migration.
+
+  The route also gained `_require_resolved_actor_in_deployed_posture`, which only `PUT` had. A
+  deletion is the least reversible thing the surface does, so an unattributable one is the last
+  write that should have been getting through.
+
+- **`server.vocabulary_review`: the HTTP surface a person works the queue through.** japes owns the
+  contract — what a reviewer can see and what they can do — and a studio or thin client renders it.
+  Putting the rendering here would make every consumer inherit one team's idea of a review screen.
+
+  **A decision goes through the lifecycle, never straight into the store.** This is the whole reason
+  it is a module rather than four lines of CRUD. `store.record` writes any status it is handed,
+  because reversing a ruling is legitimate; a route reaching for it directly would let an HTTP call
+  admit a proposal without passing the transition that says who may do that and from where. So a
+  decision is `admit(...)` against the pack's own machine, and the store only records what the
+  machine returned. A refused trigger comes back as the machine's own typed reason with the triggers
+  that *are* available, since "not from this state" and "not by you" are different things to see.
+
+  **`available_triggers` is derived, and the endpoint enforces what it advertises.** The view is
+  filtered to `TriggerType.HUMAN`, so a pack composing a different lifecycle automatically offers
+  different actions and a client cannot hardcode approve/reject. The decision route then refuses
+  anything outside that same set — the state machine checks that a *human* trigger was
+  human-initiated but has no converse rule, so a request naming a system trigger like `promote`
+  would otherwise fire it whenever its guard happened to pass, admitting on evidence through the
+  door marked review. That mostly failed closed already because a missing profile refuses the
+  guard, which is luck rather than a decision.
+
+  **Attribution splits two facts that were being conflated.** `TransitionContext.actor_class` is
+  what the transition authorises against ("reviewer"); the resolved caller is who the decision is
+  filed under. `ProposalStore` had been reading `Proposal.admitted_actor` as the identity, which
+  would have filed every human approval under "reviewer" — `decided_by` now always comes from the
+  request context, and stays empty rather than guessing when no caller resolves.
+
+  Merging returns the new vocabulary rather than adopting it, matching `KGAgent`: a surface that
+  republished a pack whenever somebody approved a proposal would make approval mean something nobody
+  agreed to. The merge route is only mounted when a `vocabulary_for` resolver is supplied, since a
+  route that always fails is worse than one that is not there. Audit appends are best-effort,
+  deliberately unlike the agent-configuration surface: the store write has already happened, so
+  raising would answer a recorded decision with a 500 and send the reviewer to click approve again,
+  where the trigger is now illegal from the new state.
+
+- **`pack.lint` + `scripts/pack_lint.py`: a pack's assets read together.** Each is valid on its own
+  and they are authored separately, so the failure that matters is a **join** — a policy rule or a
+  derivation formula reading a name nothing in the pack produces. Nothing raises at load; it
+  surfaces much later as a covenant coming back indeterminate with no explanation, which reads like
+  a broken evaluator rather than a naming gap.
+
+  Run against a real authored pack it immediately found two: the `FCCR` formula reads `taxes` while
+  the ontology declares `tax_expense` — and the metric's own `inputs:` list says
+  `FinancialPeriod.tax_expense`, so the formula disagrees with its own declared inputs — and
+  `scheduled_principal` is read by two formulas and declared nowhere.
+
+  Reports, never repairs: binding `taxes` to `tax_expense` on a name-similarity guess would be a
+  wrong auto-binding on a covenant input, worse than an honest gap. Qualified and bare names both
+  resolve, matching what `GraphContext` actually offers, so the lint does not invent a gap the
+  evaluator would not hit. A condition kind with no registered evaluator is reported rather than
+  read as "reads nothing", which would hide it behind a clean run. Underivable metrics are warnings,
+  not errors — they can still be supplied through the evaluation context.
+
+  The logic is a module so the Studio can render it; the script is a thin CLI over it and exits 1 on
+  errors so it can gate a pack build. `--policies` is opt-in: a pack naming its registry by dotted
+  path into the consumer's own code cannot be imported from japes.
+
+- **`fabric.graph.derive`: a pack's declared ratio metrics computed from what its case asserts.**
+  Run against a real authored pack, the policy read `leverage_x` and the case graph asserted
+  `funded_debt` and `adj_ebitda` — **no overlap at all**, so every rule came back indeterminate
+  until a caller hand-fed the metrics. Meanwhile the pack had already said how to compute them:
+  `concept_graph` entries carry a `formula`, and nothing read it.
+
+  **Deliberately not a formula language.** Of the six derivations in the pack this was built
+  against, three are ratios and three are not: two need multiplication, one contains a literal
+  `+/-` that has no single value. The grammar is exactly one division whose sides are sums and
+  differences of names and numbers, and **anything else is reported as unsupported with the
+  reason** — a metric silently absent looks identical to one that computed to nothing, and the
+  point of the layer is that a covenant is never evaluated against a number nobody produced. A
+  missing input, a zero denominator and an unresolvable dependency each say which name to go and
+  find; a metric built on another resolves in a later pass.
+
+  Kept out of `Vocabulary`, which is a schema graph — folding formulas in would make it a
+  computation graph too — and read from the authored ontology instead, surfaced as
+  `pack.derivations`. Distinct from `RatioCondition`, which is the *checking* shape (a ratio against
+  a threshold, inside a rule); this is the *producing* shape (a named value a rule can then read).
+
+  `check_graph` takes `derivations=` and reports `derived` / `underived`. Precedence is assertion,
+  then derived, then supplied: an assertion carries provenance a computed value does not, and a
+  computed value states how it was reached where a bare supplied number does not.
+
+- **`Contradiction`: assertions that cannot all be right — a data problem, not a vocabulary one.**
+  That distinction is the reason the type exists. A *conflicting proposal* says the corpus keeps
+  asserting a shape the vocabulary does not declare, and the answer may well be that the vocabulary
+  is stale. A contradiction says this particular assertion cannot be right: the value was misread,
+  the wrong entity was typed, or two documents disagree. One is settled by curating the domain, the
+  other by going back to the document, and reporting them through the same channel would send a
+  reviewer to fix a schema when the extraction was wrong.
+
+  `CaseGraph.contradictions(vocabulary=None)` reports three kinds. `value` needs no vocabulary and
+  always runs: one subject, one predicate, two different objects. `type` is an object incompatible
+  with what the vocabulary declares. `domain` is a predicate asserted about a concept it is not
+  declared on — distinct from an *unknown* concept, which `unknown_concepts` already reports as the
+  gap the curation loop exists to close; calling that a contradiction would send somebody to fix a
+  document that is fine.
+
+  **A contradicted value never reaches a verdict.** `GraphContext` withholds it exactly as it
+  withholds an ambiguous one, so a covenant comes back `INDETERMINATE` rather than confidently
+  wrong — the concrete failure being prevented is a document stating DSCR 0.95 against a 1.25 floor
+  while another states 1.31, where taking the first assertion reports a breach the second denies.
+  `contradicted` is reported apart from `ambiguous` because the remedies differ: one needs the rule
+  qualified to say which subject it means, the other needs two documents reconciled.
+
+  The type-compatibility rule moved to `vocabulary.satisfies` and is now shared with the
+  accumulator, so a shape treated as *matched* there can never simultaneously read as a
+  contradiction here.
+
+- **`DELETE /agents/{name}` honours `If-Match`, like `PUT`.** `strict_concurrency` was wired through
+  `check_if_match` on the write path and ignored on the delete path, so a client could remove
+  whichever revision happened to be current — including one written after its last `GET`. Gated by
+  the same flag, so a caller that never sends the header is unaffected; a stale one now gets 409 and
+  a missing one under strict mode gets 428, keeping "you forgot a precondition" distinct from
+  "someone else won the race".
+
+- **`fabric.graph.check`: a case graph evaluated against a pack's policy, with the citation kept.**
+  The fourth capability, and the one regulated industries pay for: an instance graph plus a policy
+  plus an evaluation is "this facility breaches covenant 6.1, here is the clause, here is the page
+  the number came from".
+
+  **Almost none of it is new machinery, deliberately.** The rule model, the registered condition
+  evaluators, `Verdict`, `RuleOutcome` and its `citations` field already existed, and
+  `CanonicalDecision` is already the Finding shape — a finding is a decision, not a fifth object
+  beside it. What was missing was narrow: a `Rule.condition` reads a flat mapping, a `CaseGraph` is
+  not one, and nothing carried provenance across the gap. `GraphContext` is that join, offering each
+  assertion under its bare predicate and under one qualified by the subject's concept
+  (`Borrower.dscr`), since packs author conditions both ways.
+
+  **An ambiguous name resolves to nothing rather than to a guess.** Two borrowers in one case both
+  asserting `dscr` means the bare key cannot mean either, so it is omitted and the rule comes back
+  `INDETERMINATE` — the correct answer, and the one the qualified key then answers properly. Picking
+  whichever assertion was seen last would produce a confident covenant verdict about the wrong
+  company. The ambiguous names are reported on `CheckResult`, because a rule untested for that
+  reason is a different problem from one untested because the number was never extracted.
+
+  **Untested is not passed.** `CheckResult.clean` requires nothing violated *and* nothing
+  indeterminate, and an indeterminate rule produces a finding of its own — the same lesson
+  `Coverage` encodes, since a check that quietly omits what it could not test reads as a clean bill
+  of health. Its rationale names the input the rule wanted, taken from the evaluator's static
+  evidence contract rather than from `RuleOutcome.inputs`, which describes the failure in the
+  evaluator's own vocabulary. It carries zero confidence: there is no verdict to be confident about,
+  and reporting the evaluator's own score would dress "we could not tell" as a weak finding rather
+  than an absent one.
+
+  Not re-exported from `fabric.graph`: it reads `fabric.canonical.policy`, which reaches
+  `tools/__init__` and back into the graph package. Import from `jazzx_sdk.fabric.graph.check`
+  directly, the same as `DbProposalStore`.
+
+- **A pack's authored ontology is now readable as a `Vocabulary`, closing the loop back to the
+  pack.** `KGAgent` produced a versioned vocabulary and packs authored one as YAML, and nothing
+  connected them: a merged vocabulary was something no pack could load, and a pack's ontology was
+  something no run could grow. `Vocabulary.from_pack_ontology` reads the shape packs actually
+  author, surfaced as `PackManifestLoader.load_vocabulary()` and `pack.vocabulary`. **The version is
+  the ontology's own**, so a vocabulary versions with the pack that ships it rather than beside it.
+
+  Both `relationships` and `relations` are read, because both are live in authored packs today and
+  honouring one would silently drop the other's edges. `concept_graph` entries become concepts of
+  kind `property` — a derived metric is something the domain talks about and is not a class — while
+  their formulas and inputs are not represented, since a vocabulary is a schema graph rather than a
+  computation graph. `pack.ontology` still returns the authored dict unchanged for what reads those.
+
+  Field types map onto the same XSD names `emit_assertions` emits, which is load-bearing: a declared
+  relationship and an observed one have to compare equal. A declared type with no XSD equivalent
+  (`list`, `dict`) is kept verbatim rather than forced into a wrong one.
+
+- **Two accumulator defects that only a real vocabulary could surface.** Loading an authored pack
+  turned both into immediate false conflicts:
+
+  `_category` looked a candidate up **by predicate alone** while `Candidate` is keyed by shape. A
+  predicate is not an identity in a real vocabulary — `name`, `description` and `company_name` are
+  declared on many entities — so the index kept whichever entity happened to be authored last and
+  reported every other entity's identical field as disagreeing with it. Lookup is now by
+  `(predicate, source)`, falling back to predicate-only for an untyped subject, where shape cannot
+  be matched. A predicate declared elsewhere but not on this entity reads `new`, which is what it
+  is: a new edge, not a contradiction of one.
+
+  Numeric widening was missing. `xsd:integer` derives from `xsd:decimal`, so a money field declared
+  `float` and observed as whole dollars was reported as a conflict — which would have been every
+  whole-numbered amount in a real corpus, arriving as noise in a review queue rather than evidence.
+
+  Both were latent while vocabularies were hand-written for tests, where predicates happened to be
+  unique. Verified against the two authored ontologies in the live consumer: 30 concepts / 214
+  relationships and 6 concepts / 25 relationships, both resolving completely, with a confirming
+  corpus now proposing nothing.
+
+- **`ProposalStore`: a review queue that outlives the process that filled it.** An accumulator
+  produces proposals in memory and a lifecycle decides them, which is enough for a run that decides
+  its own output and exits. It is not enough for the shape that actually wants review: somebody
+  opens a queue tomorrow, rules on what a run proposed today, and expects that ruling to still mean
+  something the next time the corpus is processed.
+
+  **The deterministic id is what makes that possible.** Proposal ids are derived from the
+  candidate's shape and carry nothing about the run, so two runs over entirely different corpora
+  that observe the same candidate produce the same `proposal_id`. That determinism already existed
+  so a reviewer's queue would not double on a rerun; it is also exactly what lets a store recognise
+  a re-proposal as the thing somebody already ruled on. Without it, persistence would be a filing
+  cabinet rather than a memory.
+
+  **Two write paths, because they answer different questions.** `put_set` is a run reporting what it
+  saw: a decided proposal keeps its decision and only its evidence is refreshed, since a rerun is
+  new evidence about a settled question rather than a reopening of it. `record` is a person or a
+  policy deciding, and overrides whatever was stored, because reversing a ruling is legitimate and a
+  store that ignored it would misreport what it holds. Collapsing them would force a choice between
+  a rerun quietly resurrecting a rejected candidate and a reviewer being unable to change their
+  mind.
+
+  **Evidence is replaced, never accumulated** — adding the counts would let a rerun over an
+  overlapping corpus drift a candidate's occurrences upward with nothing new observed. What the
+  store adds instead is what memory genuinely cannot reconstruct: `first_seen`, `last_seen` and
+  `times_proposed`. `ProposalEvidence.first_seen` is stamped fresh by each run, so it says when
+  *that run* saw the candidate; a candidate four runs have vouched for and nobody has ruled on is a
+  different thing from one proposed this morning, and only a store can tell them apart.
+
+  Two backends: `InProcessProposalStore` and `DbProposalStore` on `fabric.db` (table
+  `vocabulary_proposal`, DDL belonging to the consuming service's own alembic). The folding rules
+  are shared functions rather than reimplemented per backend, and the behavioural tests run against
+  both — whether a rerun reopens a rejected candidate is the one thing they must never disagree
+  about.
+
+  `pipelines.vocabulary_build` takes an optional `store`. With one, `propose` writes through it and
+  continues with what came *back*, so a candidate somebody already rejected never reaches a reviewer
+  again; decisions and merges are recorded as they happen, so the queue drains.
+
+- **A vocabulary can now be bootstrapped by a domain that has no ontology to start from.** The
+  blocker was not the accumulator — an empty `Vocabulary` already categorises everything as `new`
+  and proposes it. It was upstream: types reached an assertion only from hand-authored
+  `subject_concept` / `field_concepts`, so a domain with no ontology had nothing to write there, its
+  assertions were untyped, and untyped assertions propose predicates forever. The vocabulary could
+  never acquire its first concept.
+
+  The seed was already on the result and unused. `DocumentResult.doc_type` is a classification, and
+  classifying is the one thing that does not need a vocabulary. `emit_assertions` now falls back to
+  it when `subject_concept` is empty — which `emit_entity` was already doing for an entity's type,
+  making the assertion path the asymmetric half rather than this the new behaviour.
+
+  The admission floor comes along for free: `process` leaves `doc_type` unset when the
+  classification is sub-floor, so a shaky classification arrives as no classification and seeds
+  nothing. The label is used verbatim, since reshaping it would put a name in the vocabulary that
+  appears nowhere in the taxonomy that produced it. **Only the subject end bootstraps** — an
+  object's concept still has to be declared, because nothing about a document says that a string
+  value names an entity.
+
+  End to end with no ontology anywhere: an empty `Vocabulary`, a spec naming no concepts, and a
+  classified corpus produce a vocabulary holding its first concept with every relationship hanging
+  off it and nothing dangling.
+
+- **`pipelines.vocabulary_build`: a corpus becomes a vocabulary as one routed run.** `DocumentAgent`
+  extracts and `KGAgent` curates; between them sat a join every caller was wiring by hand. Three
+  calls in a fixed order with one stateful object threaded through them is a pipeline, not an idiom,
+  and hand-wiring it also forfeited what the engine gives free: per-stage traces, progress
+  streaming, per-stage timing. Stages are `ingest → emit → observe → propose → [decide] → [merge] →
+  finalize`.
+
+  **Ingest delegates rather than re-derives.** `DocTurn` already names a corpus five ways (folder,
+  KH collection, zip, urls, blob pointers), so the ingest step runs the document pipeline and
+  normalizes what comes back. A caller who already ingested passes `documents` and the step is a
+  pass-through, which makes this composable with a run that was going to happen anyway rather than a
+  reason to ingest twice.
+
+  **Deciding and merging are off by default, and the asymmetry is the point.** Observing and
+  proposing read a corpus and fill a queue. Deciding admits into a domain's vocabulary and merging
+  cuts a version, and a pipeline doing both unasked would make an unattended corpus enough to change
+  what a pack means. `KGAgentSpec` already defaults to review-only for the same reason. Merge is
+  additionally guarded on something having been accepted: a "new" version identical to the old one
+  is worse than no version. Adoption stays outside the pipeline entirely.
+
+  **A corpus and a case file are different questions.** Without `case_id` each document is its own
+  case, which is what a policy library or a regulation set actually is. With one, the assertions are
+  pooled into a single graph so `Coverage` is derived across the documents rather than per document
+  — the whole reason `documents_expected` exists.
+
+  `CorpusObservation` reports documents, assertions and **untyped** counts, with `typed_ratio`
+  returning `None` for an empty corpus rather than a misleading 1.0. The untyped count is the
+  diagnostic worth reading first: a largely untyped corpus grows a vocabulary's relationships and
+  leaves its concepts untouched, and surfacing that as a number beats discovering it later as a
+  puzzling proposal set. A failed ingest surfaces as a typed `Refusal` rather than an empty
+  vocabulary, since proposing from a corpus that could not be read would under-count evidence
+  silently. Registered in `PIPELINE_REGISTRY` as `vocabulary_build`.
+
+- **A vocabulary can be put in front of a model both ways, and which way it was used is recorded.**
+  japes had both halves — prompt formatting and a tool registry — and paired neither. `grounding.py`
+  pairs them, because the question behind the pairing is a cost lever: does a cheaper model given
+  the domain's vocabulary reach the answer an expensive one reaches? That is unmeasurable without
+  knowing which path produced what, so attribution is the feature rather than bookkeeping.
+
+  **Additive, never substitutive.** A graph built from documents is a lossy compression of them;
+  when one stood in for loan documents the reasoner's confidence that all relevant data was present
+  fell and approvals came back conditional. So the rendered context is deliberately a **summary of
+  what the domain talks about**, not of what the documents say — no assertions appear in it, it is
+  bounded, and truncation says so rather than ending quietly. Where a case graph is present the
+  context also states what it omits and that the documents remain the source, since a model told
+  what a graph contains and not what it lacks is exactly the situation that produced hedging.
+
+  The tools are plain callables — a caller wraps them for whatever runtime it has — and they answer
+  what a summary cannot: the cross-document view a reader of one document cannot assemble. An
+  unknown concept comes back naming what is known, so a model that asked wrongly can correct itself
+  without another turn.
+
+  Attribution resolves to **tool when the graph was queried**, even if context was also shown: the
+  context is always present once rendered, so crediting it whenever it appeared would make every
+  assertion look context-grounded. Usage counts calls rather than availability, because "the tool
+  was there" and "the tool was used four times" are different facts. The recorded path stamps the
+  assertions produced under it, which closes the chain from grounding to evidence.
+
+- **`DocumentAgent.emit_assertions`: extraction can now feed vocabulary construction.** The other
+  half of `emit_entity` — the same admitted fields, the same provenance, a different shape. A domain
+  object answers "what is this document about"; a graph answers "what does the corpus say", and only
+  the second accumulates across cases.
+
+  **Both ends are typed, which is the point.** An assertion whose subject and object are proper
+  nouns states a fact and generalises nothing: it can propose a *predicate* to a vocabulary but never
+  a *concept*. `subject_concept` on the spec says what an entity from these documents is;
+  `field_concepts` names the fields whose value is another entity. Everything else is typed from its
+  Python value.
+
+  That inference is deliberately shallow. A string holding `"2026-01-01"` stays `xsd:string`,
+  because inferring a date is parsing dressed as typing — and a wrong type is worse than a vague one
+  when it is what a vocabulary gets built from. `bool` is checked before `int`, since Python makes
+  the obvious ordering wrong. A spec that never said what its documents are about produces untyped
+  assertions rather than a guess.
+
+  Refused fields are not asserted: a sub-confidence value that was not good enough to store is not
+  good enough to state. Section, confidence and the grounding path travel with each assertion, so a
+  proposal built from them averages the extraction's own confidence rather than inventing one.
+
+  Two tests run the loop end to end and show the difference the types make: a typed corpus grows
+  both the concepts and the predicates, while the same corpus from an untyped spec grows only the
+  predicates — thirty relationships and zero entities, reproduced from first principles.
+
+- **`KGAgent`: a pack's vocabulary can be derived from its documents rather than hand-authored.**
+  A pack manifest declares an ontology and `PackLoader` registers it, but it arrives as a file
+  somebody wrote. The agent closes that loop — observe what a corpus asserts, propose what the
+  vocabulary is missing, decide each proposal under the pack's admission policy, merge what was
+  accepted — and is the next step of the collapse that already took policies and evidence types out
+  of code and into configuration.
+
+  **It owns one question and composes the rest.** Extraction already has a chassis: `DocumentAgent`
+  ingests, classifies, extracts under an admission floor and emits with provenance, and its
+  `emit_entity` is already ontology-scoped. What had no home is the *other* admission question — not
+  "is this assertion good enough" but "should this enter the domain's vocabulary". So the agent has
+  no `extract` and no `process`, and a test says so.
+
+  `KGAgentSpec` is pack data: which admission policies are allowed, the accumulator's noise floor,
+  and the thresholds guards resolve against. **Review-only is the default** — a pack whose vocabulary
+  grows unattended has to say so — and an unknown policy name fails at construction rather than
+  producing a lifecycle quietly missing a route.
+
+  Three separations the tests pin, because collapsing any of them would look tidier and be wrong:
+  a **refusal leaves a proposal pending**, since an unmet guard means *not yet* rather than *no*;
+  the accumulator's floor and the admission bar are **two questions**, so clearing the first says
+  nothing about the second; and **merging cuts a version rather than editing one** — the merged
+  vocabulary is returned, the current one is untouched, and `adopt` is a separate act so a caller
+  that merges to inspect has not silently changed what the next run is measured against.
+
+  A merged vocabulary carries **no version** until its pack releases it: carrying the old one
+  forward would let a changed vocabulary answer to a version describing something else. An accepted
+  *conflicting* proposal replaces the existing definition, because accepting it was the decision
+  that the corpus is right and the vocabulary is stale.
+
+- **Vocabulary construction is run-scoped, through a pluggable accumulator.** Some questions are
+  only answerable across a corpus: "this relationship appears in enough documents to be real" cannot
+  be decided while looking at one. `accumulate.py` watches assertions as a run produces them, groups
+  them into candidates, and emits proposals carrying what it saw — occurrences, distinct documents,
+  which documents, and what the run covered.
+
+  It draws the division that keeps the lifecycle honest: **the accumulator decides what is worth
+  proposing, the lifecycle decides what is worth admitting.** A candidate seen once never reaches a
+  reviewer at all — that is noise filtering, not refusal — while a candidate above the floor becomes
+  a proposal whose admission may still be held to a higher bar. Collapsing the two would either
+  flood a review queue or let a single mention edit a domain's vocabulary.
+
+  Candidates are keyed by **shape**, not name: the same predicate asserted between different
+  concepts is two candidates, because merging them would invent a relationship nobody observed.
+  Occurrences and distinct sources are counted separately, since five appearances in one document
+  is not the evidence twice-in-two-documents is, and a guard downstream has to be able to tell.
+  Confidence is reported separately from frequency — a candidate can be frequent and uncertain, or
+  rare and clearly stated, and a reviewer needs both numbers.
+
+  Conflict is decided narrowly and mechanically: a predicate the vocabulary already defines,
+  asserted with a different shape. That is a real disagreement somebody must settle and the only
+  kind detectable without a model; anything subtler is a judge's question.
+
+  Output is deterministic — same corpus, same proposals, same order, same ids, derived from the
+  candidate's shape rather than generated. A reviewer whose queue fills with fresh ids for
+  candidates they already judged stops trusting the queue.
+
+- **A vocabulary proposal has one lifecycle and several ways into it.** A concept entering a pack's
+  vocabulary is a governed act — proposed, matched against what exists, admitted or refused — and
+  that shape had no home. `proposal.py` gives it four states (`proposed`, `accepted`, `merged`,
+  `rejected`) over `jazzx_sdk.statemachine`, and supplies the admission policies as composable
+  transition sets rather than as alternative implementations.
+
+  A studio reviewer approving, a relationship seen across enough documents to be real, a judge
+  model's verdict, and a trusted import are **four transitions into one state**. The differences
+  live in `trigger_type`, `actor_class` and `guard`, which is where a status enum that grew
+  `ACCEPTED`, `AUTO_ACCEPTED` and `APPROVED` had been trying to record them: those were never three
+  states, they were one state reached three ways with the trigger smeared into the name.
+
+  A pack composes what it allows — `proposal_lifecycle(AdmissionPolicy.review(),
+  AdmissionPolicy.frequency())` — and review-only is the default, so nothing enters a vocabulary
+  unattended unless a pack says it may. `merge` is added unconditionally, since a lifecycle that can
+  decide and never take effect is not one. **Accepted is not merged**: approving one proposal must
+  not release the pack.
+
+  The frequency guard compares **distinct sources**, not raw occurrences: five appearances in one
+  document is a repeated phrase, twice across two is a pattern. A guard is a single comparison, so
+  the occurrence floor sits upstream in the accumulator — what is worth *proposing* and what is
+  worth *admitting* are different questions. Both guards fail closed: a thin candidate is refused,
+  and a missing threshold refuses rather than assuming one.
+
+  Evidence is first-class on the proposal — occurrences, distinct sources, which documents, what it
+  was accumulated over — rather than a bag keyed by whichever system produced it. Guard values are
+  read from that evidence, so a frequency guard cannot be satisfied by numbers disagreeing with what
+  a reviewer sees. And one `Proposal` type with a `kind` discriminator replaces parallel concept and
+  relationship classes that shared a lifecycle, an evidence shape, a category and their
+  serialisation.
+
+- **The two graph objects are named apart: `Vocabulary` and `CaseGraph`.** Three independent efforts
+  each produced a different graph shape because the schema graph and the instance graph were never
+  distinguished. They have different lifecycles -- a vocabulary is a released artifact with a version
+  and a rollback; an assertion is evidence with provenance and a confidence -- and conflating them is
+  what made each effort re-derive its own.
+
+  **A vocabulary is a closure.** Concepts reference parents, relationships reference the concepts at
+  each end, so `jazzx_sdk.closure` walks it, reports what did not resolve, and digests what did.
+  Validation and version identity therefore come from a primitive that already existed: a
+  relationship pointing at an undefined concept is an unresolved reference, not a special-cased
+  error. A literal target (`xsd:decimal`) resolves rather than dangling, since it points outside the
+  vocabulary on purpose. It versions **with** its pack -- one release, one closure, one rollback.
+
+  **A case graph reports its coverage**, and that is the point of it. A graph built from documents is
+  a lossy compression of them; standing one in for its sources cost a reasoner the ability to tell a
+  sparse graph from a complete one, and approvals came back conditional rather than approved. So
+  `Coverage` states which documents were read, which expected ones were not, and what fraction of the
+  vocabulary is represented -- and an *unstated* expectation is never reported as completeness, which
+  is the exact failure it exists to prevent. It reports the ratio and refuses to judge it: what
+  counts as sufficient is a policy decision.
+
+  **`Assertion` types both ends.** A triple whose subject and object are proper nouns can propose a
+  predicate but never a concept, because nothing says what kind of thing either end was -- the
+  mechanism behind a real promotion set of 30 relationships and zero entities. It extends `Triple`
+  rather than replacing it, so prompt formatting, merging and the store keep working, and it records
+  whether the vocabulary reached the model as context or as a tool, without which the
+  cheaper-model-with-grounding question cannot be measured.
+
+  `jazzx_sdk/closure.py` arrives here from the Plato branch, byte-identical, since it is SDK-level
+  and gate-independent.
+
+## [2.4.8] - 2026-08-28
+
+- **Converters record where each span of markdown came from, so a chunk can name its page, sheet
+  and row.** The last two entries gave chunks a span and a section path; this fills the fields that
+  were declared and empty, and it closes the chain end to end.
+
+  Conversion is the last point at which a document's structure is known -- afterwards the text is
+  markdown, and a page or a spreadsheet row can only be recovered by searching for a value, the
+  step `extraction.py` already warns "would hit almost every page and produce a meaningless
+  locator". `Conversion` now carries `ConversionRegion`s alongside the markdown, and
+  `chunking.apply_regions` intersects a chunk's span against them. Neither side searches text, so
+  neither can match the wrong occurrence.
+
+  Three routes carry structure today. A digital PDF's markdown is its page texts concatenated with
+  a blank line between, so page boundaries are arithmetic rather than a guess. A workbook names
+  each sheet with its **source** row range -- numbered before empty rows are dropped, because the
+  spreadsheet's own 1-based row is what an operator opens the file to, and recording the
+  post-filter index would name a row nobody can find. A CSV gets the same treatment under its
+  synthetic sheet name. A passthrough `.md` or a flow-layout `.docx` reports no regions, which is a
+  statement that the format has no structure to carry rather than that it was lost.
+
+  Ranges rather than first-values: a chunk spanning pages 4 to 6 says so, because claiming page 4
+  sends a reader to the wrong place two thirds of the time, and a chunk overlapping two sheets
+  claims neither -- the same rule a merged chunk already followed.
+
+  `convert_document` and `convert_document_and_structure` are unchanged; `convert_document_located`
+  is the third entry point, over one implementation, matching how `extract`/`extract_located` split.
+
+- **Locators reach the extraction path.** The previous entry put a locator on the chunker in
+  `documents/chunking.py`, which nothing uses: `extract()` -- and therefore `DocumentAgent` and
+  `document_ingest` -- runs on a second chunker in `documents/extract.py` whose contract was
+  `Callable[[str, int], list[str]]`. Bare strings, so provenance stopped at the chunk boundary.
+
+  That seam is now `Callable[[str, int], list[Chunk]]`. The chunkers already sliced by offset and
+  already promised losslessness, so the spans were derivable all along and simply discarded; the
+  recursion now carries absolute offsets rather than substrings, and each chunk is named by the
+  heading it opens with.
+
+  `_merge_extractions`' rule -- "the first chunk that reports a non-empty value wins" -- was
+  *already an attribution*, naming exactly which region produced each field, and it was being
+  thrown away. It is now returned: `extract_located()` gives the instance plus a
+  `{field: ChunkLocator}` map, and `extract()` is a thin wrapper over it that returns the instance
+  alone, so the two cannot disagree about what was extracted.
+
+  `DocumentAgent` uses it. A field whose chunk is known now gets a `SectionLocator` naming that
+  section and its path, slotted **below** the page and cell locators (which are more precise) and
+  **above** the generic `section="document"` fallback (which names nothing). That is the same
+  answer `_resolve_locator` previously reached by searching the markdown for the extracted value --
+  the step `extraction.py` already warned "would hit almost every page and produce a meaningless
+  locator" -- arrived at without a search that can mis-match.
+
+- **A document chunk carries where it came from, instead of that being rediscovered later.**
+  `DocumentChunker.chunk_document` returned `(name, content)` pairs, so by the time a chunk existed
+  the source structure was gone. Provenance was then reconstructed downstream by *searching*:
+  `DocumentAgent` matches an extracted value back against the markdown to resolve a
+  `SectionLocator`. That works until the anchor is loose, and `extraction.py` already named the
+  consequence -- an anchor that hits almost every page produces "a meaningless locator".
+
+  Chunks now carry a `ChunkLocator`. Two fields are populated today because the chunker already
+  knows them and was discarding them: the character span it cut, and the header hierarchy it cut
+  under -- `("Article VI", "Covenants", "6.1 Financial Covenants")` rather than a flat matched
+  header, which is the difference between a citation a reviewer can act on and one they have to go
+  looking for. `page`, `sheet_name` and the row range are declared but empty, so a converter can
+  fill them without every downstream reader changing shape.
+
+  Merging is where provenance would have vanished quietly, since it builds new text rather than
+  passing a slice through. A merged chunk spans everything that went into it and keeps only the
+  ancestry that stays true of the pair: merging 6.1 with 6.2 gives a chunk under Covenants, not one
+  claiming to be 6.1, and a merge across two spreadsheet sheets claims neither.
+
+  **Nothing existing changes.** `Chunk` is a tuple subclass, so `for name, content in chunks`,
+  indexing, and equality against a plain pair all still work. A separate richer return type was the
+  alternative and would have meant two code paths over one splitting algorithm, which is the drift
+  this module would then have to police.
+
+  The span bounds the *source region*, not a byte-identical slice: for a single section
+  `content[start:end].strip()` is the chunk, but a merged chunk's text is re-joined. Stated in the
+  docstring because "exact offsets" is the natural reading and is wrong in the merged case.
+
 ## [Unreleased] - Plato
+
+### plato 0.1.1
+
+- **`jazzx_sdk` and `plato` are lint-clean, and three tests that never ran now do.** A sweep of
+  208 findings, most of them mechanical, but two kinds were not.
+
+  Twenty-two names appeared only in annotations and were imported nowhere. `from __future__ import
+  annotations` kept them from raising, which is why nothing caught it, but the names stayed
+  unresolvable: `typing.get_type_hints()` on any of them raises. That is the exact shape of the
+  failure that made every route 422 twice on this branch. Each now has a real import, under
+  `TYPE_CHECKING` where it is annotation-only.
+
+  Two test classes shared a name, so the first one's three tests were silently discarded by the
+  second. The two are not duplicates: the live class registers **async** hooks and the shadowed one
+  registers **sync** hooks, so deleting the shadowed class would have dropped a calling convention
+  from coverage entirely. Renamed instead, and both now run.
+
+  Left alone: 69 stylistic findings in tests (semicolons, import order, a pytest-fixture false
+  positive), none of which is a defect. Also left, and noted at the site rather than tidied away:
+  the mock Knowledge Hub's `search_documents` resolves a collection id and then ignores it,
+  fabricating five results regardless of what the caller stored. A test that populates a collection
+  and searches it is asserting against invented documents.
+
+- **An out-of-range `reasoning_effort` is named before the API rejects it.**
+  `unsupported_request_params` said which *params* a model rejects; nothing said which *values* of
+  the reasoning param it takes, so an effort the model does not accept reached the API and came
+  back as a 400 whose message does not name what would have worked. Cards now carry
+  `reasoning_efforts`, and `unsupported_reasoning_effort()` reports the mismatch alongside the
+  values that would have.
+
+  **Advisory, and deliberately so.** The guard warns and sends rather than refusing. These lists
+  are authored per model and go stale the moment a vendor adds a tier; a guard that refused on a
+  stale list would block a call that works, which is strictly worse than the 400 it replaces. A
+  wrong entry costs a spurious warning instead. Empty means "unknown", never "none allowed", so a
+  model whose list has not been authored stays silent rather than warning on every valid effort.
+  Populated for the gpt-5.6 family only, where the accepted set is confirmed.
+
+- **The durable model overlay covers cards, not just pricing.** Phase 5 task 4 half-landed: an
+  operator could correct a rate without a deploy but not a context window, though both are
+  reference data and neither is code. A window that ships wrong caps every request short and a
+  reasoning flag that ships wrong changes which parameters get sent, so both need fixing without a
+  release. `put_card` writes on the same append-only trail and `apply_overlays` applies both kinds.
+
+  No migration: the row already carried a `kind` column, which the read had simply hardcoded to
+  `pricing`. The two kinds are read separately rather than merged into one mapping, or whichever
+  was written second would silently discard the other. Tuple-valued card fields are restored on
+  the way back, since JSON has only lists and a card carrying a list where the codebase expects a
+  tuple works until something hashes or compares it.
+
+- **`EvalServiceClient` now covers what a consumer had to write for itself.** A service injecting
+  approved feedback into its own system prompt needed four things beyond the HTTP read, and each
+  was being written per-service -- which is how a limit ends up enforced in one place and not
+  another. `list_static_feedback` joins `get_feedback_config` and `find_similar` on the client;
+  `evaluation/feedback_render.py` holds the rest.
+
+  The split is deliberate: the client does I/O, `feedback_render` shapes text. `clamp_top_n` bounds
+  what a *remote* config may request, because `max_results` is authored in eval-service and would
+  otherwise let one service decide how much text lands in the highest-trust slot of another's
+  prompt. `cap_block` bounds the rendered size separately, since a handful of very long entries is
+  the other way to blow a prompt and an item count cannot see it. `render_feedback_block` falls
+  back to plain bullets when a template is missing or broken, so a mistyped template costs the
+  formatting rather than the reviewer's instruction.
+
+  Two things japes already had and did not need a second copy of: `normalize_feedback_text` unwraps
+  a feedback row that stored a JSON envelope instead of prose, and `render_prompt_template` is
+  already the sandboxed fail-soft renderer -- its docstring even notes that callers were each
+  building their own. The sandboxed environment gained `trim_blocks`/`lstrip_blocks` so an
+  operator-authored template renders the same here as elsewhere in the estate.
+
+  Error containment is now stated on the class and applied uniformly: these reads may never raise
+  into a live turn, and the catches are broad on purpose. `httpx.InvalidURL` -- raised for a
+  malformed base URL, such as an unclosed IPv6 bracket in a misconfigured environment variable --
+  is not an `httpx.HTTPError` subclass and escaped the narrower handlers that were there.
+
+- **`evaluation/README.md` describes what shipped.** It claimed "Phase 1 Complete (v1.6.0)" and
+  listed L3 review, the harness and the UI as "coming" long after all three landed, so a reader
+  orienting from it concluded the opposite of the truth. It now maps every stage to its module,
+  points at the end-to-end test as the place the handoffs are visible, and states the known gaps
+  rather than leaving them to be rediscovered.
+
+- **The mock Knowledge Hub client no longer differs from the real one, and two `RAGStore` calls
+  that could never have worked are fixed.** Reported from an outside build as "`fabric.rag` does
+  not work against `local_fabric()`". The diagnosis was the mock; the mock was the smaller half.
+
+  `RAGStore.create_collection` passed `metadata=` and `RAGStore.retrieve_by_metadata` passed
+  `limit=`. **Neither parameter exists on the real Knowledge Hub client**, so both calls would have
+  raised `TypeError` against a real deployment; `create_collection` had therefore never worked
+  against one. A broad `except Exception` reported each as
+  `KnowledgeFabricError("Failed to ...")`, which reads as a service outage rather than a signature
+  mismatch, and the mock accepted both because it had grown parameters the real client never had.
+  Both are now applied client-side, the same treatment `search`'s own `limit`/`metadata_filters`
+  already had, and both are documented as not reaching the endpoint.
+
+  The mock's signatures now match the real client's exactly, including order and required-ness:
+  `create_document` had `**kwargs` swallowing `document_type`/`indexing_enabled`, and had made
+  `collection_id`/`content`/`name` optional, so code omitting them passed every test and failed in
+  production. Its `search_documents` also ignored the collection and fabricated five documents per
+  call, so a test that populated a collection and searched it asserted against invented content and
+  passed regardless of the code under test; it now searches what was stored.
+
+  A parameter-parity test already existed with all three methods on a known-drift allowlist -- the
+  drift was tracked and deferred, and the exemption is what let it reach a real build. The
+  allowlist is now empty, the comparison is order-sensitive (mapping equality is not), and a
+  separate check refuses `**kwargs` on the mock, since an argument accepted and discarded is the
+  failure that looks most like success.
+
+- **The learning loop's routing stage no longer discards provenance, and its tag vocabulary is
+  actually extensible.** Composing the loop end to end for the first time surfaced both.
+
+  `CuratorQueueEntry` flattened an `ImprovementSignal` to a tag and a string, dropping
+  `attribution_id` and `evidence_ids` -- the provenance `learning_candidate_to_signal` exists to
+  attach. A governed learning candidate and a raw thumbs-down reached synthesis
+  indistinguishable, so the governance established one stage earlier was undone by the next. The
+  entry now carries the whole signal; the flattened fields stay, so existing readers are
+  unaffected. That also lets Layer 1 feed Layer 2, which previously could not be written as a
+  pipeline at all since routing returned one type and synthesis took another.
+
+  `Feedback.to_signal()` copied `category` straight into the tag, and the router validates tags
+  against a registered set. So `from_case_result`, japes' own factory for turning an evaluation
+  result into feedback, emitted `eval_fail` and had it rejected: the automated half of the loop
+  discarded every signal it created, and human feedback worked only because a human happened to
+  pick a registered word. The tag is now mapped rather than copied, with the original category
+  preserved in `context` and a platform fallback.
+
+  `VALID_SIGNAL_TAGS` was an alias of the defaults, so a pack "injecting its own tags" -- which the
+  module's comment invited -- mutated the platform set for every other pack in the process.
+  Platform tags are now separate from the two AML-specific ones (`sar_template`,
+  `typology_threshold`, kept registered because jaci routes them), and `register_signal_tags()` is
+  the mechanism the module always described and never had.
+
+- **Concurrent migrators are serialized, and schema work gets its own timeouts.** Plato is
+  deliberately multi-replica, so a rollout starts every replica at once and each runs
+  `upgrade head` against one database; they then race on an ACCESS EXCLUSIVE lock and the deploy
+  fails. A session-scoped advisory lock now means one replica migrates and the rest block, then
+  find the work done and no-op. Session-scoped rather than transaction-scoped because alembic
+  commits between revisions, and a transaction lock would release at the first commit.
+
+  `lock_timeout` (30s) bounds how long a statement inside a migration waits for a table lock;
+  `statement_timeout` (30min) replaces a server default tuned for queries that would kill a
+  backfill part-way. The advisory-lock wait itself stays unbounded on purpose: a replica queued
+  behind another migrator should wait, not fail. The unlock rolls back first, or a failed migration
+  leaves the transaction aborted and the release silently never runs.
+
+- **OpenAI cache-write tokens were billed at the input rate.** `ModelPricing` has carried a
+  `cache_creation` rate for a long time and `compute_cost` has always accepted the tokens, but
+  nothing populated them from an OpenAI response, so on the families that bill cache writes every
+  cost figure, trace and budget understated. The Anthropic provider already did this correctly on
+  both its paths, which makes it a symmetry gap rather than a missing feature.
+
+  Both OpenAI paths now read the field, under either of the two names the API surfaces use, and
+  subtract the writes from the uncached remainder: they are part of `prompt_tokens`, not additional
+  to it, so billing them at the higher rate while still counting them as input charges twice.
+  Usage extraction moved to a module-level `extract_usage` so a test can exercise the real
+  arithmetic instead of restating it.
+
+  Known and left alone: the long-context tier defines no `cache_creation`, so a write in a prompt
+  over the threshold is billed at that tier's input rate. Whether the vendor charges a premium
+  there is unconfirmed, and a guessed rate would be worse than a recorded assumption.
+
+- **A BPMN/DMN repository can be walked as a reference graph.** `closure.py`'s `Resolver.expand`
+  docstring named this case as its reason for existing, and shipped with nothing able to read BPMN:
+  the seam was there and empty. `jazzx_sdk/bpmn.py` fills it, which is step 1 of the promotion
+  retirement path and gate-invariant.
+
+  It walks call activities and decision references to a fixed point, so a process called two levels
+  down is in the closure rather than a deploy that fails on its first step, and it pulls in the
+  tools, agents and decisions that only a process's *content* names. Lookup is by key first and
+  display name second, because the estate's authoring path writes a display name into the field a
+  key belongs in; a name matching two definitions is reported as ambiguous rather than picked, since
+  picking one yields a stable digest for a graph nobody chose. Expression-valued references
+  (`calledElement="${nextProcess}"`) are carried as unresolvable rather than dropped, and they
+  change the digest, so an incomplete closure cannot be mistaken for a complete one.
+
+  **The parsing is `common.refs`, not a second implementation.** That is the shared extractor every
+  other dependency graph in the estate is built from, and two parsers of one format drift until what
+  a release bundles and what a dependency view shows disagree. The `common` submodule moved 29
+  commits to origin/HEAD to pick it up; the full suite passes against the bump.
+
+  **The walk crosses component kinds.** A process names things in its own XML, an agent names them
+  in its descriptor, and a tool's *executable* calls further tools and agents that neither of the
+  first two mention. A closure that stopped at the first tool leaves those uncreated wherever the
+  release is applied. `ComponentSource` supplies content for the kinds a BPMN export does not
+  carry, and the walk continues through them to a fixed point across kinds, cycles included.
+  Without a source they stay terminal, because a resolver that guessed at content it does not have
+  would report a closure it never walked. Components are fetched once each however many references
+  reach them, since a real source is a network call per fetch.
+
+  One exception, and it is one because the shared extractor answers a different question:
+  `dmn_decision_ids` reads what a DMN document *defines*. `common.refs` reports outgoing references,
+  and a document's own identity is not one, so without this a `decisionRef` could never resolve to
+  the DMN carrying it and a missing decision would look the same as a present one. Identity only,
+  so there is still one implementation of what a document points at.
+
+  `defusedxml` is now an optional dependency behind the `bpmn` and `plato` extras. `common.refs`
+  requires it, and the one local read uses the same defused parser rather than the standard-library
+  one, which is documented as vulnerable to entity-expansion denial of service.
+
+- **An assistant can be frozen into a digest-addressable release.** Phase 2's gate-invariant half:
+  the parts of versioned config that no answer to "who owns the durable store" can invalidate.
+  `jazzx_sdk/agents/interactive/release.py` produces and validates a release as a *value*. It
+  stores nothing and reads no database, which is exactly what lets it exist before that decision
+  lands; whoever ends up owning the store stores these values unchanged.
+
+  **Pins, not names.** Every dependency enters the digest as `(kind, name, version)` with its
+  content digest. That is the single property making the acceptance criterion hold: publishing a
+  new version of a skill cannot alter an existing release, because the release never referred to
+  "the skill", it referred to version 3 of it. A name-keyed digest follows the registry forward,
+  which is the failure a release exists to prevent, and it is also how the whole thing gets faked:
+  such a digest is stable across a rollback for the uninteresting reason that names did not change.
+  So the tests move content under a stable name and assert the digest notices, then move the
+  version and assert existing releases do not.
+
+  The plan's definition of done passes: rollback reproduces the same closure digest *and* the same
+  effective spec on a graph whose registries have since moved.
+
+  Validation is `ProfileRegistry.validate()` called against the frozen set, not a fork of it.
+  Whether a graph is admissible does not depend on where its members came from, and a second
+  implementation would drift from the one every boot exercises. It runs *before* the digest is
+  taken, since a digest over a graph with a dangling reference is stable, trustworthy-looking, and
+  describes something that cannot run.
+
+  One trap found and closed: `ProfileRegistry.register()` keys off `spec.name` while the closure
+  walk keys off the mapping key. When those disagree the graph is validated under one identity and
+  digested under another, and both steps pass while describing different things. Now a refusal.
+
+- **A service details page at `GET {prefix}/info/ui`.** One self-contained HTML file: no build step,
+  no CDN, no external font. A deployed service fetching an asset from someone else's host is a
+  dependency nobody reviewed and a CSP exemption nobody wanted.
+
+  It fetches `/info` from the browser rather than being rendered server-side, so the contract has
+  one shape and Refresh does not reload the document. The schema banner is the reason the page
+  exists, so it is not one card among many: current reads green, a mismatch reads red and says the
+  container should not be serving, and *cannot verify* reads amber rather than red, because "no
+  answer" is not the same as "the answer is no".
+
+  It sits behind the same identity requirement as everything else. Exempting it would create an
+  unauthenticated route, which is exactly the posture a deployed start refuses; reached without
+  identity headers the page explains that instead of rendering blank, and an `x-user-id` field
+  makes it usable locally by adding a header client-side while asking nothing of the server.
+
+- **Versions and the commit, together.** The page and `/info` now report every version available
+  (`plato`, `sdk`, `common`) plus the commit that produced the image. A version says what a
+  container claims to be; a commit says what it contains, and they diverge on exactly the case
+  worth diagnosing -- a rebuild from a branch, a hotfix with no version bump.
+
+  `common` is the awkward one and worth stating plainly: it is a git submodule whose packaging
+  version has been static for a long time, so its *commit* is what identifies which one is
+  installed. Both are reported, since an operator who looks for a version and finds the key missing
+  assumes the lookup is broken.
+
+  The commit is read from the environment first and a working tree only as a fallback, never
+  merged, and `source` distinguishes the two so a page showing `working tree` tells the reader they
+  are looking at a checkout rather than a built image. `Dockerfile` takes `JAPES_GIT_COMMIT` and
+  `JAPES_COMMON_COMMIT` as build args; without them a built image honestly reports the commit as
+  unknown, since no `.git` reaches the runtime stage. These stay plain ARGs rather than BuildKit
+  secrets: a commit sha is not a secret, unlike the dependency token in the same file.
+
+### Earlier on this branch
+
+- **A container refuses to start against a schema it was not built for.** A service version says
+  which code is running, not which schema that code expects, and the gap between them is the
+  classic deploy failure: a replica rolls out ahead of its migration, every write touching a new
+  column fails, and the symptom is scattered 500s rather than "this container should not have
+  started". An orchestrator sees a healthy process and sends it traffic.
+
+  `plato/schema_version.py` compares the migration tree's head against the database's recorded
+  revision, and the entry point refuses on a mismatch with its own exit code, the same stance
+  `check_posture` already takes there. Both directions refuse: a database *ahead* of the image is
+  refused too, because a newer migration may have dropped something the running code still writes
+  and "probably compatible" is not a property this can check.
+
+  The expected revision is read from the migration tree rather than pinned in a constant, since a
+  constant is a second declaration that can disagree with the migrations, and the failure mode
+  would be a service refusing to start over a number nobody had updated. Unmigrated is reported
+  distinctly from mismatched: different mistake, different fix. **No environment variable disables
+  the check** -- an escape hatch on a safety check is set once during an incident and inherited by
+  every deployment after it; a caller with no database simply does not call it, and the unreachable
+  case is reported as its own message so "cannot answer" never reads as "the answer is yes".
+
+  Alembic's version row is now pinned to `plato_control` rather than left to the connection's
+  search path, so the revision sits with the configuration it describes. That schema is created in
+  `env.py` before the migration body runs, because alembic writes its version table first and the
+  migration's own `CREATE SCHEMA` would come too late.
+
+- **`config_info()`: one call for what a process is running.** The SDK's version was reachable only
+  by importing it, the model inventory only by calling `list_model_cards`, and which optional
+  dependencies an image actually shipped was not answerable at all. `jazzx_sdk.config_info()`
+  gathers versions, the resolved default model and carded inventory, optional-package presence, and
+  the non-secret fields of a `FabricConfig`. Plato serves it at `GET {prefix}/info`, adding its own
+  version, the resolved role, and the expected-versus-actual schema revision.
+
+  Distinct from `server/settings_api.py`, which edits a caller-declared catalog and is a write
+  surface. This one is read-only and derived, so it cannot go stale against what is installed.
+
+  **No secret values, not even masked.** A mask still discloses length and invites "just the first
+  four characters" as the next change; what an operator needs is whether a credential is
+  *configured*, which is a boolean. The subtle cases set the policy: `DATABASE_URL` and
+  `APPLICATIONINSIGHTS_CONNECTION_STRING` carry a password and an instrumentation key inside
+  strings that look nothing like credentials, and a surface reporting "just the config" publishes
+  both. So credentials are an allowlist of variables known to carry secrets, reported as
+  present/absent, and the `FabricConfig` summary names its safe fields one by one rather than
+  dumping the model -- a dump would carry `api_key`, and would keep carrying whatever secret field
+  is added to that model next. A test asserts a field added later is absent rather than included.
+
+  Extension is by composition (`extra=`) rather than a registration hook, because `jazzx_sdk` must
+  not import its consumers.
+
+- **`docs/DEPLOYMENT_ENV.md`: every environment variable a deployment reads**, derived from source
+  rather than from a working deployment. It surfaces something a running instance would not: with
+  the default `common` database backend, six of `common`'s settings fields have no defaults, so a
+  missing one fails at import with a pydantic validation error naming the field -- which looks
+  nothing like the database problem it actually is. None of the six are `JAPES_`-prefixed.
+
+- **Plato has its own version, on its own clock, and services now report the one they declare.**
+  `plato/_version.py` starts at 0.1.0, mirroring `jazzx_sdk/_version.py`'s shape.
+
+  Separate rather than shared because the two answer different questions. `jazzx_sdk`'s version is
+  what a consumer pins, so bumping it is a release to every repo that installs japes. Plato's
+  identifies a deployed image. Fusing them would mean a Plato deploy required a library release,
+  and a japes patch silently renumbered a running service that had not changed.
+
+  Plato takes no `pyproject.toml` version and needs no sync test: it ships inside the `japes`
+  distribution behind the `plato` extra, so it has one declaration and nothing to drift from. The
+  SDK needs its sync test only because poetry-core requires a static version in `pyproject.toml`.
+  Adding a second declaration for Plato would create the problem that test exists to catch.
+
+  Surfacing it exposed a standing bug: `create_app` advertised a hardcoded `version="0.2.0"` while
+  the SDK was at 2.4.7, so every service built on it, in every repo, reported a version that had
+  been wrong for a long time and that nothing checked. It is now an `app_version` parameter
+  defaulting to the SDK version, so an existing caller gets a true answer without changing, a
+  service passes its own, and a deployment that genuinely wants an API version distinct from either
+  can say so. `/health` reports it alongside the handler name, since `/docs` is routinely disabled
+  in a deployment while `/health` is what an operator can reach.
+
+- **Plato's schema is now something a deployment can create, and the three untenanted tables were
+  fixed rather than recorded as debt.** Plato owns five schemas and six tables but had no migration,
+  so a deployment's only route to a schema was `create_all()` -- which builds from whatever stores
+  happened to be imported, and cannot place a table in a schema at all.
+
+  The larger finding came first. `DbTurnRunStore` and `DbConfigAuditStore` had no tenant column, so
+  in a multi-tenant deployment one tenant's run id could collide with another's and `history()`
+  returned every tenant's audit trail. Nothing released depends on the old shape (verified across
+  the sibling checkouts: nothing deploys either store), so both were corrected at the model rather
+  than migrated later: `tenant_id` joins both of `turn_run`'s and `turn_run_event`'s composite
+  primary keys, `config_audit_event` gains a `(tenant_id, event_id)` unique constraint, each store
+  is scoped at construction, and all twelve query sites filter. `plato.tenancy.find_untenanted_tables`
+  now returns nothing, where it previously named three tables.
+
+  `plato/models.py` is the one place every Plato-owned store is imported, so the table set is
+  enumerable rather than emergent -- a module that quietly stopped being imported would otherwise
+  drop its tables out of the migration chain without failing anything. It deliberately excludes
+  `japes_feedback`: eval-service is the system of record, and a second durable copy makes "which one
+  is right" a question somebody answers under pressure. A test asserts the absence.
+
+  Schemas are assigned in the migration, not on the models, so the models stay portable to sqlite,
+  which has none. That means the two can drift, and drift here fails only when a deployment's table
+  is missing a column the code writes to. So the migration is **run** under test and its output
+  compared column-by-column against the registered metadata, rather than its source being read --
+  a `create_all` comparison could only ever agree with itself. The migration is dialect-aware for
+  this reason, and reversible, which a release that has not shipped yet should be.
+
+- **A pack can be read from anywhere, not only from a directory.** `load_pack` read the filesystem,
+  which quietly made a new tenant a deploy: the manifest was durable in `plato_control` while the
+  profile, personas and skills that give it meaning were files in the container image. That is the
+  opposite of what Phase 1 claimed, and on jaci's scale it is ten scenarios' worth of
+  `pack_manifest.yaml` / `pipelines.yaml` / `document_agent.yaml` with no durable home.
+
+  `plato/packs/sources.py` splits *where the bytes come from* from *what they mean*, the same split
+  `fabric` already makes for blobs and databases. It differs from those in one respect and
+  deliberately: `BlobStore` and `DbStore` take a `backend="..."` string because their backend set is
+  closed and small, while a pack can arrive from a directory, a bundle, a config store that does
+  not exist yet, or a tenant upload. A protocol stays open to the fourth without editing the first
+  three.
+
+  Three sources ship: `DirectoryPackSource` (the authoring loop, and still the default),
+  `BundlePackSource` over the existing `pack_bundle`/`unpack_bundle` so zip-slip protection is
+  inherited rather than reimplemented, and `MappingPackSource` for bytes from anywhere else. The
+  last is the seam Phase 2 lands on: `ConfigAssetVersion` rows resolve to exactly that shape, so
+  adopting a durable store is a new caller rather than a change to `load_pack`. A bare path still
+  works, so no existing caller changes.
+
+  The tested property is **equivalence**: the same pack from all three sources yields the same
+  manifest, profile and skills. If that stops holding, behaviour depends on how config was
+  delivered, which is the failure the split exists to prevent. Files are materialised to a temp
+  directory so `InteractiveAgentSpec.from_dir` does the parsing, reused rather than forked because
+  a second mapping-based implementation of the same rules is a place for the two to disagree about
+  what a pack means; the cost is one write at composition time, not per request, and a test asserts
+  nothing is left behind.
+
+- **The sqlparse CVE floor is scoped to the `mlflow` extra, matching what landed on `main`.** It was
+  declared non-optional, so it installed for every consumer, and japes imports it nowhere: it
+  arrives only through `mlflow-skinny`. Now optional and listed in the `mlflow` extra.
+
+  The floor itself stays, and the comment now says why it cannot be inherited: `mlflow-skinny` asks
+  for `sqlparse >=0.4.0,<1`, a range that still admits the vulnerable 0.5.5, so bumping mlflow alone
+  does not close the CVEs. A PR review suggested dropping the direct pin on the argument that mlflow
+  would enforce it transitively; that would have reintroduced all four.
+
+  Brought back from `fix/vulnerabilities` rather than cherry-picked: that commit's `poetry.lock` was
+  generated against a `main`-based lock with no alembic or import-linter, so it would have fought
+  this branch's. Same pyproject change, re-locked here.
+
+
+- **`MockKnowledgeHubClient(data_dir=...)` finishes what its docstring promised (issue #57).**
+  The docstring said entities were "saved to / loaded from" `data_dir`; nothing wrote them back, so
+  a caller believed cross-process persistence worked and got an empty store with no error.
+  Entities, ontologies and documents were wired since the issue was filed. Collections and policies
+  were not, and that was the worse remainder: documents persisted while the collections holding
+  them did not, so a round trip restored documents whose `collection_id` named a collection that no
+  longer existed and `list_documents(collection_id=...)` found nothing. Data present and
+  unreachable is harder to diagnose than data plainly absent.
+
+  Both stores now persist and reload, and a collection delete writes both files, since the cascade
+  to its documents already happened in memory. The name-to-id index is rebuilt on load rather than
+  stored: two files that must agree are a way for them to disagree. The docstring now names every
+  file it writes instead of one.
+
+  **A second bug fell out of writing the tests.** `list_collections` returned three hardcoded
+  collections and never read `self._collections`, so a collection created through
+  `create_collection` was invisible to it *within the same process*, and the canned entries carried
+  document counts (42, 15, 128) matching no document the mock ever held. It reads the store now.
+  The canned data is deleted rather than kept as seed: nothing in japes or any sibling repo
+  referenced those names, and anything that had been relying on them was relying on a fiction.
+
+  Issue #57's second item, `FabricConfig.validate_for_mode()` demanding `knowledge_hub_url` for a
+  Mock client, was already fixed: `has_client` is threaded from `KnowledgeFabric.__init__`, and it
+  relaxes for any supplied client rather than special-casing `is_mock`, on the reasoning that the
+  URL exists so something can build a client and is redundant once one is handed over.
+
+- **A registry's contents can be exposed as MCP tools, which is how a configured assistant becomes
+  callable by another agent.** `kernel_tools.py` and `knowledge_hub_tools.py` hand-write their
+  tools, which is right for a fixed surface and wrong for anything a deployment configures: a
+  tenant's assistants are not known at import, so a hand-written tool per assistant means a code
+  change per assistant.
+
+  **The registry says which items, an adapter says how to call one.** The first sketch was "expose
+  any `NamedRegistry`", and thinking it through killed that: the registries are not homogeneous in
+  the way that matters. `ProfileRegistry` holds specs that run a turn and `GuardrailRegistry` holds
+  `check(text)` callables, but a `Skill` is a spec fragment with no meaning outside a parent agent
+  and a `SchemaRegistry` entry is a pydantic class that is not callable at all. A blanket seam
+  would have emitted broken tools for two of five. An adapter that returns `None` for an item it
+  cannot express is what keeps that honest, and declining is tested as carefully as succeeding.
+
+  **Authorization reuses the existing selector rather than inventing one.** An exposed assistant is
+  admitted through `admit_hop(f"assistant:{name}")`, character for character what
+  `_build_composed_skill_tool` checks for in-process composition, because calling an assistant over
+  MCP is the same act across a process boundary. A refused item is never registered, so a caller
+  does not learn a capability exists by being denied it. A failed authority check fails closed.
+
+  **Deliberately not mounted anywhere.** MCP carries no convention for the trace id and idempotency
+  key `GovernedRouter` requires on every governed route, so a host exposing assistants this way
+  would either invent one or route around its own governance. That is a posture decision for the
+  mounting host and it is not made here. Prompted by eval-service exposing scorers over MCP, which
+  is the same shape arrived at independently.
+
+- **Tailing a run no longer polls every 100ms while nothing is happening.** `ResilientRunner.resume`
+  polled at a flat 100ms whether or not the run was producing. Every SSE client holds one of those
+  loops and each iteration is two queries, so a turn thinking for ten minutes before its first
+  token cost roughly 6,000 iterations per connected client. The interval now widens while the run
+  is silent and snaps back the moment it speaks.
+
+  `concurrency.adaptive_interval` is the primitive, and the design decision worth recording is
+  which loops it applies to. japes has five of this shape and they are **not one family**:
+  sweepers (`Reaper`, `SessionReaper`, plato's `OverlayRefresher`) reconcile on a cadence with no
+  endpoint, so widening one only makes reconciliation lag; waiters wait for one specific thing, so
+  their cost scales with how long it takes. A test pins the sweepers as flat, so a later
+  consistency pass cannot helpfully back them off.
+
+  **Keyed on idleness, not the run's age**, which is where this departs from eval-service's
+  `e1ca595` that prompted it. Their poller waits for a terminal state with no intermediate output,
+  so age is a fine proxy. `resume` yields events as they arrive, and backing off on age would have
+  delivered a long streaming turn in multi-second chunks: a regression in experience to save
+  queries. Any event resets the clock. An explicitly passed `poll_seconds` stays flat, so a caller
+  that had tuned its own cadence is unaffected.
+
+- **A turn waiting on a slow model was reaped as a dead worker.** `ResilientRunner.execute` beat
+  once before opening the stream and then only *inside* the `async for` loop, so the entire window
+  before the first event was unguarded. A reasoning model thinking for longer than
+  `Reaper.ttl_seconds` (30s) emits nothing in that window: the heartbeat went stale while the
+  worker was perfectly healthy, the reaper marked the run `FAILED` with "reaped: heartbeat stale",
+  the dispatcher's FIFO gate released the conversation, and the turn's own completion later wrote
+  over a run somebody had already been told failed. A 45-second first token is ordinary; the
+  defaults made it a failure.
+
+  Liveness now beats on its own timer, cancelled when the turn ends. "This worker is alive" and
+  "here is my progress" had been sharing a trigger and are different things: the in-loop beat still
+  snapshots partial output, while the reaper's signal no longer depends on the model producing
+  anything. A missed beat logs and continues rather than ending the loop, since a transient store
+  error should not get a healthy run reaped.
+
+  Found by reading eval-service's `e1ca595` ("stop the poller failing a process that is merely
+  slow"), which hit the same class of bug from the other side: a watcher whose deadline marked
+  failure rather than merely stopping watching. japes reaps on heartbeat staleness rather than a
+  wall clock, which is the better shape, and still had the hole. Mutation-verified: reverting the
+  runner change fails the test.
+
+- **A spec can name its structured output, so a composed assistant can finally have one.**
+  `InteractiveAgentSpec` had no `output_schema` field: structured output was a constructor argument
+  only. Invisible for an agent built in code, and fatal for a composed `spec_ref` assistant, which
+  is built from a spec and never from a constructor argument, so it could not have one by any
+  route. `spec.output_schema` names a model in a new `SchemaRegistry`, resolved at build time.
+
+  A name rather than a dotted import path, deliberately: a spec is data, written in YAML and read
+  back from a store, and a dotted path would turn configuration into arbitrary code execution when
+  configuration is exactly what a tenant is allowed to add. The registry takes the same name-keyed
+  shape as `router`, `guardrails` and `skills`, refuses anything that is not a `BaseModel` subclass
+  at registration rather than failing mid-turn, and inherits `freeze()` with the rest of the
+  family. An explicit `output_schema=` argument still wins, so every existing caller is unchanged,
+  and an unresolvable name warns and returns text rather than raising, since raising would make
+  adding the field a breaking change for a deployment shipping a spec that names a schema it has
+  not registered yet.
+
+  **The backlog item this came from was two-thirds wrong, and checking beat building.** It asked
+  for `guardrails`, `knowledge` and `output_schema` on `Skill`. The first two already work: a
+  `spec_ref` skill resolves a full spec, whose own guardrails and knowledge apply through the
+  shared catalog and fabric, so adding them to `Skill` would have duplicated what the referenced
+  spec owns with no rule for which wins. The item predates `spec_ref`, which did not satisfy those
+  two so much as make them obsolete. Two docstrings claiming all three "apply, not flattened away"
+  were true for two and false for the third; both are corrected.
+
+  What crosses to a parent is JSON text, not an object: a function tool returns a string to the
+  model by construction, and `InteractiveResponse.answer` already holds the schema's JSON. The
+  parent gets something parseable instead of prose, which is the benefit; a typed object crossing
+  that boundary is not available under the Agents SDK tool contract.
+
+- **Registries can be sealed, so capability is decided before an instance serves rather than
+  during.** A domain's extension point in v2 is skills and prompts, not code, which makes the
+  registry the thing a use case or a tenant expands. That only holds if the expansion stops: a
+  tenant skill registered after serving began changes what an already-bound agent can reach with
+  nothing recording when or why. `NamedRegistry.freeze()` draws the line, and `RegistryFrozenError`
+  says plainly that the caller is too late for the change to be reviewable.
+
+  Guarded at `_put`, the one mutation point the whole family routes through, so `register`,
+  `register_dict`, `load_dir` and the tiered writes are all covered without each having to remember
+  the check. One-way on purpose: an `unfreeze` would make the guarantee conditional on nobody
+  calling it, which is not a guarantee. `_frozen` is a class attribute as well as an instance one,
+  so a subclass that never calls `__init__` reads as unfrozen instead of raising `AttributeError`
+  on its first write.
+
+  `plato.packs.loader.tenant_registries` is the composition that uses it: platform packs layer
+  first at tier 1, tenant packs at tier 3, and both registries come back frozen. The tiering means
+  adding a tenant pack cannot silently shadow a platform skill, while overriding one on purpose
+  stays possible and still has to be written down.
+
+- **kernel agents convert to `InteractiveAgentSpec`, and what will not convert is counted.**
+  kernel is being retired in favour of japes patterns, and a strangler only finishes if the number
+  of rows not yet moved goes down where somebody can see it. Tasks close without rows moving; the
+  count does not, which is why it is the metric worth reporting.
+
+  The mapping is not invented: `plan_kernel_salvage_hardening.md` already decided field by field
+  what japes carries and what it rejects, and this implements that decision rather than reopening
+  it. What it adds is that nothing is dropped in silence. Four outcomes, deliberately distinct: a
+  field is *carried*, *superseded* (japes solves it better, and the replacement is named, so
+  `max_steps` to `max_turns` is not filed alongside `learning_strategy` to the guidance layer),
+  *carried elsewhere* (`autonomy` belongs on the manifest and `description` on the exposing skill,
+  so they survive but the caller still has to place them), or *unresolved*. A row with anything
+  unresolved is not counted as converted, the same discipline `jazzx_sdk.closure` applies: a
+  partial result that presents as complete is worse than an obvious failure, because it gets
+  trusted. A dangling `callable_agent_ids` entry blocks conversion rather than vanishing, since an
+  agent whose sub-agent quietly disappeared routes to nothing at its first turn.
+
+  Nothing here reads kernel's database. Rows arrive as dicts, so the converter is testable without
+  a kernel checkout and japes gains no dependency on a schema it is retiring.
+
+  A completeness test asserts every field kernel's `AgentCreate` declares is accounted for in one
+  of the four categories, so a field added to kernel later surfaces as a failing test rather than
+  as a value that silently stopped arriving. It earned its place immediately: it caught
+  `reasoning_mode` and `text_verbosity` being handled inline rather than declared, which had made
+  the declaration a second source of truth that could drift from the behaviour.
+
+- **A retried feedback submission wrote a second row, and the code said the opposite.**
+  `feedback_to_submission_v1` minted `event_id=uuid4()` per call while the sink's docstring
+  claimed a blind retry was safe "because eval-service dedupes on that key". A key generated fresh
+  per attempt cannot dedupe anything, so an ambiguous failure the caller retried turned one user's
+  thumbs-down into two rows. `event_id` is now `uuid5` over the feedback's own id: stable across
+  attempts, processes and restarts, distinct per item. One existing test asserted the old
+  behaviour outright ("two calls generate distinct event ids"), so it encoded the bug; it is
+  replaced, and the change is called out as deliberate rather than left to look like a break.
+
+  Two more of the queue's four sub-tasks landed with it. `EvalServiceFeedbackSink` no longer
+  inherits the broad local `FeedbackStore`: a new narrow `FeedbackSink` ABC carries `submit` and
+  `append` only, and `list`/`clear` are gone rather than present-and-refusing, because a method
+  that exists and raises is a worse contract than one that is absent (a caller typed against the
+  wider interface type-checks clean and fails in production). And the calling request's identity
+  headers are propagated on submission, so eval-service attributes feedback to the person who gave
+  it rather than to the japes service account, which is what the attribution spine needs to be
+  worth building. `content-type` cannot be displaced by an inbound header of the same name.
+
+  The fourth sub-task, pointing at the agreed V1 route and response shape, stays blocked on
+  eval-service publishing it.
+
+- **`POST /v1/feedback` on Plato: a pass-through that stores nothing.** eval-service is the system
+  of record, and a second durable copy would make "which one is right" a question somebody answers
+  under pressure. What the route adds over calling eval-service directly is the two things a
+  browser cannot supply for itself: the caller's identity, propagated rather than replaced by a
+  service account, and an idempotency key stable across retries. A neutral reaction is refused
+  rather than mapped, since the wire contract's reaction is binary and guessing would invent an
+  opinion the user never gave; an upstream failure is a 502, which tells the caller to retry rather
+  than reading as Plato being broken.
+
+- **The `feedback` table name is eval-service's, and japes has stopped claiming it.** Both sides
+  declared a table called `feedback` with different schemas and different lifecycle owners, while
+  being expected to coexist in one Postgres instance. The japes table is now `japes_feedback`, and
+  `assert_not_eval_service_database` refuses a database that already holds the contested name,
+  naming both causes because from inside the guard they are indistinguishable: it is either
+  eval-service's database, or a japes database from before the rename. **This needs a migration in
+  any deployment already running `DbFeedbackStore`** (`ALTER TABLE feedback RENAME TO
+  japes_feedback`); without one the store silently starts writing to a new empty table while the
+  old rows sit unread. A test asserts no module in `jazzx_sdk` declares the old name, so a table
+  added later fails without anyone having to remember the rule.
+
+- **A pricing correction now reaches every replica, not just the one that took the request.**
+  `register_model_pricing` writes a process-local dict, which is right for a consumer compiling in
+  its own rates at import and wrong for an operator correcting a shipped rate at 2am: the
+  correction lands on whichever replica served the call, every other one keeps billing the old
+  number, and nothing reports that they disagree. `plato/reference/model_overlay.py` is the durable
+  half, and the in-process `register_*` keeps exactly its previous meaning.
+
+  Append-only, because a rate is a claim about money and overwriting the previous row would destroy
+  the record of what was in force when an old trace ran; the newest row wins on read and the
+  history stays queryable with its actor and reason. Applying is explicit rather than read-through,
+  since costing is a hot path that must not touch a database: rows are pushed into the process
+  table at boot and on a refresh tick, so a replica is at most one interval stale and that interval
+  is a stated number. `OverlayRefresher` takes the same `sweep`/`run_forever` shape as the run and
+  session reapers rather than inventing a third way to reconcile a replica. Durable overlays apply
+  with `overwrite=True` deliberately: an operator correcting a rate has decided, and losing to a
+  code-level registration would make the API look like it did nothing.
+
+  Two bugs found while building it, both worth recording. sqlite rejects autoincrement on a
+  composite primary key, so `tenant_id` sits in a unique constraint rather than the PK, which is
+  weaker than intended and is now stated in the model rather than left to be discovered. And the
+  schema assignment (`plato_reference`) belongs in the migration, not the model, for the same
+  reason the other Plato stores omit it: sqlite has no schemas.
+
+- **Plato requires `If-Match` on a settings write.** `settings_api` honours it when supplied but
+  does not require it, deliberately, since requiring it in the SDK would break every existing
+  caller. Plato has no such callers and the write edits configuration and secrets at runtime, so
+  the blind write it would otherwise permit is a last-writer-wins race between two operators with
+  no sign that either lost. `posture.require_if_match` refuses with 428 rather than 400: the
+  request is well-formed and would be accepted with the header, and the client should re-read and
+  retry rather than fix its body. It keys on the method, so a router that later grows a POST cannot
+  quietly escape the requirement, and reads are untouched.
+
+  Plato serves no SPA, and the SDK's `static_dir` gating was already correct, so that item is a
+  test pinning the behaviour rather than a change: no mounts, `static_dir` unset, and an unknown
+  path is a 404 rather than a catch-all returning HTML.
+
+- **A tool catalog can now follow the turn instead of the agent.** `InteractiveAgent`'s `tools=`
+  accepts a zero-arg callable as well as a dict, resolved fresh each turn. Found by trying to host
+  `jazzx-assistant` on Plato and discovering the two are structurally incompatible: it builds a new
+  agent every turn because its eleven file tools are each bound to that turn's grounding directory,
+  while Plato binds once and caches per `(tenant, assistant, release)`. Rebuilding per turn to get
+  turn-scoped tools defeats the reason for caching a bound agent at all. Additive and small: `tools`
+  was already re-read on every turn, it was simply fixed at construction, so this changes where the
+  value comes from and nothing else. Every existing caller passes a dict and is unaffected, which a
+  test asserts directly.
+
+- **`plato/packs/`: a pack is the manifest, profile and skills a host binds, as data.** The loader
+  reads a directory of exactly the shape the estate's assistants already ship (`profile.yaml`,
+  `persona.md`, `skills/*.yaml`) plus the manifest beside it, and registers it into shared
+  registries so several packs populate one catalog, which is the multi-assistant case Phase 1
+  exists to serve. A pack that is missing a piece fails whole rather than half-loading: a partial
+  pack binds an agent whose skills silently do not exist, and the first symptom is a turn that
+  cannot route.
+
+  `jazzx-assistant`'s real profile loads and binds through Plato's runtime, with its three
+  specialist skills resolving and its streaming flags carried through. Stated precisely, because
+  the test proves less than the phase heading suggests: it stops at binding, since a turn against a
+  profile with skills takes the agentic path and `ScriptedLLM` covers single-shot only, and it is
+  skipped when the sibling checkout is absent, so it does not run on CI at all.
+
+- **`jazzx_sdk.closure`: resolving a reference graph to a frozen, digest-addressable set.** Phase 2
+  is gated on decisions that are not ours alone to make, so this is the part of it that no answer
+  can invalidate: it sits in the SDK rather than in `plato/`, and whichever system ends up owning
+  versioned configuration consumes it rather than rebuilding it.
+
+  It exists because the obvious implementation is wrong in a way that hides. Walking an asset's
+  declared references one level produces a digest that is stable and trusted and does not describe
+  what will actually run. Four properties, each one a failure the estate's existing promotion path
+  already shipped and fixed: the walk is a **fixed point** with a visited set, because a process
+  calls a process calls a decision and the graph has cycles; **ordering is imposed at
+  serialization**, never inherited from traversal, because a walk over a set has no inherent order
+  and digesting in visit order makes two runs over identical input disagree; the digest is over
+  **resolved identity**, because the same thing arrives as a key in one place and a display name in
+  another and hashing what was stored makes identical content hash twice; and what could not be
+  resolved is **carried, never dropped**, because an expression-valued reference that vanishes
+  leaves a digest that is reproducible and incomplete, which is worse than an unstable one for
+  being believed.
+
+  Domain-neutral by construction: it knows nothing about processes, tools or BPMN. The caller
+  supplies a `Resolver` saying how to resolve one reference and what a resolved node references in
+  turn, which is where content-derived references enter the walk (a process's service task naming a
+  tool no declared list mentions was a real production failure, not a hypothetical). It never
+  resolves by name-with-create-if-absent, and a test asserts that by source: that upsert is the
+  workaround an immutable release primitive exists to replace.
+
+  18 tests, one per failure mode. Two mutation-verified: removing the sort breaks three ordering
+  tests, and dropping unresolved references from the digest breaks the test that a silently-dropped
+  reference would otherwise hash identical to a complete closure.
 
 - **Two assistants, different manifests and personas, served from one running instance by writing
   configuration.** This is phase 1's whole claim and it now has a test that makes it: a second
@@ -213,6 +2201,19 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
   scoping and the entry point.
 
 ## [Unreleased]
+
+- **25 provider tests passed only on machines with an `OPENAI_API_KEY` exported.** CI found them
+  the first time it ran, which is the point of it. They construct `OpenAIProvider()` the default
+  way on purpose, and that path reads the environment and raises without a key, so the suite had a
+  silent dependency on a credential nobody had declared. Every call through the provider is mocked,
+  so what they need is a constructible client, not a usable one: an autouse fixture in
+  `tests/agents/conftest.py` fills in a placeholder only when the variable is absent, leaving a
+  real key to win and the live smoke tests to keep theirs. Verified by running the full suite with
+  the variable unset, which is what CI does.
+
+  The workflow reports failures as well as skips now (`-rfs`, was `-rs`). The first red run named
+  no failing tests in its summary, so finding them meant grepping the log body for section
+  headers.
 
 - **The suite now runs in CI, so a pull request arrives with signal rather than an assertion.**
   Nothing ran pytest outside the machine of whoever wrote the change, which made "tests pass
@@ -1681,6 +3682,7 @@ Full suite green (2828 passed, 3 skipped).
 Kernel salvage K7 (design note only, no code -- plan explicitly scopes this
 "size: large, its own effort, not folded into K1-K6/K8/K10"): parent-to-
 sub-agent state inheritance, docs/plans/design_note_k7_parent_child_artifacts.md
+(moved 2026-08-25 to docs/plans/Plato/; path above is where it was at this release)
 
 Authorization already cascades parent-to-child (`InvocationContext`/
 `PermissionScope` via `descend()`/`narrow()`); state has no counterpart --

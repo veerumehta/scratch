@@ -2,9 +2,9 @@
 
 Repos: `japes` (new `plato/` package + SDK-side deltas). Consumers to check before any phase that changes shared behavior: `jaci`, `jazzx-assistant`, `juno`, `macer`, `k9`. Cross-repo reads required by name: `assistant` (`app/assistant/promotion.py`), `eval-service`.
 
-**Target release: JAPES 2.5.0 — Plato.** (The two `ape/plans/` filenames still reading `2_5_0` were retargeted to earlier 2.4.x releases; those numbers are legacy labels, not claims.)
+**Plato versions independently: `plato/_version.py` is at `0.1.1`,** separate from `jazzx_sdk`'s `2.4.7`. That was not in R1 or R2, and it is the better call — it removes one of the two costs §3.4 told the reader to accept (a Plato deploy bumping the version consumers pin) rather than living with it. The SDK-side deltas Plato needs still ride the SDK's own version.
 
-**Revision 2** — written against `japes` **HEAD `3714a5e`** on `dev` (v2.4.7, committed, unpushed; `_version.py` reads `2.4.7`). Every anchor below was read in the working tree, not carried over from prose. **R2 folds in the six items R1 queued for 2.4.7, all of which landed in `3714a5e` while R1 was being written** — see *Already landed in 2.4.7*. Three of the six shipped in a better shape than R1 proposed; the differences are recorded rather than smoothed over, because they change what remains. Companion architecture/charter doc (audience: platform architects, the D1/Studio conversation): *Plato — Platform Two*, in project knowledge.
+**Revision 3** — written against `japes` **HEAD `83fe10a`** on the **`plato` branch** (`plato/_version.py` `0.1.1`; `jazzx_sdk/_version.py` `2.4.7`), read 2026-08-27. **Phases 0 and 1 have shipped, Phase 5 is substantially done, Phase 6 is partly done, and Phase 2's computation half is in the working tree uncommitted** — see *Where this stands*. R3 records what shipped differently from the plan rather than smoothing it over, because in three of four cases the shipped shape is better and changes what remains. Companion architecture/charter doc (audience: platform architects, the D1/Studio conversation): *Plato — Platform Two*, in project knowledge.
 
 **Read first.** `CLAUDE.md` §§1–7 — especially **§2 Simplicity First** (this plan adds a package, a Dockerfile, an alembic tree and five schemas; every one must be defensible as the minimum that solves the problem), **§3 Surgical Changes** (the SDK-side deltas must not become a refactor), and **§7 Symmetry** (Plato supplies durable backings for three ABCs that all share the same in-process shape — do the family, not the nearest sibling). Also `plans/plan_JAPES_2_6_0_CONFIG_VERSIONING_AND_AUDIT.md` and its **D1/D2/D3 addendum** (this plan is that addendum's **shape 3**, made concrete), `status/done_JAPES_2_4_0_UAF_PHASE1_ADDITIVE.md` (its "blocked on someone else" list is this plan's scope), and `plans/engineering_queue.md`.
 
@@ -15,6 +15,31 @@ Repos: `japes` (new `plato/` package + SDK-side deltas). Consumers to check befo
 ## The one-sentence version
 
 Thirteen UAF phases and two config-versioning phases shipped the *primitives* — manifest store with rollback, session lifecycle, audit events, optimistic concurrency, the skill IO record, the context middleware — as **in-process ABCs with no durable backing and no HTTP surface**, so `plato/` supplies the missing half: durable stores, an assistant-id-addressed multi-tenant API, generated skill routes, and the config system-of-record that the addendum's D1 shape 3 describes.
+
+---
+
+## Where this stands (2026-08-27)
+
+`plato/` is **3,020 lines across 25 modules** on the `plato` branch, with its own version, its own alembic chain and six tables.
+
+| Phase | State | Evidence |
+|---|---|---|
+| **0 — foundations** | **Done** | `plato/` sibling package, `.importlinter` (two contracts, see below), `Dockerfile`, `plato/alembic.ini` + `migrations/versions/0001_initial.py`, `posture.py`, `oidc.py`, `tenancy.py`, `schema_version.py`. CHANGELOG: *"Plato refuses to boot deployed without identity enforcement."* |
+| **1 — assistant-addressed runtime** | **Done** | `assistants_api.py` serves chat, chat/stream, run resume from `?from_seq=`, cooperative stop, and session create/get/delete, all on `GovernedRouter`. CHANGELOG carries P1's acceptance criterion nearly verbatim: *"Two assistants, different manifests and personas, served from one running instance by writing…"* |
+| **2 — releases** | **Computation in progress, storage not started** | `jazzx_sdk/agents/interactive/release.py` + `tests/test_agent_release.py` (232 lines) are **untracked in the working tree**. No release, alias or promotion tables in `0001_initial`. |
+| **3 — skill IO, generated routes, process-start** | **Not started** | No generated skill routes, no per-assistant OpenAPI, and still no POST to `process-instances` anywhere in the tree. |
+| **4 — trace of record** | **Not started** | — |
+| **5 — reference data + console** | **Done bar the console's release view** | `plato/reference/model_overlay.py` + a `model_overlay` table. CHANGELOG: *"A pricing correction now reaches every replica, not just the one that took the request."* That was R2's only remaining substantial Phase 5 item. |
+| **6 — feedback seam, strangler** | **Feedback done; strangler started** | `feedback_api.py` (pass-through, stores nothing), the `feedback` table name released to eval-service, and `migration/kernel_agents.py` converting kernel agents and **counting what will not convert**. |
+
+**Four things shipped better than this plan specified. Recorded because they change what remains:**
+
+1. **`.importlinter` carries a second contract** — `common` must import neither `jazzx_sdk` nor `plato`, because `common` is vendored into other repositories and a back-dependency would make it unvendorable everywhere. Guardrail 2 asked for one contract; the family needed two. Straight §7 Symmetry.
+2. **Plato versions independently** (`0.1.1`). See the header note.
+3. **`schema_version.py`: the image declares the schema revision it expects and refuses to start on a mismatch.** Not in this plan at all. Its reasoning is the same one behind P0's forced `require_identity` — *"a container that boots into a broken state is worse than one that fails, because the first looks healthy to an orchestrator and takes traffic."* The generalisation is worth stating: **every startup precondition Plato has is a refusal, not a warning.**
+4. **Schemas are assigned in the migration, not on the models,** so the models stay portable to sqlite, which is what the suite runs on. `models.py` exists so the table set is *enumerable rather than emergent* — `db.metadata` is populated as a side effect of constructing a store, so a module that quietly stopped being imported would drop its tables out of the migration chain silently. That module is also where Phase 6's *"plato contains no feedback table"* acceptance would be violated, and a test asserts it is not.
+
+**And one gap the plan did not catch, which `plato/packs/sources.py` fixes:** `load_pack` read a directory, *"which made a new tenant a deploy: the manifest was durable in `plato_control` while the profile, personas and skills that give it meaning were files in the container image. That is the opposite of what Phase 1 claimed."* Phase 1's acceptance criterion — configuration, no deploy — was passing on the manifest while the rest of the pack still required an image. Worth remembering when writing the next acceptance criterion: it tested the half that was easy to test.
 
 ---
 
@@ -102,9 +127,9 @@ Already answered in the addendum; **adopt, do not relitigate**: `content_digest(
 
 ---
 
-## Phase 0 — the package, the boundary, and the deployable (S–M)
+## Phase 0 — the package, the boundary, and the deployable (S–M) — **SHIPPED**
 
-**No gate.** Nothing here depends on D1.
+**No gate.** Nothing here depends on D1. Tasks are retained as the record of what was asked for; see *Where this stands* for what shipped beyond them.
 
 **Tasks**
 
@@ -134,9 +159,9 @@ Already answered in the addendum; **adopt, do not relitigate**: `content_digest(
 
 ---
 
-## Phase 1 — the assistant-addressed runtime (M) — *the proof*
+## Phase 1 — the assistant-addressed runtime (M) — *the proof* — **SHIPPED**
 
-**No gate.** This is the phase that justifies the project; ship it before arguing about Phase 2.
+**No gate.** This was the phase that justified the project, and it landed with its acceptance criterion intact. One caveat recorded in *Where this stands*: the criterion passed on the manifest while pack bytes still came from the image, which `plato/packs/sources.py` then fixed.
 
 **Tasks**
 
@@ -158,9 +183,18 @@ Already answered in the addendum; **adopt, do not relitigate**: `content_digest(
 
 ---
 
-## Phase 2 — versioned config assets, releases, aliases (L)
+## Phase 2 — versioned config assets, releases, aliases (L) — **computation in progress**
 
-**Gate: D1 and D2, in writing.** Do not start otherwise. Phases 0–1 give real work while that is pending.
+**Gate: D1 and D2, in writing** — for the *storage* half only. `jazzx_sdk/agents/interactive/release.py` (untracked at `83fe10a`) made a split this plan did not anticipate and should adopt:
+
+> **Computation here, storage elsewhere.** This module produces and validates a release as a value. It stores nothing and reads no database, **which is what lets it exist before the question of who owns the durable store is settled.** Whoever owns it stores these values; the way they are computed does not change with the answer.
+
+That is the right seam, and it un-gates half the phase. Restated:
+
+- **2a — the release as a value** (`Pin`, `VersionSet`, `AgentRelease.closure_digest()` / `verify()`, `freeze_release()`). **No gate.** In the tree, with 232 lines of tests, uncommitted. It already holds the two properties that matter: *"pins, not names"* — a release refers to version 3 of a skill, never to "the skill", so publishing a new version cannot alter it — and **resolve, then freeze**, because *"a digest over a graph with a dangling reference is stable, trustworthy-looking and describes something that cannot run, which is worse than no digest at all."* It reuses `ProfileRegistry.validate()` rather than forking it, as task 4 asked.
+- **2b — the durable store** (tables, promotion, aliases, backfill). **Gated on D1 and D2.** Nothing of it exists: `0001_initial` has no release, alias or promotion table.
+
+**Commit 2a.** Untracked work that passes its own tests is the one state from which it can be lost.
 
 Implements the config-versioning plan's Phases 3–5 with Plato as the durable store. Read that plan's F1–F7 before starting — they still apply and are not repeated here.
 
@@ -237,9 +271,9 @@ Implements the config-versioning plan's Phases 3–5 with Plato as the durable s
 
 ---
 
-## Phase 5 — versioned reference data and the operator console (M)
+## Phase 5 — versioned reference data and the operator console (M) — **SHIPPED bar one item**
 
-Independent of Phases 2–4; can run in parallel. **Items 1–3 are small enough to land in 2.4.7 ahead of Plato** — see the sequencing note.
+Items 1–3 and 6 landed in 2.4.7; **task 4, the durable multi-replica overlay, landed in Plato** as `plato/reference/model_overlay.py` plus a `model_overlay` table. What remains is task 5's release and alias inventory on the console, which cannot exist until Phase 2b does.
 
 **Tasks**
 
@@ -263,7 +297,9 @@ Independent of Phases 2–4; can run in parallel. **Items 1–3 are small enough
 
 ---
 
-## Phase 6 — feedback seam, then the strangler (S–M, then ongoing)
+## Phase 6 — feedback seam, then the strangler (S–M, then ongoing) — **tasks 1–3 shipped**
+
+`plato/feedback_api.py` is the pass-through that stores nothing; the `feedback` table name was released to eval-service; `plato/migration/kernel_agents.py` converts kernel agents and counts what will not convert, with four deliberately distinct outcomes (*carried*, *superseded*, *carried elsewhere*, *unresolved*) and a completeness test asserting every field kernel's `AgentCreate` declares is accounted for. It reads no kernel database — rows arrive as dicts. **The weekly count is now producible; start reporting it.** Tasks 4–5 (jazzx-assistant as a manifest, the SERVICE-LAYER ports) have not started.
 
 **Tasks**
 
@@ -296,16 +332,17 @@ Independent of Phases 2–4; can run in parallel. **Items 1–3 are small enough
 ## Sequencing
 
 ```
-Phase 0  (package, boundary, deployable, durable stores)  ──► no gate, start now
-Phase 1  (assistant-addressed runtime)                    ──► after 0. THE PROOF.
-Phase 5  (reference data + console; items 1-3 in 2.4.7)   ──► parallel, no gate
-Phase 2  (versioned assets, releases, aliases)            ──► gate: D1 + D2 in writing
+Phase 0  (package, boundary, deployable, durable stores)  ──► SHIPPED
+Phase 1  (assistant-addressed runtime)                    ──► SHIPPED — the proof landed
+Phase 5  (reference data + console)                       ──► SHIPPED bar the release view
+Phase 6  (feedback seam; kernel converter)                ──► tasks 1-3 SHIPPED
+Phase 2a (release as a value)                             ──► in the tree, uncommitted, NO GATE
+Phase 2b (durable store, promotion, aliases)              ──► gate: D1 + D2 in writing
 Phase 3  (skill IO, generated routes, process-start)      ──► gate: D4 (+ D3)
 Phase 4  (trace of record)                                ──► gate: UAF item 9
-Phase 6  (feedback seam, then strangler)                  ──► 1-2 anytime; 3-5 after Phase 1
 ```
 
-**Land Phase 1 before arguing about Phase 2.** It is the smallest thing that makes the case, and if it does not convince anyone, nothing later will.
+**Next three, in order.** (1) Commit 2a. (2) Chase D1/D2 — `note_D1_D2_DECISION_MEMO.md` is with the Studio owner and 2b cannot start without it; everything gated behind it is now the majority of what remains. (3) Start reporting the kernel-agent count, since Phase 6 made it producible and it is the only number that says whether the strangler is working.
 
 **Already in 2.4.7** — Phase 5 items 1–3 and 6, Phase 2 task 1, and Phase 0 task 6. See *Already landed in 2.4.7*.
 

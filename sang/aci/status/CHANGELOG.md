@@ -9,6 +9,37 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ## [Unreleased]
 
+## [0.20.6] - 2026-08-31
+
+Pinned onto the current japes dev, and given a way to find out when that breaks.
+
+- **A test workflow.** jaci had none: the only CI was a nightly Docker build, so nothing verified a
+  branch and nothing caught a japes regression. jaci pins `japes @ dev`, a moving ref, so a green
+  jaci commit can go red without jaci changing at all -- the workflow runs on PRs, on pushes to
+  dev/main, and nightly, and it deliberately does *not* use `uv sync --frozen`: resolving japes
+  fresh is the entire point, and a frozen install would test yesterday's japes forever. It prints
+  the japes version under test so a red nightly says which one, without a re-run.
+- **`uv.lock` refreshed onto japes 2.4.9** (`5fa4d43`), up from 2.4.6 (`9c28116`), 18 commits
+  stale. `uv lock --upgrade-package japes` will not move an already-resolved git rev -- nor will
+  `--refresh-package`, `uv cache clean`, or `--no-cache`; the lock had to be regenerated. Same 174
+  packages, 26 routine patch bumps alongside.
+- **`dscr_core` declares its policy corpus** (`policies: {dir: policies}`), so its 41 eligibility
+  rules reach `Pack.policies` instead of being loadable only by path. Needs japes 2.4.9's
+  `PackManifestLoader.policy_files()`, which is why the lock refresh comes with it. The
+  `policies/registry.py` that Phase 1 of the DSCR plan called for is no longer needed -- it existed
+  only to hold a list.
+- **`ci_lending` ontology v0.2.1: two covenant formulas that could never resolve.** `FCCR` read
+  `taxes` while the entity declares `tax_expense` -- and its own `inputs:` list already named
+  `tax_expense`, so the formula disagreed with its own declaration. `scheduled_principal` was
+  divided by in both `FCCR` and `DebtServiceCoverage`, declared nowhere, and absent from both
+  inputs lists. Neither raises: the metric silently fails to resolve and every covenant reading it
+  comes back indeterminate, which reads as a broken evaluator rather than a naming mismatch. Found
+  by japes' `lint_pack` run against the authored pack, which is what that check exists for.
+
+- **Local `poetry.lock` removed.** Already gitignored and untracked, so nothing consumed it; it sat
+  on disk pinning japes 2.4.0 and misleading anyone who read it.
+
+
 - **Model-data overlay** (`jaci.sdk.model_overlay`): registers the Claude 5 family
   (`claude-opus-5`, `claude-sonnet-5`, `claude-fable-5`) with the SDK at package import, ahead of
   JAPES shipping them. Prices and limits transcribed from Anthropic's own pages (verified

@@ -11,6 +11,19 @@ the publish path. This is that read, reduced to what changes Plato's design.
 (`2bfd241`, `616c752`), both closing closure-completeness gaps found in production. That matters
 more than the line count: every fix is a requirement Plato inherits, and the list is still growing.
 
+**Update, 2026-08-24 (sibling scan).** It grew again, twice, in the three days since: `891ef74`
+moved BPMN reference parsing to a shared `common.refs` rather than a local copy, and `fa23852`
+("close nested promotion dependency gaps") added four more extractors: `bpmn_schema_names`,
+`extract_declared_tool_names`, `extract_prompt_references` and `extract_prompt_process_names`. Two
+new reference *kinds* fall out of those: BPMN references schemas, and **a prompt references
+processes**, so content-derived references are not a BPMN speciality. A nested agent descriptor's
+declared tools must also seed the walk.
+
+Four production gaps in seven days is the finding, not any one of them. It is the argument for
+`jazzx_sdk.closure` taking references from a caller-supplied extractor rather than enumerating
+kinds itself: every one of these lands as a new extractor with the walk untouched. Had the walk
+known about BPMN, all four would have been changes to it.
+
 ---
 
 ## 1. The claim this note tests

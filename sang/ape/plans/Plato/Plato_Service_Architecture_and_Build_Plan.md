@@ -5,10 +5,10 @@
 > "…to divide things again by classes, where the natural joints are, and not to try to break any part, after the manner of a bad carver."
 > — Plato, *Phaedrus* 265e
 
-Author: Virendra Mehta · Draft · 2026-08-24 · target release **JAPES 2.5.0 — Plato**
-Status: **for review** — proposes a new deployable and asks for five decisions (§10). Nothing here is agreed.
+Author: Virendra Mehta · 2026-08-24, status updated 2026-08-27 · **`plato` `0.1.1`**
+Status: **being built.** Phases 0 and 1 have shipped on the `plato` branch; the argument below stands as written and the decisions in §10 are still open. D1 and D2 are with the Studio owner as `note_D1_D2_DECISION_MEMO.md`.
 
-**Written against** `japes` **HEAD `3714a5e`** (`dev`, v2.4.7, committed and unpushed), read 2026-08-24, plus the `ape/` plan and status tree (`CLAUDE.md` 2026-08-17, `plans/`, `status/`). Companion build plan for Claude Code: `plan_JAPES_PLATO_SERVICE.md`.
+**Written against** `japes` **HEAD `83fe10a`** on the **`plato` branch**, read 2026-08-27, plus the `ape/` plan and status tree. Companion build plan for Claude Code, with per-phase state: `plan_JAPES_PLATO_SERVICE.md`.
 
 **Not read:** the `eval-service` repo (last known `edd3cfb`, 2026-07-30 — now four weeks stale), and the sibling consumer repos `jaci`, `jazzx-assistant`, `kernel`, `assistant`, `macer`, on which several caller audits below depend.
 
@@ -20,7 +20,7 @@ Status: **for review** — proposes a new deployable and asks for five decisions
 
 **What that plan could not ship is the list this document is about.** Its own "blocked on someone else" section names five things, and four of them are one thing wearing four hats: *there is no deployable*. Every primitive it built is an in-process ABC with no durable backing and no HTTP surface in front of it.
 
-**Plato is that deployable.** `japes-plato` hosts the SDK behind an assistant-id-addressed, multi-tenant HTTP surface, with its own Postgres database as the durable control plane for assistant configuration. It is deliberately the answer to the config-versioning addendum's **D1 shape 3**, which that document already records as *"under active consideration."*
+**Plato is that deployable, and it now exists.** `japes-plato` hosts the SDK behind an assistant-id-addressed, multi-tenant HTTP surface, with its own Postgres database as the durable control plane for assistant configuration. It is deliberately the answer to the config-versioning addendum's **D1 shape 3**, which that document records as *"under active consideration."* As of `83fe10a` it is **3,020 lines across 25 modules on the `plato` branch**, versioned independently at `0.1.1`, with its own alembic chain and six tables: chat, streaming, session and feedback surfaces serve; the release and promotion half waits on D1.
 
 Five planes: **(A)** assistant-addressed runtime, **(B)** config control plane and database, **(C)** generated per-skill action APIs, **(D)** trace, session and feedback, **(E)** operator console and versioned reference data. It ships as one image in the roles japes already supports — `JAPES_RUN_MODE=queue|server|dual|ui` — against a database on the existing Postgres server.
 
@@ -78,6 +78,7 @@ And the bill compounds: *"Every mortgage capability landed through Juno produces
 - **Repo: `japes`** — not a separate repository. Rationale and four guardrails in §3.4.
 - **Python package: `plato/`,** a top-level sibling of `jazzx_sdk/` — not `japes_plato/`, not `jazzx_sdk/plato/`. The sibling placement is load-bearing (§3.4 guardrail 1). `plato` imports `jazzx_sdk` and `common`; `jazzx_sdk` never imports `plato`, enforced in CI.
 - **Database: `plato`** on the existing Postgres server, schemas per §7.
+- **Plato versions independently** — `plato/_version.py` (`0.1.1`), separate from `jazzx_sdk`'s. Decided during Phase 0 and not anticipated here: it removes the version-churn cost §3.4 told the reader to accept, rather than living with it. The SDK-side deltas Plato depends on still ride the SDK's version.
 
 **Version numbering.** 2.5.0 is Plato's. Two `ape/plans/` filenames still carry that number — `plan_JAPES_2_5_0_INVOCATION_AUTHORIZATION` (shipped at `f50a498` with no bump) and `plan_JAPES_2_5_0_LOCATOR_AND_INVENTORY_DISCIPLINE` (its Revision 2 body targets 2.4.2) — but **both were retargeted to earlier 2.4.x releases**, so the filenames are legacy labels, not claims. Plato is the first thing to actually take 2.5.0, which is the right weight for it: a new deployable is a minor bump at least.
 
@@ -419,11 +420,20 @@ GET    /v1/console/inventory         releases, aliases, packs, health
 
 Sizes are relative, not calendar. Every phase names its adopter — the config-versioning plan's Risk 4 ("stores with no caller") applies to services too. The executable form, with per-phase anchors and the Claude Code protocol, is `plan_JAPES_PLATO_SERVICE.md`.
 
-### P-1 — landed in 2.4.7
+### Phase status (2026-08-27)
 
-All six items this document queued for the patch release shipped in `3714a5e` (33 files, +3337/−183) while the draft was circulating: `content_digest()` (as `jazzx_sdk/digest.py`, a dependency-free bottom-layer module — a better placement than proposed, since `llm` sits below `evaluation` and could not otherwise reach it); `MODEL_DATA_VERSION` and the overlay registration log; the version stamp onto run tags; security-header middleware; the console data router; and ETag + `If-Match` + audit on `settings_api`'s `PATCH`.
+| | State |
+|---|---|
+| **P-1** — the six items queued for 2.4.7 | **Shipped** in `3714a5e` |
+| **P0** — foundations | **Shipped.** Package, two import contracts, Dockerfile, alembic chain, six tables, OIDC, tenancy, posture, and `schema_version.py` — the image refuses to start when its expected schema revision does not match the database's |
+| **P1** — assistant-addressed runtime | **Shipped.** Chat, streaming with resume from `?from_seq=`, cooperative stop, sessions — all on `GovernedRouter`. Its acceptance criterion is in the CHANGELOG nearly verbatim |
+| **P2** — releases and aliases | **Split, and half is un-gated.** `release.py` computes and validates a release as a value, storing nothing — *"which is what lets it exist before the question of who owns the durable store is settled."* That half is in the tree, tested, uncommitted. The durable half waits on D1/D2 |
+| **P3** — skill IO, generated routes, process-start | Not started. Gated on D5 |
+| **P4** — trace of record | Not started |
+| **P5** — reference data and console | **Shipped** bar the console's release view, which needs P2's storage half. The multi-replica overlay landed as `plato/reference/model_overlay.py` |
+| **P6** — feedback seam and strangler | Feedback pass-through shipped, the `feedback` table name released to eval-service, and the kernel-agent converter built with the unconverted count as its metric. **Start reporting that count** |
 
-**Still available before 2.4.7 pushes, no gate:** engineering-queue **0.4** (the `feedback` table name — the one Tier 0 item cleanly takeable; **0.1 is disputed** and needs a decision rather than the queue's literal ask, **0.3 could not be located** and may be eval-service-side), and one pre-push question — the default CSP is `default-src 'none'`, which is right for JSON and **breaks any consumer serving a SPA through `static_dir`**. `spa_csp()` exists for that case; somebody has to check whether `k9`/`k9-ui` or another consumer serves one today.
+Two things worth carrying forward from what shipped. **Every startup precondition Plato has is a refusal, not a warning** — identity enforcement, posture, and schema revision all fail the container rather than degrade it, on the stated reasoning that a container booting into a broken state *"looks healthy to an orchestrator and takes traffic."* And **P1's acceptance criterion tested the half that was easy to test**: it passed on the manifest while pack bytes still came from the container image, so a new tenant was still a deploy. `plato/packs/sources.py` fixed it. Worth remembering when writing P3's.
 
 ### P0 — Foundations (S)
 `plato/` package as a sibling of `jazzx_sdk/`; the four §3.4 guardrails; the `docs/ARCHITECTURE.md` self-description edit; first Dockerfile and first alembic tree; roles over `JAPES_RUN_MODE`; health; alembic-as-a-job; Key Vault; `require_identity` **forced on**; Keycloak/OIDC verification; Keto wiring; the `plato` DB and its five schemas; durable backends for the shipped `ConfigAuditStore`, `SessionStore` and `AssistantManifestStore`.
@@ -470,8 +480,8 @@ Named accepter per row, per §5.3.
 
 | # | Decision | Gates | Accepter |
 |---|---|---|---|
-| **D1** | **Adopt shape 3** — Plato is the durable system of record for assistant config. The addendum's own question, with a specific answer proposed. | P2 entirely | SDK owner **+** Studio owner |
-| **D2** | **Does Studio write to Plato's API, or keep its own store?** If both, there are two writers on day one and §5.4 is already lost. | P2, P6 | Studio owner |
+| **D1** | **Adopt shape 3** — Plato is the durable system of record for assistant config. **Recommended in writing** in `note_D1_D2_DECISION_MEMO.md`, with the Studio owner since 2026-08-24. Its deciding argument is sharper than this document's: since v2 capability *is* configuration rather than code, a configuration version **is** the release, and a release whose digest does not match its recomputed closure has to fail *at load* — and the thing that loads a release is Plato. | **P2's storage half**, and by now most of what remains | SDK owner **+** Studio owner |
+| **D2** | **Does Studio write to Plato's API, or keep its own store?** Recommended in the same memo: Studio writes to Plato's API and Plato stays the only writer. If both write, there are two writers on day one and §5.4 is already lost. | P2, P6 | Studio owner |
 | **D3** | **Is Plato the owner of process-start?** UAF item 6's *"name an owner"* is still open. | P3 | Platform architect **+** Kernel owner |
 | **D4** | **Do we state the eval-service absorption intent now, or hold at Stage 1?** Recommendation: state Stages 1–2, hold Stage 3. | Nothing technically; everything politically | Platform lead |
 | **D5** | **Contested item 4 — per-skill IO on the execution path.** The record shipped; the execution path was deliberately left alone. Nothing generates routes until this is settled. | P3 | SDK owner |
@@ -488,7 +498,7 @@ Already settled, do not relitigate: **addendum D2 shipped** as `jazzx_sdk/digest
 4. **P2 grows into a registry refactor.** The config-versioning plan's own top risk, inherited whole. Its task-3 boundary is the mitigation: the versioned store is additive, `_registry.py` and `agents/interactive/registry.py` untouched until runtime pinning. A diff there means scope escaped.
 5. **P3 stalls on D5.** Plane C is worthless without declared IO on the execution path, and that change touches `_build_parent_tools` — *"the deepest change."* Mitigation: settle D5 before P3 starts; if it slips, P4 moves ahead of P3.
 6. **The eval-service conversation goes badly.** Mitigation: §5.2's staging and §5.3's ownership bar. Stage 1 is genuinely cooperative and it is all v1 commits to.
-7. **The tree moves faster than the plan.** Three instances in three days: thirteen UAF phases and two config-versioning phases had landed before the first read; then all six items this document queued for 2.4.7 landed in `3714a5e` while the draft was being circulated. Expect more. Re-verify every anchor before estimating; **if an anchor is gone, stop and report.**
+7. **The tree moves faster than the plan.** Now four instances in four days — the six 2.4.7 items, then Phases 0, 1, 5 and most of 6: thirteen UAF phases and two config-versioning phases had landed before the first read; then all six items this document queued for 2.4.7 landed in `3714a5e` while the draft was being circulated. Expect more. Re-verify every anchor before estimating; **if an anchor is gone, stop and report.**
 
 ---
 

@@ -3,7 +3,7 @@
 > **Status (2026-08-13): K1,K2(steps 1-2),K3,K4,K5,K6,K8,K10 shipped, in v2.4.0 (pushed).** Each
 > corrected against a critical read rather than implemented literally (see CHANGELOG for the
 > specifics — e.g. K1 found 4 pre-existing retry implementations, not the 2 this plan compared).
-> **K7: design note only** (`design_note_k7_parent_child_artifacts.md`, all 5 points settled) —
+> **K7: design note only** (`Plato/design_note_k7_parent_child_artifacts.md`, all 5 points settled) —
 > implementation not started, per this plan's own "size: large, its own effort" scoping.
 > **K9: not started** — gated on a UAF IO-contract decision that was never made. **K11: not
 > started** — deferred to a future pass. K2's step 3 (mirror approver onto the suspending
