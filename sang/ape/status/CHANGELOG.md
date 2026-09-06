@@ -2,6 +2,1106 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+## [2.5.0] - 2026-09-06
+
+*The newest of three [2.5.0] sections. `2.4.9` and `2.4.8` sit between them because they merged in
+from `dev` while this release was in progress; the interleaving is how that shows.*
+
+- **The MLflow reporter addressed runs through process-global state and blocked the event loop.**
+  `MlflowReporter.report` was `async def` and did every MLflow call inline: `set_experiment`,
+  `start_run`, three `log_*` calls and an artifact upload, all synchronous HTTP against a tracking
+  server. The `async` signature hid it, since a caller awaiting this reasonably assumes it yields.
+  It now runs under `asyncio.to_thread`.
+
+  `mlflow.start_run` keys off a *thread-local* active run, so two concurrent publishes interleaved
+  into whichever entered last. Runs are now created through `MlflowClient` and addressed by explicit
+  `run_id` on every call -- which `observability/backends/mlflow/tracer.py` already did, and stated
+  the reason for. One module had the answer and its sibling did not.
+
+  `create_run` has no context manager, so the run is terminated explicitly in a `finally` with
+  `FINISHED`/`FAILED`; without it a failed publish leaves a run `RUNNING` forever, which reads as a
+  job that never finished rather than one that failed. `experiment_run_to_mlflow` lost its one line
+  of global state (`mlflow.set_experiment`) for the same reason, and `log_artifact_with_retry` now
+  documents that it sleeps up to 30s and must be called off the loop.
+
+- **Importing `jazzx_sdk` no longer imports SQLAlchemy.** `evaluation/__init__` eagerly imported the
+  two DB-backed stores, which define ORM models at class-definition time, and `fabric.guidance`
+  reaches them through `evaluation.prompt_registry` -- so anyone touching guidance paid for the ORM.
+  They resolve through `__getattr__` now, matching the pattern `observability/__init__` already
+  used. 1697 modules to 1572 on a bare import.
+
+- **The Plato boot contract is one table, and `--health` is the readiness probe.** The policy -- a
+  serving role comes up and reports, a `job:*` role refuses -- was stated as prose in eight places,
+  and changing it meant finding all eight. It is data in `plato/boot_contract.py` now, the
+  documentation table is rendered from it, and `tests/test_plato_boot_contract.py` holds each row to
+  the code path it describes.
+
+  Making the boot non-fatal removed the signal an orchestrator relied on, and nothing replaced it.
+  `python -m plato --health` probes the container's own `/v1/health` and exits non-zero unless
+  `configured` is true. `--check` cannot answer that: it parses the environment in a second process
+  and never sees what this one resolved, so it is documented as a parse diagnostic, not a gate.
+  `create_app` grew a `readiness_provider` hook to put the answer on `/health`, the one path the
+  identity middleware exempts -- a probe against `/info` was 401'd on every strict-posture replica.
+
+  Building the table surfaced one thing the prose had wrong. Three situations leave a replica
+  serving `/info` alone, so "blocks chat" is meaningless for them: there are no chat routes to
+  block. Exactly one row turns a turn into a 503.
+
+- **Configuration written through `/v1/config` now survives a restart, and the database itself can
+  be swapped at runtime.** Migration `0002_setting` adds `plato_setting`, and `DbSettingsStore`
+  reads the environment overlaid with what the database holds -- the database winning, because a
+  value written through the API is a later decision than the container's environment.
+
+  **Two layers, because one is impossible.** `PLATO_DB_BACKEND`, `PLATO_SQLITE_PATH` and
+  `DATABASE_URL` say *which* database the durable layer is in, so writing them into it and then
+  swapping the database leaves the new value in the old one. Those stay in the environment;
+  everything else persists.
+
+  **A NULL value is not a missing row.** Writing an empty value persists "explicitly unset", which
+  has to survive a restart or the environment's value silently returns. `forget()` drops the row
+  instead, so the deployment's own configuration applies again. Both intentions come up.
+
+  **`tenant_id` on a deployment-wide table.** `plato.tenancy` requires it in every table's key, and
+  the rule earns its bluntness -- the table exempted "because it is not tenant data" is the one that
+  later holds some. Deployment-wide rows carry the reserved `_platform` id, the same answer
+  `PLATO_PACK_TABLE_DESIGN.md` reached for shared packs, and per-tenant settings stay possible
+  without a migration.
+
+  **The live database swap.** `DbStore.dispose()` marks a store permanently dead, so a swap cannot
+  mutate one in place: `DatabaseHandle` holds the current store behind a single reference every
+  per-tenant store resolves through, and the caches are keyed on the store they were built against
+  so a swap cannot hand back one bound to the retired engine. The replacement is built and its
+  tables created *before* the swap, so an unreachable database leaves the running one in place.
+
+  In-flight requests finish against the old database. Nothing can know when the last session on the
+  retired engine closes, so it is kept referenced rather than disposed -- disposing immediately
+  fails a request that was already mid-flight and did nothing wrong. Only reachable in a relaxed
+  posture, since that is where config writes are, which is also why `create_all()` is acceptable
+  there rather than the alembic chain.
+
+  Durable settings are exported into the environment at boot, before the wiring resolves anything:
+  a setting written yesterday is only durable if something reads it back, and every consumer of it
+  reads the environment. Never fatal -- a replica that cannot reach its settings table starts on
+  its environment, degraded and saying so.
+
+- **Plato serves its own configuration at `/v1/config`, and a relaxed replica can be fixed over
+  HTTP without a redeploy.** Most of this already existed and nothing mounted it:
+  `jazzx_sdk.server.settings_api` does masking, unknown- and non-editable-key rejection,
+  `If-Match` concurrency and audit. Plato now supplies the catalogue its wiring actually reads --
+  and no more, because a field nothing reads is a control that appears to work.
+
+  **`SettingsStore` accepts async implementations.** It was a sync protocol, which quietly ruled
+  out every store a deployment wants: `fabric.db` is async-only, so a database-backed store could
+  only have honoured a sync `read` by calling `asyncio.run` on the loop already running the
+  request, which raises. The router awaits either through `call_maybe_async`, so existing sync
+  stores are unaffected.
+
+  **The posture gate is injectable.** `settings_api` refuses unauthenticated writes in a *deployed*
+  posture, which would have blocked dev-daily -- the one environment where someone needs to fix a
+  Knowledge Hub URL without a redeploy. `posture_gate` lets a caller that has thought about it pass
+  `strict_mode` instead; the default stays `deployed_posture`, because that is the safe answer for a
+  library whose consumer has not.
+
+  **`degraded` is a callable now, not a boot snapshot.** `missing_config()` recomputes from the
+  environment as it is, so `/info` and the chat gate see a value set a moment ago. A snapshot would
+  have meant the endpoint asked to confirm a fix denying the fix happened. Verified end to end: a
+  strict replica 503s, the value is set over HTTP, and the same process serves.
+
+  Read is open in every posture, since "what is this replica configured with" is the question asked
+  about a box behaving oddly and the answer is already masked. Writes need a relaxed posture or an
+  `auth` dependency, and the posture keys themselves are non-editable -- a replica must not be able
+  to promote or relax itself in response to a request.
+
+  Re-wiring lives in the store's `write`, not in a wrapper around the route: replacing a FastAPI
+  endpoint with a generic `*args, **kwargs` function leaves FastAPI seeing no parameters, and the
+  body it then never parses comes back as a 422 that looks like the caller's fault. That was the
+  first shape of it.
+
+- **A real-shaped profile now ships with the suite.** Two pack tests ran against a jazzx-assistant
+  checkout beside japes, so they only ever ran on a machine that had both -- in CI they skipped,
+  printing a path under the runner's home that read like a misconfiguration. `tests/fixtures/
+  reference_profile` mirrors the structure (persona in its own file, empty `scope`, both streaming
+  flags, three skills as separate documents with tools and references) and two tests cover the
+  loader and the runtime binding path everywhere. Confirmed by breaking the fixture: a dangling
+  `persona.md` reference and a dropped skill each fail a different one.
+
+  Generic on purpose. Pinning the fixture to a consumer's domain would make every edit here a
+  question about whether their assistant still works, which is a contract test belonging in their
+  repo -- their CI has the profile by definition, and a failure would land where the fix is. The
+  sibling-gated pair stays as local extra assurance, with a skip reason that says so.
+
+- **The suite runs clean: zero warnings, down from eleven.** Two unrelated causes, both of them
+  noise that trained the eye to skip the warning block.
+
+  Nine classes named `Test*` are subjects, not tests: experts, skills and pydantic models whose
+  bases take constructor arguments, so pytest tried to collect each one and skipped it with a
+  warning. `__test__ = False` is the documented opt-out and keeps each name matching the thing it
+  implements, rather than renaming the subject to please the collector.
+
+  Two `datetime.utcnow()` calls in `test_automation_handler.py` are deliberately naive -- they
+  assert the handler tolerates a datetime with no tzinfo. `utcnow()` is deprecated, and its
+  naive-UTC replacement is an aware `now()` with the tzinfo dropped, which keeps the input naive
+  instead of quietly fixing the thing under test.
+
+- **The double's own contract is now pinned by tests, after two rounds of getting it wrong.**
+  Recording calls on the class made the base class's list process-global for directly-constructed
+  instances: a scripted list resumed at whatever the previous test left behind, so a fresh agent's
+  *first* call returned the second response, and `last_call()` handed back another test's call
+  instead of raising. Class-level state is only safe on a `returning()` subclass, which belongs to
+  one test; the base class is shared by the whole process. Bound subclasses record on the class
+  (one flow, several agents), direct instances record on themselves, and the scripted index follows
+  whichever is authoritative.
+
+  `last_call()` had the same split-brain: a `classmethod` reads the class list either way, so a
+  directly-constructed agent that *had* been called raised "was never called". It is a descriptor
+  now, binding to the instance's record on an instance and the class's on a bound subclass. The
+  test that was meant to cover it asserted only the never-called case, which is the one path where
+  the empty class list happens to give the right answer -- it passed against the broken code.
+
+  Also: `returning(RuntimeError)` raises rather than handing the class back as a result, an empty
+  script is a loud error rather than `None` on every call, and the module docstring's em-dash is
+  gone along with the ones in the Plato modules added alongside it.
+
+  Nine tests now cover the shapes, each one a case a hand-rolled double had and a draft of this got
+  wrong. A test double's failures are silent by construction, which is exactly how a two-value
+  unpack survived against a three-value contract.
+
+- **A real bug, found by migrating the hand-rolled doubles onto `ScriptedReasoningAgent`.**
+  `ReasoningAgent.run` returns `tuple[Any, SQLiteSession, TokenUsage]`, and
+  `agents/reasoning/grounding.py:184` unpacked two. Every real call to `HeadingsOnlySelector`
+  raised `ValueError: too many values to unpack` -- caught by the surrounding `except`, logged as
+  "selection call failed", and degraded to no selection. So headings-only grounding selected
+  nothing, on every call, quietly.
+
+  The test could not catch it because its hand-rolled double returned two values as well: the
+  double agreed with the bug instead of with the contract. That is the argument for a shipped
+  double in one line -- seven test files each wrote their own, and each was free to be wrong in its
+  own direction. Confirmed by restoring the two-value unpack against the migrated test, which now
+  fails.
+
+  Seven files migrated (`curator_synthesis`, `evaluator_mode`, `adjudication_agent`,
+  `adjudication_segment`, `learning_candidate_adapter`, `precomputed_grounding`,
+  `condition_evaluator`); no hand-rolled `ReasoningAgent` double remains. `test_split.py` keeps
+  its own, correctly -- that one doubles `AgentExecutionService`, a different interface.
+
+  Three defects in the shipped double surfaced while migrating real usages, each from a shape a
+  hand-rolled version had and the first draft did not: a callable response stored as a class
+  attribute became a *bound method* and arrived with `self` as an extra positional; a scripted list
+  restarted per instance, so a flow building one agent per segment handed every segment the first
+  response; and calls recorded only on the class meant two directly-constructed instances shared
+  one history. Responses that are exceptions are now raised rather than returned, which is how a
+  test says "this call fails".
+
+- **`ScriptedReasoningAgent`, and the last `synthesize_bucket(llm=...)` caller is gone.** The SDK
+  deprecated `llm=` in favour of `agents=` while shipping a test double only for the deprecated
+  path, so every caller testing the replacement hand-rolled one -- five test files here did, and
+  `test_learning_loop_end_to_end.py` stayed on the deprecated call for exactly that reason, its
+  docstring saying "swapping it is a separate change". A deprecation whose replacement is harder to
+  test than the thing it replaces does not get adopted.
+
+  `jazzx_sdk.agents.scripted.ScriptedReasoningAgent` is the counterpart to `ScriptedLLM`: a fixed
+  response, a list consumed in order, or a callable receiving the call's kwargs -- the three shapes
+  the hand-rolled versions grew, including routing on `name` where one flow makes several
+  differently-named calls. `returning()` builds the bound subclass each of them defined by hand.
+
+  The suite now runs clean of that warning, verified with `-W error::DeprecationWarning`.
+
+- **A pricing overlay for any model with a long-context tier registered broken.**
+  `plato/reference/model_overlay.py` stored pricing with `asdict()`, which renders `long_context`
+  as a nested dict, and reloaded it with `ModelPricing(**payload)`, which takes that dict as-is.
+  Construction *succeeds*, so the overlay registered with a plain dict where a `LongContextPricing`
+  belongs, past the `except` that would have logged and skipped a malformed row. The failure then
+  surfaced as `AttributeError: 'dict' object has no attribute 'threshold_prompt_tokens'` from
+  `for_prompt_size`, at cost-computation time, far from the load that caused it.
+
+  Every frontier model with a large-prompt premium carries a tier, so this was the common case for
+  exactly the models an operator is most likely to correct a rate on.
+
+  `_pricing_from_json` already did this correctly for the bundled `model_data.json` and was
+  private, so the overlay hand-rolled its own version and got it wrong. It is now
+  `pricing_from_mapping`, public, and both callers use it: reconstructing pricing from a dict is
+  one operation, and the second hand-rolled copy was the bug. The card path alongside it had
+  already been written carefully for the same class of problem (`_CARD_TUPLE_FIELDS` rehydrates its
+  tuples), which is what makes the pricing omission an oversight rather than a shared gap.
+
+  Reported in review of the pushed branch; confirmed by restoring `ModelPricing(**payload)` against
+  the new test, which fails.
+
+- **Four fixes from the first real deployment's environment, and the boot is now unstoppable.**
+
+  `PLATO_WIRING` was set to `acme.plato_wiring:build` -- the placeholder from this repo's own
+  documentation, written before a shipped wiring existed. The docs now name
+  `plato.wiring_default:build`. (A placeholder failed at boot when this landed; the boot contract
+  above later reversed that for serving roles, which come up on `/info` with the reason instead.
+  A `job:*` role still exits 4.)
+
+  `JAPES_REQUIRE_IDENTITY=true` was silently ignored: the wiring built
+  `ServerSettings(require_identity=strict)`, and with no environment tier that is `False`. A
+  deployment asking for identity enforcement got none and was told nothing. An explicit request now
+  wins in any posture, and still cannot turn enforcement *off* in a strict one.
+
+  `KH_API_KEY` -- the name the platform actually sets -- was read by nothing, so a deployment that
+  supplied its Knowledge Hub token got an unauthenticated client. Accepted now, with the
+  JAPES-prefixed names still winning.
+
+  **Blank means unset only where blank is not a value the field could hold.** The first attempt
+  dropped every blank key so the field's default applied -- fine for a `bool` or a `Literal`, which
+  cannot be `""`, and wrong for a `str` whose default is non-empty. `llm_fallback_provider=""` is
+  how a deployment says "no fallback" (`llm/manager.py` gates on `if fallback and
+  fallback_provider`), so clearing it silently re-enabled Anthropic on every primary failure for an
+  OpenAI-only deployment. It also contradicted `env()`, whose contract is that an empty string
+  counts as set.
+
+  Making the documented "every field" true then needed a settings *source*, not a validator: the
+  env source JSON-decodes a complex field before any validator runs, so `JAPES_LLM_TASK_ROUTING=""`
+  raised `SettingsError` regardless. `_BlankAwareEnvSource` drops a blank per field, ahead of the
+  decode. Its type test unwraps unions only -- recursing into a generic's parameters made
+  `dict[str, dict[str, str]]` report `str` among its types, so a dict field read as one a blank
+  could legitimately fill. The alias lookup matters for the same reason: pydantic-settings keys an
+  aliased field by its alias, so every `JAPES_`-prefixed variable was taking the unknown-key branch.
+
+  A blank value crashed `JAPESSettings` -- first `JAPES_ENVIRONMENT`, and after a per-field fix
+  still `use_managed_identity` and `llm_enable_local`, booleans on the same model fed by the same
+  platform. The coercion is model-wide now, dropping blank keys so each field's own default
+  applies, because a rule stated unconditionally in the docs cannot have an unwritten list of
+  exceptions. Relatedly, a *blank* `JAPES_KNOWLEDGE_HUB_TOKEN` shadowed a filled `KH_API_KEY`:
+  `env()` treats an empty string as set by design, so the token lookup now takes the first
+  non-blank name. An empty `JAPES_ENVIRONMENT=""` crashed `JAPESSettings`. Container platforms render a
+  declared-but-valueless variable as `""`, so the literal rejected it and every caller of
+  `get_runtime_settings()` raised. Empty now means unset, which is what the operator meant; a typo
+  is still rejected loudly.
+
+  **And a schema behind the image no longer exits 5 for a serving role.** `/info` reports which
+  revision the image expects against what the database has, and a replica that answers that is
+  worth more than one that exits having printed it once. A `job:*` role still refuses: it takes no
+  requests, consults no gate, and writes, so a sweeper deleting rows through the image's models
+  against an older schema corrupts quietly -- which is the failure the check exists for, and which
+  the first version of this change removed for every role at once.
+
+  Getting that reported at all took two corrections. `build()` returned a *snapshot* of what was
+  missing, so a note recorded a moment later never reached `/info`, which answered
+  `configured: true` against a mismatched schema -- strictly worse than the exit it replaced. It
+  now hands over the function. And the note lived in `plato/__main__`, which under `python -m plato`
+  runs as `__main__`: importing `plato.__main__` executes the file a second time and binds a
+  *different* list than the one appended to, so the value was never going to arrive. State shared
+  across that boundary now lives in an ordinarily-imported module.
+
+  **What `degraded` reports is the running process, not the environment and not a boot snapshot.**
+  Both of those were wrong in opposite directions. Reading the environment cleared the pack gap the
+  moment `PLATO_PACK_DIR` was set, while the process kept the empty registries it loaded once --
+  `/info` claiming assistants the replica could not serve. A boot note went stale the other way: a
+  database corrected through `swap_database` kept being reported as sqlite until a restart.
+
+  So each check reads whatever actually decides the answer: the process for the pack (are there
+  skills?) and the database (what is the *current* store?), the environment for the Knowledge Hub
+  URL, LLM key and tenants, and boot notes only for what neither can rediscover -- a schema behind
+  the image, and a pack path that was set but would not load. The pack message says a restart is
+  what fixes it, since setting the variable will not.
+
+  The pack predicate itself then got written twice. The first version probed `_skills` and `all()`
+  -- names `SkillRegistry` does not have; it is a `NamedRegistry` with `_items` and `__len__` --
+  so every registry read as empty and a *correctly configured* deployment permanently reported
+  "No assistants loaded", 503-ing its chat routes in a strict posture. Guessing at an API
+  defensively was worse than reading it: `getattr` with a default does not raise, so the `except`
+  written to catch exactly that never fired. It is `len(skills)` now.
+
+  Nothing caught it because no test in that file had ever built against a pack that loads -- every
+  one pointed `PLATO_PACK_DIR` at `/nonexistent/pack`, so the negative case asserted the absence of
+  three other reasons and never that the pack gap was absent. There is a loadable pack from the
+  shipped reference profile now, and the always-on predicate fails against it.
+
+  `PlatoWiring.degraded` is declared as the tuple-or-callable it now is, with `resolve_degraded()`
+  for consumers; it had kept a `tuple[str, ...]` annotation while the shipped wiring assigned a
+  function, so `" ".join(wiring.degraded)` raised `TypeError`.
+
+  **Boot notes reach every wiring, not just the shipped one.** They were merged inside
+  `plato.wiring_default`, so a deployment naming its own factory -- the documented normal case --
+  got `configured: true` and an open chat gate against a mismatched schema, having also lost the
+  exit that used to catch it. The merge is in `plato.wiring.resolve_degraded`, which every role's
+  app goes through whoever built the wiring.
+
+  **And the posture gate applies the rule the wiring applies.** It checked
+  `JAPES_REQUIRE_IDENTITY` alone while `build()` had been changed to `strict or requested`, so a
+  production replica with the variable unset returned 3 and never started -- the gate refusing the
+  very configuration it was about to produce. That is the exact sibling of the bug it was fixing,
+  one file away.
+
+  `resolve_kh_token` moved to `jazzx_sdk.config.envvars`, the tier both readers can import.
+  `ClientLayer` and `FabricConfig` read the same platform credential under *different name lists*,
+  so a deployment could end up with an authenticated Knowledge Hub client and an unauthenticated
+  fabric one. The import-linter contract caught the first attempt, which had `fabric` importing
+  `client_layer`.
+
+  Also: `_apply_durable_settings` called `asyncio.run` unconditionally, so building inside a
+  running loop raised and leaked an un-awaited coroutine, surfacing as a RuntimeWarning against
+  whichever test was collecting garbage. It now closes the coroutine and says why it skipped.
+
+  First-boot logging is one line rather than a traceback: before migrations the settings table
+  legitimately does not exist, and a stack trace there reads as a failure in a log whose next line
+  says the replica started fine.
+
+- **Plato 0.1.2.** The deployable wiring, the four deployment tiers, the strictness axis, and
+  `/v1/config` with durable settings and a runtime database swap. The SDK stays at 2.5.0: Plato's
+  version tracks the service, not the library it is built on.
+
+- **Plato ships a deployable wiring, and `dev-daily` is now a posture the platform recognises.**
+  The cloud replica reached `PLATO_WIRING is not set` -- correct behaviour, since the package
+  deliberately ships no default: Plato hosts *someone's* assistant. That argument holds for the
+  pack and the tenants and does not hold for the plumbing around them, which every environment
+  resolves identically and was about to be re-derived per deployment.
+
+  **Four deployment tiers, one canonical name each: `local`, `dev-daily`, `staging`,
+  `production`.** `deployed_posture()` recognised only `production`/`prod`/`staging`, so a shared
+  cloud environment reported `environment=local` and ran with identity enforcement off, in-process
+  stores allowed and a Mock Knowledge Hub permitted -- the same exposure as production, since other
+  people can reach it, with none of the guards.
+
+  The cloud tier is `dev-daily` rather than `dev` deliberately. `dev` reads as a synonym for "my
+  laptop" and means exactly that in jaci's `.env.template` and juno, so naming the cloud tier `dev`
+  would flip both to deployed and take away the Mock fallback their developers rely on -- a failure
+  landing on laptops, pointed the opposite way to the one the tier exists to prevent. `dev` and
+  `test` are accepted aliases of `local`, and `prod` of `production`; aliases resolve rather than
+  being rejected because a name the table does not know reads as *not deployed*, which loses a
+  fail-safe quietly.
+
+  **Strictness is a second axis, and `dev-daily` is relaxed by default.** Deployed and strict came
+  apart the moment dev-daily existed: *deployed* is about what a replica holds, *strict* is about
+  what the environment is for. dev-daily is where someone pushes a branch to see whether it works,
+  so a tier that refuses to start without a real Knowledge Hub, Postgres and identity headers does
+  not serve it. `strict_mode()` is strict on `staging`/`production` and relaxed on
+  `local`/`dev-daily`, and `JAPES_STRICTNESS` overrides it -- tightening any tier, loosening every
+  one except `production`, where the guards it would disable are the only thing between an
+  anonymous caller and real data.
+
+  Relaxed, a Plato replica comes up the way a laptop does: Mock Knowledge Hub, sqlite, identity
+  off, chat serving. What is missing is still collected, logged at boot and reported by `/info`; it
+  is advice there and enforcement (`enforce_degraded`) on staging and production.
+
+  Four guards moved onto the new axis -- the Mock Knowledge Hub refusals in `client_layer` and
+  `fabric`, the durable-queue-store requirement in `runtime`, and Plato's `require_identity`
+  refusal. Two deliberately did not: an unauthenticated configuration write and an unattributed
+  actor stay gated on *deployed*, since neither stops a replica coming up and relaxing them costs
+  real exposure on a shared environment for no gain. A first pass moved all six, which is what
+  five posture tests caught.
+
+  `check_settings(environment=...)` takes the environment as an argument so tests need not mutate
+  the process, so strictness reads it through `strict_for(name)` rather than the process
+  environment -- otherwise the check reads one environment and its strictness another, and the
+  injection seam silently stops working.
+
+  `environment_tier()` returns the tier and `deployed_posture()` still returns the operator's own
+  spelling, since that is what lands in logs and error messages. One table backs both, and
+  `JAPESSettings.environment` now derives its allowed values from it rather than restating them.
+
+  **`plato/wiring_default.py`** is the shipped factory: `PLATO_WIRING=plato.wiring_default:build`.
+  One file for both postures, deciding by posture rather than by two files drifting apart.
+  Deployed, it expects Postgres via `common.core.db`, a Knowledge Hub URL, an LLM provider key, an
+  explicit `PLATO_TENANTS`, and `X-Tenant-Id` per request, and turns `require_identity` on.
+  `scripts/plato_wiring.py` stays the zero-infra demo.
+
+  **It starts anyway when those are missing, and says so in three places.** Refusing to boot was
+  the first shape of this, and it was the wrong trade: the exit reports only the first missing
+  variable, so four missing variables cost four deploy cycles. Now every missing item is collected
+  into `PlatoWiring.degraded` and the boot continues. The startup log lists all of them; `GET
+  /info` reports `extra.configured` and `extra.degraded`; and the chat routes answer 503
+  `plato_not_configured` naming what is missing, rather than serving a Mock Knowledge Hub's empty
+  context as though it were real. Sessions, `/info` and the migration check keep working, which is
+  why the database falls back to sqlite (itself reported) instead of being withheld: those are the
+  surfaces you diagnose with. Identity is not relaxed by degradation.
+
+  **A pre-existing crash surfaced on the way, and is why the list is derived rather than
+  restated.** `JAPESSettings.environment` was `Literal["dev", "staging", "prod"]` while
+  `deployed_posture()` treats `production` as its canonical deployed value, so any service setting
+  `JAPES_ENVIRONMENT=production` died inside `get_runtime_settings()` instead of being recognised
+  as deployed. Restating the names in two places is what allowed that, so the literal is now
+  `Literal[ENVIRONMENT_NAMES]` off the tier table and a test asserts the derivation holds.
+
+  The two reads fail in opposite directions on purpose: `environment_tier()` treats an unknown name
+  as `local`, because guessing that a typo means production would refuse to start a laptop, and
+  `JAPESSettings` rejects it loudly. Together a typo gets one clear error instead of a quiet loss
+  of every fail-safe.
+
+  **The environment-resolved `ClientLayer` moved out of `jazzx_sdk.ui`.** `get_client_layer` and
+  friends were named for their first caller; nothing in them was Streamlit-specific, and a server
+  wiring should not reach into a module called `ui` for the platform handle a deployment runs on.
+  They now live in `client_layer.py`, beside the `ClientLayer` they build and the env resolution
+  they use, with `jazzx_sdk.ui` re-exporting the public three so jaci's imports keep working
+  (surveyed first: only jaci's two UI pages and one japes test).
+
+  Nine tests, including the one distinction the tier rests on -- `dev` non-deployed, `dev-daily`
+  deployed, `production` deployed but not pre-production -- and a fixture that clears the LLM keys,
+  because a developer's own key silently satisfied that check while the test was being written.
+
+- **The reference chat conductor can require its grounding, and no longer loses escalated turns
+  from history.** Both came out of reading what jazzx-assistant's handler does above a single agent
+  call, and both are cases where the pipeline could not express something a consumer had to
+  orchestrate outside it -- which is the thing `ground_step` was written to prevent.
+
+  **Required grounding.** `gather_degrading` degrades every source to its default so one dead
+  system cannot sink a turn. That is right for advisory context and wrong for evidence: a turn
+  grounding on a loan record that is down answered confidently from an empty default, and nothing
+  in `turn.grounded` could tell that default from a real empty result. `ground_step(required=...)`
+  and `build_chat_components(required_sources=...)` name the sources whose absence must stop the
+  turn (`True` for all), raising `GroundingRequiredError`, which `run_chat_turn`'s existing
+  `on_step_error` already turns into an incomplete reply that halts the run. Default stays
+  `False`, so every current caller keeps degrade-everything.
+
+  Which sources degraded is read off `gather_degrading`'s own `SourceProgress.failed` reports
+  rather than re-derived, by chaining a recording hook onto the caller's. The primitive needed no
+  change: it already knew, it just had no one to tell. A second return value would have been a
+  thing every other caller had to ignore.
+
+  **Side-branch persistence.** `respond` persists its own turn, so the direct route was covered and
+  the other two were not: `escalate` and `refuse` both hand back an answer the user reads without
+  touching the agent, leaving conversation history with a hole exactly where the turn was most
+  worth keeping, and the next turn then loaded a history that skipped it. Closing it needed a
+  public seam -- `_persist_turn` was private, so a pack could not do it either -- so
+  `InteractiveAgent.persist_turn` now exposes the same decision `respond` makes, with the same
+  conversation guard. `persist_side_branch` is shared by `finalize_step` and `stream_chat_turn`'s
+  three one-shot returns, because a copy in each is two chances for the routes to disagree about
+  what history contains. It fails soft: bookkeeping must never lose a delivered answer.
+
+  Eight tests, each confirmed to fail against the previous behaviour: required-source failure stops
+  the turn and the agent is never called, `required=True` covers every source, a non-required
+  failure still degrades, the caller's progress hook still fires alongside the recorder, escalated
+  and refused answers are persisted, the direct branch is *not* persisted twice, a store failure
+  still delivers the answer, and the streaming route persists its side branches too.
+
+- **`aiosqlite` became a core dependency, having been declared as a dev one.** It was added for
+  tests ("zero-infra backend for testing SqlConversationStore") and a runtime branch then grew onto
+  it: `DbStore._sessionmaker` builds a `sqlite+aiosqlite://` engine whenever `backend="sqlite"` is
+  selected. A dev-group dependency is absent from every non-dev install, so that path raised
+  `ModuleNotFoundError: No module named 'aiosqlite'`.
+
+  The first attempt put it in the `plato` extra, which was the wrong home twice over. The backend is
+  chosen by `FabricConfig.db_backend` -- core SDK config read from `JAPES_DB_BACKEND` /
+  `JAZZX_DB_BACKEND`, nothing to do with hosting -- so a plain `pip install japes` could select
+  `"sqlite"` and still break. And extras are not installed by a bare `poetry install`, which
+  `docs/LOCAL_TESTING.md` documents, so the suite's own sqlite tests would have errored rather than
+  skipped: the comment claiming they "skip w/o aiosqlite" described a guard that does not exist.
+
+  Core is the honest placement, and cheap: 55 KB, no runtime dependencies of its own. Verified on a
+  plain install with no extras at all -- `JAPES_DB_BACKEND=sqlite` resolves and a session opens,
+  while `alembic` correctly stays absent as an extras-gated dependency. The lock diff is one field,
+  `optional = true` to `false`. The image guard names `aiosqlite` too, since it is the one core
+  dependency nothing on the eager import path pulls.
+
+- **The Plato image shipped empty, and the build reported success.** The container died on
+  `import pydantic` at `jazzx_sdk/models.py:30`, a core dependency, which meant nothing at all had
+  installed rather than an extra being missed.
+
+  Three faults, compounding. `pyproject.toml` declares `jazzx-eval-contracts` as a *path*
+  dependency and `README.md` as the readme, but the builder stage copied only `pyproject.toml` and
+  `poetry.lock`, so `poetry install` failed with `Path /build/jazzx_eval_contracts ... does not
+  exist`. The install line then ended `&& git config --unset ... || true`, and since `&&` and `||`
+  associate left at equal precedence that binds to the whole chain: a failed install short-circuits
+  to `true` and the RUN exits 0. And the stage boundary copies `site-packages` whether or not
+  anything landed in it, so the empty result was invisible until deploy.
+
+  A fourth fault sat behind those, and the first pass at this missed it: `jazzx-eval-contracts` is
+  declared `develop = true`, so poetry installs it *editable*. site-packages receives a `.pth`
+  holding the absolute builder path `/build/jazzx_eval_contracts`, never a copy of the package, and
+  the runtime stage copies site-packages without that directory. A `.pth` naming a missing directory
+  is ignored in silence, so the build would have gone green and the image still could not import the
+  package -- reached through `EvalServiceFeedbackSink` behind `POST /v1/feedback`, among others. The
+  source is now copied into `/app`, but not the way the neighbouring copies work, and the first
+  attempt at this got that wrong too: `jazzx_sdk`, `common` and `plato` are directories that *are*
+  packages, while `jazzx_eval_contracts/` is a project root holding `pyproject.toml`, `tests/`,
+  `scripts/` and the package one level down. Copying the root puts an `__init__.py`-less directory
+  on `PYTHONPATH`, where `import jazzx_eval_contracts` quietly succeeds as an empty namespace
+  package while every submodule import fails. The builder stage wants the root, because poetry reads
+  its `pyproject.toml`; the runtime stage wants the package. The two paths are deliberately
+  different.
+
+  That asymmetry also disarmed the check: a bare `import jazzx_eval_contracts` passes in exactly the
+  broken state, so the assertion imports `jazzx_eval_contracts.feedback` instead.
+
+  So: the directory and README are copied into the builder, the contracts source into the runtime
+  stage, the `|| true` is braced to cover only the cleanup, and the runtime stage asserts the five
+  imports that each stand for one way this can break, plus `jazzx_sdk.evaluation.feedback_sink`,
+  which is lazy and therefore invisible to a bare `import jazzx_sdk`.
+
+  The same faults were in `examples/document_analyzer/Dockerfile` and
+  `examples/basic/Dockerfile.sample`, which build from the repo root against the same manifest;
+  both are fixed rather than left to fail the same way, and both gained the import check.
+
+  `examples/basic/` is excluded by `.dockerignore`, so that one is a template nobody builds from
+  here. It is fixed anyway: a sample is copied, and a broken sample propagates.
+
+  Verified without a daemon: `poetry check --lock` passes on the fixed builder context and still
+  reports both errors on the old one; the braced form exits 1 on a failed install while still
+  tolerating a failed cleanup; an editable install's `.pth` was shown to hold an absolute source
+  path and to raise `ModuleNotFoundError` once that directory is moved away; the new assertion fails
+  on exactly that condition; and each `RUN python -c` payload is reassembled the way Docker joins
+  continuation lines and parsed with `ast.parse`, which is what catches a doubled backslash making
+  the guard-rail line itself a syntax error.
+
+- **MLflow moved behind a backend boundary, and the SDK's public surface is now the abstractions
+  only.** The four abstract base classes already existed -- `RunTracer`, `TraceSource`,
+  `AgentTraceHooks`, `EvaluationReporter`, `ExperimentStore` -- but their mlflow implementations sat
+  beside them, in three cases inside the same file. `run_tracer.py` was the clearest: 383 lines of
+  which the ABC was about forty.
+
+  Implementations now live in `observability/backends/mlflow/` (tracer, trace source, hooks,
+  runtime, env) and `evaluation/backends/mlflow/` (reporter, experiment store and its bridge).
+  `MlflowTracer`, `MlflowTraceSource` and `MlflowTraceHooks` have left `jazzx_sdk.__all__`, and
+  `MlflowExperimentStore` has left `evaluation`'s: a backend is reached at its own path or built by
+  `resolve_tracer`, never exported as though it were the interface.
+
+  **Two directories, not one, and the tier contract is what determined that.** The first attempt put
+  every mlflow file under `observability/backends/`, and the contract broke: `evaluation` sits above
+  `observability`, so a class implementing `EvaluationReporter` cannot live below it without
+  importing upward. A backend belongs with the abstraction it implements, which is a better rule
+  than "all mlflow code in one place" and would not have been obvious without the check.
+
+  **`AgentTraceHooks` turned out to be an abstraction living in the mlflow file.** The assessment
+  that preceded this work recorded `agent_hooks.py` as 319 lines with "no abstraction above it" --
+  wrong. It contains an ABC (needing only openai-agents) *and* the mlflow subclass, coupled through
+  a factory call rather than an import, so they separated cleanly. The base class no longer sits
+  behind an optional dependency it does not use.
+
+  A fourth contract now enforces the boundary: nothing may import a backend at module scope, with
+  one registered exemption for `resolve_tracer`, the factory whose job is choosing one. That
+  exemption is explicit because import-linter counts a function-level import like any other --
+  which is the better outcome, since any *other* module reaching for a backend now fails even if it
+  does so lazily. Verified by adding such an import and watching it break.
+
+  **Two follow-up fixes, both found in review of the above.** The lazy `AgentTraceHooks` entry was
+  retargeted at `backends/mlflow/hooks.py`, which serves only `MlflowTraceHooks`, so an export that
+  stayed listed in `__all__` stopped resolving -- `from jazzx_sdk import AgentTraceHooks` raised, and
+  the whole suite passed, because the surface test compares name *sets*. `test_every_exported_name_
+  actually_resolves` now gets every name in `__all__` on all three packages.
+
+  And the boundary the contract names had a crossing it structurally cannot see:
+  `observability/__init__.py` re-exported three helpers from `backends/mlflow/env.py` at module
+  scope. An import-linter `forbidden` contract skips any pair whose forbidden module descends from
+  the source, so `observability -> observability.backends.**` reports KEPT however it is listed
+  (measured: the edge is in the grimp graph and the contract still passes). The crossing is now
+  gone -- those three resolve lazily, like `AgentTraceHooks` -- and `test_no_backend_on_the_eager_
+  path` asserts in a subprocess that no backend module reaches `sys.modules` on a bare package
+  import. The contract was renamed to `no abstraction imports a backend at module scope`, which is
+  what it actually checks. Both tests were confirmed to fail against the defects they describe.
+
+  `RunContext` moved with the mlflow half rather than staying in `span_mapping.py`. It is a handle
+  whose purpose is carrying an `MlflowClient`, so keeping it in the module that advertises importing
+  no mlflow was the same mismatch the split existed to fix, and its callers use it alongside
+  `log_artifact_with_retry`. Nothing in japes constructs one yet: it and `log_artifact_with_retry`
+  are two thirds of macer's `utils/run.py` trio, ported for the SDK consolidation, and the
+  `create_run` factory is still outstanding.
+
+  `observability/mlflow_bridge.py` is gone, split rather than renamed. The name was the visible
+  problem and the mixed contents were the real one: `spans_to_canonical_trace` and its helpers work
+  on anything span-shaped and import no mlflow, but `safe_link_traces_to_run`,
+  `safe_update_current_trace`, `log_artifact_with_retry` and `mlflow_run_to_canonical_trace` all
+  `import mlflow` in their bodies. One file, both sides of the boundary the rest of this change
+  draws. The generic half is now `observability/span_mapping.py`, next to the abstractions it
+  serves; the mlflow half is `observability/backends/mlflow/bridge.py`. `trace_source.py`'s
+  docstring had asserted the whole file imported no mlflow, which was true of the part it used and
+  false of the file.
+
+  Part of the motivation is version containment rather than tidiness: mlflow's constraints have
+  pinned unrelated packages before, and it currently carries a high-severity advisory with no fixed
+  release. Confined to two directories the SDK never imports eagerly, that is a contained problem.
+
+  Consumers: k9 imports `RunTracer`/`RunHandle`/`SpanHandle` and ships its own `PrintingTracer` on
+  that base -- untouched by this, and standing proof the seam works. jaci imported `MlflowReporter`
+  by its old path; that one line is fixed alongside. No other repository referenced any of it.
+
+- **LiteLLM is gone, and `openai-agents` moves 0.20 -> 0.22 with `openai` 2.x -> 3.3.** One optional
+  dependency was setting the floor for the whole SDK: every litellm release through 1.98.0 pinned
+  `openai<3.0.0`, while openai-agents 0.21+ requires `openai>=3.0.0`. Removing it was blocked on
+  capability, not on will, and the three things it still did have each been replaced first:
+
+  - Claude as an Agents-SDK model -> `AnthropicNativeModel`, including the `cache_control` injection
+    that was the litellm-backed model's whole reason for existing.
+  - Bare Gemini -> `GeminiNativeModel`.
+  - **Gemini on Vertex AI** -> `build_genai_client`, the last capability only the passthrough had.
+
+  Deleted: `jazzx_sdk/agents/anthropic_model.py`, its lazy export from `jazzx_sdk.agents`, the
+  `litellm/<provider>/<model>` dispatch in `resolve_model`, `_litellm_model`,
+  `_litellm_anthropic_name`, the `JAPES_ANTHROPIC_LITELLM` escape hatch, and the `litellm` extra.
+
+  **A stale `litellm/` prefix still resolves.** Names recorded while that was the route carry the
+  qualifier, and a stored name should not fail on a prefix that has merely stopped meaning
+  something -- it is stripped and the provider inferred from what is left. The prefix also stays in
+  `model_identity`'s strip list for the same reason. What is gone is any *dispatch* on it: a
+  provider japes has no adapter for is now unreachable through `resolve_model`, and writing an
+  adapter is the route rather than a passthrough that constrains every other dependency.
+
+  Four tests went with the deleted module. Their coverage did not: cache_control injection and its
+  empty-block skip are the native adapter's now and are tested there, which a comment in
+  `test_agent_models.py` records so the deletion does not read as lost coverage. One test asserted
+  the passthrough still existed by grepping `resolve_model`'s source; it now asserts the opposite
+  behaviourally -- a `litellm/vertex_ai/...` name resolving to `GeminiNativeModel` with the
+  qualifier stripped -- because the source form also matched the docstring explaining the
+  tolerance, and would have failed for the wrong reason.
+
+  Consumers: jaci pinned `japes[litellm]` and is fixed separately (it imports no litellm; its
+  Anthropic eval harness passes a model *name* and lets `resolve_model` choose, which has been the
+  native path since that adapter landed). macer and eval-service use litellm as their own direct
+  dependency, unrelated to this extra. k9, juno, jazzx-assistant, assistant, kernel: no usage.
+
+- **Gemini reaches Vertex AI natively, which was the last thing only LiteLLM could do.** Vertex
+  takes a Google Cloud project and location and authenticates with ambient credentials, none of
+  which a bare model name can express -- so `litellm/vertex_ai/<model>` was the only route, and that
+  one passthrough kept the whole SDK pinned at `openai-agents` 0.20.
+
+  `build_genai_client` is now the single place a `google-genai` client is constructed, taking
+  `vertexai`/`project`/`location`. Both tiers use it -- the LLM tier's single-shot `run` and the
+  agent tier's tool loop each had their own `Client(api_key=...)` line, and a second one is how the
+  two come to disagree about which account a request bills.
+
+  Vertex turns on when asked, or when `GOOGLE_GENAI_USE_VERTEXAI` is set *and* a project resolves.
+  That is the variable `google-genai` reads itself, so a deployment already configured for Vertex
+  needs no japes-specific setting. The flag alone is deliberately not enough: Vertex without a
+  project cannot work, and switching paths on it would turn a missing setting into a confusing
+  credentials error. Asking for Vertex explicitly with no project is refused outright rather than
+  falling back to the api-key path, which would silently bill a different account.
+
+  `is_available()` no longer means "has an api key". On Vertex there is no key, and reporting a
+  correctly configured deployment as unavailable is worse than the check being slightly longer.
+
+  Two things the tier contract caught while this was written, both worth recording. Importing
+  `jazzx_sdk.config` -- the package -- pulls `config.settings`, which imports `client_layer` and
+  through it most of the SDK; a two-line env helper should not drag the runtime facade in behind
+  it, so the import is `jazzx_sdk.config.envvars` directly. And the first draft added Vertex to the
+  agent-tier provider alone, leaving the LLM tier on its own client: the contract did not object to
+  that, but the duplication is the shape CLAUDE.md's symmetry rule names, which is why the builder
+  is shared rather than copied.
+
+- **The native Anthropic model asks for prompt caching, not just reports it.** `AnthropicNativeModel`
+  read Anthropic's cache counts back into `InputTokensDetails` but never injected a `cache_control`
+  directive, so every Claude turn on the native path paid full price while the usage fields dutifully
+  reported zero cached tokens. The LiteLLM-backed `AnthropicModel` it replaces did inject them --
+  that was the reason it existed, in its own words, "(LiteLLM doesn't do this for you)".
+
+  The failure mode is why this mattered: nothing errors. A request without breakpoints succeeds,
+  returns the right answer, and reports a cache hit rate of zero. The bill is the only signal.
+
+  Breakpoints are spent as the LiteLLM path spent them -- the system prompt, the message before each
+  of the last two user turns, and the final message. Everything *before* a breakpoint becomes
+  eligible for reuse, so they sit behind the parts that do not change between turns. Anthropic
+  allows four; a test asserts we never exceed that, since going over is a 400 rather than a
+  degradation.
+
+  Empty blocks are skipped, because Anthropic rejects `cache_control` on empty text and a breakpoint
+  spent there would buy a 400 in exchange for saving nothing. Caller blocks are copied rather than
+  marked in place.
+
+  One existing test changed shape: `system` now reaches the API as a cached text block rather than a
+  bare string, because the directive attaches to a block and that is the only form Anthropic accepts
+  it on. The test's purpose -- parity between the streaming and blocking paths -- is untouched; both
+  still go through one `_request` builder.
+
+  This is a prerequisite for dropping the `litellm` extra rather than part of it. Verified
+  separately: with litellm's declaration removed, `openai-agents` resolves to 0.22.0 and `openai` to
+  3.3.0, and the whole suite passes on them -- so litellm is indeed the wall holding the SDK at
+  0.20, and the only thing it was still doing for us is the caching now ported here.
+
+- **The mock Knowledge Hub validates updates, not just creates.** `MockKnowledgeHubClient` called
+  `_validate_entity` from `create_entity` and nowhere else, so a mock-backed test could write a
+  valid entity and then update it into a shape its ontology forbids with nothing objecting. Real KH
+  validates both (`update_entity_with_validation`), which made the mock weaker than the thing it
+  stands in for -- the one property a mock must not have.
+
+  Validation is against the **effective** ontology and entity type: a partial update may change
+  either, and checking the new value against the stored pair would validate it against the schema it
+  is leaving rather than the one it is joining. Real KH shipped that exact bug and fixed it in its
+  own `93ea215` ("json_value validated against the pre-update schema -> now validated against the
+  effective ontology_id/entity_type"), so a mock repeating it would be wrong the same way twice.
+
+  It runs before the write, so a rejected update leaves the stored entity untouched. Raising after
+  mutating would be worse than not validating: the store would hold a value the schema forbids, and
+  the next read would look authoritative.
+
+  A name-only update is not re-validated. Nothing the schema describes has changed, and checking
+  anyway would surface invalidity predating the call, reported as a failure of the rename.
+
+  A metadata-only update is not re-validated either. That case is the seam between two changes that
+  landed separately -- write provenance added `metadata` to this method, validation was added around
+  `json_value` -- and metadata is the provenance envelope rather than part of the value the ontology
+  describes. Stamping who touched an entity must not fail on invalidity predating the stamp.
+
+  Found by surveying sibling repositories: jazzx-assistant added the same validation to its own
+  hand-rolled mock KH on 2026-09-02. That japes ships a reusable mock KH precisely so packs stop
+  hand-rolling one, and a consuming repo has its own anyway, is a separate question worth asking
+  them -- recorded in `SIBLING_SURVEY_2026-09-02.md`.
+
+- **`settings.py` and `env.py` became `config/`.** One concern read from two directions: `env()`
+  resolves a `JAPES_`-preferred variable name with a legacy fallback, and `JAPESSettings` is the
+  typed surface built on that same convention -- which `settings.py`'s own docstring already pointed
+  at. Neither had a consumer outside this repository, so nothing needed a shim.
+
+  `env.py` is `config/envvars.py` rather than `config/env.py`, and the reason is worth recording
+  because the first attempt shipped the bug: re-exporting the `env()` function from the package
+  `__init__` **shadows a submodule of the same name**. `jazzx_sdk.config.env` then resolves to the
+  function, and three tests that `monkeypatch.setattr` against
+  `jazzx_sdk.config.env.deployed_posture` failed with "'function' object has no attribute". Renaming
+  the module removes the collision rather than working around it.
+
+- **The shared-contracts grouping was proposed here and then dropped, because the data said no.**
+  `models.py`, `events_domain.py` and `failures.py` are each bottom-tier and widely imported, which
+  is what made them look like a set. Their consumers are nearly disjoint: `models` reaches 10
+  packages, all transport and runtime (`server`, `channels`, `clients`, `queue`, `observability`);
+  `events_domain` reaches 2 (`automation`, `statemachine`); `failures` reaches 7 and none of them
+  overlap the first group meaningfully (`agents`, `llm`, `tools`, `evaluation`). A package holding
+  all three would have no coherent audience, which is structure for its own sake.
+
+  `contracts.py` does not belong with them either, for the opposite reason: it imports *upward*,
+  from `fabric.canonical` and `evaluation`, because it is the curated Tier-1 import surface a
+  library consumer opens -- a facade over definitions, not a definition. Grouping a top-of-stack
+  re-export with bottom-of-stack primitives would have been flagged by the tier contract.
+
+- **Three root-level clusters became packages: `queue/`, `runtime/`, `concurrency/`.** Seven modules
+  that sat as peers of `fabric` and `agents` while being one tier's worth of one concern each.
+  `queue_processor.py`, `queue_execution.py` and `queue_execution_db.py` are now
+  `queue/processor.py`, `queue/execution.py` and `queue/execution_db.py`; `launcher.py` joins
+  `runtime/`; `concurrency_guard.py` joins `concurrency/`.
+
+  Two of the three cost nothing to import. `concurrency.py` and `runtime.py` became the packages'
+  `__init__.py`, so every `from jazzx_sdk.concurrency import ...` and `from jazzx_sdk.runtime
+  import ...` still resolves -- and `concurrency` has fifteen importers.
+
+  The queue move does break one import path, deliberately. Four repositories -- jaci, k9,
+  jazzx-assistant and macer -- do `from jazzx_sdk.queue_processor import QueueSettings`, reaching
+  past the public API into a private module path. `QueueSettings` is already exported from
+  `jazzx_sdk` itself and listed in `__all__`, so the fix on each side is `from jazzx_sdk import
+  QueueSettings`: one line per repository, and an import that will not break the next time a module
+  moves. A shim would have preserved the habit that made a rename breaking in the first place.
+
+  No change to the debt list -- grouping alters shape, not direction, and it would be misleading to
+  report otherwise. Top-level entries went from 55 to 53, which is the honest measure of what
+  grouping alone buys.
+
+- **Two server-tier route modules moved into `server/`, where their imports already pointed.**
+  `observability/trace_routes.py` and `runs/server.py` both import `server.governed_http`: route
+  factories living in core packages. Their own docstrings said as much -- one described itself as
+  "consistent with the rest of japes' server tier" -- so the code had known for a while.
+
+  They are now `server/trace_routes.py` and `server/run_routes.py` (renamed, because
+  `server/server.py` names nothing). No shim: a survey across japes, jaci, k9, jazzx-assistant,
+  juno, macer, assistant and eval-service found them referenced only by japes' own two tests.
+  Neither was ever exported from its package `__init__`, which is why nothing depended on them.
+
+  The debt count went 16 -> 17, and the direction is worth explaining. `runs -> server` cleared,
+  which is -1. `observability` was never in the layer list at all, so its inversion was invisible to
+  the contract -- and an unpoliced module is exactly where the next one hides. Bringing it under the
+  contract exposed two pre-existing edges (`observability -> agents`, `identity -> observability`),
+  which is +2. The longer list is the stronger one: one real inversion is gone for good, and the
+  package that hid it is now policed.
+
+  Left alone deliberately: `identity.with_trace_context` imports `observability.trace_context`, and
+  its own docstring says trace propagation is orthogonal to identity. Moving it would relocate the
+  edge rather than remove it, since `kernel_request_headers` in the same module composes with it.
+
+- **The tier debt list is down from 29 pairs to 16, with no code moved.** All of it came from making
+  the contract describe the code more accurately rather than from loosening it -- the ratchet still
+  catches a new cross-tier edge, verified again by adding `fabric -> server` and watching it break.
+
+  `exclude_type_checking_imports = True` accounts for 7 of the 13. Type-only imports are not runtime
+  dependencies, and counting them had one `if TYPE_CHECKING` annotation in `handlers.py` reporting
+  the SDK's identity primitives as dependents of llm, agents, mcp and fabric -- through
+  `ClientLayer`, which they never touch at runtime.
+
+  The other 6 were the layer order being wrong, in three ways worth naming because each was a
+  mistaken assumption about the architecture rather than a defect:
+
+  - `streaming` is a transport primitive agents publish *to*, not a host sitting above them.
+  - `statemachine` consults `authority`, so it cannot sit below it.
+  - `pack` and `manifest` are configuration nothing lower reads, so they belong near the top.
+    Moving them cleared five pairs and introduced three (`fabric -> manifest`,
+    `authority -> manifest`, `pipelines -> pack`), which is where ordering stops paying.
+
+  What remains needs code, not a different sort. Two are files in the wrong package -- `runs/server.py`
+  and `observability/trace_routes.py` both import `server.governed_http`, being server-tier route
+  modules living in core packages. One is a client reaching into runtime internals
+  (`clients/japes_queue_client.py` importing `queue_processor._build_provider_pair` and
+  `_parse_message`). The rest are shared *types* sitting inside higher packages -- `modes.schemas`
+  read by `tools`, `finance.vocabulary` read by `expressions` -- where the fix is to move the type,
+  and each move is a breaking import for consumers.
+
+- **Caller identity moved out of `handlers.py` into `jazzx_sdk.identity`, with no shim.**
+  `handlers.py` held two unrelated things: the handler contract a consumer implements
+  (`Handler`, `BaseHandler`, `HandlerContext`, `job_id_for`) and the platform's identity
+  primitives -- security context, inbound-header capture, `CallerIdentity`, and the outbound header
+  set that forwards them. Fourteen packages imported it, more than any module here except `fabric`
+  and `concurrency`, so under a name that reads as message-handling runtime nothing said whether a
+  core module depending on it was reaching upward or sideways.
+
+  A correction to the earlier note in this file: `handlers.py` was described as containing no
+  handlers. It does -- `HandlerContext` alone is imported 23 times by consumer repos. The first
+  reading covered only the file's first 300 lines. It was never misnamed; it was two concerns
+  sharing a file, which makes the fix a split rather than a rename and far cheaper.
+
+  **No shim, because the survey said none was needed.** Consumers were counted before anything
+  moved: juno and macer import `jazzx_sdk.handlers` not at all; jaci (16 files), k9 (5) and
+  jazzx-assistant (2) import `HandlerContext` and `BaseHandler`, which have not moved. Exactly one
+  external import touches the identity half -- `default_request_headers`, in one jazzx-assistant
+  test -- so a compatibility layer would have existed for a single line in a single test.
+
+  The halves turned out to share no code at all, only a file: the one apparent crossing,
+  `security_context`, is a `HandlerContext` *field* carrying the inbound value, not a call into
+  that machinery. So neither module imports the other. 22 files inside this repo were repointed,
+  including four tests that reached for the module object rather than importing names.
+
+  `identity` joins the tier contract in the bottom layer. The debt list went from 30 pairs to 29 --
+  the split was about making the tiers nameable, not about breaking the cycle, and it is honest that
+  it barely moved that number.
+
+- **The SDK's tiers are declared and enforced, and the measurement says they are not tiers yet.**
+  `.importlinter` guarded only package boundaries (`jazzx_sdk` never imports `plato`, `common`
+  imports neither). Nothing constrained direction *inside* `jazzx_sdk`, so the core/queue/server
+  split lived in prose and a lower tier importing its host was a review-time question at best.
+
+  What the measurement found, before any contract was written:
+
+  - **26 of the SDK's top-level modules form a single import cycle** -- `fabric`, `agents`,
+    `server`, `clients`, `conductor`, `modes`, `llm`, `tools`, `handlers` and 17 more are all
+    mutually reachable. No ordering of layers can pass outright against that.
+  - **39% of cross-package imports (241 of 605) are deferred inside functions.** That is what keeps
+    the cycle from failing at import time, and why it went unseen.
+  - `handlers.py` contains no handlers. It is security context, header propagation and
+    `CallerIdentity` -- the third most depended-upon module in the SDK (14 importers, behind
+    `fabric` at 23 and `concurrency` at 15) under a name that says nothing about which tier it is.
+  - `observability/trace_routes.py` imports `server.governed_http`: server-tier code inside a core
+    package.
+
+  The contract that landed is a **ratchet**, not a clean bill of health: seven tiers ordered by the
+  measured direction of dependencies rather than by intent, and 30 wrong-way pairs registered as a
+  debt list that may only shrink. It passes today and any *new* cross-tier edge fails CI -- verified
+  by adding a `fabric -> server` import and watching it break, then removing it. The ordering itself
+  was iterated against the graph: the first attempt (written from the intended architecture) had 32
+  violating pairs, and correcting it to the real direction cut that to 27. `mcp` moved into the
+  `agents` tier for the same reason -- it exposes agent capabilities, so it is a peer, not a layer
+  below.
+
+  One registered edge is explicitly not debt: `handlers -> client_layer` exists only under
+  `if TYPE_CHECKING`, for a single annotation. import-linter reads the AST and counts it, and
+  through it everything `ClientLayer` touches -- which would report the SDK's identity primitives as
+  depending on llm, agents, mcp and fabric, which at runtime they do not.
+
+  Known limitation, worth stating: the debt entries are per top-level *pair*, so a new import
+  between two modules already on the list is not caught. Tightening that means shrinking the list,
+  which is the point.
+
+- **Two suite warnings fixed, one left standing with its cause named.** `plato/alembic.ini` now
+  declares `path_separator = os` instead of inheriting the legacy split on spaces, commas and
+  colons -- which alembic warns is going away, and which would silently fragment the repo-root path
+  under a directory containing any of those characters. `test_transaction_context.py` reads
+  `model_fields` off the model class rather than an instance, deprecated in pydantic 2.11 and gone
+  in v3; it was the only instance-level use in the repo.
+
+- **`DbStore.dispose()`, and the suite stops leaking sqlite worker threads.** `DbStore` opened an
+  `aiosqlite` engine lazily and offered no way to close it, so each of the ~50 stores the suite
+  builds left a worker thread bound to the loop it was created under. When such a store was
+  collected -- often several files later -- the thread woke to a closed loop and raised, and pytest
+  reported it against whichever test happened to be running. No file emitted it alone, which is
+  what made it hard to place.
+
+  `dispose()` closes only an engine the store opened itself: a `common.core.db` factory or an
+  injected sessionmaker belongs to whoever built it, and closing those from here would drop
+  connections other callers still hold. It is idempotent and a no-op on a store that never resolved
+  an engine.
+
+  A disposed store refuses reuse rather than reopening. Reopening reads as harmless and is not: on
+  the `:memory:` default a second engine is a different, empty database, so the next query fails as
+  `no such table` with nothing naming the dispose that caused it.
+
+  Tests get it through an autouse fixture that tracks instances, rather than 49 inline call sites
+  opting in one by one -- none of them sit in a fixture, and one written tomorrow would not opt in.
+  The tracking holds **strong** references: a store that falls out of scope mid-test is exactly the
+  one that leaks, and a `WeakSet` (tried first) let it be collected before teardown saw it, which is
+  why the first attempt changed nothing. Verified causally: 0 warnings with the fixture, 10 with it
+  switched off.
+
+- **A gateway without routing no longer breaks model resolution.** `resolve_agent_model_name` read
+  `gateway.task_routing` directly, while the branch above it already treated "no gateway" as "no
+  routing". `gateway` is duck-typed, so any stand-in that is not an `LLMManager` -- a scripted
+  manager wired into a local host, say -- raised `AttributeError` from inside model resolution and
+  surfaced as a 500 on the first agentic turn. It now reads through `getattr` and falls through to
+  the default, which is what "no routing" already meant one line earlier.
+
+- **`scripts/plato_wiring.py`: Plato runs on a workstation.** The manifest's `allowed_skills` is
+  derived from the profile's own `skills/*.yaml`, for the same reason the stub tool catalog is
+  derived: a hardcoded mirror of a sibling checkout drifts silently when a skill is added, and
+  fails the manifest write with a bare `ValueError` when one is renamed.
+
+  The stubs are real `FunctionTool` objects, not bare callables. `Agent(tools=[...])` accepts a
+  plain function and stores it unwrapped, so the mistake survives construction and every turn that
+  never reaches a skill; it fails later inside `Converter.tool_to_openai` with "Hosted tools are not
+  supported ... Got tool type: `<class 'function'>`". Verified at that exact call: a plain callable
+  raises there, and all 11 stubs now serialise. `@function_tool` derives its schema from a
+  signature, which a stub generated per tool name has none of, so the schema is declared explicitly
+  and left non-strict -- the real skills call these with argument sets this file cannot know, and a
+  strict schema would reject the call rather than stub it.
+
+  `_assemble_pack` refuses to `rmtree` a directory it did not create, checked by a marker file it
+  writes. `PLATO_LOCAL_CACHE` is a path a person types, and the unconditional delete would have
+  taken whatever they pointed it at, and the marker is written *before* the copy so a boot
+  interrupted partway leaves a directory the next boot still recognises as its own.
+
+  The manifest write runs under a throwaway `asyncio.run` loop, opening the engine under a loop
+  that closes immediately -- left alone deliberately, because plato does the same thing to the same
+  store moments later, when `check_schema_or_report` runs `assert_schema_current(db)` before
+  uvicorn starts. An earlier revision seeded through a separate short-lived store to keep the
+  runtime's engine pristine; it bought nothing for that reason and is gone. File-backed sqlite
+  serves correctly afterwards, verified against a running server.
+
+  Plato ships no default `PLATO_WIRING`
+  on purpose -- a container that boots into a stub looks healthy to an orchestrator -- which is
+  right for a deployment and a wall for anyone who wants to watch it serve. This supplies one:
+  sqlite on disk, `ScriptedLLM`, and stub tools derived from whatever the profile's skills declare
+  rather than a fixed list, so a tool added to the profile is covered instead of breaking the boot.
+
+  The database is built by running the real alembic tree, not `create_all`: Plato refuses a
+  database carrying no revision stamp, and satisfying that check any other way would be lying to
+  it. A local boot therefore exercises the migrations the way a deployment does.
+
+  Tracked in `scripts/` rather than gitignored under `scripts/local/`, because the wall is not
+  workstation-specific -- every clone meets it -- and `scripts/` is outside `packages`, so nothing
+  reaches a consumer's install.
+
+  **Stated plainly because the wiring makes it look free: a chat turn calls the real OpenAI API.**
+  `ScriptedLLM` answers the scope guardrail and the non-agentic path, but this profile's turns take
+  the agentic path, which builds an OpenAI agent directly rather than going through `llm_manager`.
+  Measured against a live server: sessions, `/health` and `/v1/info` need no key; one turn was ~7k
+  input tokens on `OPENAI_API_KEY`, and with no key it fails outright rather than falling back to
+  the script. Boot prints which state you are in.
+
+- **A guard so CI's extras cannot silently fall behind again.** `tests/test_ci_extras_coverage.py`
+  asserts every extra `pyproject.toml` declares is either installed by the workflow or named in an
+  `EXCLUDED` map with the reason it is safe to leave out. Adding an extra now forces that decision
+  rather than defaulting to silence, and three companion checks keep the map honest: nothing may be
+  both installed and excluded, `EXCLUDED` may not name an extra that no longer exists, and the
+  gitignored pre-push hook's `CI_EXTRAS` must match the workflow (skipped where the hook is absent).
+
+  Deliberately not an import scan. The `gemini` failure came from a *lazy* import inside
+  `jazzx_sdk.agents.gemini_provider`, not from anything the test files import at module level, so no
+  static scan of `tests/` could have seen it -- and reproducing it needs a CI-shaped install, which
+  a test running inside the developer's own environment cannot conjure. The list itself is what is
+  checkable exactly and cheaply.
+
+  `greenlet` gets its own check, because it is a main-group dependency with a platform marker
+  rather than an extra: nothing in the extras logic can see it, and deleting its declaration would
+  look harmless on any machine that already carries the package. That check evaluates the marker
+  against an `arm64` environment rather than looking for the string, so an unconditional
+  `greenlet = ">=3.0.0"` -- which covers Apple Silicon and more besides -- passes. A guard that
+  reddened on the safer declaration is one somebody deletes.
+
+  The `bpmn` exclusion is the one reason mechanically checkable from data the file already parses,
+  so it is checked: `extras["bpmn"] <= extras["plato"]`. If `bpmn` ever gains a package `plato`
+  lacks, "adds nothing" stops being true, and an exclusion that quietly became wrong is worse than
+  one never written down.
+
+  Each was verified by reintroducing the drift it targets and confirming it fails: dropping `plato`
+  from the workflow, pointing the hook at a stale set, marking an installed extra as excluded,
+  naming an extra that does not exist, deleting greenlet outright, and narrowing its marker to
+  SQLAlchemy's own platform list -- plus the converse, that the unconditional declaration passes.
+
+  The workflow lookup anchors on the `run:` line rather than the first `--extras` in the file --
+  roughly fifty lines of prose about extras sit above it, and an example command quoted there would
+  otherwise be compared instead of the real one, with every assertion still green.
+
+- **`greenlet` is declared for Apple Silicon, which SQLAlchemy's own marker misses.** SQLAlchemy's
+  async layer requires greenlet and declares it, but its marker lists `aarch64` -- Linux's name for
+  the chip -- and not `arm64`, macOS's name for the same chip. A fresh `poetry install` on Apple
+  Silicon therefore omits it, and 178 tests die with `ValueError: the greenlet library is required`.
+  Nothing warns; the package simply is not there.
+
+  It only surfaces on a rebuild. Any environment created before this carries greenlet from some
+  earlier install and looks healthy, which is why a working machine is not evidence.
+
+  Declared for `arm64`/`ARM64` only -- the spellings SQLAlchemy's marker misses -- so no platform
+  resolves it twice; the lock change is two lines, appending those two values to the existing
+  marker. Verified by uninstalling greenlet, confirming it was gone, and re-running `poetry install`:
+  it comes back from the lock. Removable once SQLAlchemy's own marker covers macOS.
+
+- **CI installs the `plato` extra, so the BPMN resolver tests run and `alembic` stops being
+  accidental.** `common/refs/extract.py` imports `defusedxml`, which only the `bpmn` and `plato`
+  extras supply, so all 22 tests in `test_bpmn_resolver.py` failed at import in a CI-shaped
+  install -- the same shape as the `gemini` gap: a branch adds tests needing an extra, CI's list
+  does not move with it. Found by rebuilding the local venv from scratch, which is the only way it
+  surfaces; an older environment carries the package from some earlier install and looks fine.
+
+  `plato` rather than the narrower `bpmn` because it also declares **`alembic`**, which nothing
+  else in CI's list does. Plato's migration tests were getting it transitively from `mlflow`, so
+  dropping the mlflow extra would have broken migration tests with nothing naming the connection.
+  Verified rather than assumed: uninstalling both packages and re-running `poetry install` with
+  this extras list brings back `alembic 1.18.4` and `defusedxml 0.7.1` from the list itself.
+
+- **The Gemini provider tests run in CI instead of failing, and the ones that need no SDK keep
+  running without it.** CI installed `mcp templating finance pptx mlflow` but not `gemini`, so
+  `google.genai` was absent and tests died at the first lazy `from google.genai import types`.
+
+  The SDK modules were already right -- they import `google.genai` inside the functions that need
+  it, so importing `gemini_provider`/`gemini_native` costs nothing without the extra. Two changes
+  sit on top of that:
+
+  *CI installs the `gemini` extra.* One package, and the tests are offline (fake key, stubbed
+  client). Without it, `GeminiProvider` and `GeminiNativeModel` -- both shipped and exported -- had
+  no CI coverage at all. The extra lands *with* the marks rather than instead of them: before this,
+  a CI without it failed outright, and marks alone would have turned that into a green run
+  verifying nothing -- a skip reading as a pass, the failure the `mlflow` extra was added to fix.
+
+  *The guard is a per-test marker, not a module-level `importorskip`.* Only 21 of the 31 tests build
+  requests through `google.genai` types; the other 10 exercise `_usage`, `_output_items`,
+  `resolve_model` and the `AgentExecutionService` registry and touch no Gemini SDK type. Skipping
+  the file wholesale would have stopped those 10 running for anyone installed without the extra --
+  turning tests that passed into tests that no longer run. Which 21 need it was determined by making
+  `google.genai` unimportable and reading the failures, not by inspection.
+
+  Verified in both installs: with the extra, 31 pass; without it, 10 pass and 21 skip with a stated
+  reason. The lock is bumped in the same commit so CI tests what was verified: it pinned
+  `google-genai` 2.8.0 while this work was done against a newer local install, which is exactly the
+  gap that makes a local pass meaningless. `poetry update google-genai --lock` moved two packages --
+  `google-genai` 2.8.0 -> 2.21.0 and its dependency `google-auth` 2.55.0 -> 2.57.0 -- and the 31
+  tests were re-run against 2.21.0 rather than assumed compatible. The pre-push hook's `CI_EXTRAS` is updated in the same breath -- it had drifted when
+  `mlflow` was added, and that drift is what let a local pass look like a CI pass.
+
+- **The curator tests exercise the supported synthesis path, not the deprecated one.**
+  `synthesize_bucket` has taken `agents=<AgentExecutionService>` since `llm=` was deprecated, but
+  five tests still called it the old way, so every suite run carried five `DeprecationWarning`s.
+
+  The warnings were the symptom; the problem was where the coverage sat. Everything substantive --
+  applicability, feedback/attribution/evidence provenance, the red-teaming batch, draft persistence
+  -- ran through the path scheduled for deletion, while `agents=` had a single test. When `llm=`
+  goes, those tests would have gone with it and taken the coverage rather than moving it.
+
+  Those five now use `agents=` through the existing `ReasoningAgent` monkeypatch seam (moved above
+  the tests in `test_curator_synthesis.py`, with a local stub added to
+  `test_learning_candidate_adapter.py`). The deprecated path keeps exactly one test, which asserts
+  the warning fires via `pytest.deprecated_call()` -- so the shim stays covered until it is removed,
+  and no warning leaks. Both files pass under `-W error::DeprecationWarning`. Suite warnings 20 -> 15.
+
+- **The last pydantic v1-style `class Config` is gone.** `FabricConfig` still declared its settings
+  through the inner class pydantic v2 deprecated and v3 removes, so every test run carried a
+  `PydanticDeprecatedSince20` warning. It is now `model_config = ConfigDict(use_enum_values=True)`,
+  and it was the only one left in `jazzx_sdk` -- every other model had already migrated.
+
+  `use_enum_values` is carried across verbatim and noted in place, because what it changes is
+  subtle: it alters the *stored* type, so `retrieval_mode` holds the string `"strict"` rather than
+  `RetrievalMode.STRICT` and `model_dump()` emits a plain string. Comparisons are unaffected --
+  `RetrievalMode` is a `str, Enum`, so `mode == RetrievalMode.STRICT` holds either way -- which is
+  precisely the trap: dropping the setting would look harmless at every in-repo call site while
+  changing the serialised shape for anything persisting or transmitting the config.
+
+- **The open MLflow SSRF advisory is recorded where the floor is declared.**
+  GHSA-h7x2-h6g9-p789 / CVE-2026-71211 (unvalidated `api_base` in MLflow's AI Gateway) has **no
+  fixed release**: it covers `>=3.13.0,<=3.15.2` and 3.15.2 is the latest published version, so
+  there is nothing to bump to, and dropping below 3.13 reinstates the webhook-delivery SSRF this
+  floor was raised to close. It is also not reachable from japes, which uses only mlflow tracking
+  (`MlflowClient`, entities, runs) and runs no gateway. Documented rather than silently carried, so
+  the next person to see the alert does not re-derive the analysis.
+
+- **The real-assistant test no longer hardcodes a workstation path.**
+  `tests/test_plato_packs.py` pinned the `jazzx-assistant` profile to an absolute path under one
+  developer's home directory, so on every other machine the skip read as "the sibling is absent"
+  when the real reason was "you are not that person". It now resolves the sibling relative to this
+  checkout -- the `<workspace>/japes`, `<workspace>/jazzx-assistant` layout every JazzX repo already
+  uses, so the default needs no configuration -- with `JAPES_ASSISTANT_PROFILE_DIR` to override,
+  matching the existing `JAPES_REAL_PACKS_DIR` convention. The skip reason now names the path it
+  looked at and the variable that changes it.
+
 - **Entity write provenance verified against the landed Knowledge Hub contract.** KH `93ea215`
   ("add metadata JSONB column") added an optional, free-form, client-owned `metadata` JSONB column
   on `entity`, exposed on `EntityCreate`/`EntityUpdate`/`EntityRead` under the wire name `metadata`.
@@ -1291,7 +2391,11 @@ squashed on the way in, so the reasoning lives here.
   `content[start:end].strip()` is the chunk, but a merged chunk's text is re-joined. Stated in the
   docstring because "exact offsets" is the natural reading and is wrong in the merged case.
 
-## [Unreleased] - Plato
+## [2.5.0] - plato 0.1.1
+
+*Part of the same 2.5.0 series as the sections above. Headed by the SDK version because that is
+what the commits announce and what consumers of the library track; Plato's own version is the
+subheading, since it tracks the service rather than the library it is built on.*
 
 ### plato 0.1.1
 
@@ -2200,7 +3304,7 @@ squashed on the way in, so the reasoning lives here.
   `plato` extra adds only `alembic`. 18 tests cover the boundary, the packaging, the alembic
   scoping and the entry point.
 
-## [Unreleased]
+## [Unreleased] - SDK (pre-2.4.7)
 
 - **25 provider tests passed only on machines with an `OPENAI_API_KEY` exported.** CI found them
   the first time it ran, which is the point of it. They construct `OpenAIProvider()` the default
