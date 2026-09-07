@@ -2,6 +2,241 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+## [2.5.0] - 2026-09-07
+
+*Post-push round: the sliced adversarial review (see below) and PR #67's bot both ran against the
+pushed commit, which the size-capped review had skipped.*
+
+- **Review round 9.** One defect, and it undid the safety of round 6's own fix: a header that is
+  present but blank produced an identity. `email or name` yields `""`, and the context builder
+  tested `is None`, so `x-user-name:` gave a context whose principal is the empty string -- an
+  anonymous request the middleware admitted, and the `identity_required` gate then opened for.
+  On a strict deployment `GET /api/v1/logs` returned the buffered records and `/api/v1/metrics`
+  the full per-route inventory, both of which were withheld before that gate existed. It is the
+  same empty-identity hole closed on the token path earlier in this section, left open on the
+  header path the gate actually rests on. An empty identity is not an identity, in
+  `build_invocation_context_from_headers` as in `verify`.
+
+  Three notes: the refresh floor used `fetched_at > 0` as its "has fetched" sentinel, so an
+  injected clock with a zero origin made a successful fetch indistinguishable from never having
+  fetched and the floor failed open again -- a separate flag now; the security-header test
+  asserted only that *a* policy was present, which would have passed with the dashboard silently
+  getting the API's `default-src 'none'` and rendering as unstyled text; and a docstring still
+  described the Swagger route that round 8 deleted.
+
+- **Review round 8: no defects.** Five non-blocking findings, fixed anyway, one of which was
+  substantive: the degraded app is built by hand rather than by `create_app`, so it attached none
+  of the response security headers -- every degraded response went out with no CSP, no
+  frame-ancestors and no nosniff, on the replica an operator is most likely to open in a browser.
+  The `/` page had one only because it sets its own. FastAPI's CDN-loaded `/docs` is dropped there
+  too, as the working app already does: it was mounted and reachable, so the nav omission had been
+  hiding a page that worked, for a reason (the CSP blanking it) that no header was being set to
+  make true.
+
+  The rest: `sync_collection` passed `manifest_scope or collection_id`, which is `materialize`'s
+  own default now -- and passing it made `manifest_scope is None` false in there, silently
+  disabling the adoption of a manifest recorded under the previous path-based scope. A comment
+  claimed `_dsn_summary` resolved the engine accessor when both callers still did it themselves,
+  so it now does. `fetch_validated` accepted `validate` and `allow_hosts` together and quietly
+  honoured only the first. `_safe_fetch` still had its own `max_redirects=10` beside the constant
+  extracted for it. And the new `env_*` test file promised coverage of the numeric readers and
+  contained one test for the text one.
+
+- **Review round 7.** The SSRF guard added earlier in this section broke an ordinary
+  deployment: `validate_url_safe` refuses any host resolving private *and* fails closed on one
+  that does not resolve, so a Knowledge Hub whose blob URLs point in-cluster
+  (`http://minio:9000`, a compose stack, or a hub serving blobs from its own address) had every
+  `download_document_v2` raise. It now accepts hosts the deployment has declared: the hub's own,
+  automatically, plus `JAPES_KH_BLOB_HOSTS`. The scheme rule and the private-IP rule still apply
+  to everything else, so this admits a named host rather than disabling the guard.
+
+  `_probe_failed` was added to and never discarded, so a document whose first metadata call
+  failed had its *successful* retry thrown away for the listing's weaker digest -- and
+  re-downloaded on the run after the retry worked. The test passed because it asserted only the
+  call count; it asserts the recorded digest now.
+
+  `create_config_router` was the third member of the withholding family without the new
+  `identity_required` kwarg, so one predicate meant two things. That asymmetry is real and is now
+  stated rather than implied by an omission: a gateway-injected header identifies who is asking
+  without being an authorization decision, which is enough to *read* diagnostics and not enough
+  to *write* configuration. The guide and the logs docstring said these routes need an `auth`
+  dependency, which stopped being true when `require_identity` began unlocking them.
+
+- **Review round 6.** The consequential defect: the withholding gate keyed on `auth is None`,
+  and *no shipped wiring sets `PlatoWiring.auth`* -- so on every strict deployment there is, an
+  authenticated operator saw a permanently empty metrics table and no log records, while
+  `require_identity` was already authenticating each request and the guide described an `auth`
+  path no wiring takes. Identity middleware is now the other way a caller can be known, so a
+  working replica serves both and the degraded app -- which has no middleware and cannot be given
+  any -- still withholds.
+
+  The digest preservation added in round 5 covered the probed document and not the batch behind
+  it: a failed metadata call reports `None` for any document, and letting that overwrite a listing
+  digest costs a re-download on every run. It applies to all of them now.
+
+  `create_config_router` -- which `logs_api` cites as the shape it copied -- was the one member of
+  that family still spelling the predicate out after it was extracted for the other two.
+
+  Three notes: a docstring reflow had lost its indentation and read as a fragment; two
+  `fetch_validated` tests and the `env_text` test had landed in the materialize file rather than
+  beside what they test; and the `data:` branch matched `;base64` case-sensitively where the
+  grammar is case-insensitive, and returned a zero-byte document for a URL with no comma at all
+  instead of refusing it.
+
+- **Review round 5.** Three defects, all in rounds 3 and 4's own changes.
+
+  The sharpest was a branch that could not fire: `get_document_metadata` swallows every error and
+  returns `None`, so `_current_hash` stored `{}` and the "the probe call failed" test was
+  indistinguishable from "the record was empty". The test pinning it passed only because its stub
+  *raised*, which the production client never does -- so against a real hub a timeout on the
+  probed document still concluded "this hub does not hash" and denied every other document its
+  backfill, while overwriting the probed document's listing digest with `None` so it re-downloaded
+  on every run. Failures are recorded explicitly now, and the listing's digest is kept when the
+  call does not answer.
+
+  `fetch_validated`'s no-`Location` exit returned before the status check, and httpx calls any 3xx
+  a redirect -- so a `302` without the header, or a `304`, came back as an empty body the caller
+  read as content. Both exits are one path now. And delegating `read_from_url` to that helper
+  imported a 200-only rule into a general web fetch that legitimately meets `203` and `206`, so
+  the rule is opt-in and only the Knowledge Hub client asks for it.
+
+  Three notes: the scope docstring claimed a default that only holds when a collection is given;
+  the guide said log records and metrics are withheld in a "deployed" posture when the gate is
+  strictness, and `dev-daily` is deployed but deliberately relaxed; and `DEFAULT_TIMEOUT` is an
+  `httpx.Timeout` passed into two `float` parameters.
+
+- **Review round 4.** The defect was round 3's fix again: a document the listing never returned
+  has no digest at all, not even the `updated_at` fallback -- and the walk gives up after its page
+  budget, so partial coverage is a designed state rather than an edge. The probe's conclusion is
+  about what the metadata endpoint adds to a *listed* row, so unlisted ids are now always asked.
+
+  Two symmetry findings, both duplication this session created: the withholding gate and its
+  `{"withheld": True, "reason": ...}` reply were spelled once in `logs_api` and again in
+  `metrics_api`, and now live in `plato.posture`; and `resolve_kh_token` kept its own copy of the
+  blank-is-unset loop that `env_text` had just been extracted from, while its docstring cited it
+  as the precedent.
+
+  Three notes: the dashboard's withheld branch dropped the totals the router keeps deliberately,
+  so a deployed replica rendered as having served nothing; the "transient, so it raises" comment
+  had come to sit over a refused host and a storage 404, neither of which a retry fixes; and a
+  non-base64 `data:` URL was returned without percent-decoding, so `data:text/plain,a%20b` gave
+  `b"a%20b"`.
+
+- **Review round 3.** Both defects were in round 2's own fix: the one-document probe conflated
+  "the listing gave a weak digest" with "no listing ran at all". Below the threshold every id is
+  weak by construction, so one probe decided the strategy for documents nothing was known about
+  and left the rest with no digest -- `_needs_download` then said yes on every run and
+  `page_count` was never filled, silently disabling the per-document path the threshold exists to
+  select. And `_current_hash` reports any failure as `None`, indistinguishable from "no hash", so
+  one timeout suppressed the metadata call for every remaining document. The probe now runs only
+  when a listing produced no hashes, picks the lowest id rather than whatever set ordering
+  offered, and falls back to asking everyone when it fails rather than concluding from it.
+
+  The blank-is-unset rule was hand-spelled at four sites in `wiring_local`; `envvars` owns env
+  reading and already stated it once, so it is now `env_text` beside `env` and `env_int`.
+
+  Three notes: `raise_for_status` accepts every 2xx, so a `204` returned its empty body as the
+  document -- only 200 is content now; the test named "not walked pointlessly" only ever avoided
+  the metadata calls, not the walk; and two comments claimed the degraded app has no `/docs` when
+  FastAPI's Swagger UI is mounted there -- the link resolves, to a CDN page the CSP blanks, which
+  is a reason to omit it but not the one given.
+
+- **Review round 2 (the loop now runs after every commit).** Three of the four defects were the
+  same shape: a guard applied to one member of a family and not the others.
+
+  The dashboard's metrics panel had no reader for the `withheld` response the logs panel was given,
+  so a deployed replica that had served traffic rendered "No requests served yet." beside a
+  non-zero request total in the same payload. The nav omission was applied to `/` and not to
+  `/info/ui`, which renders the same nav -- so the three 404s moved one click away instead of
+  going. And `status` was the third member of the script's port family without the ownership check
+  `start` and `stop` had just been given, so it still reported another repo's uvicorn as a running
+  Plato.
+
+  The redirect-following loop was a line-for-line re-derivation of `tools.documents.local`'s.
+  `clients` sits *below* `tools` in the layer contract and cannot import it, so the loop moved to
+  `net_safety` -- where `validate_url_safe` already lives and both tiers already import from --
+  and both now call it. Converting the `tools` side broke 13 of its SSRF tests, which patch a
+  module-local alias my delegation bypassed: they had gone on passing against the real resolver
+  instead of the stub. The validator is injectable now, so each caller's seam survives.
+
+  Three notes with it: PyJWT's `require` checks a claim's presence and not its content, so
+  `"sub": ""` decoded fine and reached a direct caller; `listing_has_sha256` put an all-legacy
+  collection on a hashing hub on the wrong side of the cost model, which one probe call now
+  settles instead of a guess; and the guide offered an `auth` dependency on the degraded path,
+  where there is no way to supply one.
+
+- **SSRF on the signed-URL fetches.** The URL comes out of a Knowledge Hub response and was
+  fetched with `follow_redirects=True` and no validation, at both sites -- so a manipulated or
+  open-redirecting response was an unauthenticated GET from inside the deployment's network.
+  `net_safety.validate_url_safe` already existed for this. Both sites now share one
+  `fetch_signed_url` that validates every hop before fetching it, because that helper's own
+  docstring says a caller following redirects must, and follows redirects itself rather than
+  leaving it to httpx. A `data:` URL is decoded locally and never fetched -- that is what the
+  Mock Knowledge Hub hands out, and it touches no network.
+
+- **A signed token without a subject is refused.** PyJWT does not require `sub`, so one produced
+  `{"userId": ""}` -- which a caller keying storage on it reads as a single shared anonymous user
+  rather than as no identity. Required in `verify`, and refused again in `identity_from_claims`
+  for claims that did not come through it.
+
+- **An issuer publishing no usable keys could be hammered.** The 30-second refresh floor was
+  gated on the cache *holding* keys, so `{"keys": []}` -- or entries with no `kid`, which are
+  dropped -- failed open: both the unforced and the forced load re-fetched on every request, two
+  issuer fetches per request, unbounded. A fetch counts even when it yielded nothing.
+
+- **Per-route metrics are withheld like log records.** `logs` was gated for a deployed posture
+  because the degraded app has no identity middleware; `metrics` sits on that same app with no
+  `auth` and no guard, serving the route inventory and per-route request and error volumes to
+  anything that could reach the port. The totals and uptime stay, because a probe needs them and
+  they name nothing.
+
+- **The degraded nav offered three routes it does not mount.** Guide, config and database each
+  404'd from a nav an operator was reading while already debugging a replica that would not start.
+
+- **The guide promised logs a deployed posture withholds,** and `boot_contract.py` had it right
+  all along. Corrected, along with the routes table. Its em-dashes are gone too.
+
+- **A hub with no `sha256` at all is no longer walked pointlessly.** A weaker digest is worth a
+  metadata call only where that call can improve it: on a hub predating hash computation nothing
+  has one, so the paginated walk *plus* N metadata calls was strictly worse than the N calls
+  alone. Told apart now by whether any listing row carried one.
+
+- **`./scripts/plato-local.sh` stopped killing whatever held the port.** `listening()` is pure
+  port occupancy, so `stop` and `restart` SIGTERMed another repo's uvicorn, a Streamlit or a
+  Docker proxy and `kill -9`'d it five seconds later, while `start` called it "already running".
+  It checks the process is Plato now, and refuses rather than guessing.
+
+  `wait_until_up` also used `curl -fsS`, which treats the degraded replica's 503 `/health` as a
+  failure -- so a typo'd `PLATO_WIRING` burned the full 30 seconds and reported that nothing came
+  up, the exact confusion the fallback `/health` exists to remove. It waits for an answer, then
+  reports the reason: two seconds instead of thirty.
+
+- **Three `wiring_local` knobs treated an empty variable as a value,** where two others in the
+  same file already guarded it. `PLATO_LOCAL_DB=` made the database path the root *directory*;
+  `PLATO_LOCAL_CACHE=` pointed the pack cache there; `PLATO_LOCAL_TENANT=` put `""` on every
+  session and manifest row. The boot line also prints paths through `display_path` now, for the
+  reason the dashboard does.
+
+- **The external-reference check could not see a stylesheet load.** It matched `src=`/`href=`
+  attributes only, so `@font-face { src: url(https://...) }` or `@import` passed all three "no
+  CDN, no external font" assertions -- which the bare `"http://" not in body` check they replaced
+  did catch.
+
+- **The review itself: sliced rather than skipped.** The push went out unreviewed because the diff
+  exceeded the one-pass cap and the hook exits 0 there -- so the gate passed silently on exactly
+  the pushes big enough to need it, which a workflow that squashes several rounds into one commit
+  produces every time. It now packs whole files into slices, blocks if any slice reports a defect,
+  caps the slice count, and names the files in any slice it could not reach.
+
+- **Smaller corrections.** `_dsn_summary` already owned the engine/URL introspection
+  `effective_settings` re-spelled; `materialize` and `sync_collection` documented a default scope
+  the code no longer uses; an explicit `timeout_seconds=0` bypassed the floor its own constant
+  documents; the v2 entity docstrings named `KnowledgeHubError` where the code raises the
+  `Unsupported` subclass a caller is meant to branch on; a duplicated span-shape test that read
+  the ambient cap moved beside the pair that owns that contract; two subprocess tests parsed
+  stdout without checking the exit code; a registered test model card had no cleanup; and an OIDC
+  test's name described a path it did not exercise.
+
 ## [2.5.0] - 2026-09-06
 
 *Continues the [2.5.0] section below, which carries `plato 0.1.1`. `2.4.9` sits between the two, and
@@ -28,11 +263,391 @@ interleaving is how that shows.*
   dispatched as many fetches as there were callers. Double-checked under an `asyncio.Lock`; the
   30-second floor now actually holds.
 
+- **The health probe and the server agree on the port.** They read `PORT` differently, so they
+  disagreed on every value `env_int` normalises: with `PORT=""` the server bound 8000 while the
+  probe built `http://127.0.0.1:/health`, which urllib connects to port 80 -- so `--health`
+  reported `unhealthy` and exited 1 for a replica that was serving. Converting the two
+  `uvicorn.run` calls in the previous change is what made this reachable: before that, the same
+  environment crashed uvicorn at startup and the mismatch could not be observed.
+
+- **The Mock Knowledge Hub's HTTP double serves the v2 routes.** The in-process
+  `MockKnowledgeHubClient` was given the single-document and bulk methods while the double kept
+  only the v1 archive route -- so a replica wired to Mock KH took `_probe_v2`'s doomed path on
+  every new `DocStore`, and nothing short of a real hub exercised the route that is now the
+  default. All four steps are there (document access, trigger, status, link), the bulk trigger
+  requires the same `x-user-id` the real one declares, and a `data:` URL stands in for the signed
+  one.
+
+- **A suffixed filename is attributed even when its base name is also requested.** The collision
+  check ran before the exact-name lookup, so a document really called `Report (2).pdf` was
+  discarded from the archive whenever `Report.pdf` was in the same request -- the strip matched
+  and it was read as a KH rename -- and re-fetched individually every run. The earlier fix only
+  covered the case where no `Report.pdf` exists, which is what its test asserted.
+
+- **Three claims trimmed to what the code does.** `_bulk_fetch`'s docstring said bulk "must not be
+  able to fail the materialize" while a denial deliberately propagates eight lines below, and
+  `bulk_download_documents` claimed it never raises while raising for an old pin, a missing user
+  id and a denial. And a comment added in the previous change blamed a hazard on a call site that
+  never had it: the `os.getenv(a) or os.getenv(b)` chain it replaced already skipped an empty
+  value -- the hazard is in routing such a chain through `env`, not in the chain itself.
+
+- **A transient failure on the probing document no longer downgrades the whole store.**
+  `_v2_probed` was set *before* awaiting the probe, so a refused signed URL raised out with the
+  route still unknown but recorded as probed -- and `DocStore` is long-lived behind
+  `fabric.docs`, so that one bad moment sent every later `materialize` down v1 as well. Exactly
+  what `_v2_unsupported` exists to prevent, undone by the ordering of two lines. The flag is set
+  only once the probe returns.
+
+- **An empty variable no longer ends a fallback chain.** `env` treats a set-but-empty value as
+  set, so `env_int("JAPES_UI_PORT", "PORT", ...)` took its default without ever consulting `PORT`:
+  with a blank `JAPES_UI_PORT` and the platform's `PORT=8080` the UI bound 8501, a port nothing
+  routes to. An empty string is not a number, so `env_number` now takes the first *non-empty*
+  name. This is the hazard its own docstring cites, reintroduced one layer up while fixing it.
+
+- **`env_int` reaches Plato's own entry points.** Both called `int(os.getenv("PORT", "8000"))`,
+  where `PORT=""` raises and the server does not start -- the same conversion applied to the
+  queue, the launcher and the span cap in the previous change, and not to the two call sites in
+  the service being changed.
+
+- **The JWKS fetcher is dispatched by `call_maybe_async`.** `_fetch_and_cache` hand-rolled
+  sync/async dispatch by calling the injected fetcher inline and testing the result -- which runs a
+  synchronous fetcher *on the event loop*, the precise stall this class was made async to avoid.
+  The repo has one home for that dispatch, which offloads a sync callable, and this same change
+  already used it in `settings_api`.
+
+- **A narrowed poll ceiling is reported rather than reversed.** `floor=BULK_POLL_INITIAL_SECONDS`
+  silently handed back the initial interval, so an operator lowering the ceiling got the opposite
+  of what they set with no indication. The invariant holds, and now says so.
+
+- **A test that pinned formatting instead of behaviour is gone.** It regexed the inline JS for an
+  exact expression, so hoisting that expression into a local would fail it with nothing changed.
+  The branch logic is asserted through the router; the page test now only checks what the router
+  cannot.
+
+- **The same false-claim defect, one field over.** `PLATO_SQLITE_PATH`'s effective value went
+  through `display_path`, so an absolute stored path could never equal its own resolved value and
+  the panel reported it as not applied -- exactly what had just been fixed for `PLATO_DB_BACKEND`
+  six lines above. Compared in the same form now, and omitted when the two agree. The router also
+  drops any hint equal to the stored value, so a provider that spells a value differently cannot
+  produce that claim again.
+
+- **An unsettled probe no longer serialises the batch.** `_probe_v2` is documented as running once
+  under a lock, and that held only when a probe *settled* the flag. It cannot settle when neither
+  route has the document -- a stale KG reference, a deleted document -- so every document took the
+  lock in turn and a ten-at-a-time batch ran at peak concurrency 1. Whether a probe has run is now
+  recorded separately from what it concluded.
+
+- **`env_int` reaches the rest of the estate.** Six queue knobs and two launcher knobs still did
+  `int(env(...))` / `int(os.getenv(...))`, which is the empty-string hazard the helper was
+  introduced for -- converted in `agent_hooks` and not in its siblings.
+
+- **A manifest recorded under the previous default scope is adopted.** The default moved from the
+  output directory to the collection id; `DbMaterializeManifestStore` keys its rows on the scope,
+  so those rows were addressed by the old key and invisible under the new one. The file store had
+  a flat-map bridge and this had none, so an upgrade cost one re-download of everything.
+  `materialize` reads the old key once when the new one is empty and re-saves under the new one.
+
+- **Two tests said less than they looked like.** Both `test_a_document_the_listing_cannot_identify`
+  and the legacy-document test built a client and immediately rebound the name to a subclass, so
+  the setup between them mutated a discarded object. And the dashboard assertion checked only that
+  `f.effective` and "in effect" appeared in the page -- it would have passed with the comparison
+  inverted, which is the defect above it. It now asserts the rendered guard.
+
+- **The collection listing now implements the cost model it documents.** `list_probe_threshold`'s
+  comment states it -- the listing's cost is the size of the *collection*, the per-document cost is
+  the size of the *request* -- and the gate only ever read the request. Six documents out of a
+  thirty-thousand-document collection therefore walked the full page ceiling, identified none of
+  them, logged a WARNING every run, and then made the six metadata calls it was meant to replace:
+  strictly worse than not listing at all. The walk now carries a budget of one page per requested
+  document, so it can never spend more calls than the alternative would, and giving up is logged
+  as the cost model working rather than as a fault.
+
+- **The configuration panel stopped contradicting itself about the database backend.**
+  `effective_settings` reported SQLAlchemy's drivername while the field's vocabulary is
+  `sqlite`/`common`, so the two could never be equal and the page took its "differs from stored"
+  branch every time: `in effect: postgresql+asyncpg (the stored value is not applied)` when it was
+  applied. It now answers in the field's own terms.
+
+- **A document legitimately named `Report (2).pdf` is attributed from a bulk archive.** The
+  collision matcher claimed any basename ending ` (N)`, so a real filename of that shape was read
+  as one KH had renamed and re-fetched individually on every run. A rename is only a rename when
+  the un-suffixed name is another wanted document, which is now the test.
+
+- **`span_text_max_chars` reads through `env_int`,** rather than hand-rolling the same
+  empty/unparseable/floor contract the helper had just been introduced for -- and which
+  `effective_settings` calls it to obtain. `KnowledgeHubUnsupportedError` is exported from
+  `jazzx_sdk.clients` beside its siblings: it is the one new error whose documented purpose is for
+  a caller to branch on, and it was the one not exported.
+
+- **Two smaller corrections.** A malformed document id in a bulk request raised a bare
+  `ValueError` from above the `try`, out of a method whose every other failure is a logged `None`.
+  And four `getattr(self._config, ..., <literal>)` fallbacks were dead branches -- `__init__`
+  always builds a `FabricConfig` -- one of which carried a literal contradicting the real default
+  (`0`, bulk off, against the field's `25`).
+
+- **A bulk task whose status call fails no longer polls out the window.** The generated
+  `asyncio_detailed` does not raise on an error response, so a 404 (the task record expired) or a
+  500 arrived as `parsed is None` -- read as an unknown state, which this code deliberately treats
+  as "still running", it polled the full patience window before the caller could fall back. Five
+  minutes by default, and the test for it took 30 seconds to fail against the old behaviour.
+  `BULK_POLL_TIMEOUT_SECONDS` is also floored now, the one member of that family read without one:
+  at zero or below, `_await_task` gave up after a single status call and bulk was silently off for
+  every caller that did not pass `timeout_seconds` itself.
+
+- **A `NullMaterializeManifestStore` spends no identifying calls again,** which is the whole
+  contract of that store. The listing had been gated on set size alone, so a large set walked the
+  collection for a store that cannot skip a single download -- and populated `page_count` where
+  the field's own comment said it would be `None`.
+
+  Fixing that naively coupled two callers that want the listing for different reasons: the probe
+  wants digests, and the bulk path wants the names it attributes archive members with, which is
+  worth the walk whatever the manifest store is. Three tests caught it. Both are asked now, and
+  `unique_ids` bounds `to_download` from above so a set too small for bulk cannot claim to need
+  it.
+
+- **A denial is not retried per document.** `retry_async` owns which exceptions retry via
+  `retryable=`, and the rule was stated only in the handler above it -- so a 403 burned the full
+  exponential backoff for every document before the re-raise could surface it. One kwarg, in the
+  place that decides.
+
+- **The dashboard no longer reports a Postgres database name as the SQLite path.**
+  `PLATO_SQLITE_PATH`'s effective value came from `url.database` for every backend, and that field
+  is labelled "sqlite backend only". The driver name was already being read one line above.
+
+- **Two smaller corrections.** The dead `if not worth_listing: unresolved = ...` assignment is
+  gone -- the comprehension above already yielded every id in that case. The configuration panel's
+  "(overridden below)" pointed at nothing below it and reversed the meaning: when the stored value
+  differs from the effective one, the stored value is the one *not* applied. And the mock's
+  `download_document_v2` ignored `collection_id`, answering for a document that lives in another
+  collection where the real route 404s.
+
+- **Numeric environment variables get one guarded reader.** `envvars.env_number` /
+  `env_int` now handle the three ways an env-configured number goes wrong -- unset, empty, and
+  unparseable -- in the module that documents the empty-string hazard in the first place. Two
+  defects closed with it:
+
+  `FabricConfig`'s four new int knobs did `int(env(...) or N)` unguarded, and they are its only
+  int env fields, so `JAPES_KH_LIST_PAGE_SIZE=none` raised out of `default_factory` and *no*
+  `FabricConfig` could be constructed at all. The `_seconds` helper added in the same change
+  guarded exactly this for its own knobs and the config siblings did not get it -- so the helper
+  is gone and both read the shared one.
+
+  And the floor was applied only on the parse path, so it did not hold when the variable was
+  merely unset: `JAPES_KH_BULK_POLL_INITIAL_SECONDS=10` against a defaulted ceiling gave
+  `initial=10, max=5`, and `min(delay, MAX, remaining)` silently discarded the configured
+  interval. The floor now applies to the answer.
+
+- **A bulk job is not started without the names to attribute it.** `bulk_download_threshold` and
+  `list_probe_threshold` are set independently, so a bulk threshold below the probe threshold is
+  reachable by configuration alone -- and there the job ran, attributed nothing (KH names members
+  after the document, and no listing means no names), latched `_bulk_available=True`, and every
+  document was fetched individually anyway. Every call, with one INFO line.
+
+- **Every task's exception is retrieved when a document is denied.** `_fetch` was given a
+  `KnowledgeHubAccessError` re-raise inside a bare `asyncio.gather`, which surfaces the first and
+  leaves the siblings running unawaited -- each then reporting "Task exception was never
+  retrieved" for the identical 403, with nothing able to catch it. Outcomes are collected first,
+  then one is raised.
+
+- **`page_count`'s comment is honest.** It said "None elsewhere and where KH has not computed it",
+  but it only ever comes from the probe or the listing -- so a `NullMaterializeManifestStore`,
+  which exists to spend no calls, leaves it `None` for a PDF that does have one. Stated rather
+  than papered over: spending calls to fill a field would contradict that store's whole contract.
+
+- **The bulk user-id guard is shared, not copied.** The mock had a verbatim duplicate of the
+  client's `_current_user_id` and its three-line message; both now come from one module-level
+  helper and one constant, so the guard that decides whether a bulk download is attempted cannot
+  drift between them.
+
+- **The v2 entity comment is back above its own flag,** having been stranded ~70 lines up by the
+  bulk and download blocks inserted beneath it -- where it read as documenting
+  `KH_V2_BULK_AVAILABLE`.
+
+- **An empty duration variable no longer breaks the import.** `float(os.getenv(NAME, "300"))`
+  runs at module scope, and `os.getenv`'s default covers *unset*, not *empty* -- so
+  `JAPES_KH_BULK_TIMEOUT_SECONDS=` (a compose file or configmap entry with no value) raised
+  `ValueError` and took the whole `jazzx_sdk.clients` package down. `jazzx_sdk.config.envvars.env`
+  documents this exact hazard, which is why the fabric knobs in the same change read
+  `env(...) or <default>`. All three durations now go through one helper that treats empty and
+  unparseable alike: default, with a warning.
+
+- **The collection listing has to earn its place.** It was made unconditional on the reasoning
+  that it is "a single call". It is a paginated walk, and its worst case is a requested id no
+  longer in the collection: neither of the loop's exits ("a short page", "found everything asked
+  for") fires, so one stale KG entity walks the whole collection to conclude what a single
+  metadata call answers with a 404. The listing's cost is the size of the *collection* and the
+  per-document cost is the size of the *request*, so `list_probe_threshold` (default 5) decides
+  between them -- and below it the metadata call answers the digest and the page count together
+  anyway.
+
+- **`bulk_download_threshold` is floored,** like the two paging fields twelve lines below it.
+  At `-1` the value stayed truthy and `len(to_download) >= -1` was always true, so every
+  `materialize` took the bulk path -- a one-document one included, and a queue job with no
+  identity header for it to use.
+
+- **A denied listing is not an empty collection.** `_bulk_fetch` and `_fetch` were each given an
+  explicit `KnowledgeHubAccessError` re-raise; `_collection_metadata`, the third new call site on
+  the same path, still swallowed it. The import is hoisted to module scope now rather than
+  repeated in three function bodies.
+
+- **Two smaller corrections.** The mock's access response read `mime_type`, a key the mock never
+  writes (`create_document` stores `content_type`), unobservable only because that value is
+  currently hardcoded. And `plato/oidc.py`'s docstring justified the async conversion with a
+  middleware that does not exist yet -- the reasoning is sound as a choice made while the shape is
+  still free to change, which is what it now says.
+
+- **A denied per-document download is no longer an empty result.** `_bulk_fetch` was given a
+  `KnowledgeHubAccessError` re-raise last round and `_fetch` was left swallowing the identical
+  error three hundred lines below -- so below the bulk threshold, or with it set to 0 (a
+  documented setting), a caller with no grant on the collection got `materialize` returning
+  nothing but warnings. The comment justifying the bulk re-raise named this exact path.
+
+- **A hub without the bulk route is asked once.** The single-document route latches
+  `_v2_download`; the bulk route caught bare `Exception` and re-probed on every call, so a v1-only
+  hub paid a doomed trigger round trip per `materialize`. It now classifies with the same
+  `_v2_unsupported` predicate and latches `_bulk_available`, which is what
+  `KnowledgeHubUnsupportedError`'s own docstring exists to allow.
+
+- **The mock requires a user id for a bulk download, like the real route.** It ignored `user_id`
+  entirely while the same mock had just been given the empty-selection refusal on the stated
+  grounds that a mock must not pass where production fails -- and the identity requirement is the
+  one that bites in a queue job, where no inbound request supplies one.
+
+- **Computed fields are read from the listing row as well as from `meta_data`.** KH writes
+  `sha256`/`page_count` into the `meta_data` column on upload and on backfill, so the bag is where
+  a listing row carries them -- confirmed in Knowledge Hub's own source, against a review finding
+  that read the generated model's declared fields and concluded otherwise. But
+  `DocumentMetadataResponse` shows KH also has a shape that carries them flat, and an unknown
+  top-level key lands in the row's `additional_properties`, so both are read now. Breadth rather
+  than a fix, and one line.
+
+- **Two orphaned comments reunited with what they describe,** both left behind by insertions in
+  this same change: the listing-page note above a class it no longer applied to, and the
+  single-document flag's note above the bulk flag.
+
+- **A legacy document gets its metadata call again.** `_doc_hash_from_metadata` falls back to
+  `updated_at`, and every listing row carries one -- so a document with no computed `sha256` still
+  produced a truthy digest, `unresolved` was always empty, and the metadata call that is the only
+  thing which backfills `sha256` and `page_count` was never made. The documented fallback was
+  unreachable, and the tell was in this diff's own test, which had to strip `updated_at` from a
+  synthetic listing to reach the branch. The fallback now fires on a digest that is not a
+  `sha256:`, not on the absence of one.
+
+- **The default manifest scope is the collection, as `sync_collection` always had it.** It was the
+  output directory as the caller spelled it, which was harmless while the manifest was one flat
+  map and is not now that storage is partitioned by that key: the same directory reached
+  relatively on one run and absolutely on the next, or a volume mounted at two paths, is a
+  different scope with nothing in it, so the whole set re-downloads.
+
+- **A denied bulk download is no longer reported as an unavailable one.** `_bulk_fetch`'s blanket
+  handler caught `KnowledgeHubAccessError`, which every `except Exception` in the client is
+  careful to re-raise -- so a 403 for the forwarded `x-user-id` logged "bulk download
+  unavailable", downgraded to per-document, and the identical denial there exhausted the retries
+  and dropped the documents with only warnings.
+
+- **`meta_data` cannot override the row it rides on.** Spread after `name` and `updated_at`, a
+  document whose uploader stored either key in that free-form bag would drive archive member
+  attribution and the change probe with it.
+
+- **The listing knobs live in `FabricConfig`,** beside `bulk_download_threshold`, rather than as
+  module-level `os.getenv` globals added in the same change. They can now be set per fabric, and
+  the test for the zero-page-size floor no longer needs `importlib.reload`.
+
+- **The mock refuses an empty document selection like the real client.** It still built a valid
+  empty archive for `[]`, and the new mock bulk route delegated to it -- a mock a test passes
+  against and production does not.
+
+- **`"[::1]"` dropped from the OIDC loopback set:** `urlsplit` strips the brackets, so the entry
+  could never match and `"::1"` already covered it.
+
+- **The configuration panel reports what the replica resolved, not just what is stored.** Blank
+  fields, including `JAPES_ENVIRONMENT` on a replica whose `/info` said `local`. The page was
+  accurate and useless: those variables are genuinely unset, and the values come from defaults or
+  from the wiring. The posture keys default when absent, the span cap has its own default, and the
+  local wiring hands the database backend and path to `DbStore` in code -- so the two read-only
+  posture fields, on the page precisely to show what the replica decided, showed nothing.
+
+  `SettingField` gains an `effective` value and `create_settings_router` an optional provider for
+  it; Plato resolves the posture, the span cap and the live database URL. The page renders it as
+  the field's placeholder plus an "in effect" line, marked `(default)` or `(overridden below)` so
+  a stored value is never confused with a resolved one.
+
+  Never populated for a secret: masking `value` is pointless if the same string is reported under
+  another name, and the router drops the hint rather than trusting each provider to remember. A
+  provider that raises is logged and omitted -- a hint is not worth failing the panel for.
+
+- **The bulk poll intervals are floored, like the listing knobs already were.**
+  `JAPES_KH_BULK_POLL_INITIAL_SECONDS=0` left the backoff at zero forever (`0 * 2` is still zero)
+  and `sleep(0)` returns at once, so the poll became a tight loop against KH for the whole
+  patience window -- thousands of status calls for one archive. `JAPES_KH_BULK_POLL_MAX_SECONDS=0`
+  did the same from the other side, pinning every sleep to zero whatever the initial value was.
+  `_LIST_PAGE_SIZE` and `_LIST_MAX_PAGES` were already floored against exactly this input class,
+  which is what made the omission a real inconsistency rather than a hypothetical one.
+
+- **`KnowledgeHubUnsupportedError` reaches the whole optional-binding family.** It was introduced
+  for the v2 download routes while `create_entity_v2` and `read_entities_v2` -- the precedent the
+  new code's own comment cites -- still raised a bare `KnowledgeHubError` for the identical
+  "this client pin lacks the binding" condition, so a caller could downgrade permanently on one
+  and not the others.
+
+- **Smaller corrections from the same review.** The per-call `manifest_store` is typed against
+  `MaterializeManifestStore` rather than `Any`, which matters because `materialize` compares it
+  against `NullMaterializeManifestStore` to decide whether to probe at all. `_bulk_fetch` takes
+  the listing as a required argument, since the only caller always supplied it and the optional
+  branch could never run. `AttributeError` no longer counts as "this hub has no v2": `hasattr`
+  already covers the absent method, so the only ones left come from inside the client and would
+  have downgraded the store while hiding themselves.
+
+- **Only one document probes the v2 route.** The comment claimed the probe "costs one call rather
+  than one per document", but `materialize` runs documents concurrently and the flag is read per
+  coroutine -- so on a hub with no v2 route, up to `concurrency` documents each paid a doomed call
+  before any of them wrote the answer. The probe now happens once under a lock, and lives in its
+  own `_probe_v2` rather than as a branch inside the download path.
+
+- **`download_document_v2` reports absence and failure differently (PR review).** It returned
+  `None` for everything: a 404, a non-200 access call, an expired or refused signed URL, an
+  unreachable blob host. On a hub already proven to serve v2, one 403 mid-batch therefore looked
+  exactly like a missing document -- `materialize` dropped it from the result, and `retry_async`
+  never saw it, because it only retries a raise. Now `None` means 404 and nothing else; every
+  other failure raises. `KnowledgeHubUnsupportedError` separates "this pin or hub has no v2 route"
+  (downgrade permanently) from "this call failed" (retry), which were the same type. `materialize`
+  keeps the probe fallback on `None`, because a hub with no v2 route 404s it exactly as a missing
+  document does -- that one ambiguity is real and unavoidable, and it is now the only one.
+
+  A transient v2 failure also no longer downgrades the rest of the batch: the blanket handler
+  flipped `_v2_download` False for the life of the store, so a single `ConnectError` sent every
+  later document down v1 on a hub that does serve v2.
+
+- **An empty `document_ids` no longer downloads the whole collection.** `if document_ids else
+  UNSET` mapped `[]` to `UNSET`, which the API reads as "everything", so an explicit empty
+  selection archived and downloaded the entire collection. `download_documents` was cited here as
+  getting it right and did not: it passed `[]` through, httpx drops an empty-list query param
+  entirely, and KH's own filter is `if document_ids:` -- equally falsy -- so the server saw no
+  filter and archived everything by a different route to the same place. Both refuse an empty
+  selection now. An explicit `timeout_seconds=0` is also honoured rather than becoming the 300s
+  default.
+
+- **The collection listing terminates on its own.** `JAPES_KH_LIST_PAGE_SIZE=0` -- a plausible
+  reading of "no paging", and the neighbouring `bulk_download_threshold` does document 0 as
+  meaningful -- left `skip` unchanged with `len(batch) < page` false forever, hanging every
+  `materialize` inside a `try` that cannot catch a hang. The size is floored at 1, and the loop
+  now has a page ceiling (`JAPES_KH_LIST_MAX_PAGES`) so it does not depend on the hub returning a
+  short page: a hub answering full pages of documents nobody asked about satisfied neither exit
+  condition.
+
+- **The bulk path stopped listing the collection twice.** `_bulk_fetch` re-fetched the listing
+  `materialize` already held for exactly those ids -- on the bulk path, which is the large
+  collection by definition, that doubled the full paginated walk. It also now guards
+  `download_document_v2` with `hasattr` the way it always guarded `bulk_download_documents`, so an
+  older client's `AttributeError` reaches the feature check rather than the blanket handler.
+
 - **One fabric can keep more than one manifest.** `FileMaterializeManifestStore` accepted `scope`
-  and ignored it, on the reasoning that one directory needs one manifest. That breaks as soon as
-  two kinds of document are materialized through the same fabric: the second `materialize()` saved
-  its hashes over the first's, so every run re-downloaded what the other had just recorded --
-  which is exactly what a persisted store across job runs is meant to prevent. The file is now
+  and ignored it, on the reasoning that one directory needs one manifest. The reason first given
+  here was wrong and is corrected: the two runs did *not* overwrite each other, because
+  `materialize` loads the map, updates only its own doc ids and saves the union. What the flat
+  file did not give is isolation -- every scope read every other scope's entries, and
+  `DbMaterializeManifestStore` partitioned where this did not, so the two stores answered the same
+  question differently. The file is now
   partitioned by scope, as the DB store always was, and `materialize()`/`sync_collection()` also
   take a `manifest_store` per call for when the two should not share a file at all. A manifest
   written by the previous version is kept as a fallback for any scope that has not written yet, so
@@ -40,8 +655,9 @@ interleaving is how that shows.*
 
 - **The change probe is one call per collection, not one per document.** It made a
   `get_document_metadata` request for every unique document. KH's `listDocuments` returns
-  `meta_data` -- where its upload pipeline stores `sha256` and `page_count` -- along with
-  `updated_at` and `name`, for every document in the collection. One paginated listing now answers
+  `meta_data` -- a free-form bag where its upload pipeline stores `sha256` and `page_count`,
+  verified to survive the generated model's `to_dict()` -- along with `updated_at` and `name`, for
+  every document in the collection. One paginated listing now answers
   the probe, the page count and the bulk archive's member attribution together. Only a document
   the listing cannot identify still costs its own call: `sha256` is absent until KH's metadata
   endpoint backfills a legacy upload, and only that endpoint does the backfill.

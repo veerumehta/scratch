@@ -42,7 +42,9 @@ if ! command -v claude >/dev/null 2>&1; then
     exit 0
 fi
 
-upstream=$(git rev-parse --abbrev-ref '@{upstream}' 2>/dev/null || echo "origin/$(git rev-parse --abbrev-ref HEAD)")
+# `REVIEW_UPSTREAM` to review an arbitrary range -- a already-pushed commit, or a slice plan you
+# want to see -- without moving the branch.
+upstream="${REVIEW_UPSTREAM:-$(git rev-parse --abbrev-ref '@{upstream}' 2>/dev/null || echo "origin/$(git rev-parse --abbrev-ref HEAD)")}"
 if ! git rev-parse --verify -q "$upstream" >/dev/null; then
     echo "  ! no upstream ($upstream) — reviewing the last commit instead"
     upstream="HEAD~1"
@@ -56,13 +58,6 @@ if [[ "$lines" -eq 0 ]]; then
     echo "  ok  nothing to review"
     exit 0
 fi
-if [[ "$lines" -gt "$MAX_LINES" ]]; then
-    echo "  ! diff is $lines lines — too large to review in one pass, skipping."
-    echo "    review it in slices by hand, or push in smaller commits."
-    exit 0
-fi
-
-echo "  reviewing $lines lines against $upstream ..."
 review_out="${TMPDIR:-/tmp}/$REPO-push-review.out"
 
 # Read-only by construction: the diff arrives on stdin and edit/write tools are denied, so the
@@ -117,21 +112,92 @@ or `VERDICT: PASS` otherwise -- [SYMMETRY] and [NOTE] findings never block, howe
 hold them. They are for the author to weigh, not a gate.
 PROMPT
 
-claude -p --disallowed-tools "Edit,Write,NotebookEdit" -- "$(cat "$prompt_file")" \
-    < "$diff_file" > "$review_out" 2>&1
+# One pass over one diff. Echoes the findings indented; returns 1 for BLOCK, 2 for no verdict.
+review_one() {
+    local slice_diff="$1" label="$2" out
+    out="${review_out}.$(echo "$label" | tr -c 'A-Za-z0-9._-' '_')"
+    claude -p --disallowed-tools "Edit,Write,NotebookEdit" -- "$(cat "$prompt_file")" \
+        < "$slice_diff" > "$out" 2>&1
+    sed 's/^/    /' "$out"
+    grep -q "^VERDICT: BLOCK" "$out" && return 1
+    grep -q "^VERDICT: PASS" "$out" && return 0
+    return 2
+}
 
-sed 's/^/    /' "$review_out"
+# A diff that fits goes in one pass. One that does not is reviewed in slices rather than skipped:
+# skipping exits 0, so the gate passed silently on exactly the pushes big enough to need it -- and
+# a workflow that squashes several rounds into one commit produces those every time.
+if [[ "$lines" -le "$MAX_LINES" ]]; then
+    echo "  reviewing $lines lines against $upstream ..."
+    review_one "$diff_file" whole
+    case $? in
+        1) echo; echo "  FAIL  review found defects (above)."; exit 1 ;;
+        0) echo "  ok  no defects reported"; exit 0 ;;
+        *) echo "  ! review returned no verdict — treating as inconclusive, not blocking"; exit 0 ;;
+    esac
+fi
 
-if grep -q "^VERDICT: BLOCK" "$review_out"; then
-    echo
-    echo "  FAIL  review found defects (above)."
+# ── sliced ────────────────────────────────────────────────────────────────────
+# Packed by file, greedily, so a slice is a set of whole files: a diff cut mid-hunk asks the
+# reviewer to judge code it cannot see. A single file larger than the budget gets its own slice
+# and is sent whole -- reviewing it slightly over the line beats not reviewing it.
+echo "  diff is $lines lines — reviewing in slices against $upstream"
+
+slice_dir="${TMPDIR:-/tmp}/$REPO-push-review-slices"
+rm -rf "$slice_dir"; mkdir -p "$slice_dir"
+
+slice=1
+slice_lines=0
+: > "$slice_dir/1.diff"
+while IFS= read -r path; do
+    [[ -z "$path" ]] && continue
+    file_diff="$slice_dir/.one.diff"
+    git diff "$upstream...HEAD" -- "$path" > "$file_diff" 2>/dev/null || continue
+    n=$(wc -l < "$file_diff" | tr -d ' ')
+    [[ "$n" -eq 0 ]] && continue
+    if [[ "$slice_lines" -gt 0 && $((slice_lines + n)) -gt "$MAX_LINES" ]]; then
+        slice=$((slice + 1)); slice_lines=0; : > "$slice_dir/$slice.diff"
+    fi
+    cat "$file_diff" >> "$slice_dir/$slice.diff"
+    slice_lines=$((slice_lines + n))
+done < <(git diff --name-only "$upstream...HEAD")
+rm -f "$slice_dir/.one.diff"
+
+total=$slice
+# Bounded, so one enormous push cannot spawn an unbounded number of reviews. Slices beyond the cap
+# are named rather than passed over in silence.
+MAX_SLICES="${REVIEW_MAX_SLICES:-8}"
+reviewed=0
+blocked=0
+inconclusive=0
+for i in $(seq 1 "$total"); do
+    if [[ "$i" -gt "$MAX_SLICES" ]]; then
+        echo
+        echo "  ! $((total - MAX_SLICES)) of $total slices not reviewed (cap $MAX_SLICES). Files:"
+        for j in $(seq "$((MAX_SLICES + 1))" "$total"); do
+            grep '^+++ b/' "$slice_dir/$j.diff" | sed 's|^+++ b/|        |'
+        done
+        break
+    fi
+    n=$(wc -l < "$slice_dir/$i.diff" | tr -d ' ')
+    say "slice $i/$total ($n lines)"
+    grep '^+++ b/' "$slice_dir/$i.diff" | sed 's|^+++ b/|    · |'
+    review_one "$slice_dir/$i.diff" "slice$i"
+    case $? in
+        1) blocked=$((blocked + 1)) ;;
+        2) inconclusive=$((inconclusive + 1)) ;;
+    esac
+    reviewed=$((reviewed + 1))
+done
+
+echo
+if [[ "$blocked" -gt 0 ]]; then
+    echo "  FAIL  $blocked of $reviewed reviewed slices found defects (above)."
     exit 1
 fi
-if grep -q "^VERDICT: PASS" "$review_out"; then
-    echo "  ok  no defects reported"
+if [[ "$inconclusive" -gt 0 ]]; then
+    echo "  ! $inconclusive of $reviewed slices returned no verdict — inconclusive, not blocking"
     exit 0
 fi
-# No verdict means the reviewer did not finish its own contract -- a timeout, a refusal, an error
-# written to the output file. Not a defect report, so not a block.
-echo "  ! review returned no verdict — treating as inconclusive, not blocking"
+echo "  ok  no defects reported across $reviewed slice(s)"
 exit 0
