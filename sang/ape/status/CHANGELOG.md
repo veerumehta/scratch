@@ -4,8 +4,444 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 ## [2.5.0] - 2026-09-06
 
-*The newest of three [2.5.0] sections. `2.4.9` and `2.4.8` sit between them because they merged in
-from `dev` while this release was in progress; the interleaving is how that shows.*
+*Continues the [2.5.0] section below, which carries `plato 0.1.1`. `2.4.9` sits between the two, and
+`2.4.8` below them, because both merged in from `dev` while this release was in progress; the
+interleaving is how that shows.*
+
+- **Inbound token verification hardened (PR review).** Three findings on `plato/oidc.py`, all
+  latent because nothing wires `TokenVerifier` into a request path yet, which is the window to fix
+  the shape rather than patch it.
+
+  **An `http://` issuer is refused at construction.** Signing keys over plaintext are worse than
+  no verification: an observer between Plato and the issuer can substitute their own public key,
+  after which every token they sign passes. The review named `issuer`; `jwks_uri` is the URL
+  actually fetched, so both are checked. `http` on loopback still works, which is the normal shape
+  for a local identity provider and has no network for an observer to sit on.
+
+  **`verify` is async.** The key fetch was a blocking `httpx.get` with a 10s timeout, and Plato's
+  identity middleware is an `async def` -- so wiring it there would have stalled every request on
+  the loop for as long as the issuer took. `fetch_jwks` stays injectable and now takes either a
+  sync or an async callable.
+
+  **One fetch under contention.** Check-then-fetch let every caller arriving on a stale cache read
+  it as stale and call the issuer before any of them wrote, so a burst naming an unknown `kid`
+  dispatched as many fetches as there were callers. Double-checked under an `asyncio.Lock`; the
+  30-second floor now actually holds.
+
+- **One fabric can keep more than one manifest.** `FileMaterializeManifestStore` accepted `scope`
+  and ignored it, on the reasoning that one directory needs one manifest. That breaks as soon as
+  two kinds of document are materialized through the same fabric: the second `materialize()` saved
+  its hashes over the first's, so every run re-downloaded what the other had just recorded --
+  which is exactly what a persisted store across job runs is meant to prevent. The file is now
+  partitioned by scope, as the DB store always was, and `materialize()`/`sync_collection()` also
+  take a `manifest_store` per call for when the two should not share a file at all. A manifest
+  written by the previous version is kept as a fallback for any scope that has not written yet, so
+  the upgrade does not cost one re-download of everything per scope.
+
+- **The change probe is one call per collection, not one per document.** It made a
+  `get_document_metadata` request for every unique document. KH's `listDocuments` returns
+  `meta_data` -- where its upload pipeline stores `sha256` and `page_count` -- along with
+  `updated_at` and `name`, for every document in the collection. One paginated listing now answers
+  the probe, the page count and the bulk archive's member attribution together. Only a document
+  the listing cannot identify still costs its own call: `sha256` is absent until KH's metadata
+  endpoint backfills a legacy upload, and only that endpoint does the backfill.
+
+- **`MaterializedDoc.page_count`.** From the same listing, so it costs nothing extra. `None` for
+  non-PDFs and for a document whose count KH has not computed, which is what KH itself reports.
+
+- **Bulk download, and fabric choosing between the two routes.** `bulk_download_documents`
+  drives KH's v2 job: trigger, poll to a terminal state, ask for the link, fetch the archive from
+  storage. Backed-off polling with a cap (`JAPES_KH_BULK_TIMEOUT_SECONDS`,
+  `JAPES_KH_BULK_POLL_INITIAL_SECONDS`, `JAPES_KH_BULK_POLL_MAX_SECONDS`). An unrecognised task
+  state counts as still running: guessing "done" loses the archive and guessing "failed" abandons
+  a job that would have succeeded, so the timeout is what ends it.
+
+  **Bulk is not simply better, which is why fabric picks.** `materialize` uses one archive at or
+  above `bulk_download_threshold` (default 25, `JAPES_KH_BULK_THRESHOLD`, 0 disables) and the
+  per-document route below it. Three round trips plus an archive build cost more than a handful of
+  documents' bytes. More decisively, **the bulk route requires an `x-user-id` header and the
+  per-document route does not** -- it is the subject KH authorizes against, so bulk is unavailable
+  in a queue job or anywhere else with no inbound request, which is where a batch download looks
+  most attractive. Rather than send an empty header, the method raises and names the alternative;
+  `materialize` treats that as a fallback, never an error, because per-document already works.
+
+  **Archive members are attributed, not assumed.** KH names them after the document, not its id,
+  so fabric resolves `{doc_id: name}` in one `list_documents` call and matches on that, with the
+  id as a second chance. Anything ambiguous is deliberately left out and fetched individually:
+  two documents sharing a name would otherwise write one document's bytes to the other's file,
+  which is silently wrong content and worse than a slower download. A partial archive tops up
+  per document; a response that is not an archive falls back whole.
+
+  Member naming is now read from Knowledge Hub's own source rather than inferred:
+  `sanitize_string(doc.name)`, with a repeated name broken by an appended ` (1)`, ` (2)` in
+  whatever order KH iterates the documents. That order is not reproducible from here, so a
+  suffixed member is never attributed -- it is detected and fetched individually. Matching also
+  tries an ASCII-normalized form, because the sanitizer strips non-ASCII. KH skips a document it
+  cannot read rather than failing the archive, which confirms a partial archive as a normal case
+  the top-up path already covers. The task-state vocabulary is still read from the generated
+  client, which is why an unknown state waits rather than deciding.
+
+- **`download_document_v2`: one document over the v2 signed-URL path.** The v1 route has KH read
+  the blob, build a one-member ZIP around it and stream that back through the service, so
+  `fabric.docs.materialize`'s per-document loop paid compression and a proxy hop on every
+  document. v2 answers with a short JSON access response and the bytes come straight from storage.
+  The generated client already carried the bindings and japes was not calling them.
+
+  `access_only=True` returns that response (`url`, `expires_at`, `file_name`, `content_type`,
+  `size`, `disposition`) without fetching the blob, for a caller that can hand the URL to a
+  browser and never move the bytes through this process.
+
+  The signed URL is fetched with a bare client, deliberately: it carries its own authorization,
+  and reusing the configured one would send the Knowledge Hub bearer token and the identity
+  headers its hook injects to the storage host. A test asserts that, and fails if the configured
+  client is used.
+
+  `materialize` prefers v2 and falls back to v1, because a deployment may not serve v2 yet. The
+  fallback is not just an exception guard: `download_document_v2` reports failure as `None` rather
+  than raising, and a v1-only deployment 404s the v2 route exactly as a missing document would --
+  so while probing, whichever route answers settles it, and once v2 has worked a `None` means the
+  document is genuinely absent rather than costing a wasted v1 round trip per miss. Available on
+  the same terms as the v2 entity API: an older client pin loses this method and nothing else.
+
+- **A degraded replica no longer serves its log buffer to anyone who can reach the port.** The
+  fallback app is a bare `FastAPI` with no identity middleware, and it is exactly where an
+  unresolvable `PLATO_WIRING` lands in a deployed environment -- so an unauthenticated caller could
+  read every buffered record. Log records are content, not counters, so a deployed posture now
+  withholds them unless the deployment passed an `auth` dependency, which is the same shape
+  `create_config_router` uses for writes. The panel shows the reason instead of the records.
+  `boot_contract.py` claimed the degraded surface was "`/info` alone ... strictly smaller than a
+  gated app"; it has not been that since the diagnostics were added, and the row now says what is
+  actually served.
+
+- **The guide ships.** `_GUIDE` pointed at `docs/PLATO.md`, and `docs/` is copied into neither the
+  image nor a wheel -- so `/docs` and `/redoc` served "The guide is not present in this image" in
+  every artifact except a source checkout, while the nav still linked to it. The file moved to
+  `plato/guide.md`, beside the module. Verified by building the wheel: it carries the guide, the
+  alembic ini, the migration tree and the dashboard.
+
+- **`create_feedback_router` follows `API_V1_PREFIX`.** It is the one router a consumer constructs
+  itself and passes through `extra_routes`, so its static default left feedback on `/api/v1` while
+  every route `create_plato_app` built moved.
+
+- **The local boot output names a path that exists.** Both branches printed `/v1/info`, which has
+  404'd since the prefix moved; the same stale path survived in the boot contract, the wiring
+  docstring and the feedback module docstring.
+
+- **A test fixture stopped evicting third-party modules.** `tests/test_plato_wiring.py` deleted
+  every module imported during a test, to clean up the fake wiring modules it installs. Importing
+  `plato.wiring_local` pulls in `sqlalchemy.orm` for the first time, so that got deleted while
+  `sqlalchemy.inspection` survived, and a later test failed with `Type <class 'object'> is already
+  registered`. The full suite passed only because something earlier happened to import
+  `sqlalchemy.orm` first. The fixture now drops only the `plato_test_*` modules it created.
+
+- **`logger.exception(...)` reaches the log panel with its traceback.** Only `getMessage()` was
+  kept, so the call an operator opens that panel to read arrived as its least informative line.
+  Redacted and tail-trimmed like the message, and rendered under it in the same cell.
+
+- **`?limit=0` returns no records.** `max(1, min(limit, maxlen))` handed back one to a caller who
+  asked for none.
+
+- **A trailing slash in `API_V1_PREFIX` no longer takes the replica down.** FastAPI asserts a
+  router prefix starts with `/` and does not end with one, and it asserts while the app is being
+  built -- so `API_V1_PREFIX=/api/v1/` raised in `create_plato_app`, `run_role` fell back to the
+  info-only app, and that raised the same assertion: the container exited on a traceback,
+  contradicting both the "a serving role always comes up" contract and the promise that setting
+  the variable moves the routes. `api_prefix()` now normalizes, so `api/v1`, `/api/v1/` and
+  `//api//` all resolve to something a router accepts.
+
+- **Flex is asked for only where it exists.** `vision_flex=True` prefixed `flex_` onto whatever
+  model was resolved, and only the OpenAI provider strips that alias -- so on
+  `JAPES_LLM_PROVIDER=anthropic` it reached `messages.create()` as part of the model name and
+  would have 400'd on the first call. The eligibility rule existed as a set in a test file, which
+  is why nothing in the library could apply it; it now lives in `llm.model_identity` as
+  `FLEX_ELIGIBLE` and `supports_flex()`, and the test imports it rather than keeping a copy that
+  could drift while both looked green.
+
+- **An unconfigured deployment names no vision model at all.** `vision_model_for` was annotated
+  `-> str | None` and documented as returning `None` when the runner's own default already reads
+  images, but it could never return `None`: `resolve_model()` always answers, falling back to the
+  global default. So an `AgentExecutionService(default_provider="anthropic")` passed as `agents=`
+  got an OpenAI model pinned onto it, and `agents.run` infers the provider from an explicit model
+  name -- the override the docstring said it avoided. It now returns `None` unless the caller
+  named a model or the environment named a provider or model.
+
+- **`./scripts/plato-local.sh --help` prints the header, and stops there.** The usage branch had a
+  hardcoded line range that ran four lines past it, presenting `set -uo pipefail` and a `cd` as
+  usage. It now reads to the first line that is not a comment, so the text cannot drift from the
+  header again.
+
+- **`GET {prefix}/database?count_rows=false` reports `truncated`** like the counting path, so a
+  consumer tests the field rather than its absence.
+
+- **A markdown table needs a real separator.** `set(line) <= set("|-: ")` is satisfied by a blank
+  line, so a lone `|`-prefixed row followed by one rendered an empty `<table>`. Not reachable from
+  the current guide, only from a future edit to it.
+
+- **The tool-span output shape is pinned.** It changed from a bare string to `{"text": ...}` when
+  the cap became configurable, and nothing recorded that, so a span reader treating the field as
+  text would have found a mapping.
+
+- **A degraded replica serves `/info` where a healthy one would.** The fallback app mounted every
+  router on the static constant while `create_plato_app` resolved through `api_prefix()`, so with
+  `API_V1_PREFIX` set the two disagreed -- and an operator probing the configured path during a
+  wiring failure would have got a 404, which reads as "the process never started" rather than "it
+  started and cannot serve". That is the exact drift the comment removed in the previous change
+  had warned about, reintroduced by making only one side configurable. The app is now built by
+  `_info_only_app`, separately from serving it, which is also what lets the boot-contract tests
+  assert on real routes instead of grepping the function's source.
+
+- **`/redoc` is served, not left blank.** `/docs` was fixed by dropping FastAPI's CDN page; its
+  sibling was left in place under the same `default-src 'none'`, so it returned 200 with
+  `cdn.jsdelivr.net` assets and rendered nothing. Both now serve the guide.
+
+- **The guide's routes table follows the prefix.** `guide_html` substituted the nav and left the
+  table on `/api/v1`, so a moved deployment read a page that contradicted itself. The substitution
+  now runs over the body, and the file keeps the default prefix on disk so it still reads correctly
+  in the repository. The logs row also said "the last 500 log records" where the endpoint returns
+  200 per request from a 500-record buffer.
+
+- **The local wiring no longer writes into `site-packages`.** `parents[1]` is the repo root in a
+  source or editable checkout and `site-packages` from a wheel, which is where the sqlite file,
+  the pack cache and alembic's working directory would have gone -- and the stated reason for
+  moving this module into the package was precisely that it should work when installed. The root
+  is now the checkout when it looks like one, and otherwise `PLATO_LOCAL_ROOT` or the working
+  directory. Alembic is pointed at the ini by absolute path, since `script_location` is relative
+  to the ini itself.
+
+- **A second `attach_log_buffer` applies what it asked for.** The call was gated on "already
+  attached", and `run_role` attaches with defaults before `create_plato_app` attaches again, so a
+  non-default capacity was unreachable in the serving path. There is still one handler; a resize
+  keeps the records already buffered.
+
+- **Reviewed and rejected: the Fable 5.1 cache rate.** `cached_input: 0.25` against `input: 10.0`
+  is 0.025x where every other Claude model is 0.1x, which reads as a missing digit. It is not: the
+  pricing page footnotes Fable 5.1 and Mythos 5.1 as the documented exception. The row's
+  provenance note now says so, so the next reader has the answer without re-deriving it from the
+  ratio.
+
+- **Reviewed and rejected: the metrics middleware's `500` seed.** Reported as counting a dropped
+  SSE stream as a server error. A mid-stream disconnect does not reach that path -- `call_next`
+  returns the response before the body streams, so the recorded status is the response's own 200.
+  The seed covers an unhandled handler error, which does arrive as a raise because this middleware
+  sits inside `ServerErrorMiddleware` and outside `ExceptionMiddleware`, and 500 is correct there.
+  Changing it to a client-error code was tried and dropped real failures out of the error count. A
+  test now pins both halves.
+
+- **The vision flex tier is a model alias, not a provider argument.** `classify_page_images` and
+  `split_document` took a `service_tier` string and passed it to the provider verbatim, where
+  OpenAI accepts only `auto`/`default`/`flex`/`priority` -- so the default `"standard"` was an
+  invalid value, and it also suppressed japes' own flex translation, which is guarded on
+  `service_tier` being absent. Asking for flex therefore disabled it. Flex is now expressed as the
+  `flex_` model prefix that `parse_model_tier` already strips, which is the one mechanism japes
+  owns end to end.
+
+- **The vision default no longer overrides the deployment's provider.** A hardcoded
+  `gpt-5.6-luna` meant a deployment on `JAPES_LLM_PROVIDER=anthropic`, holding only an Anthropic
+  key, was routed to OpenAI for page classification and failed on a call that used to work.
+  `vision_model_for()` keeps the configured default whenever its card says it reads images, and
+  substitutes only for a text-only default. An uncarded model is left alone: it may well have
+  vision, and swapping it on a guess is the override being fixed.
+
+- **One missing table no longer hides every later row count.** The database panel counted all
+  tables in a single session; postgres aborts the whole transaction on the first failed statement,
+  so the alphabetically-first table the migration had not created turned every subsequent count
+  into `PendingRollbackError` -- in exactly the degraded-schema state `/info` exists to report. A
+  session per table now. Every table failing is reported as one connection problem rather than as
+  many table problems.
+
+- **`API_V1_PREFIX` moves the routes, as the guide already claimed.** `api_prefix()` was written
+  and exported and then never called, so `create_plato_app` used the constant and the environment
+  variable did nothing. The prefix now resolves through it when the caller passes none, an explicit
+  argument still wins, and the page links follow. `docs/DEPLOYMENT_ENV.md` said Plato served `/v1`
+  and that the variable was read by nothing; both were true until 2.5.0 and are corrected.
+
+- **The default model moves to `flex_gpt-5.6-luna` and `claude-sonnet-5`.** Both are newer and
+  cheaper than what they replaced: for 1M input and 100k output, $0.58 against $7.25 on OpenAI and
+  $3.00 against $4.50 on Anthropic. The `flex_` prefix is kept, so OpenAI calls stay on the
+  cost-optimized tier as they already were. `split_document` takes `vision_flex` to opt a page
+  split into flex -- throughput-bound work, where the `429 Resource Unavailable` flex returns is a
+  normal outcome the llm tier already falls back from. Two tests hold the line: every provider
+  default must be carded, and a future bump must not silently make the default more expensive.
+
+- **Claude Fable 5.1 is carded**: 1M context, 128K output, vision and tools, `$10/$50`, and cache
+  reads at `$0.25/MTok` -- a quarter of Fable 5's, which is the headline change. Its provenance
+  records the retrieval time, not just the date: vendor pages move during a day. Note that forced
+  tool use returns an error on this model, unlike Fable 5.
+
+- **What a span retains is capped, and the cap is configurable.** Tool spans truncated at a bare
+  `1000` characters and LLM spans recorded no output at all, so the larger of the two was the one
+  not covered. Both now use `JAPES_SPAN_TEXT_MAX_CHARS` (default 4000, editable from the
+  dashboard), and a truncated output carries its `raw_length` -- a cut 40KB answer and a short one
+  look identical otherwise, and the difference is usually what the reader is chasing. An LLM
+  summary also keeps `output_types` and `status` whole, which is what separates "the model refused"
+  from "the model answered and we cut it". A bad value falls back rather than raising: tracing must
+  never fail the run it is tracing.
+
+- **Commits are shown short.** A 40-character hash wraps onto a second line in the Build card;
+  12 identify a commit uniquely in a repository this size, and the full value stays on the tooltip.
+
+- **`common` reports its commit instead of "installed (unversioned)".** It is a submodule whose
+  packaging version has not moved in a long time, so the old string said something was installed
+  and nothing about which. Fixing it surfaced that `build_info()` ran twice per `/info` request,
+  shelling out to git each time in a working tree; it now runs once.
+
+- **Plato serves a dashboard at `/`, and the pages it serves now actually run.** Seven panels over
+  the JSON APIs -- deployment tier, versions, schema revision, database tables and row counts,
+  request counters, recent logs, configuration -- refreshing every 10s and pausing when the tab is
+  hidden, so a dashboard left open does not keep counting itself in the metrics it displays.
+
+  **The pages were dead in a browser, including the `/info/ui` that already shipped.** The API's
+  `default-src 'none'` blocks a self-contained page's own inline `<style>` and `<script>`, so a
+  browser rendered the labels as unstyled text and ran nothing. `security_headers.page_csp()` is
+  the policy for a single-file page; the middleware already used `setdefault` for exactly this, and
+  the JSON API keeps the strict default. `spa_csp` does not fit: its `script-src 'self'` permits a
+  *file* and still blocks an inline script.
+
+  Three new read-only routes back the panels. `{prefix}/logs` is a bounded ring buffer (500
+  records) on the root logger, redacted through `redact_secrets` -- a connection string logged once
+  would otherwise sit in memory and be served to whoever opens the page -- and it reports the
+  effective log level, so an empty panel reads as "nothing logged at WARNING" rather than as a
+  broken capture. `{prefix}/metrics` counts requests per route *template*, never the raw path,
+  because per-id keys grow without bound; an unmatched request collapses to one key so a scanner
+  cannot mint one per URL. `{prefix}/database` reports backend, host and per-table row counts, and
+  never the DSN, which carries the password.
+
+  Logs, metrics and the dashboard are served on the degraded path too. A replica that could not
+  build an app now shows what it is and the boot warning explaining why, which is when an operator
+  most needs both.
+
+  **The configuration panel writes.** Fields render from the catalogue with the right input type,
+  and Save posts to the `PATCH {prefix}/config` that already validates, persists and re-wires -- so
+  the posture gate stays on the endpoint rather than being re-implemented in a page. Two details
+  are load-bearing: only changed fields are sent, because posting the whole form would rewrite a
+  field another operator edited between the read and the write; and a password box still showing
+  its mask is not an edit, or saving anything would overwrite every secret with the placeholder.
+  `JAPES_ENVIRONMENT` and `JAPES_STRICTNESS` render disabled -- a replica must not promote or relax
+  its own posture over HTTP.
+
+  **One nav across all three pages**, defined once rather than in each file, so they cannot drift
+  into three link sets. The page you are on renders as text rather than a link, and the JSON routes
+  sit behind a divider -- `info` the page and `info` the JSON are the same information, and a
+  reader should be able to tell which they are about to open.
+
+  **`/docs` serves a written guide instead of a blank page.** FastAPI registers its own Swagger UI
+  there first, so it won the route and then failed to load, pulling from a CDN the CSP blocks.
+  Dropping that route and serving `docs/PLATO.md` makes the path useful: how to run Plato, every
+  route, how configuration changes, and what a degraded replica does. Rendered by a small markdown
+  function rather than a library, since a dependency in the wheel for one page is not worth it.
+
+  **`scripts/plato-local.sh`** is `start`/`stop`/`restart`/`status`/`logs`/`run`. `start` waits for
+  `/health` and tails the log if it never answers -- with a non-fatal boot, silence is the only real
+  failure. `status` reports version, tier, posture, commit and anything degraded.
+
+  **Nothing on the page names the machine it runs on.** An absolute path carries the username, and
+  this page gets screenshotted, so paths are shown relative to the working directory or `~`-elided.
+  Both pages carry an inline favicon, having previously generated a `/favicon.ico` 404 per load -- requests the
+  metrics panel then reported as unmatched.
+
+- **A scanned package can now be split and classified by looking at its pages.**
+  `split_document(..., vision=True)` renders the pages and classifies what they show, where it
+  previously raised `DocumentNotReadableError` and sent the caller to DocIntel. DocIntel returns
+  text and leaves the split unsolved; this answers both in one pass.
+
+  **The algorithm did not change, and that is the point.** `split` already windowed pages with
+  overlap and voted per page weighted by confidence *and* centrality; smoothing, short-run
+  absorption and family merging all operate on labels. Exactly one line coupled any of it to text
+  -- how a window becomes classifier input -- so the vision route is a fork there and reaches the
+  same machinery. A second implementation for images would have been the mistake.
+
+  **A page counts as scanned when it has no text *and* carries an image.** "No text" alone is not
+  enough in either direction: requiring *every* page to be blank meant `vision=True` was silently
+  ignored on a combined packet with a digital cover sheet, which is the shape this route exists
+  for; counting any blank page meant one genuine separator sheet rasterized an entire digital
+  document and threw away a good text layer. Once one page qualifies every page is rendered, since
+  a window holding images for some pages and text for others puts two kinds of evidence in one
+  ballot.
+
+  `ocr_fallback` does not also run when vision answered -- DocIntel bills per page and its text
+  would be discarded -- and `max_pages` is applied before rendering rather than after, since
+  rasterizing 500 pages to classify 10 is minutes of work for nothing.
+
+  Two smaller decisions follow from what the evidence is. The filename heuristic does not run on
+  the image path: it fires before any model call on the text path, but a scanned package is
+  precisely where one filename covers forty pages. Bookmarks are skipped too, since labelling an
+  outline segment joins its pages' text, which is empty by definition here.
+
+- **An image reaches any provider from one neutral part.** `ImagePart` is the counterpart to
+  `format_tools`: a caller builds one and the provider it reaches converts it, rather than
+  hand-writing `input_image` for OpenAI, `source.base64` for Anthropic and `inline_data` for
+  Gemini and picking correctly every time. Bytes are held as bytes, so a caller that read a file
+  does not encode for a format it has not chosen, and the same part can go to two providers.
+
+  `detail` is the one knob carried neutrally, because it is the one that sets tokens per page:
+  OpenAI names it `detail`, Gemini `media_resolution`, and Anthropic has no equivalent.
+
+  **Images are not the only thing that needs translating.** A Responses content list accepts
+  `input_text`/`input_image`/`input_file` and nothing else, so the neutral `{"type": "text"}` block
+  -- which Anthropic takes verbatim and Gemini maps -- is rejected by OpenAI. Every block of a
+  list-content message is converted, so one block shape cannot go out two ways in a request.
+
+  **Conversion happens on every path a caller actually reaches**, which took several passes to get
+  right. `AgentExecutionService.run` delegates to `LLMManager` for any call without tools, so the
+  llm tier needed it as much as the agent tier -- and that tier speaks Chat Completions, where an
+  image is `image_url` wrapped in an object rather than Responses' flat `input_image`. Two APIs
+  carrying the same idea in different shapes, so there are two translators. `OpenAIProvider.run`
+  also returns from a single-message fast path, which is the *default* route for a bare
+  `AgentExecutionService()`, so the conversion sits above that branch rather than below it.
+
+  `llm.providers.local` flattens content for a text-only backend, naming an image rather than
+  serialising it: base64 in a prompt is noise a model cannot read. And the request ledger records
+  `{"type": "image", "media_type", "bytes"}` instead of the bytes -- `CostTracker._offload_payload`
+  serialises then regex-scans what it captures, so a 40-page split would have written and scanned
+  tens of megabytes nobody reads back.
+
+  **`supports_vision` has its first reader.** It had been defined on `ModelCard` and fed from
+  `model_data.json` since it was added, and nothing consulted it. An image bound for a text-only
+  model now fails before the request goes out. Only a card that positively says no refuses --
+  the card set is incomplete by design, and refusing everything unregistered would make vision
+  unusable on any new model.
+
+- **Message content reaching Gemini was converted in three places and each got a content list
+  wrong differently.** The agent tier wrapped it in `str()` and sent the Python repr as text; the
+  llm tier passed the list itself where a string belongs; the native models joined the text parts
+  and dropped everything else silently. Three implementations, three wrong answers for one input.
+  `llm.gemini_content` owns the conversion now, and an unknown block raises rather than vanishing.
+
+  **The native models raise too**, which matters more than it sounds: `resolve_model` routes a
+  `claude...` or `gemini...` model through `AnthropicNativeModel`/`GeminiNativeModel`, whose content
+  flattening kept only blocks carrying a `text` key. Once the SDK began producing image blocks, an
+  image sent through the generic provider was discarded, nothing warned, and the model answered
+  plausibly from the prompt alone. Asking about a page without sending the page is worse than not
+  asking.
+
+  An empty turn still produces one empty part rather than none: a `Content` with `parts=[]` is
+  rejected outright, and `{"role": "assistant", "content": ""}` is a legitimate history entry.
+
+- **PDF pages render to a pixel budget rather than a fixed DPI.** Measured against a real loan
+  corpus: US Letter at 110 DPI lands at 1.13 MP, just inside Anthropic's downscale threshold, while
+  Legal at the same DPI is 1.44 MP and gets downscaled on arrival -- and that corpus is *majority*
+  Legal, so a Letter-tuned DPI would have been wrong for most of it. Fitting each page to 1.15 MP
+  gives every page size the most resolution that survives. PNG rather than JPEG, which is
+  counterintuitive and measured: a rendered text page is mostly flat white, and PNG wins by 13 KB
+  at these sizes.
+
+- **Measured, and it inverts the premise the work was proposed on.** Vision is *not* cheaper than
+  extracted text: 1.4x on OpenAI, 1.9x on Gemini, 2.7x on Anthropic, per page, on the pages where
+  both routes are possible. The corpus-wide figure of 13x cheaper-for-text is an artifact -- 80% of
+  those pages have no text layer, where text is not more expensive but unavailable.
+
+  So the justification is capability, not cost. Vision is the only route that reads a scanned
+  package, and it is cheaper than DocIntel while also deciding boundaries. On a readable page it
+  stays the fallback. An image is a fixed cost per page and text scales with density, so a dense
+  enough page does cross over -- above ~765 text tokens on OpenAI, ~1508 on Anthropic -- but that
+  is a per-corpus measurement, not a default. Accuracy is not measured: a cheaper route that is
+  wrong more often is not cheaper.
+
+- **Three SWIG shutdown warnings are filtered, by exact message.** PyMuPDF's generated bindings
+  define types with no `__module__`, which Python 3.12 deprecates, and the warning fires at
+  interpreter shutdown so it lands after pytest's summary with nothing to attribute it to. Scoped
+  to those three messages rather than a blanket `DeprecationWarning` ignore, which would hide the
+  ones worth seeing -- the anthropic 1.0 migration among them.
 
 - **The MLflow reporter addressed runs through process-global state and blocked the event loop.**
   `MlflowReporter.report` was `async def` and did every MLflow call inline: `set_experiment`,
@@ -23,6 +459,10 @@ from `dev` while this release was in progress; the interleaving is how that show
   job that never finished rather than one that failed. `experiment_run_to_mlflow` lost its one line
   of global state (`mlflow.set_experiment`) for the same reason, and `log_artifact_with_retry` now
   documents that it sleeps up to 30s and must be called off the loop.
+
+  Its return value is checked rather than dropped: it reports exhaustion by returning `False`
+  instead of raising, so a run whose results artifact never uploaded was reported `FINISHED` with
+  params and metrics and no results, and the caller had no way to know.
 
 - **Importing `jazzx_sdk` no longer imports SQLAlchemy.** `evaluation/__init__` eagerly imported the
   two DB-backed stores, which define ORM models at class-definition time, and `fabric.guidance`
@@ -2312,91 +2752,6 @@ squashed on the way in, so the reasoning lives here.
   `jazzx_sdk/closure.py` arrives here from the Plato branch, byte-identical, since it is SDK-level
   and gate-independent.
 
-## [2.4.8] - 2026-08-28
-
-- **Converters record where each span of markdown came from, so a chunk can name its page, sheet
-  and row.** The last two entries gave chunks a span and a section path; this fills the fields that
-  were declared and empty, and it closes the chain end to end.
-
-  Conversion is the last point at which a document's structure is known -- afterwards the text is
-  markdown, and a page or a spreadsheet row can only be recovered by searching for a value, the
-  step `extraction.py` already warns "would hit almost every page and produce a meaningless
-  locator". `Conversion` now carries `ConversionRegion`s alongside the markdown, and
-  `chunking.apply_regions` intersects a chunk's span against them. Neither side searches text, so
-  neither can match the wrong occurrence.
-
-  Three routes carry structure today. A digital PDF's markdown is its page texts concatenated with
-  a blank line between, so page boundaries are arithmetic rather than a guess. A workbook names
-  each sheet with its **source** row range -- numbered before empty rows are dropped, because the
-  spreadsheet's own 1-based row is what an operator opens the file to, and recording the
-  post-filter index would name a row nobody can find. A CSV gets the same treatment under its
-  synthetic sheet name. A passthrough `.md` or a flow-layout `.docx` reports no regions, which is a
-  statement that the format has no structure to carry rather than that it was lost.
-
-  Ranges rather than first-values: a chunk spanning pages 4 to 6 says so, because claiming page 4
-  sends a reader to the wrong place two thirds of the time, and a chunk overlapping two sheets
-  claims neither -- the same rule a merged chunk already followed.
-
-  `convert_document` and `convert_document_and_structure` are unchanged; `convert_document_located`
-  is the third entry point, over one implementation, matching how `extract`/`extract_located` split.
-
-- **Locators reach the extraction path.** The previous entry put a locator on the chunker in
-  `documents/chunking.py`, which nothing uses: `extract()` -- and therefore `DocumentAgent` and
-  `document_ingest` -- runs on a second chunker in `documents/extract.py` whose contract was
-  `Callable[[str, int], list[str]]`. Bare strings, so provenance stopped at the chunk boundary.
-
-  That seam is now `Callable[[str, int], list[Chunk]]`. The chunkers already sliced by offset and
-  already promised losslessness, so the spans were derivable all along and simply discarded; the
-  recursion now carries absolute offsets rather than substrings, and each chunk is named by the
-  heading it opens with.
-
-  `_merge_extractions`' rule -- "the first chunk that reports a non-empty value wins" -- was
-  *already an attribution*, naming exactly which region produced each field, and it was being
-  thrown away. It is now returned: `extract_located()` gives the instance plus a
-  `{field: ChunkLocator}` map, and `extract()` is a thin wrapper over it that returns the instance
-  alone, so the two cannot disagree about what was extracted.
-
-  `DocumentAgent` uses it. A field whose chunk is known now gets a `SectionLocator` naming that
-  section and its path, slotted **below** the page and cell locators (which are more precise) and
-  **above** the generic `section="document"` fallback (which names nothing). That is the same
-  answer `_resolve_locator` previously reached by searching the markdown for the extracted value --
-  the step `extraction.py` already warned "would hit almost every page and produce a meaningless
-  locator" -- arrived at without a search that can mis-match.
-
-- **A document chunk carries where it came from, instead of that being rediscovered later.**
-  `DocumentChunker.chunk_document` returned `(name, content)` pairs, so by the time a chunk existed
-  the source structure was gone. Provenance was then reconstructed downstream by *searching*:
-  `DocumentAgent` matches an extracted value back against the markdown to resolve a
-  `SectionLocator`. That works until the anchor is loose, and `extraction.py` already named the
-  consequence -- an anchor that hits almost every page produces "a meaningless locator".
-
-  Chunks now carry a `ChunkLocator`. Two fields are populated today because the chunker already
-  knows them and was discarding them: the character span it cut, and the header hierarchy it cut
-  under -- `("Article VI", "Covenants", "6.1 Financial Covenants")` rather than a flat matched
-  header, which is the difference between a citation a reviewer can act on and one they have to go
-  looking for. `page`, `sheet_name` and the row range are declared but empty, so a converter can
-  fill them without every downstream reader changing shape.
-
-  Merging is where provenance would have vanished quietly, since it builds new text rather than
-  passing a slice through. A merged chunk spans everything that went into it and keeps only the
-  ancestry that stays true of the pair: merging 6.1 with 6.2 gives a chunk under Covenants, not one
-  claiming to be 6.1, and a merge across two spreadsheet sheets claims neither.
-
-  **Nothing existing changes.** `Chunk` is a tuple subclass, so `for name, content in chunks`,
-  indexing, and equality against a plain pair all still work. A separate richer return type was the
-  alternative and would have meant two code paths over one splitting algorithm, which is the drift
-  this module would then have to police.
-
-  The span bounds the *source region*, not a byte-identical slice: for a single section
-  `content[start:end].strip()` is the chunk, but a merged chunk's text is re-joined. Stated in the
-  docstring because "exact offsets" is the natural reading and is wrong in the merged case.
-
-## [2.5.0] - plato 0.1.1
-
-*Part of the same 2.5.0 series as the sections above. Headed by the SDK version because that is
-what the commits announce and what consumers of the library track; Plato's own version is the
-subheading, since it tracks the service rather than the library it is built on.*
-
 ### plato 0.1.1
 
 - **`jazzx_sdk` and `plato` are lint-clean, and three tests that never ran now do.** A sweep of
@@ -3303,6 +3658,85 @@ subheading, since it tracks the service rather than the library it is built on.*
   Costs a plain consumer nothing: `fastapi`, `sqlalchemy` and `asyncpg` are already core, so the
   `plato` extra adds only `alembic`. 18 tests cover the boundary, the packaging, the alembic
   scoping and the entry point.
+
+## [2.4.8] - 2026-08-28
+
+- **Converters record where each span of markdown came from, so a chunk can name its page, sheet
+  and row.** The last two entries gave chunks a span and a section path; this fills the fields that
+  were declared and empty, and it closes the chain end to end.
+
+  Conversion is the last point at which a document's structure is known -- afterwards the text is
+  markdown, and a page or a spreadsheet row can only be recovered by searching for a value, the
+  step `extraction.py` already warns "would hit almost every page and produce a meaningless
+  locator". `Conversion` now carries `ConversionRegion`s alongside the markdown, and
+  `chunking.apply_regions` intersects a chunk's span against them. Neither side searches text, so
+  neither can match the wrong occurrence.
+
+  Three routes carry structure today. A digital PDF's markdown is its page texts concatenated with
+  a blank line between, so page boundaries are arithmetic rather than a guess. A workbook names
+  each sheet with its **source** row range -- numbered before empty rows are dropped, because the
+  spreadsheet's own 1-based row is what an operator opens the file to, and recording the
+  post-filter index would name a row nobody can find. A CSV gets the same treatment under its
+  synthetic sheet name. A passthrough `.md` or a flow-layout `.docx` reports no regions, which is a
+  statement that the format has no structure to carry rather than that it was lost.
+
+  Ranges rather than first-values: a chunk spanning pages 4 to 6 says so, because claiming page 4
+  sends a reader to the wrong place two thirds of the time, and a chunk overlapping two sheets
+  claims neither -- the same rule a merged chunk already followed.
+
+  `convert_document` and `convert_document_and_structure` are unchanged; `convert_document_located`
+  is the third entry point, over one implementation, matching how `extract`/`extract_located` split.
+
+- **Locators reach the extraction path.** The previous entry put a locator on the chunker in
+  `documents/chunking.py`, which nothing uses: `extract()` -- and therefore `DocumentAgent` and
+  `document_ingest` -- runs on a second chunker in `documents/extract.py` whose contract was
+  `Callable[[str, int], list[str]]`. Bare strings, so provenance stopped at the chunk boundary.
+
+  That seam is now `Callable[[str, int], list[Chunk]]`. The chunkers already sliced by offset and
+  already promised losslessness, so the spans were derivable all along and simply discarded; the
+  recursion now carries absolute offsets rather than substrings, and each chunk is named by the
+  heading it opens with.
+
+  `_merge_extractions`' rule -- "the first chunk that reports a non-empty value wins" -- was
+  *already an attribution*, naming exactly which region produced each field, and it was being
+  thrown away. It is now returned: `extract_located()` gives the instance plus a
+  `{field: ChunkLocator}` map, and `extract()` is a thin wrapper over it that returns the instance
+  alone, so the two cannot disagree about what was extracted.
+
+  `DocumentAgent` uses it. A field whose chunk is known now gets a `SectionLocator` naming that
+  section and its path, slotted **below** the page and cell locators (which are more precise) and
+  **above** the generic `section="document"` fallback (which names nothing). That is the same
+  answer `_resolve_locator` previously reached by searching the markdown for the extracted value --
+  the step `extraction.py` already warned "would hit almost every page and produce a meaningless
+  locator" -- arrived at without a search that can mis-match.
+
+- **A document chunk carries where it came from, instead of that being rediscovered later.**
+  `DocumentChunker.chunk_document` returned `(name, content)` pairs, so by the time a chunk existed
+  the source structure was gone. Provenance was then reconstructed downstream by *searching*:
+  `DocumentAgent` matches an extracted value back against the markdown to resolve a
+  `SectionLocator`. That works until the anchor is loose, and `extraction.py` already named the
+  consequence -- an anchor that hits almost every page produces "a meaningless locator".
+
+  Chunks now carry a `ChunkLocator`. Two fields are populated today because the chunker already
+  knows them and was discarding them: the character span it cut, and the header hierarchy it cut
+  under -- `("Article VI", "Covenants", "6.1 Financial Covenants")` rather than a flat matched
+  header, which is the difference between a citation a reviewer can act on and one they have to go
+  looking for. `page`, `sheet_name` and the row range are declared but empty, so a converter can
+  fill them without every downstream reader changing shape.
+
+  Merging is where provenance would have vanished quietly, since it builds new text rather than
+  passing a slice through. A merged chunk spans everything that went into it and keeps only the
+  ancestry that stays true of the pair: merging 6.1 with 6.2 gives a chunk under Covenants, not one
+  claiming to be 6.1, and a merge across two spreadsheet sheets claims neither.
+
+  **Nothing existing changes.** `Chunk` is a tuple subclass, so `for name, content in chunks`,
+  indexing, and equality against a plain pair all still work. A separate richer return type was the
+  alternative and would have meant two code paths over one splitting algorithm, which is the drift
+  this module would then have to police.
+
+  The span bounds the *source region*, not a byte-identical slice: for a single section
+  `content[start:end].strip()` is the chunk, but a merged chunk's text is re-joined. Stated in the
+  docstring because "exact offsets" is the natural reading and is wrong in the merged case.
 
 ## [Unreleased] - SDK (pre-2.4.7)
 
