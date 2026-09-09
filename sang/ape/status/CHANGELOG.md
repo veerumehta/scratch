@@ -2,10 +2,1160 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+## [2.5.1] - 2026-09-08
+
+*SDK 2.5.1, Plato 0.1.3. All 2.5.1 work lives on the `v2.5.1` branch so it can land on `dev` as one
+squash; `dev` stays at what is pushed, for the 2.5.0 merge to `main`.*
+
+- **The pack store's blob key was not tenant-safe, and the test could not see it.** Found by the
+  review round on the commit above. The key was `packs/{pack_id}/{version}.zip` -- no tenant, no
+  digest -- and `BlobStore.put` is a plain write, so a second tenant publishing its own edited
+  `dscr-core 0.1.0` overwrote the first tenant's bytes. The first tenant's row is immutable and
+  still pointed there, so it served the *other* tenant's pack under its own now-wrong digest.
+  Reproduced end to end: `ACME GOT OTHER'S PACK: True`.
+
+  The key is content-addressed now (`packs/sha256/<digest>.zip`, the same shape
+  `BlobStore.offload(dedup=True)` already uses), which also makes copy-on-adopt's "blob shared by
+  digest" true rather than a collision that happens to be harmless when the bytes match. And
+  `materialize` re-hashes what it fetched: nothing on the read path checked, which is what made the
+  substitution silent instead of loud.
+
+  Why the test missed it: every archive in the file was byte-identical, so the cross-tenant test
+  exercised the colliding key and passed. The fixture takes a content marker now, and both new
+  tests were checked against the old code. That test also shares the cache root, which is what
+  production has -- the one construction site passes no `cache_root`, so every tenant in a process
+  takes the same default and `_cache_dir` keys on digest alone.
+
+  The review round on the fix found the key rule now existed twice: spelled here and again inside
+  `BlobStore.offload(dedup=True)`, reached by different hash functions, so the same archive routed
+  through `offload` would have landed under a second key -- which is what dedup exists to prevent.
+  `BlobStore.content_key` owns the derivation now and both callers ask for it, since the keyspace
+  is the blob store's.
+
+  The next round caught that the shared helper still re-implemented the *hash* with a bare
+  `hashlib.sha256` while `jazzx_sdk/digest.py` exists as "one implementation, importable from any
+  layer" -- so `publish` derived the row's digest from `content_digest` and the key from
+  `content_key`, two functions on adjacent lines agreeing only because the argument is `bytes`. It
+  uses `content_digest` now. No test pins it: for `bytes` the two produce identical output, so any
+  assertion passes against either, and the reason it is untestable is recorded where the choice is.
+  A tautological test written for it was deleted rather than kept.
+
+  The helper's docstring no longer claims to prevent the double-write either -- it gives one hash
+  rule and one key shape, and identical content under two prefixes is still two blobs.
+
+- **A blob key is a name, not a path.** `BlobStore.put` does `self._local_dir / key`, which treats
+  an absolute key as a path (`/etc/x` discards the blob directory entirely) and lets a `..` climb
+  out. The guard went on the key *builder* first, which was the wrong half: `offload(key=...)` and
+  every direct `put` never touch the builder, and a review round pointed at the repo's own
+  precedent one file over -- `pack.store_db._unpack` guards the write, not the caller.
+
+  Refused by shape at `put` now, which covers a bad prefix, a bad suffix and a caller-supplied key
+  in one rule. By shape rather than by resolving and comparing, because a *contained* `..` is safe
+  to write and still breaks the round trip: `put` writes the resolved path while the pointer it
+  returns carries the key unresolved, so `get` looked elsewhere and returned `None` for something
+  just written. Found by a test asserting that shape was allowed -- no caller needs a `..`, since
+  every prefix in the repo is a literal.
+
+  The next round found the guard was still in the wrong place, and this one was a live
+  arbitrary-file read: `get` and `delete` build `local_dir / key` from a **caller-supplied**
+  pointer, so guarding `put` alone left the *more* exposed pair open. Measured:
+  `get("blob://../secret.txt")` returned that file's bytes and `delete("blob://../victim.txt")`
+  unlinked it. Reachable from `DocumentAgent.process_blob` and from any stored `__blob__` ref, so
+  through a library consumer rather than an in-repo route.
+
+  Every local read, write and delete goes through one `_local_path` now, which is the path
+  construction itself and so cannot be bypassed. My own comment had claimed `put` was "the only
+  place every key passes", which was the error: two other methods build the same path. The claim
+  in `content_key`'s docstring is also scoped to the local backend now -- an Azure blob name has no
+  traversal semantics, and the flat promise held for one of the two.
+
+- **The same traversal was in `fabric.docs`, and that one reads a document.** The round after
+  found `DocStore` doing the identical unchecked join in three places (`_put_local`, `_get_local`,
+  `_delete_local`): `get("../secret.txt")` returned that file's bytes *as a document*, measured
+  under `retrieval_mode: local` and reachable under `cached` whenever Knowledge Hub is down. The
+  name is not ours to trust -- it arrives as a `document_id` from an agent tool call, or a
+  caller-supplied `doc_id` from `tools.documents.local_cache`.
+
+  Same shape, same layer, one builder. This is the third time in the session a guard landed on one
+  member of a family, and the second time the sibling was the more exposed one; the review found it
+  by looking for the sibling rather than by being told.
+
+  Then the round after that found a **fourth** local read: `_get_test_fixture` joins
+  `golden_cases_dir`, not `self._local_dir`, so guarding the three sites that use the latter left
+  it serving exactly the input they had started refusing (`{"content": ..., "source":
+  "test_fixture"}`), sidecar included. The guard takes a root now. Fixing three of four while
+  editing the function is the same miss one level finer. (An earlier version of this entry, and the
+  comment it came from, called these "the four branches of `get()`" -- the count was right and the
+  thing counted was not; `get()`'s four modes are STRICT/CACHED/LOCAL/TEST and STRICT joins no
+  path.)
+
+  The guard also sat *inside* each `try`, so its `ValueError` was rewrapped as the
+  `KnowledgeFabricError` a missing document raises -- collapsing the very distinction it was added
+  to preserve, which `BlobStore` keeps by construction. Hoisted above the handler in all four.
+
+  Which changed the *documented* contract, and the next round caught it: every `Raises:` block on
+  `put`/`get`/`delete` promised `KnowledgeFabricError` alone, and that was true only while the
+  handler was doing the rewrapping. A consumer catching the documented type now misses the refusal.
+  `ValueError` is documented on all five blocks rather than rewrapped back into the base, because
+  the split is the point and `BlobStore` raises the same type for the same reason. In-repo callers
+  are unaffected either way (`agents/interactive/reads.py` catches bare `Exception`;
+  `tools/documents/local_cache.py` catches nothing, so the type change propagates identically).
+
+  The line as first written was itself an overclaim, caught the round after: only the local path
+  validates, so `put(name="", location="hub")` -- the documented default location -- returns a hub
+  document id for an unnamed document, and a STRICT `get` raises `KnowledgeFabricError`. Scoped to
+  "if the name reaches the local filesystem", one phrasing true at all five sites rather than five
+  bespoke conditions.
+
+  Same round: the sidecar path was routed through the guard in the TEST branch only, while the
+  other three built it raw. All four derive from a name the guard already refused above, so the
+  consistent shape is the smaller one -- the redundant call is gone rather than replicated three
+  times, since appending a suffix cannot introduce a `..` or an absolute prefix. And the guard is
+  named `_local_path` again, pairing with the `BlobStore` sibling its own docstring cites.
+
+  Two claims corrected: the exposure is a library consumer calling `docs.get` directly, *not* the
+  two call sites the comment named -- `agents.interactive.reads` checks the id against the listing
+  first and `tools.documents.local_cache` reads its id from an on-disk manifest. And an assertion
+  claiming to prove "the file was read out" could not: reading a file does not change it, so the
+  `raises` was carrying that case alone.
+
+  Two claims of mine narrowed to what the code does: "either order is correct" for a same-tick tie
+  is not true when `get(pack_id)` is documented as the latest version (`TODO(publish-tick-tie)`),
+  and the digest re-hash guards the *fetch* path only -- the cache short-circuit returns without
+  hashing, and the default cache root outlives the process.
+
+  Also from that round: `seq` was `autoincrement=True` on a non-primary-key column, which
+  SQLAlchemy ignores -- every row got `0`, so the tiebreak four comments credited did nothing.
+  Dropped rather than made real: the key already makes two rows for one version impossible, so the
+  only tie would be two different versions published in the same microsecond, where either order is
+  correct. And the zip-slip rationale was wrong in two places -- CPython sanitizes member paths
+  (measured: `../escaped.yaml` lands at `root/escaped.yaml`; the escaping shape is `tarfile`'s), so
+  the guard is fail-loud defence rather than the boundary the comment claimed, and one test
+  assertion checked a path the code could never write.
+
+
+- **A published pack has somewhere to live: `pack_version`, stage 1 of the pack store.**
+  `plan_pack_store.md` §10 step 2. A pack lived only on a filesystem, which makes it something
+  baked into an image and leaves *which pack version produced this decision* unanswerable once the
+  working tree has moved on.
+
+  `jazzx_sdk/pack/store.py` is the ABC and the record; `store_db.py` is the durable implementation
+  -- both in the SDK, beside the loader they feed, which is where `AssistantManifestStore` and
+  `DbAssistantManifestStore` already put that split (the plan said "protocol in the SDK,
+  implementation in Plato"; the code says otherwise and the code wins). Plato owns the
+  registration, the schema assignment and migration `0003_pack_version`.
+
+  The design points that cost the most thought, each inherited rather than invented: a published
+  `(pack_id, version)` is immutable, so certification and drafts are deliberately absent -- both
+  are cheap to add against an immutable row and expensive to retrofit against a mutable one.
+  `tenant_id` is *in* the primary key, because `verify_tables` requires a key and a plain column is
+  a filter a query can forget. The manifest is stored inline and the asset tree as a blob pointer,
+  for the reason a package registry does not shred a wheel. And `materialize` keys its unpack cache
+  on the content digest, which is the same skip `fabric.docs.materialize` makes for a document
+  whose hash has not changed.
+
+  Ten tests, driving a real sqlite `DbStore` and a local `BlobStore` rather than stubs, and the
+  materialize test loads the unpacked tree through `PackManifestLoader` -- which is the acceptance
+  criterion the plan names. Two findings from writing them: `db.session()` does not commit on exit,
+  so the first `publish` wrote nothing and `get` read nothing; and a fixture whose policy YAML was
+  not a *policy document* proved nothing about assets arriving, because `policy_files()` correctly
+  filters the folder through `is_policy_document`.
+
+  `test_the_expected_revision_comes_from_the_migration_tree` asserted the literal `"0002_setting"`
+  under a docstring arguing against exactly that -- so it failed the moment a third migration
+  landed, over a stale number nobody had updated. It computes the head from the chain now (the one
+  revision no other file names as its `down_revision`) and additionally catches a two-headed chain.
+
+  D1 is recorded in the plan: **both, staged.** A published version stays immutable; "the pack's own
+  app crafts and updates it" is a *draft*, which gets its own mutable row in stage 2 and becomes a
+  `pack_version` at publish -- deliberately outside the version table, which is where the plan put
+  it. D2 (copy-on-adopt), D3 (materialize) and D7 (no `plato_` prefix) taken as recommended.
+
+
+
+- **`GET {prefix}/database` lists every table Plato owns, not the subset the process happened to
+  construct.** `db.metadata` fills as a side effect of `Db*Store.__init__`, so the listing was
+  whatever the wiring built -- three of seven under `wiring_local`, which reads as "Plato has three
+  tables" to an operator looking at the dashboard. `plato/models.py:register_all` is the module
+  that exists to make the set enumerable rather than emergent, so `describe_database` calls it:
+  registration is idempotent, constructing a store opens no connection, and doing it in the
+  function rather than the route means a direct caller of the exported function gets the same
+  answer.
+
+  The route's own docstring argued metadata-over-reflection in one direction only -- a table
+  missing from the database shows as an error against a row the operator can see. The inverse, a
+  table that exists but whose store was never constructed, vanished silently.
+
+  The test uses a real `DbStore`: `DbTurnRunStore` is the one of the six needing more than
+  `register_metadata` (it calls `db.repository`), so against a thin stub it raises after three
+  tables are already registered and the broad `except` reports that shortened list as success --
+  which is how the first version of this test agreed with the bug. `TODO(partial-registration-
+  marker)` records that a partial registration still reports as an ordinary success with no
+  `reason`; every shipped caller passes the `DatabaseHandle`, so only a duck-typed store reaches
+  it.
+
+- **`swap_database` created no tables.** The review round on the change above found the same
+  emergent-metadata bug one function over, and this one loses data rather than under-reporting:
+  `create_all` iterates *registered* metadata and `_db` returns a bare `DbStore`, so a swap
+  created nothing, logged success, and left every later session, manifest or settings query
+  failing `no such table`. Measured: zero metadata, zero tables. Reachable through
+  `POST /v1/config` changing `PLATO_SQLITE_PATH` or `PLATO_DB_BACKEND` in a relaxed posture --
+  strict refuses those writes, so no staging or production path.
+
+  `register_all(replacement)` before `create_all()`, the same line as the route fix. Three swap
+  tests existed and none asserted that a table was present, which is why it survived; the new one
+  does.
+
+  `TODO(swap-schema-placement)` records what the fix inherits: the models carry no `schema=` so
+  they stay portable to sqlite, so a non-sqlite swap creates all seven unqualified rather than in
+  the `plato_*` schemas the migration assigns, and nothing here sets a `search_path`. The replica
+  works against them, but a later alembic upgrade on that database builds a second copy. Turning
+  the no-op into real DDL is what made that a live consequence rather than a latent one.
+
+  Two corrections that came out of the same rounds. `swap_database`'s docstring said the retired
+  store is "kept referenced rather than disposed", and `del previous` does the opposite -- it drops
+  the last handle the function holds; what is true is that it is never *disposed*, and an in-flight
+  session's own reference is what keeps it alive. And the retired-store disposal in the tests
+  landed on one of the two same-shaped ones; both dispose both stores now, before their assert, so
+  a failing assert still disposes -- which is all four `swap_database` tests (the other two already
+  did, or swap into a failure with no second store).
+
+
+
+- **An empty exception message no longer erases the reason, anywhere in Plato.** The empty-`str(exc)`
+  fix landed as a private `_reason` in `plato/oidc.py`, and the review round after it found four
+  *mounted* sites carrying the identical format string with the identical hole -- `plato/info_api.py`
+  (both the schema and database blocks), `plato/database_api.py`, `plato/schema_version.py` and two
+  in `plato/__main__.py`. Unlike `oidc.py`, which nothing imports outside its tests,
+  `create_info_router` is mounted from both `plato/app.py` and `plato/__main__.py`, so `/info`
+  answered a database read timeout with `cannot reach the database: TimeoutError: ` in every shipped
+  server config. Measured against the unfixed code, which is what the new test asserts.
+
+  `jazzx_sdk.failures.reason` owns it now, with a `limit` for the call sites that bound their
+  output. It went into `plato/reasons.py` first, which the next round showed was the wrong layer:
+  `jazzx_sdk/server/console_api.py` renders the identical string into a *response* field and
+  cannot import `plato` -- nothing in the SDK does, and the dependency only runs the other way.
+  `failures.py` already existed for exactly this ("turn an opaque exception into a message a caller
+  can act on") and is top-level by design, so the module was a new file for one round and is now
+  four lines in the one that was already there.
+
+  The family's disposition in full: eight message sites converted, plus `console_api`'s; the four
+  logger calls in `settings_store` and `wiring_default` converted too, since they hand-rolled
+  precisely `reason(exc, limit=120)`; the five SDK sites the next round named
+  (`pipelines/vocabulary_build`, `pipelines/document_ingest`, `pipelines/chat`, `conductor/engine`
+  twice) converted as well, which leaves `grep` finding no site with the trailing-colon shape
+  anywhere in `jazzx_sdk/` or `plato/`; and two sites that format the type *without* the message
+  left alone, having never had the hole.
+
+  `reason` also redacts now. It did not, while `_safe_detail` four lines below it and the Knowledge
+  Hub client's formatter both do -- and `reason`'s output reaches HTTP response bodies through
+  `describe_database` and `registry_inventory`. Wrapping it in `redact_secrets` was not enough on
+  its own: the named trigger is a SQLAlchemy `ArgumentError` quoting the DSN it could not parse,
+  whose password sits in the URL's userinfo, and neither `redact_secrets` nor
+  `net_safety.redact_urls` (http/https only) covered `postgresql://u:pw@h`. That pattern is in
+  `redact_secrets` now, where every existing caller gets it too, and it runs before the truncation
+  rather than after -- cutting a credential in half leaves its front in place with no pattern left
+  to match.
+
+  That pattern then leaked three ways, all measured by the next round: requiring a user before the
+  `:` missed `redis://:pw@h`, the documented Redis form; excluding `/` missed a pasted password
+  containing one; and stopping at the *first* `@` left the tail of `u:p@ss@h` in place. Three
+  attempts to say what a password may contain, so it says nothing about that now and bounds on the
+  **last** `@` of the authority instead. The trade is one over-redaction -- an authority with a port
+  whose path holds an `@` (`https://h:8443/a@b`) scrubs the `8443/a` -- which is pinned by a test
+  as the accepted behaviour rather than left to be rediscovered. This matters past `reason`:
+  `redact_secrets` is the only scrub on the `/logs` ring buffer, on `cost_tracker`'s serialized
+  payloads and on `channels.notify`'s webhook bodies.
+
+  My justification for the pattern was also false: SQLAlchemy 2.0.44 raises `Could not parse
+  SQLAlchemy URL from given URL string` with no DSN in it -- the quoted-DSN wording is 1.4's. The
+  pattern is still right; the *because* was not measured, so it is gone rather than restated.
+
+  `reason` collapses whitespace too, the second thing `_safe_detail` does twelve lines below. The
+  four `limit=120` log sites fire on a *normal* first boot, where a driver error carries its SQL and
+  a docs link across three lines and the truncation cut mid-URL.
+
+  The step-error family closed at the same time: the review named five `default_step_error`
+  implementations and there are six (`chat` was already converted; `investigation_loop` carries no
+  message), and widening the grep past what it named turned up two more in
+  `modes/operational/governor.py` that no round had flagged. All converted. One site is left
+  deliberately: `clients/knowledge_hub_client.py` keeps its own formatter because it applies
+  `redact_urls`, which strips a signed URL's query -- added for a measured leak where a redirect
+  exposed the second hop's signature -- and `reason` does not. The round after made the better
+  point that the dangling colon can go *while keeping* that scrub, which is what it does now.
+
+- **`policy_extract`'s opt-in step-error handler could not construct.** Found by the review round
+  on the pass above, because that pass edited this function's message line and not the rest of it.
+  `RefusalClass.INSUFFICIENT_EVIDENCE` is not a member, and `refusal_class=`/`reason=` are not the
+  model's fields (`reason_code`/`reason_class`/`message` are, the first two required). Measured:
+  `AttributeError: type object 'RefusalClass' has no attribute 'INSUFFICIENT_EVIDENCE'`. The
+  conductor calls `on_step_error` from inside its own `except`, so "degrade to a typed `Refusal`
+  instead of crashing" crashed *over* the failure it was handling. It is the one of six
+  `default_step_error` implementations with no test; the other five work. Fixed to the sibling
+  shape and given that test.
+
+- **The handler-error response envelopes went out unscrubbed.** They put bare `str(e)` into both
+  `payload.data.error` and `error.message`, and an exception quotes what it was handed: an httpx
+  failure on a Knowledge Hub blob fetch names the final hop with `sig=` intact (the leak
+  `redact_urls` exists for), and a driver error carries `postgresql://user:pw@host`. That body is
+  returned to the HTTP caller, and `/invoke` is served by every server-mode app.
+
+  Fixed at `server/inbound.py` first, whose own comment says "mirror `/invoke`" -- and `/invoke`
+  itself was not fixed in the same pass, which the next round caught as a high. Widening the grep
+  past the two sites it named found the envelope family is **four**: `server/app.py`,
+  `server/inbound.py`, `runtime/__init__.py` and `queue/processor.py`, all now scrubbed, plus two
+  unredacted `logger.error` lines beside them.
+
+  They scrub with `redact_secrets` rather than `reason`, which was the second correction: `reason`
+  prefixes the exception type, `error.type` is already its own field in the envelope, and
+  `tests/test_server.py` pins `error.message == "Something went wrong"` -- so the first version
+  changed a caller-visible shape to add something the envelope already carried. That test failing
+  is what surfaced it, after the review's own note on the shape change had been waved off as "no
+  parser matches on it". A new test pins the goal instead of the mechanism: no credential in the
+  body, message shape unchanged.
+
+  Out of scope deliberately: roughly twenty-five further `{"error": str(e)}` sites under `tools/`,
+  plus `fabric.py`, `condition_evaluator` and `gemini_provider`. Those are tool results read
+  in-process or by a model, not HTTP bodies returned to a caller, and converting them is its own
+  change with its own risk.
+
+- **`policy_extract`'s handler returned a `Refusal` the run then discarded.** It was the only one
+  of six `default_step_error` implementations not setting `state.halt`, and the engine breaks on
+  nothing else while `finalize` carries no guard -- so a failed step ran on, `finalize` emitted a
+  `PolicyExtraction`, and the run reported `complete` with the refusal buried inside it. That also
+  left the recovery branch in `run_policy_extract` unreachable, and its own docstring's "a refusal
+  halts the run" false. Halted now, with the `remediation` both `Refusal`-returning siblings pass.
+
+  The test written for the construction fix one round earlier passed `None` for `state`, which is
+  exactly why this was invisible in it. It builds a real `ConductorState` now, and the halt
+  assertion fails against the unfixed handler.
+
+  Three comments of mine were corrected in the same round, all the same failure: a *because* that
+  was not measured. "Bounded by the last `@` rather than by what a password may contain" was still
+  bounded by `?`, `#` and whitespace, so a raw `p#w` password passes (left deliberately -- both
+  characters must be percent-encoded to survive a URL parser, and the encoded form redacts -- but
+  now stated). And "told the operator nothing", in two places, was false: the exception type was
+  always printed, so what the change buys is the colon plus redaction and one-lining, not the
+  diagnosis. `limit` also applies before the emptiness check rather than
+  after, so `limit=0` returns the type name instead of the trailing colon the function exists to
+  remove.
+
+  It is not re-exported from `jazzx_sdk` itself: the `__all__` snapshot gate in
+  `tests/test_import_boundary.py` failed the addition, which was the right catch -- the export was
+  added only to silence an `F401` on an import I had just written, and nothing imports it from the
+  package root. `jazzx_sdk.failures.reason` is the path every caller uses.
+
+- **An OIDC issuer without an audience is refused at construction.** From PR #67 review. `verify()`
+  passes `audience or None`, and PyJWT with `audience=None` and `verify_aud=True` inverts the check
+  rather than tightening it: a token carrying `aud` is rejected while one omitting it is accepted.
+  Verified against the installed PyJWT -- `InvalidAudienceError` for the compliant token, ACCEPTED
+  for the one with no `aud`.
+
+  So an operator who sets `issuer` and forgets `audience` gets either every request failing (with a
+  compliant IdP) or silent acceptance of any token from that issuer -- which is exactly the
+  cross-service reuse the `require_audience` note warns about. Neither outcome is visible from the
+  failing request, so the configuration is refused where it is built. `require_audience=False` is
+  the explicit opt-out, and an issuer-less settings object still means verification is off.
+
+  No shipped wiring constructs `OidcSettings`; it is a seam consumers wire themselves, so this
+  refuses a configuration none of our own paths can reach and protects the ones that do. Six tests
+  that built `issuer` without an audience to exercise URL and `enabled` behaviour now carry the
+  companion value.
+
+  Three review rounds on that fix, each finding the previous one half-done, and the third supplied
+  a smaller fix than any of mine. First the check accepted `"   "`, which reaches `jwt.decode` as
+  an audience and fails `aud` matching on every real token -- the one place this module would have
+  treated whitespace as a value, where it strips `sub` and both optional claims. Then stripping
+  only for the blankness *test* left `" plato "` stored raw and reaching `jwt.decode` verbatim:
+  the same failure moved from the blank value to the padded one. Then `audience` was stripped and
+  `issuer`/`jwks_uri` were not, though padding fails identically on both --
+  `urlsplit(" https://kc/realms/x ")` yields `scheme="https"` with the space left on the path, so
+  a padded issuer clears the scheme check, then mismatches `iss` on every token and hands httpx a
+  `jwks_uri` with a space in it.
+
+  All three are stripped and stored in one loop now, which is fewer lines than the single-field
+  version it replaces, and `or ""` makes a `None` from a caller building one field at a time mean
+  absent rather than `AttributeError`. The fields are annotated `str | None` to match: that is
+  what the constructor takes, and `__post_init__` normalizes each to a stripped `str`, so every
+  read is a `str` regardless. `mypy strict = true` is set in `pyproject.toml` and nothing in CI
+  runs it, so the annotation is documentation -- which is the reason for it to say what the tests
+  guarantee rather than something narrower. `resolved_jwks_uri`'s attribute access defaults, since
+  that was the one place widening the annotation cost anything.
+
+  Six review rounds landed on this one commit, and the last three found only a claim in the
+  previous round's comment -- "every read narrows or defaults" was not true of the `issuer` passed
+  to `jwt.decode`. The comments state what they need to and no more now, which is what ends that
+  pattern: a sweeping claim about a whole file invites a counter-example every round, where a
+  local reason for a local line does not. `TODO(frozen-settings)` records the remaining reach: the
+  dataclass is not frozen, so building a field at a time bypasses both checks, which is
+  pre-existing for the scheme check and left because freezing breaks that construction style for
+  a consumer.
+
 ## [2.5.0] - 2026-09-07
+
+*Post-merge fixes from PR #67 review, on `dev` so they land on that PR.*
+
+- **An unreachable issuer was a 500, not a 401.** `verify`'s docstring promises `TokenError` --
+  *"so a caller cannot treat an unverified token as an anonymous one by forgetting a check"* -- and
+  the key load sat outside the `try` that made the promise, so `httpx.ConnectError` propagated
+  past every caller catching `TokenError`. Reproduced: `ESCAPED as ConnectError`. Wrapped, and a
+  transport failure is a refusal like any other.
+
+- **A down issuer was re-fetched on every verify.** `_fresh_enough` gates the 30-second cooldown on
+  `_cache.fetched`, and a raising fetch never set it -- so the rate limit held only while the
+  endpoint was *up*, which is the case it does not need to hold for. Measured: five verifies drove
+  five fetches. A failed fetch now stamps the cache with an empty key set before re-raising, so the
+  window applies to the failure too: the token fails either way, and now it fails without a network
+  call. One fetch for five verifies.
+
+  The review round on that fix found it was worse than the bug: stamping with an **empty** key set
+  meant one blip during a forced refetch rejected every valid token for the whole cooldown, even
+  after the issuer recovered. Measured -- a `k1` token that verified before the blip failed
+  `unknown key 'k1'` immediately after it, issuer back up. The keys are kept now and only the clock
+  is stamped: a cached key does not stop being valid because a later fetch failed.
+
+  Same round: the stamp covered the fetch only, so a fetch that *returned* a malformed document
+  (`{"keys": None}`, or a top-level list -- both shapes an intercepting proxy serves with a 200)
+  raised past it and kept the unbounded re-fetch open on exactly the path the stamp exists to
+  close. The whole parse is inside the guard now. And the test asserting the transport path passed
+  `_verifier`'s first positional argument, which is the JWKS *document*, not a fetcher -- so it was
+  green on `'function' object has no attribute 'get'`, an unrelated failure the new wrap converts
+  into the same `TokenError` it asserted. The cooldown test now also proves the window *expires*,
+  which a cache stamped once and never retried would have satisfied.
+
+  A third round on the same fix found two more. The cooldown returned the cache, so on a cold cache
+  the *first* verify of an outage said "could not fetch signing keys" and every one after it said
+  "token signed by unknown key" -- blaming the caller's token for the issuer being down, and
+  telling an operator nothing about the issuer. Measured: `0 -> could not fetch`, then
+  `1 -> unknown key`, `2 -> unknown key`. The cache remembers why the attempt failed and re-raises
+  it while the window holds, but only when it has nothing usable: keys from before the failure
+  still answer. And `entry.get("kid")` sat *outside* the guard whose comment has always said "one
+  unusable key must not void the whole set", so a non-mapping entry -- or `keys` served as an
+  object, which iterates to strings -- discarded every key parsed before it.
+
+  Both survived the previous round because the three rate-limit tests asserted `raises(TokenError)`
+  without a message. They assert the message now, which is what would have caught the inversion.
+
+  A fourth round found the same lesson as the field directly above it: `error=str(exc)` tested for
+  truthiness fails open, and a JWKS *timeout* is that case -- httpcore raises
+  `ReadTimeout(TimeoutError())` and httpx maps it to `mapped_exc(str(exc))`, so `str()` is `""`.
+  Measured: `could not fetch signing keys: `, then two verifies blaming the token. So the one
+  failure an operator is most likely to be diagnosing was the one that reintroduced the misreport.
+  `failed` is a separate bool now, for exactly the reason `fetched` is separate from `fetched_at`,
+  and the reason names the exception type so an empty message still says `ReadTimeout`.
+
+  `TODO(jwks-error-detail)` records what is left: the message carries the underlying exception, and
+  `raise_for_status` puts the resolved JWKS URL in it, so a middleware rendering `TokenError` as a
+  401 detail would hand an internal hostname to an unauthenticated caller. Nothing mounts
+  `TokenVerifier` in a request path yet, and the middleware is the right place to decide what a 401
+  body says.
+
+  A fifth round: the handler's comment ended "Log-only here" and the handler had **no log call** --
+  so with the same comment telling a future middleware not to echo the message, the diagnosis
+  `error` was added to preserve reached neither the logs nor the response. The operator got
+  nothing, which is the exact failure the field exists to prevent. It logs now, and a test asserts
+  it does.
+
+  A sixth round pointed at the *sibling* branch: a fetch that succeeded and produced nothing usable
+  (`{"keys": []}` during a rotation gap) rebuilt the cache without the warm key set, so a valid
+  token was rejected for the 30-second window even after the issuer recovered. Copying the failure
+  branch's "keys are kept" fixed that and introduced something worse, which the seventh round
+  measured: `_fresh_enough` never expires a non-empty cache on the unforced path, and each later
+  empty fetch re-copied the keys forward, so a **withdrawn key kept verifying for the process
+  lifetime**. A revocation that never takes effect, traded for a 30-second availability dip.
+
+  The two branches are not the same case, which is the thing to keep: a fetch that *failed* leaves
+  the issuer's key set unknown, so a cached key is still presumed good; a fetch that *succeeded* and
+  said "no keys" is the issuer answering, and the cache must follow it. So the keys are dropped
+  again -- what survives from the sixth round is the *message*, since the empty set is answered
+  through `_or_last_error` and raises "the issuer published no usable signing keys" rather than
+  letting the caller blame the token for an unknown kid. The test that asserted the retained-keys
+  property is replaced by one asserting the withdrawal takes effect and stays in effect an hour
+  later.
+
+  Two of that round's notes are parked rather than fixed, both test-only with no shipped
+  consequence: `TODO(malformed-jwks-clock)` records that the malformed-document test uses a
+  constant clock, so it cannot tell a working cooldown from a cache stamped once (the same stamp is
+  exercised with an advancing clock by the down-issuer test); and `verify`'s outer `except
+  Exception` backstop stays uncovered, which the test that names it already says in place. A third
+  note is rejected: it claimed the first verify on the empty-JWKS path misreports an unknown kid,
+  but the caller's forced-refetch retry routes through `_or_last_error` and gets the realm message
+  already -- a test written for it passed against the unfixed code, so it was deleted rather than
+  kept.
+
+  Three more from that round, each a divergence rather than a bug: the empty-`str(exc)` guard was
+  inline in one handler while its sibling in `verify` re-emitted a raw `{exc}` -- so the same
+  timeout would have produced the empty message one function up, fixed one round earlier. Both
+  share a `_reason(exc)` helper now, and `verify`'s handler says it is a backstop rather than the
+  conversion that does the work. A fetch that *succeeded* and produced no usable keys
+  (`{"keys": []}` during a rotation gap, every entry `kid`-less) still reported "token signed by
+  unknown key" for the window -- the same misdiagnosis for a misconfigured realm instead of a down
+  one -- so it records its own condition. And the `error` field's comment read broader than the
+  code, which raises only while the cache has nothing usable.
+
+
 
 *Post-push round: the sliced adversarial review (see below) and PR #67's bot both ran against the
 pushed commit, which the size-capped review had skipped.*
+
+- **Review round 42: clean.** Both prior findings verified FIXED and no new findings -- the first
+  round of the loop to report nothing at all.
+
+  Where the loop got to, for the record: the last finding against shipped behaviour was round 34
+  (`_strip_userinfo` over-redacting an object key). Rounds 35 to 41 were comment accuracy in the
+  previous round's comment about one line, which ended when the constraint those comments kept
+  mis-describing was enforced in code instead. The incremental range is what made those rounds
+  cheap: 45 lines and about a minute each, against 5,500 lines and twenty minutes before.
+
+  What an incremental pass cannot see is a defect in code a round did not touch. The full range
+  last passed in round 32, and every change since has been reviewed by the chain, so the only gap
+  is something round 32 itself missed -- which is why `pre_push_check` reviews
+  `@{upstream}...HEAD` with no state to narrow it.
+
+- **Review round 41: PASS, no defects.** Two notes, both tidying after the clamp: the raise
+  quoted the raw `max_redirects` and so reported a bound the loop had not used
+  (`Too many redirects (> -1)`), and the widened `max(0, budget) + 1` assertion had no param that
+  reached it. The bound is a named local used by both the loop and the message, and `(1, -1,
+  False)` exercises the raise path on a negative budget.
+
+- **Review round 40: PASS, and the finding chain ends by enforcing what four rounds described.**
+  The note was that "every caller supplies a positive constant" is a property of *in-repo* callers
+  that nothing constrains: `fetch_validated` is exported and takes `max_redirects` as an ordinary
+  keyword, so a consumer passing `-1` gets `range(0)`, skips the loop, and reaches a raise that
+  reports a URL nothing validated.
+
+  The budget is clamped at zero now, which is the only sensible reading of a negative one, and the
+  caveat is deleted along with the gap it described. Rounds 35 through 40 each found an inaccuracy
+  in the previous round's comment about this one line; the code enforcing it is what terminates
+  that. The boundary test gained the negative case beside the 0, 5 and 6-hop ones.
+
+- **Review round 39: PASS, no defects.** One note, and again a count in the comment written the
+  round before: "the one caller" of `fetch_validated` where there are two. Both supply a positive
+  constant, so the conclusion held, but the number did not. Rewritten as the property rather than
+  the count -- a count is invalidated by the next caller and a property is not, which is the
+  general form of the miscount that has now appeared four times on this branch
+  (`SENSITIVE_KEY_NAMES`'s two consumers, the truthy-string list's five copies, `_body_excerpt`'s
+  seven sites, `redact_url`'s five).
+
+- **Review round 38: PASS, no defects.** One note: the enumeration said all three of
+  `fetch_validated`'s raises run after `check(current)`, but the too-many-redirects one sits
+  outside the loop and redacts `url` rather than `current` -- so a caller passing
+  `max_redirects < 0` skips the loop body and prints a URL nothing validated. Split into the two
+  inside-loop raises and that one, with its own grounds: the sole caller supplies
+  `WEB_MAX_REDIRECTS`, so nothing reaches it.
+
+  Three consecutive PASS rounds, each finding only an inaccuracy in the previous round's comment.
+  That is the fixed point: no defect has been reported against shipped behaviour since round 34.
+
+- **Review round 37: PASS, no defects.** One note, and it was the line numbers in the `TODO`
+  written the round before going stale by exactly the six lines that `TODO` inserted above them.
+  A line number in a comment goes stale by construction, so the five sites are named rather than
+  numbered now -- `validate_url_safe`'s no-hostname raise, `fetch_validated`'s three raises, and
+  `redact_urls`' lambda -- with the reason each one lands where it does attached to the name.
+
+- **Review round 36: PASS, no defects.** Two FIXED, one CHECKED, one note -- and the note was a
+  miscount in the `TODO` written the round before: "the four `redact_url` call sites" where there
+  are five, and the fifth is the one the deferral's reasoning does not cover. `redact_urls`' lambda
+  is fed hub-authored text, so "rejecting the URL anyway" does not apply there. The `TODO` now
+  enumerates all five with where each lands, and the grounds for the fifth are its own: the matcher
+  requires `https?://`, so only the literal empty-authority form reaches that branch through it,
+  and no hub path emits it. Counted with `grep` before writing the number this time.
+
+- **Review round 35: PASS, no defects.** Three of the previous round's four findings FIXED, and
+  the two remaining notes were claims of mine rather than behaviour.
+
+  `redact_urls`'s summary has now been wrong in both directions -- "query stripped" missed the
+  userinfo and fragment, "reduced to scheme, host and path" missed that a query leaves
+  `?<redacted>` behind and that the no-authority form is out of scope. It states all four facts
+  and names both earlier errors.
+
+  Two deferrals recorded with what was checked rather than fixed. `TODO(path-userinfo-last-at)`:
+  on the no-authority branch the path keeps `rpartition`'s last-`@` rule, so
+  `http:host/docs/report@2026.pdf` loses the host along with the password -- reachable only from
+  `validate_url_safe`'s own "no hostname" message, which is rejecting that URL anyway, since the
+  other three `redact_url` sites run after a hostname has been required. And the header-scan
+  guard's docstring now separates what it does discover (modules) from what it does not (shapes):
+  it matches a double-quoted name in a one-line `.get(`, which is what all nine sites use. Left
+  deliberately after three rounds reported it, because the alternative is the multi-pattern scan
+  this branch was already burned by twice, each round's guard defeated by a shape the last had not
+  considered.
+
+- **Review round 34.** Seven of the previous round's eight findings verified FIXED against the
+  tree, one still open, and one defect in the fix itself.
+
+  `_strip_userinfo` ran on the path unconditionally rather than only when there is no authority to
+  hold userinfo, so any `@` in a legitimate object key took everything before it:
+  `.../uploads/alice@corp.com/doc.pdf` became `.../<redacted>@corp.com/doc.pdf`, and an uploaded
+  `report@2026.pdf` lost its name. Over-redacting is not the safe direction when what disappears
+  is the identifier the log line exists to give an operator -- and it failed silently, leaving a
+  plausible URL naming the wrong document. The path call is guarded now, with a test on the object
+  key alongside the userinfo one.
+
+  `redact_urls`'s summary still said "the query stripped"; delegating to `redact_url` means it
+  strips userinfo and the fragment too.
+
+- **Review round 33, the first incremental one: 146 lines instead of 5,521.** One slice, a
+  `FIXED | STILL OPEN` verdict on each of the previous round's seven findings, then two defects in
+  what changed. Both were in the userinfo redaction added the round before.
+
+  `redact_urls` hand-rolled the same rule `redact_url` had just gained, with a different matcher,
+  and the two disagreed: its character class excluded `/` but not `?`, so on a pathless URL it
+  matched across the query separator and consumed the `?`, leaving the query substitution unable
+  to fire -- `https://host?sig=abc@def` came out as `https://<redacted>@def`, losing the host and
+  keeping the tail of the signature. It redacted *less* than before the change. It delegates to
+  `redact_url` per match now, which states the rule once and closes the gap for free.
+
+  `redact_url` stripped userinfo only from the authority, so a scheme with no `//` kept it in the
+  path: `http:alice:s3cret@host/x` passed the password through verbatim into
+  `validate_url_safe`'s own "no hostname" message. Both components are stripped, and the
+  `https?://`-only boundary of `redact_urls` is now stated rather than implied.
+
+  Three findings the previous round reported came back STILL OPEN because an edit batch had
+  aborted on its first mismatch and I reported the later edits as applied: the cwd-relative
+  catalogue read and the vacuous `"S" not in ...split("sig=")` assertion were never written. Both
+  fixed, one file per script, each verified immediately. The parked external-host test also
+  covers `/info/ui` now -- it listed two of the three pages it claimed to gather, so closing
+  `TODO(protocol-relative)` would have re-enabled a narrower check than the one it replaced.
+
+- **A killed review no longer skips the next round.** `save_state` recorded any run whose
+  transcript was non-empty, and the five-line header makes it non-empty -- so an interrupted round
+  left a baseline naming a transcript with no findings, and the next round diffed nothing against
+  it and reported "nothing changed since the last review". Both the state write and the bootstrap
+  now require a transcript that reached a `VERDICT:`. Found by reading the state after a kill, not
+  by review.
+
+- **Review round 32: PASS on both slices.** Five `CHECKED:` lines and one `PARKED:` line, which
+  is the first round where the deferrals cost nothing to re-verify. Two `medium` notes taken, three
+  `low` ones where the claim was mine and wrong.
+
+  Parking three tests behind `TODO(protocol-relative)` took out assertions the deferral was not
+  about: the served page's `<title>`, and `_markdown`'s HTML escaping, which nothing else in the
+  suite covers -- so the guide renderer's escaping had zero coverage while the reason named only
+  the external-URL scan. The parked assertion now lives in one test of its own, the other three
+  keep everything else, and the dashboard test whose entire substance was that assertion is gone
+  rather than left asserting nothing.
+
+  `redact_url` stripped the query and kept userinfo, so `https://user:pass@host/x` survived a
+  function whose test is named "never reaches a message whole" -- reachable from the
+  agent-callable `read_from_url`, whose 204 and redirect-budget raises interpolate the URL into
+  the buffer `plato/logs_api.py` serves. Both redactors strip it now.
+
+  Three claims of mine corrected: `x-amz-signature` is redundant in `SIGNED_URL_PARAM_NAMES`
+  (`-` is a non-word character, so `\b` falls before `signature` and that entry already covers
+  all three forms -- measured), `TODO(is-private-ip-v4-only)`'s "left as the more restrictive
+  behaviour" stopped being true once an `UnsafeUrlError` began latching v2 off for the store's
+  lifetime, and a `"S" not in ...split("sig=")` assertion could only ever pass. One test also read
+  `docs/DEPLOYMENT_ENV.md` relative to the cwd where eight sibling modules resolve from `__file__`.
+
+- **The review remembers what it found.** A round now diffs `<the commit it last reviewed>..HEAD`
+  rather than the whole branch, and carries the previous transcript's findings in with it: first a
+  one-line `FIXED | STILL OPEN | REGRESSED` verdict on each, then new defects in what changed. The
+  baseline bootstraps from the newest saved transcript when no state file exists, so the
+  transcripts kept all along are what make the first narrow round possible. State records what a
+  round *saw*, not what it approved, so a `BLOCK` still narrows the next one.
+
+  The full range is not abandoned: `pre_push_check` reviews `@{upstream}...HEAD` with no state to
+  narrow it, and `REVIEW_FULL=1` forces it here. That matters, because a defect in code a round
+  did not touch cannot be found by an incremental pass.
+
+- **Review round 31.** One `high`, one `medium`, and the `high` was the previous round's fix
+  landing on one of two entry points while its test bypassed the other.
+
+  `_probe_v2` re-raised `KnowledgeHubBlobUnreachableError` -- it subclasses `KnowledgeHubError`,
+  not `Unsupported` -- and `_v2_probed` is assigned *after* the await, so on a fresh `DocStore`
+  (which is what every caller constructs) the flag never got set: each document in turn took the
+  probe lock, re-probed, spent its retries and was dropped. Reproduced: 0 of 3 documents, v1 never
+  asked, 9 wasted v2 calls. Now 3 of 3 with one wasted call. The probe also stopped concluding
+  "this hub answers v1 but not v2" from an unreachable host: v1 answering says nothing about the
+  route, and latching it off for the store's lifetime is what a transient failure must not do.
+
+  The test now drives both entry points. It had set `_v2_download`/`_v2_probed` directly to reach
+  the post-probe branch, which is exactly how the probe branch stayed uncovered.
+
+  Three more raw identity-header reads: `inbound.py`'s `X-Correlation-Key` (a public SDK seam, so
+  a consumer's padding gave two keys for one trace) and `X-Tenant-Id` in both wirings, where a
+  padded id is a second partition. And the guard meant to catch these hard-coded three module
+  names, so it could not see any of them -- it discovers modules by scanning `jazzx_sdk/` and
+  `plato/` now, against a list of headers that carry an identity or a partition key.
+  `x-security-context` stays exempt: it is the encoded envelope, decoded rather than compared.
+  Verified by reverting each of the three in turn -- the guard catches all three.
+
+- **Review round 30.** Two defects.
+
+  A blob host japes cannot *reach* is not the same as one it refuses by policy, and only the
+  second downgraded the route. So on a deployment whose signed URLs name a host only the hub's own
+  network resolves, every document spent its retries and `materialize` returned short with one
+  warning apiece -- while v1, which streams bytes through the hub japes had just finished talking
+  to, was never tried. `JAPES_KH_BLOB_HOSTS` did not rescue it either: naming the host skips the
+  guard and the connection still fails.
+
+  `KnowledgeHubBlobUnreachableError` is that case -- an unresolvable host or a refused connection
+  -- and it reconciles the two readings this went back and forth on. It stays retryable, because a
+  resolver blip is transient, and `fabric.docs` falls through to v1 for the same document rather
+  than dropping it, without latching the route off, because the host may be reachable next call.
+
+  The dashboard never un-hid a panel's empty sentence, and `load()` re-runs every ten seconds: a
+  fresh replica said "Nothing logged at INFO or above" and then kept that line above fifty live
+  records, and a recovered database kept "Not connected" above its table. The three blocks the
+  shared frame replaced each had the omission separately; one line in the frame covers all of
+  them. Verified by driving two refresh passes through the harness: the sentence shows on pass one
+  and is gone on pass two, and it persists on both passes without the fix.
+
+- **Review round 29.** One defect: `_body_excerpt`'s docstring claimed "every body interpolated
+  in this module goes through here", and seven sites still passed `response.content` whole --
+  `create_document_v2`, `delete_ontology`, `create_entity`, `create_entity_v2`, `update_entity`,
+  `delete_entity`, `delete_policy`. The durable cost was the false claim: it reads as a rule
+  already enforced, so the next body-interpolating log would skip the helper.
+
+  All seven converted, so the claim is true. Enumerated first: `grep '\.content'` gives fourteen
+  hits -- the four already converted, these seven, two return values, and a comment -- and the
+  return values are deliberately untouched. Each now truncates at 200 bytes as well as stripping
+  any query, which the untruncated ones did not.
+
+  The test asserts the rule rather than the instances: any `.content` reaching a line that is not
+  a `return` must go through the helper, so the eighth site fails the suite instead of the next
+  review round.
+
+- **Review round 28.** One defect, and the same mistake in a new shape: I widened a shared
+  constant after checking one of its two consumers.
+
+  `SENSITIVE_KEY_NAMES` is read by `_KEY_VALUE_RE`, which wraps each name in `\b`, and by
+  `experiment_bridge.is_sensitive_key`, which tests `p in key_lower`. Adding `sig` for the
+  signed-URL case was correct for the first and wrong for the second: `design_version`,
+  `signal_threshold`, `assignee` and `sign_off` all began masking in the MLflow params the bridge
+  publishes -- silently, as a masked value rather than an error. Verified against both consumers
+  before and after.
+
+  The three query-parameter names live in their own `SIGNED_URL_PARAM_NAMES` now, which only the
+  anchored matcher reads, and `signature`/`x-amz-signature` do real work there rather than being
+  redundant under substring matching. The test drives both consumers, because checking one is what
+  produced the defect.
+
+- **Review round 27.** One `medium`, three `low`. The three `CHECKED:` lines confirmed the
+  deferrals from the previous round hold, which is the first round that cost nothing to re-verify.
+
+  The `medium` was a `data:` guard that had overcorrected. Round 22 refused a comma with nothing
+  after it, reasoning that an empty payload is the zero-byte document the missing-comma guard
+  exists to prevent. RFC 2397's `<data>` production may be empty, `MockKnowledgeHubClient` emits
+  exactly `data:<type>;base64,` for a document whose `content` is absent, and the HTTP branch of
+  the same function returns a zero-length 200 body as the document -- so the guard turned an empty
+  document into a retried, dropped one on the mock-app path. Only a missing comma is malformed now.
+
+  Every response body this module interpolates goes through `_body_excerpt`, not just the two that
+  read a URL out of it: the body is the JSON carrying the signed URL, so a hub returning it under
+  a renamed key (`{"url": null, "signed_url": "...?sig=..."}`) put a live signature into the
+  message. That also makes `TODO(httpx-request-log)`'s claim that our own records carry no
+  signature true again, and it says so.
+
+  Recorded: `allow_hosts` matches on hostname alone, so one entry admits every port on that host
+  and `_blob_allow_hosts` always includes the hub's own -- left because the only way in is a URL
+  the hub itself returned, and a hub that can hand you a URL can already hand you its bytes. And
+  `plato-local.sh`'s degraded line printed a bare `8000/` where the line above it prints the full
+  URL.
+
+- **Test-only findings are parked, not chased.** Eight tests carry a `skip` whose reason names
+  its `TODO`: the five node-harness tests (`TODO(harness-null-ids)`) and the three
+  self-contained-page assertions (`TODO(protocol-relative)`). Each `TODO` records the check that
+  established no shipped trigger, and the harness module says what re-enabling costs -- those five
+  are the only executable coverage of `loadPanel`/`loadPanels` and they catch four defects this
+  branch fixed, so they should come back before `dashboard.html` is edited again.
+
+  The review script now treats a `TODO` as a checkable claim rather than either an excuse or an
+  invitation: if the claim holds it reports `CHECKED:` in one line and raises nothing, and if the
+  code is worse than the deferral admits it raises and rates it. A test skipped with a `TODO` in
+  its reason is `PARKED:` and off the table, with one exception -- a defect in shipped code that a
+  parked test would have caught is raised against the code. Test-only findings are `low` unless the
+  shipped-code defect they would catch can be named, and for those a `TODO` plus a `skip` is the
+  expected response; weakening or deleting a test that currently catches something is never
+  proposed.
+
+- **Review round 26, and the loop stops here.** One `medium`, one `unknown`, five `low`. The two
+  rated above `low` were fixed; the rest are `TODO`s in the code with what was checked.
+
+  The `medium` was a regression from the round before: `gemini.py` read its env with `env`, which
+  returns `""` for a declared-but-empty variable and so ends the fallback chain -- the exact hazard
+  `env_text` was added for. A compose file listing `JAPES_GEMINI_API_KEY=` and supplying the real
+  key under `GEMINI_API_KEY` got an unavailable provider. All five reads in that file use
+  `env_text` now, including the three in `build_genai_client` that predate this branch.
+
+  The `unknown` turned out worse than the review suspected. `_resolves` used `gethostbyname`, which
+  is IPv4-only, so `::1` and any AAAA-only host reported as unresolvable -- routing a permanent
+  refusal down the transient path where it is retried per document and never falls back to v1.
+  Measured: `ipv6.google.com` came back `False`. It asks `getaddrinfo` now. The same IPv4-only
+  limitation in `is_private_ip` predates this branch and is left as `TODO(is-private-ip-v4-only)`:
+  widening it means deciding what "private" means for `fe80::`, `fc00::/7` and `::1`, which is a
+  change to the guard's rule rather than a fix.
+
+  Two `low`s were taken because they were incomplete work this session had claimed was complete:
+  `correlation_key` was still a raw read three lines above the two converted to `header_text`, and
+  the guard meant to catch that matched only a single-argument `get(...)` -- so it missed the
+  two-argument form, which was the one still raw. It matches on the header name now, and catches
+  both arities. And `_identity_text` had quietly changed truthiness to `is not None`, making a
+  decoded claim of `0`/`False`/`[]` the principal instead of deferring to the header beside it.
+
+  Recorded, not fixed: the node harness fabricates an element for any id where a browser returns
+  `null`; `"config-panel"` in one degraded assertion is inert because that guard lives outside the
+  extracted code; the self-contained-page scan misses protocol-relative URLs; and seven tests in
+  `test_net_safety.py` each re-implement the same transport swap. All four are test-only, none has
+  a trigger in shipped code, and each `TODO` carries the check that established that.
+
+- **Review round 25.** The ratings did their job: one `high`, seven `low`. The high one was a
+  credential leak still open on the same line that redacts.
+
+  `_collect_task_archive` redacted the interpolated message and then passed `exc_info=True`, and
+  the formatted traceback carries httpx's own text, which names the whole signed URL. The record
+  lands in the buffer `plato/logs_api.py` serves and the dashboard renders `traceback` verbatim.
+  `redact_secrets` did not save it: `SENSITIVE_KEY_NAMES` had no `sig` entry, verified against
+  that exact string. Fixed at both layers -- the traceback is gone from that call (the frames were
+  storage's, not ours) and `sig`/`signature`/`x-amz-signature` are credentials to the redactor now,
+  which also covers any path nobody has thought of. Checked for false positives: `config=` and
+  `design=` are untouched, because the pattern is word-anchored.
+
+  Writing that test surfaced one the review had not: httpx's own logger writes
+  `HTTP Request: GET <full url>` at INFO, so the raw record in the *process* log carries the
+  signature even though the served endpoint is now redacted. Recorded as `TODO(httpx-request-log)`
+  rather than fixed: raising another library's log level from inside a fetch is a side effect on
+  the host application, and the exposure that matters is covered. The test asserts the served form
+  and filters our own records by logger name, so it says which of the two it is checking.
+
+  Taken from the `low` pile only where the finding was about something this session added: a
+  `TODO(csp-info-ui)` describing a gap that did not exist (the loop above it already covers both
+  paths), an assertion claiming to check a signature on a branch that interpolates no URL, and
+  `set(fetched)` where the duplicate-fetch class this file exists for needs the list. The sixth
+  hand-rolled `MODEL_CARDS.pop` is gone now that the conftest fixture covers it, and that
+  fixture's shallow copy is recorded with what was checked -- `ModelCard` is frozen, so an
+  in-place mutation would raise.
+
+- **Review round 24, triaged rather than exhausted.** Nine findings; five taken, four recorded as
+  `TODO`s with the trigger and the blast radius written down so the deferral is checkable.
+
+  The one that mattered: a refused blob host fell back to v1 only inside `_probe_v2`, which runs
+  once per store. On the settled path the error raised, `_permanent` excluded it from retry, and
+  `_fetch` dropped the document as absent -- so a store whose probe settled `_v2_download = True`
+  (the first document's signed URL on the hub's own host, which is always admitted) silently lost
+  that document and every later one on separate storage, one warning apiece. It latches and falls
+  through to v1 now, the way `_bulk_fetch` already latched `_bulk_available`.
+
+  The behavioural dashboard harness auto-created an element for any id, so it could not see the
+  way the real page breaks after a markup rename: `getElementById` returning `null`. It seeds the
+  ids the rendered page actually contains and returns `null` otherwise. And each panel's failure
+  is contained: the frame's `try` covered only the fetch, where the three blocks it replaced
+  covered fetch and render both, so a route that stopped returning `routes` would have taken every
+  later panel with it.
+
+  `"database"` joins the three route tuples that pin the identity gate on the working app -- it is
+  the third router `create_plato_app` hands `identity_required` and it was in neither loop.
+  Verified by regression: with the knob removed from that router, two tests now fail that passed
+  before. It stays out of the degraded app's tuple, which mounts only two of the three.
+
+  Recorded and not fixed, each with what was checked: `omit=("info",)` would break the dashboard
+  script (one production caller passes `omit`, with three labels, never `info`); the self-contained
+  page scan reads `<style>` blocks and not `style=` attributes (no page has one carrying a `url(`);
+  `/api/v1/config`'s gating is absent from its guide row (a refused write, not a withheld body, so
+  it needs different words); and the looser page CSP is asserted for `/` only (both pages come from
+  one `_PAGE_HEADERS` constant, so they cannot differ).
+
+- **The review now rates findings.** Every finding carries `IMPORTANCE: high|medium|low` with the
+  blast radius it actually established -- the call sites enumerated, the configurations that reach
+  the code, whether anything outside the repo depends on it -- or `unknown` when it could not tell.
+  An unsubstantiated "small blast radius" is worse than no rating, because the author acts on it.
+  A `TODO` on the code neither excuses a finding nor invites one: a deferral is a claim about blast
+  radius and is checkable like any other.
+
+- **Review round 23.** Three defects, and two of them were in round 22's own redaction work.
+
+  A refused blob host is not always permanent. `is_private_ip` fails closed on `socket.gaierror`,
+  which is correct for an SSRF guard and wrong as a verdict: routing that through
+  `KnowledgeHubUnsupportedError` meant one DNS hiccup on the storage host dropped a document with
+  no retry and one warning, against that class's own promise to be distinct from a transient
+  failure. `net_safety.UnresolvableHostError` is the same refusal with a different answer to "can
+  a retry fix this", and both blob callers treat it as transient.
+
+  The refinement is skipped when `is_private_ip` has been replaced, because it is the seam nine
+  test files patch and a stub saying "private" is authoritative: second-guessing it with a real
+  lookup reported every stubbed host as unresolvable, since a test hostname does not resolve.
+
+  Redaction keyed on the URL the caller passed missed the URL the failure actually names:
+  `fetch_validated` follows redirects itself and httpx reports the final hop, so a signed URL
+  redirecting to a second signed URL left the second one's signature in the message.
+  `redact_urls` scrubs by pattern, which needs no assumption about which URL that was.
+
+  And the Gemini alignment stopped one line short again: `_vertex_mode` learned to read
+  `JAPES_GOOGLE_CLOUD_PROJECT` while `__init__` on the line above still read only
+  `GEMINI_API_KEY`/`GOOGLE_API_KEY`, so a deployment using this repo's prefixed convention was
+  told the provider was unavailable for a client that would have worked.
+
+  `authority/context` now asks `header_text` like its two siblings, and the source-inspection test
+  no longer exempts it -- an exempted third builder is how the rule drifted to begin with. Model
+  cards are restored by one conftest fixture rather than five hand-rolled pops and a sixth that
+  was missing: `test_vision_content.py` was leaving four cards in the process-global table. The
+  redirect budget is asserted at its boundary (5 hops resolve, 6 raise, and 0 means no redirect at
+  all), `identity_from_claims` is tested against a whitespace subject, and the message
+  `docs/DEPLOYMENT_ENV.md` tells an operator to grep for is pinned to the one the code raises --
+  the first version of that row quoted a message no branch produces.
+
+- **The dashboard's four panels are one code path.** Not a review finding: the four
+  hand-written panel blocks were where the review kept finding the same disagreement, so they were
+  the one place a structural change paid. Five parallel statements of the same fact
+  (`_NAV_PANELS`, the nav list, four fetch guards, three `withheld` branches, and three
+  inconsistent id families -- `db-*` beside `metric-rows` beside `log-*`) are now one
+  `PANEL_LABELS` tuple, one derived `panel_id`, and one `loadPanel` frame. Each panel supplies only
+  what is its own: its route, what an empty answer means, and how one row is drawn.
+
+  The id convention is what closes the class of bug rather than any individual fix: every element
+  a panel touches is `<label>-*`, derived from the same label as the nav entry, so a mapping
+  between the two cannot drift.
+
+  `tests/test_plato_dashboard_behaviour.py` runs the page's own `loadPanels` under node against a
+  stub DOM and a stub `fetch`, and asserts what it did -- which routes were requested, what each
+  panel's rows and meta and empty text ended up as. Every earlier guard on this file matched a
+  string in the rendered page, and one of them passed against a guard written as a top-level
+  `return` that stopped three panels rendering at all. Four defects from earlier rounds were
+  replayed against the new tests and all four are caught; six string-matching tests are removed as
+  superseded by strictly stronger ones. The whole page was also run against a live replica: 3
+  table rows, 6 metrics rows, and the logs panel's own empty message.
+
+- **Review round 22.** One defect, one symmetry finding, and both were about the same thing --
+  a signed URL is a credential.
+
+  The blob path's error messages carried the whole signed URL, query signature included.
+  `fetch_validated`'s `raise_for_status` produces httpx's `"Client error '403 Forbidden' for url
+  '<full url>'"`, and that was interpolated verbatim into a `KnowledgeHubError` which `materialize`
+  logs at WARNING and `plato/logs_api.py` then serves. An expired signature is the ordinary case on
+  that path. `net_safety.redact_url` reduces a URL to scheme, host and path, and every message
+  either module builds goes through it -- the same care `dsn_summary` and `display_path` already
+  take with a DSN and a home directory.
+
+  `_collect_task_archive` is the sibling that fetches a signed URL the same way, and it swallowed
+  the refusal into `None`: with `JAPES_KH_BLOB_HOSTS` unset, every `materialize` over the bulk
+  threshold paid the trigger call, the full poll and the link call again on every run. It raises
+  `KnowledgeHubUnsupportedError` now, which the store's existing latch handles.
+
+  `_permanent` is one rule for "retrying cannot change this", covering both a denial and a missing
+  capability -- a refused blob host was burning the full exponential backoff per document.
+
+  And the third reader of `X-Trace-Id`: `authority/context` got the blank-is-absent rule,
+  `governed_http` treated blank as absent but not padding, and `server/app` did neither. All three
+  go through `identity.header_text` now, along with `X-Span-Id`, `X-Actor-Ref` and
+  `X-Surface-Ref`, which have the identical shape.
+
+- **Review round 21.** One defect, in round 20's own fix, and the worst of the loop: the
+  "a hidden panel does not ask" guard was written as `if (...hidden) return;` at the top level of
+  `load()`, so on the degraded replica it returned before the metrics, logs and config blocks and
+  those panels never rendered at all -- on the one app whose own comment says that is when an
+  operator most wants them. The test asserted the guard *string* was present, which the broken
+  shape satisfied, so the full suite stayed green. One `shown(id)` helper now wraps each block,
+  all four panels have it, and the test asserts each guard wraps its own fetch and that no guard
+  leaves the function.
+
+  A blob host the SSRF policy refuses now reports as `KnowledgeHubUnsupportedError` rather than
+  `KnowledgeHubError`, so `fabric.docs` falls back to v1 instead of failing the whole collection.
+  It refuses every document identically, which makes it the route that is unusable and not the
+  document; v1 streams bytes through the hub and works. `net_safety.UnsafeUrlError` (a
+  `ValueError`, so existing callers are unaffected) is what distinguishes a policy refusal from a
+  transport failure, and the client warns with the variable that fixes it.
+
+  `guide.md`'s `/api/v1/database` row promised a withheld response no shipped wiring can produce:
+  `check_settings` refuses to start a strict posture with identity off, and the degraded app does
+  not mount the route. The row says that now instead.
+
+- **Review round 20: PASS, no defects or symmetry findings.** The families this branch claims to
+  have closed were checked and are complete: no truthy-string env parse outside `envvars.TRUTHY`,
+  no bare `httpx.AsyncClient` blob fetch in `clients`, and the one other `validate_url_safe`
+  caller does not follow redirects. Three notes taken.
+
+  Moving the reachability probe ahead of the counting loop meant a reachable database whose every
+  table count failed came back `connected: true` with a `reason` no panel rendered: the operator
+  used to read that as "Not connected: no table could be counted". The connected branch shows it
+  now.
+
+  A hidden panel still fetched its route, so the degraded replica answered a 404 per dashboard
+  load for each of Database and Configuration. The nav link and the panel were two ways to an
+  unmounted route; the fetch was the third.
+
+  `/info` is the one `create_*_router` without the gate, and the rationale did not say why. It is
+  what an operator reads when a replica will not start, which is exactly when no identity
+  middleware is running and no `auth` dependency exists to unlock anything: a gate would withhold
+  the answer in the case the route was built to give. Its fields are chosen to be safe to hand
+  out instead, and that is now written where the exemption lives.
+
+- **Review round 19: PASS, no defects.** Four findings, all taken, and one of them a reversal.
+
+  Round 17 narrowed the legacy manifest adoption to the documents each run covers, to stop a
+  foreign entry being carried into the collection's scope. That was the wrong trade: the legacy
+  read is gated on the collection's scope being empty, so a first run covering 5 of 100 documents
+  wrote 5 entries and never read the legacy key again, re-downloading the other 95 for good.
+  Over-reporting is what this store already accepts and documents -- a hash only permits a skip,
+  and that decision also requires the file to be on disk. The whole map is adopted again, with a
+  test for the partial first run.
+
+  `api_prefix` was the last hand-spelled copy of the blank-is-unset rule; a grep for the pattern
+  now returns only `env_text` itself.
+
+  Two claims narrowed to what the code does: the empty-`data:`-payload guard is about a malformed
+  URL, not parity with the HTTP path, which returns a `200` with a zero-length body as the
+  document; and `_safe_fetch`'s two `Raises:` lists now name the `ValueError` a `204` produces,
+  which a caller reading them would have been catching as `HTTPStatusError`.
+
+- **Review round 18: PASS, no defects.** Five findings, all taken, two of them families the
+  previous round had counted wrong.
+
+  There were five copies of the truthy-string list, not four. The one missed is the most drifted:
+  the queue's `use_managed_identity` tested `== "true"`, so `JAPES_USE_MANAGED_IDENTITY=1` (or
+  `yes`, or `on`) read as False and sent the client down the connection-string path, which then
+  raises when no connection string is set. And the Gemini unification stopped one line short:
+  `build_genai_client` reads `JAPES_GOOGLE_CLOUD_PROJECT` first while `_vertex_mode` read only
+  `GOOGLE_CLOUD_PROJECT`, so a deployment setting the prefixed name was told the provider was
+  unavailable though the client would have been built and worked.
+
+  Three claims corrected: `describe_database`'s two early returns carried neither `tables` nor
+  `truncated`, which its own docstring tells an exported caller to rely on; `require_200` does not
+  decide `204`/`205`, which carry no body and are refused either way; and the metrics docstring
+  named one of the two unlocks where its sibling names both.
+
+- **Review round 17.** Two defects.
+
+  A listing row that identifies nothing was treated as weakly identified rather than as no
+  information. `_collection_metadata` passes `updated_at` straight through, so a hub that omits it
+  gives rows with no digest at all; those went into the probe's `weak` group, and one probe
+  concluding "the endpoint adds no sha256" then left the other five with no digest either, out of
+  the manifest and re-downloaded on every run with `page_count` never filled. Verified against
+  this tree: one metadata call and one manifest entry for six documents, where the shape this
+  replaced made six of each. They are asked now, like an unlisted row.
+
+  `trace_id` kept the blank-header-is-present bug the identity fields beside it had just had
+  removed: `governed_http` substitutes a generated id only when it is `None`, so `X-Trace-Id:`
+  with no value travelled the hop as `""` and landed in the refusal record.
+
+  `env_flag` joins `env_text`/`env_list`, retiring four copies of the truthy-string list --
+  `launcher._env_bool`, `wiring_default.identity_requested`, and the Gemini pair, which had
+  already drifted by reading `on` as no. `identity_requested`'s own docstring had warned that two
+  copies diverge on the next edit; there were four.
+
+  `JAPES_KH_BLOB_HOSTS` reached the deployment catalogue: without it a deployment whose hub hands
+  out `http://minio:9000` signed URLs goes from working to a refused private address on upgrade,
+  with the fix discoverable only by reading a docstring. Every dashboard panel is omittable now,
+  not just the two the degraded app happens to drop. And `env_list`'s real default is asserted:
+  every case passed `default=("a",)`, so unset-means-empty, which `_blob_allow_hosts` depends on,
+  was untested.
+
+- **Review round 16: PASS, no defects.** Five findings, all taken.
+
+  With `_identity_text` owning the blank-and-padded rule, `build_invocation_context_from_headers`
+  was restating it under a twelve-line comment describing bugs the layer below now prevents; that
+  restating is how the two came apart in the first place. Twelve lines and two `.strip()` calls
+  gone. The claims path had the same gap in the other direction: `identity_from_claims` stripped
+  `sub` and passed `preferred_username`/`email` through, so `"  alice  "` from a token was a
+  different principal from `"alice"` through a gateway, against its own docstring's promise that
+  the two produce one identity.
+
+  The legacy manifest adoption took the whole path-scoped map. The save loop visits only this
+  run's documents, so an entry for a document outside the collection survived and was written
+  under the collection's scope from then on. Only this run's ids are adopted now.
+
+  Two records rather than changes: `_NO_BODY_STATUSES` had two comments disagreeing about 304, and
+  the blob path's redirect budget went from httpx's 20 to `DEFAULT_MAX_REDIRECTS`. The 5 is right
+  here -- it is the number argued for a signed storage URL behind a CDN -- but a deliberate
+  narrowing should say so where the sibling defends its own 10.
+
+- **Review round 15.** Two defects, both in round 14's own fixes, and both the same mistake:
+  fixing part of a family.
+
+  `x-user-id` was the member of the `x-user-*` set the strip rule skipped, and `UUID()` does not
+  tolerate surrounding whitespace, so a gateway that padded the header made the caller anonymous
+  and every route under `require_identity` answered 401. Both readers strip now.
+
+  `connected` still meant "an engine URL could be built" on the counting path, which downgrades it
+  only when every count fails: a store whose registered metadata lists no tables has no counts to
+  fail, so the default route called an unreachable database connected while `?count_rows=false` on
+  the same route said otherwise. The `SELECT 1` runs before both paths now, and the all-counts-
+  failed message says the schema may not be migrated, which is what it can still mean once the
+  connection has answered.
+
+  `omit` reached the dashboard's nav and not its panels, so the degraded app dropped the
+  Configuration and Database links and then rendered both panels against routes it does not mount.
+  And two comments claiming more than their code: the `fetch_signed_url` move does not let
+  `download_to_file` take a `data:` URL (`_safe_fetch` refuses a non-http(s) URL at its own front
+  door), and `sync_collection`'s legacy manifest read can find a path-scoped entry left by a
+  direct `materialize()` into the same directory.
+
+- **Review round 14: PASS, no defects.** Five findings, all taken.
+
+  One header set had two readers and two answers. `build_invocation_context_from_headers` got the
+  blank-and-padded rule in round 9; `identity.py`, the layer it reads through, did not, so
+  `get_current_user_email()` answered `""` for `x-user-email:` and `" a@b.c "` for a padded one
+  while the context builder answered `None` and `"a@b.c"` for the same request. Both go through
+  one `_identity_text` now.
+
+  `fetch_signed_url` moved to `net_safety` beside `fetch_validated`. It names nothing
+  hub-specific, and `clients` sits below `tools` in the layer contract, so while it lived in the
+  Knowledge Hub client `documents.local` could not reach it and `download_to_file` could not take
+  a `data:` URL at all. The client imports the name it calls.
+
+  Three smaller ones: `_probe_failed.discard` could never fire (`_current_hash` runs at most once
+  per document per run) under a comment crediting it with an effect the digest restore actually
+  has; `304` left `_NO_BODY_STATUSES`, which its own comment said `raise_for_status` refuses
+  first; and `_dsn_summary` became `dsn_summary`, since two modules import it and the underscore
+  claimed a privacy the import contradicts.
+
+- **Review round 13.** One defect, in round 12's own fix. Withholding the database route by
+  asking `describe_database(count_rows=False)` avoided the 40 discarded scans, but that path
+  returns before opening a session, so `connected` meant "an engine URL could be built": a replica
+  with Postgres down answered `connected: true, withheld: true` to an anonymous caller while the
+  counting path on the same route reported it could not reach the database at all. The docstring
+  and the new test both asserted a guarantee the path did not keep. `count_rows=False` now runs one
+  `SELECT 1`, which fixes `?count_rows=false` on the open route as well.
+
+  `env_number` and both strictness readers spelled `env_text`'s rule by hand in the file that
+  defines it. `environment_tier` and `deployed_posture` keep their own loops: they scan every name
+  for a deployed tier, so first-non-blank would change what they answer.
+
+  A base64 `data:` payload is percent-decoded before decoding and validated after: `b64decode`
+  drops non-alphabet characters by default, so `...;base64,ab%2Bcd` returned corrupt bytes as a
+  successful download. And the metrics and logs panels clear their rows when withholding, which
+  only the database panel did.
+
+  Not taken: `page_count` reaching only the probed document when a hub's metadata endpoint carries
+  it without `sha256`. The field is documented as absent whenever nothing asked, and dropping a
+  real value from the one document we did ask about to make the set uniform is worse than the
+  inconsistency.
+
+- **Review round 12: PASS, no defects.** Five findings taken anyway, four of which the previous
+  round's own fixes created.
+
+  `fetch_validated`'s `validate` parameter is gone, and with it the exclusivity `ValueError`
+  against `allow_hosts` and `documents.local._validate_url_safe`. The seam existed so a caller's
+  wrapper stayed the object its SSRF tests patched, but the same round deleted the module alias
+  those tests patched through, leaving a wrapper that called `validate_url_safe(url)` and a
+  parameter whose only value was the function's own default. `_safe_fetch` reaches the rule
+  directly now, and a test asserts `documents.local` names `is_private_ip` nowhere.
+
+  `GET {prefix}/database` ran `describe_database` and then withheld the answer: on a strict
+  deployment with `require_identity=False`, an unauthenticated request drove up to
+  `MAX_TABLES_COUNTED` (40) `SELECT COUNT(*)` scans per call and returned none of them. The gate
+  now asks with `count_rows=False`, which is all `connected` needs. `logs` and `metrics`, the
+  siblings whose shape this router's docstring cites, already returned before doing the work.
+
+  A `data:` URL with a comma and nothing after it (`data:application/pdf;base64,`) reached exactly
+  the outcome the comma guard was written to prevent, a zero-byte document reported as a
+  successful download; it is refused now, as the HTTP path already refuses a 204 for that reason.
+
+  Two comments that outran their code: `validate_url_safe`'s worked example still pointed at the
+  manual-redirect loop the same diff deleted, and `authority/context` justified stripping a
+  `user_id` that `identity_from_headers` returns as a parsed `UUID`.
+
+- **Review round 10 (full range): no defects.** Four findings, all taken. One was a regression
+  introduced by the previous round's own tidying: adopting `net_safety.DEFAULT_MAX_REDIRECTS` in
+  `_safe_fetch` halved the redirect budget for `read_from_url` and `download_to_file` from 10 to
+  5, and that 5 is argued for a signed storage URL behind a CDN, not for arbitrary web fetches --
+  so a 6-hop chain that resolved began raising. It has its own `WEB_MAX_REDIRECTS` again, with the
+  reason written down.
+
+  `env_list` joins `env_text` and `env_int`: the comma-list parse was spelled inline in the
+  Knowledge Hub client and again in `wiring_default`, with the blank filter in a different position
+  each time. A value naming nothing (`","`) now means the same as unset. And two docstrings: one
+  claimed `PLATO_LOCAL_ROOT` holds the migration tree six lines below the correction saying it does
+  not, and `nav_html`'s `omit` matches labels while its own text described paths.
 
 - **Review round 9.** One defect, and it undid the safety of round 6's own fix: a header that is
   present but blank produced an identity. `email or name` yields `""`, and the context builder

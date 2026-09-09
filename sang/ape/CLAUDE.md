@@ -1,6 +1,6 @@
 # Claude Session Status
 
-**Last Updated**: 2026-08-17
+**Last Updated**: 2026-09-08
 
 ## Working Principles
 
@@ -81,11 +81,46 @@ ARCHITECTURE.md                        ✅ "Document Module Design"
 docs/DOCUMENT_CHUNKING.md             ✅ "How to use chunking in your pack"
 ```
 
+### Plan and status files
+
+Plans and design notes live in **`docs/plans/`**, never in `docs/` itself. Both `docs/plans` and
+`docs/status` are symlinks into `/Users/sangit/src/.scratch/sang/ape/`, which is **its own git
+repository** — so these files never enter japes' history (satisfying the "do not commit planning
+documents" rule above) but are still version-controlled where they live. Treat them as tracked
+files, not scratch.
+
+**The lifecycle is a move, not a rewrite.** A file lands in `plans/` while it is live, and moves to
+`status/` once it is done, stale, or superseded — renamed with the prefix that says which:
+`done_*`, `superseded_*`, `stale_*`. Nothing is deleted, and nothing live sits in `status/`.
+
+```
+docs/plans/plan_<topic>.md          live: being written, argued, or built against
+        └─► docs/status/done_<topic>.md        built and shipped
+            docs/status/superseded_<topic>.md  a later plan replaced it
+            docs/status/stale_<topic>.md       overtaken by events, not replaced
+```
+
+**Move with `git mv`, from the `.scratch` repo root** — a plain `mv` plus an untracked add loses the
+rename, and the rename is the record of what happened to that plan:
+
+```
+git -C /Users/sangit/src/.scratch mv sang/ape/plans/plan_<topic>.md \
+                                     sang/ape/status/done_<topic>.md
+```
+
+Naming: `plan_*` for a plan, `design_note_*` or `note_*` for an assessment that decides nothing.
+
+**Read `status/` before writing a new plan.** It holds finished and superseded designs, which is
+exactly where a new plan's prior art is — and a plan written without it duplicates work and
+contradicts decisions already made. `PLATO_PACK_TABLE_DESIGN.md` was written twice for this reason.
+Grep both directories for the subject first; if a status doc covers it, revise against that doc
+rather than starting from the code.
+
 ### Development Workflow
 
 When implementing a new feature:
 
-1. **Analyze** - Create planning docs in `/tmp/` if needed (or docs/plan_*.md which is gitignored)
+1. **Analyze** - Create the planning doc in `docs/plans/` (see "Plan and status files" above)
 2. **Decide** - Document the decision and rationale in ARCHITECTURE.md
 3. **Implement** - Write code and tests
 4. **Document** - Update CHANGELOG.md, README.md, and user guides
@@ -153,6 +188,13 @@ When editing existing code:
 - Match existing style, even if you'd do it differently.
 - If you notice unrelated dead code, mention it - don't delete it.
 
+Mechanics that have cost real work here:
+- Apply edits one at a time, writing each immediately. A helper that batches five and writes once
+  at the end discards all five when the third pattern misses -- and the fixes get reported as done.
+- Never `git checkout <file>` to undo a temporary change; it destroys uncommitted work in the same
+  file. Copy the file aside and copy it back.
+- Read (or check for) a file before `Write`. Assuming a module is new has clobbered an existing one.
+
 When your changes create orphans:
 - Remove imports/variables/functions that YOUR changes made unused.
 - Don't remove pre-existing dead code unless asked.
@@ -160,6 +202,17 @@ When your changes create orphans:
 The test: Every changed line should trace directly to the user's request.
 
 ## 4. Goal-Driven Execution
+
+**A test is not evidence until two things are true: it fails against the old code, and its stubs
+behave the way production does.** The second is the one that slips. A stub that raises where the
+real client returns `None` exercises a branch production can never reach -- green test, live bug.
+If a test passes on the first run against code you believe is broken, the test is wrong.
+
+**On the second review finding against code you just wrote, simplify it rather than add a case.**
+Four rounds went into one test guard, each version defeated by a shape the last had not considered;
+the honest version was one assertion on the thing that had actually broken. And do not state a
+*because* you have not measured -- an argument from "ruff would wrap this line" turned out to be
+false by 5 characters.
 
 **Define success criteria. Loop until verified.**
 
@@ -189,6 +242,13 @@ by Claude Sonnet etc
 version, not the spec.) Other JazzX repos may use `^`; in our repos prefer `>=`.
 
 ## 7. Symmetry & cross-cutting consistency
+
+**Enumerate the family before editing, not after.** Grep for the pattern, list every hit, and fix
+all of them in that change or say which you are leaving and why. "Check the siblings afterwards"
+has been the rule here for months and still failed six times in one session -- gating one route and
+not its twin, adding a guard to two of three functions, converting one call site of five. Every
+instance was found by review a round later, after the work was reported done. An enumeration in the
+message is the only version of this that holds.
 - Japes is v2; the services built on it (juno, kernel, assistant, knowledge-hub) are still v1-shaped.
 That gap is real leverage, not just cleanup debt — japes can absorb patterns those services already
 proved out and make them the consistent default, rather than leaving each service to re-derive its

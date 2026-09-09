@@ -24,7 +24,9 @@
 #
 # Run it by hand any time:
 #   ./scripts/local/pre_push_check.sh              # lock + drift + suite
-#   ./scripts/local/pre_push_check.sh --quick      # lock + drift only, no suite
+#   ./scripts/local/pre_push_check.sh --quick      # lock + drift only, no suite, no review
+#   JAPES_SKIP_SUITE=1 git push                    # skip the suite, keep the review
+#   JAPES_SKIP_REVIEW=1 git push                   # keep the suite, skip the review
 #   ./scripts/local/pre_push_check.sh --ci-versions  # suite against the versions the lock pins
 #
 # Step 4 is `adversarial_review.sh`, which stands alone and works in any repo:
@@ -201,8 +203,15 @@ else
 fi
 
 # ── 3. the suite ──────────────────────────────────────────────────────────────
-if [[ "$QUICK" == "1" ]]; then
-    say "3/4  suite skipped (--quick)"
+# `JAPES_SKIP_SUITE=1` keeps the review, which `--quick` does not: the review is the step that
+# catches what a green suite does not, and the suite is the slow one. Symmetric with the
+# `JAPES_SKIP_REVIEW=1` that already existed for the other direction.
+if [[ "$QUICK" == "1" || "${JAPES_SKIP_SUITE:-}" == "1" ]]; then
+    if [[ "$QUICK" == "1" ]]; then
+        say "3/4  suite skipped (--quick)"
+    else
+        say "3/4  suite skipped (JAPES_SKIP_SUITE=1) -- the review below still runs"
+    fi
 else
     if [[ "$CI_VERSIONS" == "1" ]]; then
         say "3/4  pytest -q -rfs  (against poetry.lock's pins)"
@@ -265,13 +274,20 @@ if [[ "$fail" == "1" ]]; then
 fi
 # Record the pass against this exact commit+tree, and drop stamps for anything else: a stamp for a
 # commit that has been amended away is a claim about a tree nobody can check.
-if [[ "$QUICK" != "1" ]]; then
+# Stamped only by a run that skipped nothing: the stamp is a claim that this commit+tree passed
+# the gate, and a run with the suite or the review turned off did not.
+if [[ "$QUICK" != "1" && "${JAPES_SKIP_SUITE:-}" != "1" && "${JAPES_SKIP_REVIEW:-}" != "1" ]]; then
     find "$STAMP_DIR" -type f ! -name "$(basename "$stamp")" -delete 2>/dev/null || :
     date -u "+%Y-%m-%dT%H:%M:%SZ" > "$stamp"
 fi
+# Names what actually ran. The fixed list said "suite + review" whichever of them had been
+# skipped, which is a green summary claiming a check nobody performed.
+ran="lock + paths + deps"
+[[ "$QUICK" == "1" || "${JAPES_SKIP_SUITE:-}" == "1" ]] || ran="$ran + suite"
+[[ "$QUICK" == "1" || "${JAPES_SKIP_REVIEW:-}" == "1" ]] || ran="$ran + review"
 if [[ "$warn" == "1" ]]; then
-    echo "pre-push: ok, with warnings above (see 2c). CodeQL and the security scan still run on the PR."
+    echo "pre-push: ok, with warnings above (see 2c) [$ran]. CodeQL and the security scan still run on the PR."
 else
-    echo "pre-push: ok (lock + paths + deps + suite + review). CodeQL and the security scan still run on the PR."
+    echo "pre-push: ok ($ran). CodeQL and the security scan still run on the PR."
 fi
 exit 0
