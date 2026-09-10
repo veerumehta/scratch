@@ -7,6 +7,507 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 *SDK 2.5.1, Plato 0.1.3. All 2.5.1 work lives on the `v2.5.1` branch so it can land on `dev` as one
 squash; `dev` stays at what is pushed, for the 2.5.0 merge to `main`.*
 
+*`v2.5.1` is rebased onto the pushed `dev` (`25f5d35`), keeping its three commits. No conflicts,
+including in the two files both branches had touched.*
+
+- **Plato serves a published domain pack.** The answer to *what consumes one*: it had no notion of
+  a domain pack at all -- every pack path was the assistant kind that `build_from_manifest` binds,
+  so a `Pack` had nowhere to land and a domain pack could be published, materialized, and still
+  unusable.
+
+  `plato.packs.domain.published_domain_packs(store)` is the mirror of `published_registries`: same
+  tenant scoping, same materialize-then-load, same `assistant_id` discriminator, returning `Pack`
+  objects. `domain_pack_summary` gives an operator surface counts and ids rather than contents,
+  catching per pack so one malformed pack cannot blank the view.
+
+  `Pack`, not a new type: everything a domain pack means is already its surface, and a second
+  object over the same manifest would be somewhere for the two to disagree. What was missing was
+  never the object, only a way to get one per tenant without a checkout.
+
+  A bug in the first version, caught by the two-halves test: it loaded via
+  `Pack.from_manifest(pack_id, root.parent)` on the claim that `materialize` returns the pack's own
+  directory -- true only when the archive *nests* it. A flat archive unpacks with the manifest at
+  the cache root, so the parent was a level too high and the id lookup found nothing. It loads from
+  the returned root now.
+
+  Proven on an authored pack through a real store: publish, `published_domain_packs`, and the
+  eligibility grid's `dscr_min_high_ltv` comes back `1.20`. The companion test asserts each
+  resolver returns only its own half, since a store holds both shapes.
+
+  The round on it also found the `profiles.default` branch re-reading by path instead of matching
+  what `profile_files` found -- so a `default:` naming a missing file warned, let `policy_profiles`
+  succeed, then raised `FileNotFoundError`. It falls through with a warning now. `profile_files`
+  and `policy_files` were the same twenty lines twice; both call one `_declared_files` with a
+  per-kind `keep` filter, which is where that filter should have lived to begin with.
+
+  And the tests hardcoded a consumer checkout's absolute path -- one machine's layout and another
+  repo's name in committed code -- when this repo already had `JAPES_REAL_PACKS_DIR` for exactly
+  that, with the reasoning written down. Both use it now.
+
+  The round after that found the case a published domain pack actually hits: `Pack.from_loader`
+  leaves `_packs_root` unset, so `_can_merge` is permanently false and a pack declaring
+  `depends_on` returned only its *own* playbooks, evidence types and skills -- silently, against
+  `evidence_types`' own promise that the local list is what a caller gets only for a pack with no
+  dependencies. Real packs declare them. A materialized cache has no siblings to merge from, so it
+  warns and names the dropped dependencies; publishing the closure is what `pack_dependency` is
+  for.
+
+  Two claims of mine were false again. "One load, both views" described a plain method that
+  `policy_profile` reads twice, so every declared YAML was re-parsed on each read -- measured at
+  four `from_yaml` calls per call and four more per re-read, now two, one per profile, as a
+  `cached_property` like every sibling accessor on that class. And the `Raises:` block said a
+  validated field "cannot be wrong by the time this runs", which `model_construct` and
+  `model_copy(update=...)` both walk past in pydantic v2.
+
+  Smaller, from the same round: a `default:` naming a missing file raised "declares 2 profiles and
+  no `profiles.default`" when one *was* declared and merely unresolvable -- two situations, two
+  messages now, since the exception is what a caller sees while the warning only reaches a log; and
+  the summary handlers reduced an exception to its type name with nothing logged, leaving an
+  operator able to see a pack was broken and unable to learn which file.
+
+  The push-time round found the two ways `policy_profile` could hand back the wrong institution's
+  thresholds. Keyed by `profile_id`, two files declaring the same id collapsed into one entry, so
+  the single-profile branch returned whichever parsed last -- measured: two profiles, `9.99` from
+  the second file, no warning. And an id the pack does not declare answered `None`, which is what a
+  pack with no profiles at all answers, so `pack.policy_profile(pinned) or pack.policy_profile()`
+  fell back to the default institution when a pinned id went stale. Both raise now, and `None`
+  means only the one thing the docstring attributes it to. `plato.packs.domain` also read a literal
+  `pack_manifest.yaml` while the store had a constant for both spellings -- that constant is public
+  now and shared, since it exists *because* the store and its reader disagreed about the name once.
+
+  The full-range round after it found the profile accessors' remaining hole and the one the archive
+  guards left. A ``dir:`` scan reads every YAML in the folder, so a `notes.yaml` beside a profile
+  made `PolicyProfile.from_yaml` raise and `policy_profiles` return *nothing* -- not the stray file
+  skipped, the pack's real profile gone. `policy_files` had taken `keep=is_policy_document` for
+  exactly that since it was written; profiles now have `is_policy_profile_document` beside
+  `PolicyProfile`, and `keep` applies to the folder scan only, so a path the manifest names
+  outright still fails loudly instead of vanishing as though it were somebody's notes.
+
+  And `publish` requires archive bytes without validating them, so a row whose archive is not a
+  zip, whose blob the store no longer has, or whose digest does not match reached `materialize`
+  and took the whole composition down -- the failure `published_registries`' own docstring said it
+  refuses, true until then only of the two branches that had guards. Both resolvers guard the row
+  now and name the pack they skipped. What is left is stated rather than implied: `tenant_registries`
+  reads each root through `load_pack` after the loop, so a well-formed archive that is not a loadable
+  pack still aborts, and guarding that means composing pack by pack instead of handing over a root
+  list. A `TODO` says so at the call site.
+
+  Smaller, from the same round: `"assistant_id"` was spelled independently in both resolvers to tell
+  the two pack shapes apart, which is what `MANIFEST_NAMES` had just been made public to stop --
+  `is_assistant_pack` sits beside `PackVersionRecord` now. `reason`'s ``limit`` reached six more
+  call sites whose text is served or stored (three `TokenError` messages, the key-fetch message, the
+  schema-check note and three boot notes); the one left uncapped prints to stderr from the CLI. The
+  abstract `materialize` named only `PackNotFound` while its implementation raises three more
+  things. And the duplicate-`profile_id` message named the second file and "another", so an author
+  still had to grep the folder for the pair.
+
+  The round after that found the first of those fixes was half a fix: `policy_profile` returned
+  `None` before it looked at the id, so a named id against a pack declaring *no* profiles still
+  came back `None` -- the conflation the branch exists to refuse, surviving in the one case with
+  nothing to compare against, with the docstring's two sentences contradicting each other over it.
+  The id check runs first now.
+
+  It also found the asset joins. Every `pack_id` join got `bare_name` in this release while the
+  eleven joins that resolve *manifest*-declared paths got nothing, though the manifest is the less
+  trusted of the two once a pack arrives from a store: `materialize` unpacks a published manifest
+  and hands its root to the loader. Measured before the guard: `policies: {core: ../../elsewhere/
+  leak.yaml}` came back from `policy_files()` as a path outside the pack, and `load_policies` read
+  it. All eleven go through one `_asset_path` now, on `relative_name` rather than `bare_name`,
+  because a declared asset nests (`policies/overlays/rb_ci.yaml`) and only escaping is the fault.
+  One of them turned out to join `""` for a playbook entry with no `path:` and fail on the pack's
+  own directory; it warns.
+
+  `reason`'s ``limit`` reached six more sites, the ones that put it in a *returned* object rather
+  than a log: three `Refusal.message`, `InteractiveResponse.incomplete_reason`, a span attribute
+  and a Trace note. Five stay uncapped, all log-only, two of which build their served body through
+  `redact_secrets` separately.
+
+  Three smaller ones. `domain_pack_summary` left `has_policy_registry` unassigned when `policies`
+  raised, so a consumer reading it got a `KeyError` instead of the error reported beside it. Both
+  `prompt_loader` `Raises:` blocks credited the `ValueError` to `pack_id` when `mode_name` is
+  checked first and unconditionally -- and `modes/base.py` quotes one of them as its contract. And
+  a comment called `register_all` a module.
+
+  A third round, on the profile filter added two rounds earlier. Its docstring claimed a malformed
+  profile "still fails loudly", and the one malformation that matters does the opposite: the shape
+  check reads `profile_id`, so a file spelling it `profile-id` loses the only thing telling it from
+  somebody's notes and is skipped like notes -- `policy_profile()` then answers `None`, which is
+  the one meaning that method reserves. The claim went rather than a third case being added to the
+  predicate; `_declared_files` logs every file `keep` rejects, at debug, because a pack legitimately
+  holds other assets in that folder and a warning would fire on every load of one.
+
+  `published_domain_packs` read `depends_on()` inside the per-row load guard, so a manifest naming
+  an unknown fragment kind dropped a pack whose `pack_id`, `version` and `policy_registry` all
+  resolved -- and since `published_registries` never calls it, the same row composed as an assistant
+  pack and vanished as a domain one. The advice now runs after the pack is in, guarded on its own.
+
+  Not everything the round raised was true: it reported a `profiles.default:` naming a missing file
+  as returning `None` with no diagnostic, and `_declared_files` already logs "not found" on that
+  path. The duplicated row loop it flagged for a third time is real and now carries a
+  `TODO(share-published-row-loop)` with the shape it should take: both readers are still test-only,
+  and they are also where the two pack shapes are defined, so folding them together in the same
+  pass as two defect fixes would settle that by accident.
+
+  `is_policy_profile_document` says why it is not `is_policy_document(key="profile_id")` -- a bare
+  top-level list is a policy document and not a profile. `env_text(*names) if names else ""` lost a
+  branch that could not run. And `_archive` in the store tests takes a manifest override, because
+  the loader reads the manifest the archive carries while the published dict sets the row's columns
+  -- a distinction a test asserting on `depends_on` needs and did not have.
+
+  A fourth round, and none of it in the profile accessors, which have settled. Two defects, both
+  claims that read as enforced and were not. The cache-marker containment check used
+  `Path.is_relative_to` on unresolved paths, and pathlib does not collapse `..`, so
+  `<entry>/../../elsewhere` is relative to `<entry>` by that test -- measured `True`. The marker is
+  a file in a predictable shared directory whose contents come back as a pack root, and the branch
+  returns before the digest is re-verified, so nothing downstream would have noticed. `_unpack` had
+  resolved both sides all along.
+
+  And `list_packs` was documented as "the most recent version of each pack" while the query orders
+  by `published_at`: publish `0.2.0`, then a `0.1.1` backport, and it answers `0.1.1`. The
+  `publish-tick-tie` note deferred that alongside the same-microsecond tie on the grounds that it
+  "needs two round-trips inside one microsecond", which is true of the tie and false of this -- an
+  ordinary sequence of two calls. Last-published is the right answer for "what did this tenant last
+  ship", so the wording moved rather than the ordering, and both `list_packs` and `get` now say
+  "published, not highest"; ordering on a parsed version needs a prerelease policy no caller has
+  asked for.
+
+  Both sibling guards this release wrote lessons for and left on the old spelling are lined up:
+  `DomainPackFabric`'s two manifest-path joins take `relative_name` like the eleven on the
+  `PackManifestLoader` side, and `plato.packs.loader` moved from `startswith` to `is_relative_to`
+  -- the check whose own comment in `store_db` explains why `startswith` admits a same-prefix
+  sibling. `MANIFEST_NAMES` moved to the host-free `store` module, since a reader wanting it was
+  importing the sqlalchemy one for a two-element tuple. And "name one" now says how, for the list
+  form of `profiles:` that has nowhere to put a `default:`.
+
+  A fifth round came back with no defects. Two of its three notes were worth taking. `materialize`
+  answered two different `Path`s for one directory -- the unpack branch unresolved, the cache-hit
+  branch resolved, and on macOS `gettempdir()` is `/tmp`, a symlink to `/private/tmp`, so one
+  version came back as `/tmp/japes-packs/<digest>` and then `/private/tmp/...`. Its test passed only
+  because pytest's `tmp_path` is already resolved; it asserts a resolved answer now.
+
+  And `limit=200` was a bare literal at nineteen sites, all added in this release, which is how a
+  twentieth picks a different number -- Plato's settings paths already carry unrelated `120`s and
+  `_safe_detail` a hardcoded 1000. It is `SERVED_REASON_LIMIT` now, exported alongside `reason`
+  since a caller passing `limit` needs it. The pre-existing `120`s are left alone: nothing shows
+  they answer the same question.
+
+  Declined, with the measurement: converting the two archive-member guards to `relative_name` was
+  offered as placement only, and is not. `relative_name("a/../b")` refuses while the resolve-and-
+  compare accepts it, correctly -- it stays inside the root. Uniformity there would tighten which
+  archives unpack, on a guard that is right as written.
+
+  A sixth round crossed the size limit and reviewed in two slices, which is how `wiring_default`
+  and `app.py` got read properly for the first time -- the fifth round's clean pass had covered
+  them in one skim. Two defects, both with a running consequence.
+
+  `discover_root` walked out of `site-packages`. A wheel at
+  `<proj>/.venv/lib/python3.12/site-packages/plato/` resolved `<proj>`, so `_REPO` -- which feeds
+  the sqlite path and the alembic run -- pointed at an unrelated consumer's tree. The `parents[1]`
+  it replaced was accidentally safe there: it answered `site-packages`, failed the marker and fell
+  through to cwd, which makes the resolver a regression on that one path. The walk stops at an
+  install directory now, for every caller. The docstring had named the risk and waved it off as
+  "unreachable in the image -- the cwd fallback still answers there", wrong twice: cwd is never
+  consulted once discovery succeeds, and the image is safe because nothing above `/app/plato/`
+  carries a `pyproject.toml`.
+
+  And the re-wire compared against a boot snapshot no swap updated, so after the first one it was
+  wrong in both directions: an unrelated config write still differed from boot and swapped again,
+  leaking an engine, since `swap_database` disposes nothing; and a path moved a -> b -> a matched
+  boot, so it returned early while the process kept writing to `b` and `/v1/config` reported `a`.
+  It tracks the live wiring now, recorded after the swap rather than before, so a swap that raises
+  does not register a state the process is not in.
+
+  A third reachability claim was false in the same way as the other two. "A staging or production
+  deployment cannot get here at all" is not what the code enforces: `withholding` returns false as
+  soon as `auth` is not None, so a strict deployment built with an auth dependency can PATCH a
+  bootstrap key and run `create_all()` DDL against its real database. Corrected in the three places
+  that asserted it; the gate itself is as designed, since authenticated writes are what passing
+  `auth` is for.
+
+  Smaller: two comments in `plato.packs.domain` had gone stale against their own code -- one still
+  listed unknown fragment kinds among what the load guard catches after `depends_on()` moved out,
+  and the other claimed the round-4 reordering stopped a consumer's `KeyError` when `policy_registry`
+  is the statement that raises, so it did not. Absent-on-failure is a documented contract there now.
+  `SERVED_REASON_LIMIT`'s note said "a bare 200 at nineteen call sites" without adding that fifteen
+  of them passed no limit at all before this release, which makes adopting it a truncation change
+  and not only an extraction. The store contract exports from `jazzx_sdk.pack` alongside the rest,
+  as `jazzx_sdk.runs` does for its own, with `store_db` still behind its own import so sqlalchemy
+  stays off the eager path.
+
+  A seventh round, sliced again, found the cache branch trusting the marker to mean the tree is
+  there. A cleaner sweeping `gettempdir()` takes the extracted files and leaves the marker -- every
+  `materialize` refreshes the marker's atime, the files' not -- and the branch then answered with a
+  directory holding nothing but the marker. Forever, with the archive intact in the blob store and
+  nothing logged: downstream a published pack was silently dropped, and recovery meant deleting the
+  marker by hand. It checks for a manifest and re-unpacks now.
+
+  The three served error envelopes -- the queue processor's terminal reply, the server handler's,
+  the runtime handler's -- put `redact_secrets(str(exc))` into a response with no bound, which
+  earlier rounds of this release mistook for a log-only site and left alone. `SERVED_REASON_LIMIT`
+  applies to all three, and to `kid` in the OIDC unknown-key refusal, which comes from
+  `get_unverified_header` and is caller-chosen in both content and length.
+
+  Four claims were wrong. `roots`'s header said `env()` where the code uses `env_text` for a
+  distinction a test pins. `content_digest` was documented as covering "the archived asset bytes",
+  which a manifest-only row does not have -- it digests the manifest. And a test docstring said
+  "three of seven" and "one of the six" for a `register_all` that builds seven stores across eight
+  tables, the same drift the route's own comment dropped its count to avoid.
+
+  The migration-head test was a step from breaking on the next generated file: `script.py.mako`
+  emits `${repr(...)}`, which Python renders in single quotes, and alembic names files in hex -- so
+  a generated revision matched neither the `[0-9]*.py` glob nor the double-quote pattern, would have
+  been left out of the chain, and the assertion would have failed over a head it had not read. Both
+  halves demonstrated on a file shaped the way alembic writes one.
+
+- **The cache marker was trusted, not checked.** `materialize` short-circuits on a
+  `.pack_manifest_root` marker and returned the path it names -- a file in a predictable shared
+  directory (`gettempdir()/japes-packs/<digest>`), whose contents became a pack root, from which
+  `Pack._resolve` will `import_module` a manifest pointer. The deferral recorded in that code
+  covered trusting an already-unpacked *tree*; a pointer out of the cache is a different thing.
+  A marker naming anything outside its own cache entry is now ignored, warned about, and
+  re-unpacked. Its sibling containment check moved from `str.startswith` to `is_relative_to`:
+  without a separator, `../<same-prefix>extra/x` resolved to a sibling of the root and passed the
+  guard whose stated purpose was to fail on a member that tried.
+
+  `mode_name` turned out to be the other half of the join the pack-id guard had just closed: same
+  `read_text` expression, plus three more in the same module. Checked once where it enters each
+  public function rather than at four joins, which is the shape the `pack_id` guard should have
+  taken too.
+
+  And the `-`/`_` spelling rule -- left duplicated on purpose two rounds earlier, on the argument
+  that folding two callers together in the same pass as a defect fix invites a third finding -- was
+  raised again, so it is one `id_spellings()` now, shared by `pack.roots` and `from_pack_id`.
+
+  Three claims corrected with them: the summary docstring said all four metadata reads were
+  defensive when they sit outside the handlers, and two test docstrings said `fragments: [profiles]`
+  lets a dependency import a profile. It validates and merges nothing -- `_MERGE_ID_FIELD` covers
+  playbooks, evidence types and skills only -- exactly as for `ontology` and `mode_tuning`.
+
+- **The review's own state file could narrow against abandoned history.** `saved_upstream` was
+  compared as a *label*: `HEAD~1` equals `HEAD~1` while resolving somewhere else entirely after a
+  squash or a branch switch, so the comment's claim that "a different range does not inherit the
+  wrong state" was not something the code checked. It now requires the saved head to be an
+  **ancestor** of HEAD; accepts a rewritten-history-but-identical-tree case as "nothing changed",
+  which is what an amend or a squash of already-reviewed work is; and otherwise declines to narrow
+  rather than diffing two unrelated trees and reporting their difference as a change.
+
+- **A pack can declare its policy profile, so a published pack is usable from its manifest.** The
+  question that closes: *what consumes a published domain pack?* Investigating DSCR as Plato's use
+  case found the blocker sits upstream of Plato. A pack's policies name thresholds and the
+  `PolicyProfile` is what those names resolve to, and `FRAGMENT_KINDS` had no `profiles` -- so the
+  one asset that makes the rules mean anything was reachable only by a path its consumer hardcoded.
+  Workable from a checkout; impossible from a store, where the manifest is the only thing that
+  travels with the bytes. A pack could be published, materialized, and still not usable.
+
+  `profiles` is a fragment kind now, with `PackManifestLoader.profile_files()` taking the shapes
+  `policy_files()` already takes -- `dir:`, `default:`, a bare path, a list -- plus
+  `Pack.policy_profiles` keyed by `profile_id` and `Pack.policy_profile(id=None)`.
+
+  Two decisions in that accessor. No declared profile answers `None` rather than raising: a pack
+  legitimately has none, and a caller that needs one can say so more clearly than the accessor can.
+  Several with no `default:` *raises*: a `PolicyProfile` carries an `institution_ref`, so more than
+  one is a legitimate shape, and taking the first of an unordered set is how a run silently applies
+  another institution's thresholds.
+
+  Proven on the shipped DSCR pack rather than a stand-in -- `policy_registry` from `policies.dir`
+  and `dscr_min_high_ltv: 1.20` from the declared profile, both through the manifest with no
+  consumer naming a file. That test skips when the consumer's checkout is not beside this one,
+  since a missing fixture is not a defect. Seven tests, all failing against the code before.
+
+  `FRAGMENT_KINDS` is pinned by a snapshot test, which failed and was right to: adding a kind
+  changes what every pack manifest may declare. Updated deliberately, with the reason in the test.
+
+- **`packs_root` is resolvable, not just accepted.** `PackManifestLoader.from_pack_id(pack_id,
+  packs_root)` always took the root from its caller and nothing here supplied one, so a consumer
+  computed its own -- typically by counting directories up from `__file__`, a count correct only
+  for the nesting of the file it sits in. Move the module and its path breaks and nothing else,
+  which reads as a missing pack rather than an import error.
+
+  `jazzx_sdk.pack.roots` supplies it: `discover_root` finds a project root by marker rather than
+  by counting, `resolve_packs_root` consults an environment override *first* so a deployment with
+  no repo above the installed package still works, and `resolve_pack_root` reconciles `-`/`_` so
+  `dscr-core` finds `dscr_core/` -- the same reconciliation `from_pack_id` already did internally,
+  now available to a caller that only wants the directory.
+
+  Env var names are the caller's: `resolve_packs_root(*env_names)` takes them and `env()` tries
+  them in order, so the SDK supplies the mechanism and the consumer supplies the vocabulary. That
+  is what lets a domain collapse its own path helper to the few lines that name its knobs.
+
+  It is also deliberately where a `PackVersionStore` lookup lands. With `published_registries`
+  above serving assistant packs from the store, this is the seam for the *domain* pack half --
+  which is the question the store cannot answer yet.
+
+  The review round on it found the day's own lesson missed one function further: `resolve_pack_root`
+  joined an unvalidated `pack_id`, so `""` resolved to `packs_root` itself and `"../secret"` to a
+  directory beside it, both returned as a pack root. Measured. `path_safety.bare_name` -- added
+  earlier in this same release for this exact join -- guards it now.
+
+  Three more from that round. `env` plus a truthiness test is the shape `env_text` was added to
+  own, and the docstring cited `env`'s contract while the code followed `env_text`'s, since a blank
+  falls through to discovery. A *file* named `config` satisfied the directory marker; the first fix
+  for that hardcoded the name while its own docstring described a trailing-slash convention, so
+  `DEFAULT_MARKERS` is `("pyproject.toml", "config/")` and the slash now means what it says. And
+  `plato/wiring_local.py` was the last live counting site in this repo -- `parents[1]` plus a lone
+  `pyproject.toml` check, both of the failures this module exists to remove -- so it uses
+  `discover_root`, whose `None` composes with the cwd fallback it already had.
+
+  Then the round after that caught the migration itself, and it was the worst find of the set: the
+  default markers require a `config/` directory and **this repo has none**, so `discover_root`
+  returned `None` in `wiring_local` and every path derived from `_REPO` -- the sqlite file, the
+  cache, the sibling-profile default, and `cwd=` for the alembic subprocess -- silently became
+  working-directory-relative. Measured: `_find_root()` from `/tmp` returned `/private/tmp`, so
+  `python -m plato` outside the repo root would migrate one database and create an empty other,
+  the exact failure `_anchored` was written against.
+
+  The error was applying markers that describe a *consumer's* layout to this repo. The call site
+  passes `markers=("pyproject.toml",)` now and says why. Its test passed only because pytest runs
+  from the repo root; it `chdir`s first now, and fails against the unfixed code with the tmp path
+  where the checkout should be.
+
+  That round also found `from_pack_id` carrying the identical unvalidated join -- and unlike
+  `resolve_pack_root` it has a shipped caller in `Pack.from_pack_id`, so guarding the new function
+  and leaving the old one open was the one-of-a-family miss again. Both guard now. The raise
+  contract is stated rather than half-promised: `ValueError` for a malformed id, which is the
+  caller's mistake, and `PackRootNotFoundError` for a well-formed id with no directory, which is
+  the packs directory's state. And a *directory* named `pyproject.toml` satisfied the file marker,
+  the file-vs-directory confusion fixed in one direction only when the trailing `/` was added.
+
+  The round after found members three and four, and the worst of the set: `modes/prompt_loader`
+  joins `pack_id` in two places and then `read_text`s the result, so an escaped path returns an
+  arbitrary file's contents *as a prompt* -- instruction the model follows, rather than a wrong
+  directory. The two that return a path were guarded first and the two that read were not. Ten
+  parametrized cases do not raise against the unguarded code.
+
+  Scoped honestly: in this repo a mode's `pack_id` is manifest-derived, so this is a boundary
+  rather than a fix for a live route, and the docstring says that instead of implying a
+  reachable exploit. `""` is excluded from those two, deliberately -- `pack_id` is optional there
+  and both gate on truthiness, so an empty id means "no pack tuning" and never reaches the join.
+
+  Three of my own claims corrected with them. The docstring named `Pack.from_pack_id`, which does
+  not exist -- it is `Pack.from_manifest` -- and called it a shipped caller, an out-of-repo claim
+  stated as in-repo fact. The two lists of bad ids had already drifted into a subset, dropping the
+  two cases with distinct mechanisms, so there is one shared list now. And `markers=`
+  `("pyproject.toml",)` in `wiring_local` does reinstate what `DEFAULT_MARKERS` warns against; it
+  is kept, because this repo has no `config/` for the default set to match and the image's
+  `WORKDIR /app` carries no `pyproject.toml`, but the docstring says so rather than claiming a
+  checkout is required.
+
+  And a *fifth*: `evaluation/harness/config.py` joins `pack_id` into `get_output_path`, which
+  unlike every read above is a **write** target -- `pack_id="../.."` puts eval output two
+  directories above `output_dir`. Guarded with a pydantic field validator rather than at the join,
+  because construction is the single place an id enters and a path can be built from it more than
+  once. The comment claiming the family was covered was, once again, a census that was false when
+  written; it now names the shared rule and says that where-else is a question for a grep.
+
+  The `Raises:` gap came with it, and it is the same one fixed in `roots.py` the round before and
+  not carried across: both prompt loaders documented `FileNotFoundError` alone while the new guard
+  raises `ValueError`, and `modes/base.py` quotes that block as *the* contract when it justifies
+  propagating. Both state it now. The prompt cases also moved to `test_modes_framework`, beside
+  the other `resolve_mode_prompt` tests, importing the shared id list rather than restating it.
+
+  Left as noted: the `-`/`_` candidate spelling is duplicated between here and `manifest_loader`.
+  Folding two callers into a shared helper in the same pass that fixed a defect in one of them is
+  how the next round finds a third thing.
+
+- **A published pack now serves a tenant, which is what the pack table was for.** The store
+  landed without the half that uses it: the `pack_version` row, `PackVersionStore` and the
+  migration all shipped, while `plato/packs/loader.py` still read a directory -- so pack bytes
+  still came from the container image and the plan's acceptance criterion (*a pack published to a
+  running Plato serves a new tenant with no deploy and no code change*) was exactly as unproven as
+  it had been before the table existed.
+
+  `published_registries(store)` closes it: `list_packs()`, `materialize()` per record, then the
+  `tenant_registries()` that already existed. Materialize-then-load, which is the plan's own
+  recommendation and what the loader's docstring anticipated ("adopting a durable store later is a
+  new caller rather than a change here") -- a second mapping-based implementation of what a pack
+  means is the thing worth not having twice. No tenant argument, because the store is tenant-scoped
+  at construction.
+
+  **Writing the test found the store and the runtime disagreeing about what a pack is.**
+  `materialize` located the pack root by `pack_manifest.yaml`, the domain-pack name
+  `PackManifestLoader` reads, while Plato's loader reads `manifest.yaml` plus `profile/`. So an
+  assistant-shaped pack *published without complaint and then failed at materialize* -- the worst
+  moment to learn it. The root is recognised by either name now, root before nested for both. This
+  is the three-representations finding in §3 of the plan arriving as a defect rather than as prose.
+
+  The test publishes the shipped `manifest_binding` fixture, which is the pack
+  `test_assistant_manifest_binding` binds a live agent from, so the published bytes are provably
+  the shape the runtime accepts rather than one invented to satisfy the store. It names no
+  filesystem pack directory anywhere. A second test covers the tenant that has published nothing,
+  which is a state to report rather than an error -- `PackNotFound` answers a different question.
+
+  Still open from that plan: the publish gate (step 3), which is where this belongs long-term --
+  `publish` will still accept an archive `materialize` could reject.
+
+  The review round on it found three defects in the new code, two of which would have met the first
+  real pack. `published_registries` fed *every* published row to `load_pack`, so a single domain
+  pack -- the shape the rest of that test file publishes, and the shape the new `_MANIFEST_NAMES`
+  comment says the store carries on purpose -- aborted the whole composition and made the tenant
+  unservable. And a manifest-only row, legal by construction with `content_ref` `None`, raised
+  `PackNotFound` and took every other pack down with it, which the sibling test asserts is not how
+  an absence is reported. Both are skipped now, on `assistant_id`: required on `AssistantManifest`,
+  absent from a domain manifest, so the row settles the question without materializing anything.
+
+  The third was the freeze assertion in the new test, vacuous: `SkillRegistry` has no `values()`,
+  so `next(iter(skills.values()))` raised `AttributeError`, `pytest.raises(Exception)` swallowed
+  it, and `register` was never reached. It registers for real now and expects
+  `RegistryFrozenError`.
+
+  One claim of mine corrected with it: materialize-then-load was justified as avoiding "a
+  mapping-based second implementation of what a pack means", but `MappingPackSource` exists and
+  `load_pack` already accepts it, so that route reuses the same rules. The real reason is
+  `materialize`'s digest-keyed cache, which is what the docstring says now.
+
+  The round after that found the *fix* had made a fourth: once domain packs are skipped by
+  `assistant_id`, the only row the `content_ref is None` branch can reach is an assistant pack
+  whose `profile/` never got published -- a publish-time mistake -- and it was skipped at
+  `logger.debug`. So a tenant served no assistant with nothing saying why. My justification for
+  skipping it, "legal by construction", described exactly the population the line above had already
+  handled. It warns and names the pack now, and still composes the rest: raising would let one
+  broken row make the tenant unservable, which is the defect it was introduced to fix.
+
+  The test for it never reached that branch either -- it published the domain-pack fixture, which
+  the `assistant_id` check skips first, so it passed with the branch deleted. It publishes an
+  assistant manifest with no archive now and asserts the warning. The first version of *that*
+  assertion used `r.message % r.args`, which raises `TypeError` on a record whose args do not match
+  its template; `getMessage()` is what formats a log record.
+
+- **Two PR review items recorded as TODOs rather than changed.** `TODO(if-match-post)`: `POST` in
+  the `If-Match` method set is wrong for a POST that *creates* -- there is no ETag to send, so it
+  would take a 428 it cannot satisfy -- but `require_if_match` is exported and called only from
+  tests, so there is no route to fix against and removing POST now would guess which way the first
+  one goes. `TODO(migration-concurrent-index)`: one transaction per migration run is what makes a
+  failure roll back instead of half-applying, and the cost is that `CREATE INDEX CONCURRENTLY` can
+  never appear in a migration. Nothing needs one; the TODO names both wrapping sites (the offline
+  branch as well as the online one the review pointed at) and says to scope any future change to
+  the migration that needs it rather than dropping the transaction for the whole chain.
+
+- **The last review round's five low findings, folded in here.** `reason` is on the package surface
+  now, with the `__all__` snapshot updated deliberately -- which is what that gate asks for, and
+  two earlier refusals to do it rested on the weaker argument that nothing in-repo needed the name.
+  `verify`'s two `TokenError` messages, and the two boot notes in `plato/__main__` and
+  `wiring_default`, go through `reason` like the rest. The queue envelope binds its scrubbed detail
+  once, as its three siblings do, and now has a test -- it was the one of the four with none, which
+  is what would have let a later edit drop the scrub silently; it fails with `redact_secrets`
+  removed. And the docstring no longer claims `reason` does "the same two things" as
+  `_safe_detail`, which caps at 1000 unconditionally while `reason` truncates only when asked.
+
+  Three claims from that pass were wrong and the round after caught each. The new queue test said
+  it covered "the one of the four envelopes with no test" -- but `inbound.py`'s existing test
+  asserted only `status` and `error.type`, so it passed with the scrub removed; two assertions in
+  that test close it, and all four envelopes are now genuinely covered. "The rest put the message
+  in a trace note or a refusal" was false of `server/console_api.py`, which puts an uncapped
+  `reason(exc)` straight into an HTTP body, contradicting the paragraph three lines above it; it
+  caps at 200 now like the other two body-bound callers, and the docstring says to pass `limit` for
+  anything body-bound. And `TODO(migration-concurrent-index)`'s "one transaction for the whole run"
+  is Postgres-only: with `transactional_ddl` False it degrades to a `nullcontext` and alembic
+  commits per revision, which is the sqlite dev path and what `_take_migration_lock`'s docstring
+  already said.
+
+  Also from that round: the `print` beside the scrubbed wiring note was still raw, so the same
+  exception reached stderr unredacted. Both sinks take one `detail` now, as the sibling handler
+  does.
+
 - **The pack store's blob key was not tenant-safe, and the test could not see it.** Found by the
   review round on the commit above. The key was `packs/{pack_id}/{version}.zip` -- no tenant, no
   digest -- and `BlobStore.put` is a plain write, so a second tenant publishing its own edited
@@ -344,6 +845,208 @@ squash; `dev` stays at what is pushed, for the 2.5.0 merge to `main`.*
   `tests/test_import_boundary.py` failed the addition, which was the right catch -- the export was
   added only to silence an `F401` on an import I had just written, and nothing imports it from the
   package root. `jazzx_sdk.failures.reason` is the path every caller uses.
+
+- **A blob key and a document name are names, not paths.** Brought onto `dev` from the 2.5.1 work
+  rather than left to arrive with it, because `dev` is what merges to `main` as 2.5.0 and these are
+  a silent arbitrary local-file read and unlink. Both were measured independently by the review
+  round on the pushed commit: `get("blob://../secret.txt")` returned the file's bytes,
+  `delete("blob://../victim.txt")` returned `True` and unlinked it, `put(key="/tmp/.../x")` wrote
+  outside the blob directory, and `DocStore(retrieval_mode="local").get("../secret.txt")` returned
+  that file as a document -- the last also reachable under `cached` whenever Knowledge Hub is down,
+  which is the fallback path rather than an exotic setting.
+
+  Every local read, write and delete on both stores goes through one `_local_path` that refuses by
+  shape, so there is no boundary left to forget. `DocStore` has four such branches, the TEST-mode
+  fixture read included, since it joins `golden_cases_dir` rather than the cache directory. By
+  shape rather than by resolving and comparing, because the name is echoed back in `file_path` and
+  a contained `..` would make that disagree with where the bytes came from.
+
+  `blob.content_key` came with the files. It is unused on `dev` -- it exists for the pack store,
+  which stays on 2.5.1 -- and imports nothing from `pack`, so it carries no dependency; the
+  alternative was hand-splitting a diff, which is how a security fix gets landed incompletely.
+  Reverting the two source files fails ten tests, every one of them `DID NOT RAISE`.
+
+  The review round on that fix then found the same miss one layer up: the guard went on the blob
+  *key* and not on the blob *filename* beside it. `DocumentAgent.materialize_blob_to(pointer, dest,
+  filename="../../escaped.txt")` wrote the bytes outside `dest` and returned that path as an
+  ordinary success, and `process_blob` builds the identical `Path(tmp) / filename`. The name
+  arrives with the pointer, from `DocumentIngestTurn.blob_pointers` -- the same caller-supplied
+  source the new guard's own docstring cites as why `get` and `delete` were the exposed pair.
+
+  Both go through one `_blob_filename` now, which refuses rather than coercing to
+  `Path(filename).name`. Coercing is right in `tools.documents.local`, where the name comes from a
+  `Content-Disposition` header nobody controls and the alternative is failing the download; here
+  the caller chose the name, so a silent rename leaves it looking for a file that is not there.
+  Refusing also matches the two guards this was found beside.
+
+  Two mistakes on the way, both caught by the tests written for it: the first version coerced while
+  its docstring said it refused, and `".."` passed the comparison on its own because pathlib does
+  not resolve it -- `Path("..").name` is `".."`, so it equals its own `.name`. Both tests fail
+  against the unfixed code, the second with a `PermissionError` on `/tmp/.../../../escaped.pdf`,
+  which is the escape being attempted and stopped by the filesystem rather than by us.
+
+  The round after found the third layer of the same family: `turn.collection_id` reaches
+  `_scratch_dir` as a path component, so `"../../elsewhere"` placed the scratch folder outside the
+  base and `process_dir` globbed it and wrote its artifacts there. Guarded in `_scratch_dir`
+  itself, not at that one caller -- it is the only builder there, and every other part it receives
+  is a literal or a `.stem`, so the rule costs them nothing and the next branch cannot forget it.
+
+  Three test corrections from the same round, all of them the test being weaker than it read. The
+  `rglob` assertion claimed to prove "nothing was written under `tmp_path`" while the escape lands
+  in `tmp_path.parent`, outside anything it can see -- the same shape as the blob-store assertion
+  corrected earlier in this release. A bare `pytest.raises(ValueError)` would have stayed green off
+  the missing-pointer raise in the same method if a fixture stopped resolving the pointer, so it
+  matches the message now. And `"."` had no case -- though the comment added with it inverted the
+  two clauses, which the next round caught: `Path(".").name` is `""`, so the equality clause does
+  catch `"."`, and it is `".."` that needs the explicit tuple because pathlib does not resolve it.
+
+  That round also found the assertion in the *new* `collection_id` test could not observe its own
+  escape -- it looked one directory too high, and the branch only builds a string while the fake
+  agent writes nothing, so nothing is created either way. Removed rather than corrected: the
+  `raises` is the whole test, and saying that is better than a check shaped like evidence.
+
+  And "every other part is a literal or a `.stem`, so the rule costs them nothing" was not
+  measured. The correction was not measured either: it claimed a file named `...zip` (stem `".."`)
+  had unpacked into the base's *parent*, and the round after that showed the only stem call site
+  passes `("unpacked", stem)`, so the path was `base/unpacked/..` -- which resolves to `base`.
+  Nothing escaped. Both stems are refused now because a bare name is the rule, not because they
+  got out.
+
+  Three rounds on one sentence, and three rounds where the only findings were comment claims of
+  mine being false. The archaeology is gone rather than rewritten a fourth time: a docstring says
+  what the code enforces, and the history lives here, where being wrong is cheap and a narrative is
+  the point. The same applies to the caller surveys corrected earlier in this entry -- a count of
+  call sites is stale as soon as one is added.
+
+- **The JWKS fetch could be pointed inside the network.** From the PR review round on the pushed
+  commit. `OidcSettings` checked the URL's *scheme*, which says the fetch is encrypted, not where
+  it goes -- so `jwks_uri=https://169.254.169.254/latest/meta-data` was fetched and its body parsed
+  as a key set. The guard already existed one layer over: `net_safety.is_private_ip` names that
+  exact address in its own docstring, and `plato/oidc.py` did not import `net_safety` at all.
+
+  Through `net_safety.fetch_validated` now, which is also the loop that re-checks every redirect
+  hop (a client following redirects itself is checked once and then sent wherever the first
+  response points) and which offloads the resolver rather than blocking the loop this class went
+  async to keep free. Against the pre-fix code the new test takes ten seconds, because the request
+  is really attempted.
+
+  `OidcSettings.allow_hosts` comes with it, and is not optional: the common Keycloak shape is
+  in-cluster, which resolves private, so a bare private-address rule would refuse the primary
+  deployment rather than block anything. Same contract as the Knowledge Hub client's blob
+  allow-list -- it admits a stated host, it does not disable the guard. Loopback stays permitted
+  because `_is_secure_url` already blessed `http://` there for a dev instance, and a guard that
+  breaks local development is a worse bug than the one it fixes.
+
+- **`gitpython` floor to 3.1.59.** Five advisories published 2026-09-09, one critical, all fixed in
+  3.1.59; the push gate reported them against the default branch. It is a transitive dependency of
+  the mlflow extra and already carried a direct floor for six earlier CVEs, so this is that floor
+  moved. Locked at 3.1.62, and `gitpython` is the only package the relock moved.
+
+- **One home for "is this name safe to join onto a directory".** The push review found two more
+  members of the family the traversal guards were written for, and the reason both existed is that
+  the rule had been hand-written four times.
+
+  `materialize()` had no guard at all: it writes `out / name_fn(entity)`, and for
+  `sync_collection` that name is the Knowledge Hub's stored document name -- remote, and
+  user-supplied at upload. Reproduced end to end: `wrote outside out? True -> /tmp/.../evil.pdf`,
+  two levels above the output directory. `process_dir` then globs `out`, never sees the file, and
+  the run drops it silently as well.
+
+  And `"."` passed both `_local_path` guards, because `PurePosixPath(".").parts` is `()` -- so it is
+  neither empty, absolute, nor `..`-bearing -- while `Path("blobs") / "."` is `blobs`. Measured:
+  `put(b"x", key=".")` wrote a *file* at the blob directory's own path and left every later write
+  failing `FileExistsError` on it. `_blob_filename`'s docstring had claimed the family "answers a
+  bad name the same way"; that was false for exactly this input, in the direction that matters.
+
+  So `jazzx_sdk.path_safety` owns the two rules now -- `relative_name` (may nest, may not escape)
+  and `bare_name` (one component) -- and all five sites call it: both `_local_path`s, `materialize`,
+  `_blob_filename`, and `_scratch_dir`. Top-level and dependency-free because `fabric` cannot
+  import `agents` and both need it, which is the same reason `digest` and `net_safety` sit there.
+  `relative_name` for `materialize` was the wrong of the two, and the next round measured why:
+  `out`'s consumer globs it non-recursively, so a nested name is written and never seen, and a
+  document named `.japes/manifest.json` lands on the run manifest `process_dir` keeps there --
+  `manifest now: b'%PDF evil'`, with `materialize` returning it as an ordinary success and the next
+  run reading document bytes as its manifest. It is `bare_name` now, matching the two neighbouring
+  guards that already used it for this shape. Permitting nesting to avoid refusing a name no caller
+  needs traded a loud refusal for silent data loss.
+
+  Two corrections in `path_safety` itself from that round. The `"."` member of the parts set did
+  nothing in `relative_name` -- pathlib strips single dots, so `"a/./b"` is already `("a", "b")` and
+  could never match it -- while the error text claimed to refuse a `"."` segment; the two cases are
+  separate checks now, each saying what it enforces. And the shape check used `PurePosixPath` while
+  the join uses `Path`, so on Windows `..\x` would pass a check that its own join then lets out;
+  both use `PurePath`. Pre-existing in the inline guards, and worse once centralized as "the same
+  rule for every join site".
+
+  Two flaws in the test written to prove it, both the shapes these guidelines name: the entity
+  fixture put `doc_id` at the top level where production reads it from inside `json_value`, and the
+  `_KH` stub took `doc_ids` returning a dict where the real client takes `document_ids=` and
+  returns a ZIP -- so the download failed, the write under test never ran, and the `raises` was
+  passing for the wrong reason.
+
+- **Boot notes are served, so they are scrubbed and bounded.** Brought onto `dev` for the same
+  reason as the path guards: `/info` renders `boot_notes` under `degraded` and `/health` under
+  `missing`, so a `PLATO_WIRING` import or a pack load failing with a driver error put
+  `postgresql://user:password@host` into every response a degraded replica gave -- an
+  unauthenticated probe surface. Both call sites go through `reason` now, and `record_boot_note`
+  caps at `BOOT_NOTE_MAX_CHARS`; the cap is at the source rather than at the callers because there
+  are several and a later one would have to remember.
+
+  The first version of the test for it was wrong twice. Its redaction assertion composed the note
+  by calling `reason(exc)` *in the test*, so it could not tell whether the shipped call site did --
+  the only thing worth asserting; it drives `_registries` with a raising `pack_registries` now. And
+  the cap assertion imported `BOOT_NOTE_MAX_CHARS`, so against the unfixed code it failed on
+  `ImportError` rather than on behaviour, and would have passed by agreeing with whatever the
+  constant said. It uses the literal, and the two now fail as `assert [2015] == [500]` and with the
+  DSN present in the note.
+
+  The review round then turned the argument back on the change: the *bound* went to the source
+  because "a later caller would have to remember", while redaction stayed at each caller -- and
+  forgetting to redact is the demonstrated failure, not the hypothetical one, since this fix was
+  two call sites that interpolated a raw exception. So `record_boot_note` does
+  `redact_secrets(note)[:BOOT_NOTE_MAX_CHARS]`: redaction before truncation for the reason `reason`
+  gives, idempotent for callers already going through it, and a caller that forgets is covered
+  rather than trusted. A test passes an unscrubbed DSN straight in.
+
+  `TODO(bound-missing-config)` records the other producer of that served list: `missing_config`
+  echoes the `PLATO_PACK_DIR` repr with neither treatment, and bounding in `resolve_degraded` would
+  cover both. Left because that value is written by whoever deploys -- a long `/info` field, not a
+  credential we introduced. And the constant's comment no longer claims room "for a driver message
+  with its cause": the budget covers the prefix too, so the cause is what gets cut.
+
+  The round after that caught a comment asserting commit history -- "two of these call sites passed
+  a raw exception until the commit that added this" -- written in the same session as the note
+  saying not to do that. Gone from the comment and the test docstring; the rule they state holds
+  from the code beneath them.
+
+- **`TODO(settings-store-env-leak)`** records a test-isolation bug found while reviewing the above
+  and confirmed to predate it. `apply_to_environment` writes `os.environ` directly and the settings
+  store tests call it, so what it sets outlives the test -- the autouse fixture's
+  `monkeypatch.delenv` only restores what was there when the test started. Reproduces as
+  `pytest tests/test_plato_settings_store.py tests/test_plato_info_api.py`
+  (`assert None == 'sqlite'`), and is unreachable in the suite's own order: nothing randomizes it,
+  and `info_api` sorts before `settings_store`. Which also means the `-p no:randomly` this session
+  put on every full-suite run was a no-op -- that plugin is not installed.
+
+
+- **A URL check ran on the event loop.** `net_safety.validate_url_safe` ends in
+  `socket.getaddrinfo`, and `WebhookChannel.send` is an `async def` that called it inline -- so
+  every webhook send stalled every other coroutine for as long as the resolver took. Offloaded via
+  `call_maybe_async`, which `fetch_validated` and `plato/oidc` already do for the same call. The
+  review named the function; the caller was found by grepping for it.
+
+  Two findings from that round are rejected on measurement, not judgement. `InvalidIssuerError`
+  was said to carry the presented issuer: on the installed PyJWT it is the fixed string
+  `Invalid issuer`. The header-parse error was said to include decoded header bytes from the
+  token: it is `Invalid header string: 'utf-8' codec can't decode byte 0x81 in position 15`, a
+  codec diagnostic naming a byte value and an offset. Neither discloses token content.
+
+  `TODO(jwks-discovery)` records the third: `/protocol/openid-connect/certs` is Keycloak's path
+  rather than a standard one, so the default is wrong for Azure AD, Google and Auth0, and the
+  portable answer is to read `jwks_uri` from `{issuer}/.well-known/openid-configuration`. An
+  operator can already set it explicitly and nothing mounts `TokenVerifier`, so no deployment is
+  wrong today; discovery is its own change, with a second fetch, its own cache and its own failure
+  mode.
 
 - **An OIDC issuer without an audience is refused at construction.** From PR #67 review. `verify()`
   passes `audience or None`, and PyJWT with `audience=None` and `verify_aud=True` inverts the check

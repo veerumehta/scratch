@@ -9,6 +9,84 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ## [Unreleased]
 
+### Changed — japes 2.5.1 (branch `japes-2.5.1`, needs an unreleased japes)
+
+- **Pack paths resolve through one seam instead of counting directories.** Modules computed
+  their own root by walking up from `__file__` -- `parents[4]`, `parents[5]`, `parent` five or
+  six times -- each count correct only for the nesting of the file it sat in, so moving a
+  module breaks its path and nothing else. `jaci.paths` replaces that for DSCR:
+  `pack_root("dscr-core")`, `packs_dir()`, `prompts_dir()`, `repo_root()`.
+
+  The mechanism is japes' (`jazzx_sdk.pack.roots`): marker-based discovery, an environment
+  override consulted first, and `-`/`_` reconciliation so `dscr-core` finds `dscr_core/`.
+  Every domain needs it and none of it is jaci's, so what stays here is the vocabulary -- the
+  variable names, and that prompts live in `prompts/`. That is also what makes a *published*
+  pack reachable later without touching jaci: `resolve_packs_root` is where a pack-store
+  lookup lands, in japes.
+
+  DSCR's six sites are converted. The rest of the repo still counts directories; converting
+  them is mechanical but wide, and each scenario deserves its own pass.
+
+### Changed — japes 2.5.0
+
+- **The `[litellm]` extra is gone from the japes pin.** Not optional: japes 2.5.0 removed the
+  extra entirely, so `japes[litellm] @ ...` no longer resolves at all. Claude is reached by
+  japes' own native Agents-SDK model now. Removing the stale `litellm` from an existing
+  environment is also required -- it pins `openai<3.0.0` while 2.5.0 pulls `openai` 3.x, which
+  `pip check` reports as a conflict until it goes.
+
+- **The MLflow reporter moved too.** `jazzx_sdk.evaluation.reporters.mlflow` became
+  `jazzx_sdk.evaluation.backends.mlflow.reporter` -- japes 2.5.0 put its MLflow
+  implementations behind a backend boundary. The old path raises `ModuleNotFoundError`, so
+  `JACI_EVAL_MLFLOW=1` would have failed at the import rather than at anything to do with
+  MLflow. Second of the two stale japes paths in the repo, after `queue_processor`.
+
+  The `run_eval_anthropic` header no longer claims the litellm extra is required, since
+  japes resolves an Anthropic `model_name` to its own native model now.
+
+- **`uv.lock` regenerated, which is the only way it moves.** Dropping the extra from
+  `pyproject.toml` left the lock still requesting `japes[litellm]`, so `uv sync --frozen`
+  would have failed in CI before a test ran -- and the lock still pinned japes at 2.4.9.
+  `uv lock` alone keeps the old commit and `uv lock --upgrade-package japes` does not move
+  it either, both confirmed here; the lock has to be regenerated, exactly as `tests.yml`
+  already documents. Now at japes 2.5.0 (`e61fbc2`), with `litellm` gone entirely and
+  `openai` 3.11.0, `openai-agents` 0.22.2 and `gitpython` 3.1.62 following from it. The
+  file shrinks by ~300 lines: litellm was pulling `tiktoken`, `tokenizers`, `boto3` and
+  `regex` behind it.
+
+- **A pre-push check, as japes has.** Five steps: lock consistency, open Dependabot alerts,
+  japes freshness, the suite, and the adversarial review. The review script is *referenced*
+  from the japes checkout rather than copied, since it takes the repo name as its only
+  argument and works in any checkout; a copy would be a second thing to keep in step.
+
+  Installed by `scripts/local/install_hooks.sh`, which wraps rather than replaces: jaci's
+  `pre-push` is git-lfs's and overwriting it stops LFS objects uploading, silently, until
+  someone clones and finds pointer files. Checks run first and LFS second -- uploading
+  objects for a push the suite is about to reject leaves the remote holding objects for a
+  commit that never arrives.
+
+  The freshness step exists because `uv.lock` pins japes to a commit even for `@dev`, so a
+  laptop on an editable install and CI run different japes. It reads PEP 610's
+  `direct_url.json` for that; a first version scanned `distribution.files` for
+  `__editable__` and was silently false for this install.
+
+- **`QueueSettings` moved with the queue package.** `jazzx_sdk.queue_processor` became
+  `jazzx_sdk.queue.processor` in japes 2.5.0, one of thirteen root modules that moved into
+  packages. Imported from `jazzx_sdk.queue`, which re-exports it -- the package path rather than
+  the submodule, so a later reshuffle inside `queue/` does not reach us. This was the only stale
+  japes path in the repo; the other fourteen moved names appear nowhere here.
+
+- **`spread_approval` is registered as a signal tag.** japes 2.5.0 stopped copying a `Feedback`
+  category straight into an `ImprovementSignal` tag, because an unregistered category produced
+  signals the Curator's router silently rejected -- so these approvals were being dropped rather
+  than routed, and the mapping to `other` is what made it visible. `register_signal_tags` (new in
+  2.5.0) exists for exactly this: the capability registers its own tag at import, before any
+  approval can record feedback, and registration is additive so it cannot disturb another pack's
+  taxonomy.
+
+  Not a workaround for the change -- the change surfaced a real loss. The tag now survives
+  `to_signal()` and the signal routes.
+
 ## [0.20.6] - 2026-08-31
 
 Pinned onto the current japes dev, and given a way to find out when that breaks.

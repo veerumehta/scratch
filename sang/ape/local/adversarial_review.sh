@@ -108,10 +108,29 @@ if [[ -z "${REVIEW_FULL:-}" ]]; then
                 || saved_upstream=""
         fi
     fi
+    # The label match is necessary and not sufficient: `saved_upstream` is a *label* like `HEAD~1`,
+    # which compares equal to itself while resolving somewhere else entirely after a squash or a
+    # branch switch. What the state has to mean is "the last reviewed head is a prefix of what is
+    # being reviewed now", so that is what is checked -- an ancestor test, on the commit itself.
+    #
+    # Three outcomes, because the wrong one is silent:
+    #   * an ancestor            -> narrow to `<it>..HEAD`, the loop's whole point
+    #   * not an ancestor, same tree -> the history was rewritten and the content was not (an
+    #     `--amend` that changed the base, a squash), so there is genuinely nothing new to review
+    #   * neither                -> the state describes history this HEAD does not contain; do not
+    #     narrow, or the diff mixes two unrelated trees and reports their difference as a change
     if [[ -n "${saved_head:-}" && "${saved_upstream:-}" == "$upstream" ]] \
        && git cat-file -e "$saved_head^{commit}" 2>/dev/null; then
-        prior_head="$saved_head"
-        [[ -r "${saved_transcript:-}" ]] && prior_transcript="$saved_transcript"
+        if git merge-base --is-ancestor "$saved_head" HEAD 2>/dev/null; then
+            prior_head="$saved_head"
+            [[ -r "${saved_transcript:-}" ]] && prior_transcript="$saved_transcript"
+        elif [[ "$(git rev-parse "$saved_head^{tree}")" == "$(git rev-parse 'HEAD^{tree}')" ]]; then
+            prior_head="$saved_head"
+            [[ -r "${saved_transcript:-}" ]] && prior_transcript="$saved_transcript"
+        else
+            echo "  --  state names $(git rev-parse --short "$saved_head"), which is not in HEAD's" \
+                 "history and has a different tree; reviewing the full range"
+        fi
     fi
 fi
 
