@@ -166,9 +166,11 @@ Each lands on its own review. Not before `v2.5.1` is closed.
   derived-artifact cache in §5 is the real work. **Ask for that breakdown before building.**
 - **If the required set cannot be computed cheaply.** Scoping by investor assumes the conversation
   knows its investors before grounding. If deciding that needs the documents, the tiers collapse.
-- **If one consumer stays the only consumer.** jazzx-assistant is already the *only* external
-  caller of `materialize`, so this is not a hypothetical: the method has one outside user and this
-  plan adds public surface for that user. It is a real request rather than speculative generality,
-  but the honest framing is that `fabric.docs.materialize` is a one-consumer API today, and the
-  case for tiering living in japes rests on the second consumer arriving. If none does, this was
-  theirs to write.
+- **Not "only one consumer asked for it".** jazzx-assistant is the only external caller of
+  `materialize` today, and on an earlier reading that counted against building this here. It does
+  not. That consumer is the canonical assistant: its turn shape is what the next assistant
+  (policy workbench, a DSCR one) will start from, so absorbing its needs is the point rather than
+  a favour to one caller. The risk worth tracking is the opposite one -- building the tiering
+  *around* one consumer's current call site instead of the shape every assistant needs, which is
+  what a `required=` predicate tuned to "investor" rather than to an arbitrary caller rule would
+  look like.

@@ -997,6 +997,17 @@ including in the two files both branches had touched.*
   costs: its first version exited 4 on wiring resolution and passed for the wrong reason, so it
   now stubs `load_wiring` and fails with `0 == 6` against the unfixed code.
 
+- **The close budget is one budget, and the retired stores stay on the list until they use it.**
+  `dispose_all` emptied the retired list before disposing anything, so a current store that stalled
+  or raised took the rest with it -- dropped having been neither closed nor recorded, which
+  narrowed the "drains that list when the process ends" sentence written one round earlier. It pops
+  one at a time now, and the constant's comment says the bound covers the whole call rather than a
+  single pool, which is what `asyncio.wait_for` actually wraps. A unit test retires two stores
+  behind a failing current one and asserts both survive on the list; against the old ordering it
+  reads `assert [] == ['first', 'second']`. Also: the blocking-dispose test pins `TimeoutError`
+  rather than the prefix its raising sibling shares, and the two new env-name constants joined
+  `__all__` beside `WIRING_ENV`.
+
 - **The bundled `dscr_core` notes described a prepay default that no longer passes.** The pack's
   `ENCODING_NOTES.md` §1b stated `prepayment_penalty_requested` defaults to `"no_prepay"` and
   cited that as the reason no gold case needed updating. The consumer's default is `"unspecified"`
@@ -1026,6 +1037,17 @@ including in the two files both branches had touched.*
   disk after every run. Both are pinned: one test sabotages `dispose` and still expects the row's
   code, another runs a job with `GOOGLE_APPLICATION_CREDENTIALS_B64` set and expects no key left
   in `TMPDIR`.
+
+  The review's follow-up round closed the rest of it. `release_wiring` runs in `run_role`'s
+  `finally`, before the entry point's exit, so the guarantee covered a `dispose` that *raises* and
+  not one that *blocks* -- an unbounded await there reproduces the same hang. The wait is bounded
+  by `PLATO_POOL_CLOSE_TIMEOUT_SECONDS` (default 10, floor 1) and a third test holds it with a
+  `dispose` that sleeps an hour. The `except` around `atexit._run_exitfuncs()` came out: atexit
+  reports a callback's exception as unraisable and continues, so there was nothing to catch and
+  the comment claimed a property that was atexit's. `_TIER_VARS` in the test now derives from
+  `_POSTURE_ENV_VARS` instead of repeating its four names, and `swap_database`'s docstring no
+  longer says the retired store "is never disposed" -- `dispose_all` drains it at exit, which is
+  what `replace` had always promised.
 
   The test that was supposed to hold row 6 to its code path is the reason this shipped: it stubbed
   `load_wiring`, which is precisely the call that opens the store, so it asserted a return value
