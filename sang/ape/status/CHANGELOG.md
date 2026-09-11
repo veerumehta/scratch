@@ -1022,13 +1022,42 @@ including in the two files both branches had touched.*
   rename frees the name it left, which is the only way a name is released (there is no delete
   route), so the app cannot refuse a name nothing holds.
 
-  Nine tests, seven of which were watched to fail against the behaviour they pin: a duplicate
-  create accepted as `201`, two `400`-vs-`422` cases (create schema, update schema), a missing
-  `json_value` at `400`, a rename silently overwriting at `200`, and a vacated name still refused
-  at `409` twice over -- once for a rename and once for a blanked name, the empty-string edge that
-  keying the release on a *truthy* new name had skipped. The other two are controls that stop the
-  change being satisfied by refusing everything: the same name in a second collection, and the
-  client returning two entities rather than raising. The
+  Two rounds of review found the ordering wrong in both directions, and both are now the
+  service's. **Validation precedes the conflict**, because the real create validates before the
+  insert whose integrity error becomes the 409 -- a body that is both a repeat name and
+  schema-invalid is a 422, where checking the conflict first made it a 409. The app asks the
+  delegate to validate without writing (`validate_entity`, and `validate_update` for the update
+  route, which was extracted from `update_entity` so the effective-pair rule keeps one owner
+  rather than being restated in the app). **A present-but-blank name is refused**, as the
+  service's body model refuses it: an earlier cut stored it and then maintained the conflict set
+  around it, modelling a state the Hub never reaches. And the conflict set is maintained on
+  **both** halves of its `(collection_id, name)` key, since `collection_id` is patchable too --
+  keying it on the name alone left a vacated name blocked and a taken one unrecorded, the latter
+  being the quiet direction where the mock accepts what the service refuses. Names compare
+  exactly, as the service's unique constraint does; stripping them folded ` e-1 ` onto `e-1` and
+  invented a conflict.
+
+  A `null` for either key field means "not supplied", not "set to None": the delegate writes a
+  field only when it is not `None`, so a JSON null leaves the stored value in place. A round of
+  this fix stringified it into the key as `"None"`, discarding the entity's live key and recording
+  a phantom, after which the app accepted a duplicate the service refuses -- at 200, with a
+  plausible body. A client that serializes unset optionals as null hits that on any partial PATCH.
+  A blank `collection_id` is refused alongside a blank name, since the service types it `UUID` and
+  no empty string parses as one. The create route draws the same null distinction, which took a
+  further round: a null `name` passed its guard (`str(None)` is truthy), was stored as the field's
+  value, and put the phantom `"None"` into the conflict set, which then refused an entity
+  legitimately named `None`. The two routes still answer a null differently -- 400 on create, 200
+  on update -- and that is the point rather than a leftover, since a create's fields are required
+  and an update's are optional.
+
+  Sixteen test functions, fourteen of which were watched to fail against the behaviour they pin: a duplicate
+  create accepted as `201`, three `400`-vs-`422` cases (create schema, update schema, missing
+  `json_value`), a schema-invalid duplicate answering `409`, a rename silently overwriting at
+  `200`, a vacated name still refused at `409`, a blank name stored at `200`, a blank
+  `collection_id` stored at `200`, a collection move leaving both directions wrong, a null key
+  field poisoning the key on either route, and a padded name refused at `409`. The other two are controls that
+  stop the change being satisfied by refusing everything: the same name in a second collection,
+  and the client double creating both rather than raising. The
   missing-scalar-field `400` stays, now with a `TODO(missing-fields-still-400)` recording why: the
   real route's detail shape differs too, so matching the code alone would be half a fix.
 
