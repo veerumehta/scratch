@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Reject a commit message that credits a tool for the work.
+#
+# Author: Virendra Mehta <virendra.mehta@jazzx.ai>
+#
+# Install (per repo, one line):
+#     cp scripts/local/commit-msg .git/hooks/commit-msg && chmod +x .git/hooks/commit-msg
+#
+# Or for every repo at once, without copying into each:
+#     git config --global core.hooksPath ~/.git-hooks
+#     mkdir -p ~/.git-hooks && cp scripts/local/commit-msg ~/.git-hooks/ && chmod +x ~/.git-hooks/commit-msg
+#   (a repo with its own .git/hooks then needs core.hooksPath unset locally, since the global
+#   path replaces rather than supplements it -- check with `git config core.hooksPath`.)
+#
+# What it does NOT reject: naming Anthropic, Claude, OpenAI or Gemini as *products this code
+# integrates with*. That is subject matter, and this repo ships adapters for all of them. Only
+# the trailers and banners that credit a tool for authorship are refused, which is why the
+# patterns below are anchored to those exact shapes rather than to the vendor names.
+#
+# Bypass, when you genuinely mean it:  git commit --no-verify
+
+set -euo pipefail
+
+msg_file="${1:?commit-msg hook expects the message file as $1}"
+
+# Comment lines are git's own template, not the author's text, and a commented-out example
+# should not fail the commit.
+body="$(grep -v '^#' "$msg_file" || true)"
+
+# Each entry: a description, then an extended-regex. Anchored to attribution shapes.
+patterns=(
+    "a Co-authored-by trailer crediting a tool|^[[:space:]]*co-authored-by:[[:space:]]*.*(claude|anthropic|copilot|cursor|codex|gemini|chatgpt|openai)"
+    "a generated-with banner|generated[[:space:]]+(with|by)[[:space:]]+\[?(claude|anthropic|copilot|cursor|codex|gemini|chatgpt|openai)"
+    "a bot account as co-author|^[[:space:]]*co-authored-by:[[:space:]]*.*\[bot\]"
+    "an AI-assistance note|(ai|llm)[- ](generated|assisted|authored|written)"
+    "the robot banner|🤖"
+)
+
+failed=0
+for entry in "${patterns[@]}"; do
+    label="${entry%%|*}"
+    regex="${entry#*|}"
+    if printf '%s' "$body" | grep -qiE "$regex"; then
+        if [[ $failed -eq 0 ]]; then
+            printf '\n\033[1mcommit refused: the message credits a tool for the work\033[0m\n\n' >&2
+        fi
+        failed=1
+        printf '  - %s\n' "$label" >&2
+        printf '%s' "$body" | grep -inE "$regex" | sed 's/^/      /' >&2
+    fi
+done
+
+if [[ $failed -eq 1 ]]; then
+    cat >&2 <<'EOF'
+
+  This work ships under its author's name. Remove the line(s) above and commit again.
+
+  Deliberate exception:  git commit --no-verify
+EOF
+    exit 1
+fi
