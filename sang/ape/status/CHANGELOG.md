@@ -10,6 +10,1100 @@ squash; `dev` stays at what is pushed, for the 2.5.0 merge to `main`.*
 *`v2.5.1` is rebased onto the pushed `dev` (`25f5d35`), keeping its three commits. No conflicts,
 including in the two files both branches had touched.*
 
+- **A dedicated packs page, and the pack store's first writes.** `pack_version` decides what a
+  domain is and the dashboard showed it as a row count beside seven other tables. `GET
+  {prefix}/packs/ui` is a page of its own: one row per pack with domain, segment and latest
+  version, expanding into that pack's versions with status, visibility, publisher, digest, archive
+  presence and declared dependencies. Expansion survives a reload, so a delete does not collapse
+  the pack being worked in.
+
+  `GET {prefix}/packs` is the JSON behind it, gated like `database` and `metrics`, and it never
+  raises: an unwired or unreachable store reports `available: false` with a reason, and one
+  unreadable pack costs that pack's versions rather than the page.
+
+  `DELETE {prefix}/packs/{pack_id}/{version}` is the only mutation the table permits, because a
+  published version is immutable by construction -- the key carries no surrogate, so an edit is a
+  new version and retirement is a delete. `PackVersionStore.delete` is tenant-scoped by that key
+  and idempotent, and it keeps the archive: the blob key is the content digest and copy-on-adopt
+  means two tenants legitimately share one, so reclaiming it needs a count across every tenant
+  that a tenant-scoped store cannot ask. `TODO(orphan-blob-gc)` records that.
+
+  `POST {prefix}/packs/initialize` publishes `plato/data/seed_packs` -- `dscr_core` and
+  `ci-spread-core`, the two packs that ship with the image -- into the calling tenant, so a fresh dev-daily database is not empty on the
+  page it is meant to be verified through. `PLATO_SEED_PACKS_DIR` points somewhere else, which is
+  how a developer seeds the packs they are editing rather than the snapshot. Idempotent by
+  `(pack_id, version)`: `publish` refuses a duplicate and this is something someone does twice.
+  Editor and build junk (`.DS_Store`, `__pycache__`, `*.pyc`) never reaches an archive.
+
+  Both writes are relaxed-posture only -- `local` and `dev-daily` -- through one shared gate rather
+  than a check spelled per route. Deliberately harder than `/v1/config`'s PATCH, which admits a
+  write in a strict posture as soon as an auth dependency is present: that is the right trade for
+  fixing a Knowledge Hub URL and the wrong one for rows that say which rules a decision was made
+  under.
+
+  The router takes `store_for(tenant)` rather than a store, the shape `session_store_for` has:
+  `PackVersionStore` is tenant-scoped at construction, so one store on the app would have served
+  every tenant the first one's packs -- wrong exactly where several tenants are the point.
+
+  The review round on it found the seeding verified the wrong thing: that the packs *publish*, not
+  that they load. Three of the five vendored packs point `policies.registry`, `conductor.*` or
+  `experts.*.class` at `jaci.*` dotted paths, and jaci is not a japes dependency -- so the image
+  ships a pack that raises `ModuleNotFoundError` on `policy_registry` and `initialize` reports it
+  published. Recorded as `TODO(seed-pack-consumer-pointers)` and a strict xfail rather than settled
+  by guess: either the vendored copies drop the pointers in favour of the declarative files they
+  already carry, or those packs are not seed data.
+
+  `dscr_core` also declared `policies:` and no `profiles:`, so the profile beside its rules was
+  never loaded and the ten rules resolving `profile:`/`profile_table:` references had nothing to
+  resolve against. Declared now; the profile answers with 7 thresholds and 5 grids.
+
+  And `Threshold` failed open on a typo. `frozen=True` without `extra="forbid"` let pydantic drop
+  an unmodelled key, so `{value: '1.20', status: active, provinance: secondary_source}` built an
+  institution-authored, *active* threshold and `get` served the figure as the institution's own --
+  on the one field the type exists to govern, with the coercion's own comment claiming an unmodelled
+  key was refused. Extras are forbidden, so a misspelling and unmodelled metadata are both refused
+  by both accessors.
+
+  Smaller: the degraded nav offered the two new pack links it does not mount, which is the case
+  `nav_html`'s `omit` list exists for; a mistyped `PLATO_SEED_PACKS_DIR` rendered as "0 published,
+  0 already there" because the page dropped `reason`; `seed.py` claimed assistant packs seed when
+  an `AssistantManifest` has no `pack_version` to publish under, and reported them as declaring no
+  `pack_id` when they do; `GuidanceAsset.is_active` carried the same naive-datetime crash `as_utc`
+  was extracted for; and one new test asserted `sorted(x) == x` over the same list.
+
+  A second round on it found the deferral's own enumeration wrong: three packs named, four
+  carrying `jaci.*` pointers. `clinical-intake-core` has one on `modes.evaluator.class`, which the
+  parked test cannot see because it reads `policy_registry` and `policy_profile()` and never
+  touches `modes:` -- so a fix following that note literally would have left one pack broken. Only
+  `dscr_core` is clean. The note names all four now and a test pins the set against the manifests,
+  since a sentence someone has to keep in step is not a record.
+
+  An existing but empty seed root returned no `reason`, rendering as "0 published, 0 already
+  there" -- the same misread as a missing root, one input over. Neither write recorded who asked:
+  the page carries a **By** column that always showed a dash, `publish` already takes the
+  argument, and `settings_store._actor` already owned the best-effort lookup. `pack_inventory`
+  claimed never to raise while the row transform sat outside its per-pack guard.
+  `_manifest_of` returned on the first unreadable manifest name instead of trying the other. And
+  `TODO(if-match-post)` was deferred on "there is no route to fix against", which `POST
+  {prefix}/packs/initialize` makes false.
+
+  A third round found the feature dead in every deployment. `create_plato_app` grew a
+  `pack_store_for` kwarg, the router used it and the nav advertised the page, but `PlatoWiring` had
+  no such field and `build_app` passed none -- so `/packs` answered "no pack store is wired" and
+  both writes 503'd for any real server. All 24 tests built the app directly with their own
+  factory, which is why none of them saw it. The wiring carries it now, built beside
+  `session_store_for` with the same per-tenant caching, and the new test goes through `build_app`.
+  Archives need somewhere to live, so `_pack_blob` resolves `PLATO_PACK_BLOB_BACKEND`/`_DIR`/
+  `_CONTAINER`, local by default: a replica with no object store configured still publishes.
+
+  `nav_html`'s docstring and `TODO(omit-info)` both still quoted the degraded omission tuple as
+  three entries after it grew to five, in the file whose stated purpose is that three files cannot
+  drift into three link sets. They point at its owner now instead of restating it.
+
+  A fourth round found the same shape one layer out: the page could not work where it is aimed. The
+  shipped tenant resolver *raises* on a deployed posture with no `X-Tenant-Id` -- rightly, since
+  serving an unlabelled request as some arbitrary tenant is a cross-tenant read -- and the page sent
+  no such header, so every fetch 500'd on dev-daily, the posture this surface exists for. The route
+  answers 400 naming the header now, and the page carries a tenant field on `info.html`'s
+  affordance: client-side, remembered, re-reads on Enter. All four fetches go through one helper.
+
+  `load()` also mapped every non-2xx to `null`, which renders as "Pack store not readable" -- the
+  page blaming the store for a request problem, while its two write paths already read `detail`.
+  `seed.py` dropped the `.strip()` `publish` applies to the same key, so a padded `pack_id` missed
+  the already-published lookup and a second run reported `failed` where it should say `skipped`.
+  `pack_inventory`'s "never raises" now covers the sort and record reads that sat outside its
+  guards, and `_MANIFEST_KEYS` no longer claims to be what an operator reads on a page with no
+  manifest column.
+
+  **Retiring a version no longer frees its number.** `delete` removed the row, so publishing the
+  same `(pack_id, version)` afterwards succeeded with different bytes -- in-place editing with an
+  extra call, and nothing recording that the version had ever held anything else. Measured:
+  digest `e060ce02` became `a8ecd153` under one version and `versions()` showed a single `0.1.0`.
+  Over HTTP that is `DELETE .../packs/{id}/{version}` then `POST .../packs/initialize`, and bundled
+  seed content changes without a `pack_version` bump -- so a re-initialize after an image upgrade
+  substituted content under an unchanged version.
+
+  `0004_pack_version_retired_at` adds the tombstone. `delete` sets `retired_at`, the three reads
+  skip it, and `publish` asks `_row_including_retired` rather than `get` -- the one read that must
+  not filter, because filtering it there would have left the tombstone doing nothing at all. The
+  language is *retire* now, on the route, its 404 and the page, since that is what it does.
+
+  Two more from the same round: `detect_cross_period_addback_inconsistency` raised
+  `ThresholdNotActivated` out of a findings function while `policy_lint` in the same change
+  explicitly reports it, so an unapproved severity knob lost every finding the call would have
+  produced -- named in `detail` now. And `_warning_refs` returning `{}` left `policy_id`/`rule_id`
+  absent where the violations loop always sets them, so a consumer keying on `rule_id` got a
+  `KeyError` instead of the `None` the docstring's own story implies.
+
+  `load_workbook_layout` picked up two `TODO`s from the same review, both pre-existing and neither
+  built here. A layout `key` that resolves against neither the chart of accounts nor the metric
+  catalog loads clean and then emits a labeled row of empty cells in a *governed* workbook with no
+  exception entry -- validating it needs the pack's own accounts and metrics, which that function
+  deliberately does not take, so the check belongs where the caller has both. And a
+  `live_formula: true` sheet declared before its Inputs sheet silently writes literals instead of
+  formulas: a workbook that looks right and is not live. A shipped layout's header claims the first
+  check already happens.
+
+  The seed set is `dscr_core` and `ci-spread-core`, re-vendored after their manifests were fixed at
+  source. `ci-spread-core` declares `policies: {dir: policies}` instead of a `registry:` pointer
+  into consumer code plus an enumerated `core:` -- verified to yield the same six policy ids the
+  code registry held, so the swap is behaviour-preserving rather than the credit decision it was
+  first described as. `dscr_core` declares its `profiles:` dir. Both now load inside the image,
+  which is what the parked strict xfail was waiting for; it flipped and is a plain test.
+
+  Wiring the pack store into `wiring_default` and not `wiring_local` left the feature dead in
+  `local` -- one of the two postures its writes are admitted in, and the one a laptop runs -- while
+  the test written for exactly that failure covered `wiring_default` alone. The third time this
+  release that a producer was added without visiting every construction of it.
+
+  Retiring a seeded version then re-initializing reported `failed: ValueError`: the pre-check reads
+  through `get`, which filters a tombstone, while `publish` sees one and refuses. `PackVersionExists`
+  carries `retired`, so a caller tells "nothing to do" from a fault without matching on a message,
+  and the answer is `skipped: retired`.
+
+  `_pack_blob` warns on a deployed posture as `_db` does for the same shape: the rows go to Postgres
+  and local archive bytes do not, after which `has_archive: true` claims an archive that is gone.
+  `pack_inventory` guards the record reads without hiding the pack -- the first attempt dropped an
+  unreadable one, contradicting its own test, so it is two guards that mean different things. The
+  consumer-module guard reads every file rather than manifests only, and pins the set: `dscr_core`
+  was called clean on a manifest-only read and its notes name `jaci.*`. Clearing the tenant field
+  clears the stored value instead of silently re-sending the old one.
+
+  `_pack_blob` keyed its durability guard on `== "local"` while `BlobStore` treats every
+  non-`azure` backend as local, so `Azure` with a capital -- or any typo -- skipped both the
+  `local_dir` and the warning: archives to `./blobs` inside the container, `has_archive: true` on
+  the row, bytes gone with the pod, silently. It guards the complement now, as `_db` does and as
+  its own docstring claimed to.
+
+  The **By** column had no way to be filled. `_actor()` reads the identity header and the page sent
+  none, so every seeded row stored null and each retire logged an unattributed caller for what the
+  module docstring calls a governed act; `info.html` has carried that field all along and the page
+  with the writes did not. And the fetch-exception path still reported "Pack store not readable"
+  for a replica that was restarting -- the misattribution the branch above it had just been fixed
+  for.
+
+  Two tests say what they do: the local-wiring one greps source rather than calling `build()`,
+  which `SystemExit`s without an assistant-profile checkout, and is named for that; the
+  consumer-module guard reads every text file rather than a `.yaml`/`.md` allowlist, its own
+  docstring having rejected a guard that reads a fraction of the tree.
+
+  An unreadable pack rendered as `Versions 0` beside a populated `Latest`. A pack row cannot exist
+  with no live versions, so an empty list means the second query failed -- wrong data whose only
+  trace was a log line, against `pack_inventory`'s own promise that the operator learns the pack is
+  unreadable. `versions_error` travels in the JSON, the row says "unreadable", and the header count
+  reports how many rather than undercounting.
+
+  Two symmetries, both the same mistake: restating an invariant locally instead of extending the
+  family. `_pack_blob()` was resolved inside `pack_store_for`, on the cache-miss path, so with two
+  or more tenants its warnings re-fired per request while `_db`'s land once at boot -- hoisted
+  beside it. And the four page-family invariants in `test_plato_info_api` enumerate pages by hand;
+  `packs_html` was in none of them, with two restated in its own file instead. It is in all four
+  now, including the external-host scan whose docstring records `info.html` having been left
+  "scanned by nothing" exactly this way once before.
+
+  Smaller: `#empty` doubled as the error channel, so a failed retire's message was wiped by the
+  next expander click; errors have their own element. A `count("headers(")` assertion also matched
+  the prose comment describing the helper. `TODO(azure-blob-container-singleton)` records that
+  `PLATO_PACK_BLOB_CONTAINER` only applies if pack archives are the process's first azure consumer.
+
+  The round after that was mostly the round before it. The error channel added to stop messages
+  being wiped never cleared on success, so a refusal from a blank tenant field sat beside the table
+  that rendered once one was supplied, and the failure path left "Nothing published yet." visible
+  underneath; both reset per attempt now. The `headers(` assertion "corrected" by subtracting the
+  definition still counted the prose comment describing it, so it sat at its threshold on the
+  strength of a sentence -- it counts call sites. The azure-container `TODO` claimed the collision
+  was unreachable because this is plato's only `backend="azure"` construction; `fabric.fabric`
+  builds a second from `JAPES_BLOB_*` that plato instantiates through `_client_layer()`. And the
+  identity field invites a value `get_current_user_id` discards: it parses `x-user-id` as a UUID
+  and returns `None` otherwise, so a name typed there left the row unattributed.
+
+  Two that were not: the pack-archive degradation was logged at boot and not reported, while `_db`'s
+  sqlite equivalent goes through `missing_config` to `/info` and the dashboard -- so one
+  container-start line was the only trace that a published pack cannot be materialized after a
+  restart. And `azure` with no container warned nothing while the local branch warns twice.
+
+  Reporting it through `missing_config` was then reverted, because it broke readiness. That list is
+  what `/health` answers 503 from and what a strict posture refuses every chat route on, and the
+  note is true whenever `PLATO_PACK_BLOB_BACKEND` is unset -- its default. Measured: a staging
+  replica with tenants, a Knowledge Hub, an LLM key and a `common` database got exactly one
+  degraded note, this one, so it would fail its container probe over a pack store it may never
+  publish to. The sqlite degradation it claimed to copy fires only on a database that genuinely
+  cannot persist. `_pack_blob` warns at boot; the comment records why it goes no further, and a
+  test holds a configured replica ready. The claim that `/v1/config` could clear the note was false
+  as well -- the key is not in the settings catalogue.
+
+  `#meta` kept the version count from the last successful read, so a mistyped tenant rendered
+  "3 versions" beside "unavailable" -- the third stale-channel bug in that file, now cleared on
+  every path.
+
+  **A bare threshold no longer claims a provenance it was not given.** `get_threshold` answered
+  `INSTITUTION_AUTHORED` for every plain value, including the shipped DSCR profile whose own header
+  credits its numbers to a vendor program summary -- the attribution `looks_authored` refuses to
+  invent for one mapping, invented for every profile. `ThresholdProvenance.UNSPECIFIED` is the
+  default and what a bare value reports; `ACTIVE` stays, because "a bare value is served" is true.
+
+  The grid `TODO` also had its blast radius backwards: it said the gate "covers seven of its
+  numbers and not the rest", and that profile authors all seven thresholds as bare strings, so the
+  gate covers *none* of its 157. Adopting it means authoring provenance on the thresholds, not only
+  closing the grid.
+
+  `_evaluate_composite` lifts a child's refusal onto its own `inputs`, which deleted the recursive
+  `limbs` walker in `experts.policy.default` -- the only code outside the condition evaluator that
+  knew the shape it builds. A grandchild refusal still reaches the warning.
+
+  One resolver, one guard. `_store` caught the tenant resolver's raise and wrote a comment
+  explaining why, while `assistants_api._tenant` calls the same resolver -- so every chat route
+  answered 500 with a stack trace for the request the packs route answered "X-Tenant-Id is
+  required". `plato.tenancy.tenant_of` is shared by both; proven by reverting.
+
+  `latest_version` was a lie in the field name: it is `list_packs()`'s row, chosen by
+  `published_at`, which that method's docstring calls the wrong answer for a caller reading it as
+  the highest version. Publish `0.2.0`, backport `0.1.1`, and the page said `Latest 0.1.1` above
+  its own expanded rows listing `0.2.0`. It is `last_published_version` under "Last published".
+
+  Smaller: `packs_html` lost an `omit` parameter no caller passes; the identity field shares
+  `info.html`'s storage key rather than making an operator retype a UUID one nav click away;
+  `PlatoWiring.pack_store_for` sits genuinely last, and its comment no longer justifies its
+  position with a dataclass rule that did not apply to a defaulted field; the store-cache docstring
+  says what it is (one entry, cleared per miss) instead of contradicting the note 30 lines above
+  it; `TODO(publish-tick-tie)`'s stated reason is no longer "no caller invokes publish yet", which
+  the seed route made false. And one ordering assertion was deleted rather than corrected a third
+  time -- `seed_packs` iterates a sorted list, so it could never have failed.
+
+- **Review round: the withholding branch outranked the precedence check that should have
+  silenced it.** Two defects in the not-activated work, both in the ordering of decisions rather
+  than in any single one.
+
+  `check_compliance` evaluated a rule's applicability gate *before* checking whether a
+  higher-precedence policy already owns the field the rule reads. So a rule an overlay had
+  replaced could still reach the `gate_blocks` branch and withhold `allowed` on its own gate's
+  unapproved threshold -- and nothing the operator did could clear it, because approving that
+  seed changes the answer of a rule that does not apply. The field-precedence check moved above
+  the gate, which also stops evaluating a gate whose rule is skipped either way.
+
+  In `_evaluate_composite`, the refusal *text* was first-child-wins while the composite's
+  `indeterminate_reason` gives `POLICY_NOT_ACTIVATED` precedence, so the two disagreed: a
+  satisfied `any_of` limb still carries the refusal text of its own refused child, and
+  `all_of[any_of[seedA, ok], ratio(seedB)]` reported the reason from `seedB` under text naming
+  `seedA`. An operator reads that text to know which key to approve. The text now comes from the
+  child that actually blocked, on the same precedence the reason uses, and is carried only when
+  the composite's reason is the one it explains -- so an `EVIDENCE_MISSING` outcome no longer
+  ships a stray refusal from a limb that passed.
+
+  The warning line also had no single owner: `experts.policy` built it in two pieces and
+  `finance.validation` kept a regex guessing at the join, two packages apart with nothing tying
+  them together. `format_not_activated`/`parse_not_activated` now sit together in
+  `fabric.canonical.refusal` -- which both sides already import at runtime, unlike `experts`,
+  whose import in `validation` is deliberately `TYPE_CHECKING`-only -- with `NOT_ACTIVATED_INPUT_KEY`
+  replacing four bare string literals. A round-trip test fails if the format changes without the
+  parser. `ComplianceResult.warnings` stays `list[str]`: a second structured field duplicating a
+  display channel is the kind of API growth that invites its own drift.
+
+  Declined, with the measurement: the two gate sites differed in that one wrapped
+  `gate_outcome.inputs` in `dict(...)` and the other did not. Pydantic v2 rebuilds a dict field
+  during validation, so the wrapper never protected anything -- it only made one of the two read
+  as if the other were unsafe. Dropped rather than mirrored.
+
+- **`seed_packs` called three kinds of "not a pack" already published.** A directory with no
+  readable manifest, an assistant pack, and a manifest with no `pack_id` all landed in `skipped`
+  beside the genuine already-published case, and the page renders `skipped.length` as "already
+  there". Pointing the seeder at a checkout whose asset-only directories keep their manifest as a
+  sibling top-level file -- the documented use of `PLATO_SEED_PACKS_DIR` -- reported three packs
+  as sitting in the store that had never been published. `not_packs` is now its own bucket, its
+  own count on the page, and the test asserts the two are distinguishable on a second run rather
+  than merely that a bad directory is non-fatal.
+
+  `TODO(seed-pack-vendoring)` records what the bundled copies are and are not: nothing keeps them
+  in step with the consumer-authored originals, which are the edited ones, and the packs name that
+  consumer's Python modules in their layout and reclassification declarations, so those entry
+  points do not resolve in a plato-only deployment. The policy and profile corpora, which is what
+  the page is verified through, do.
+
+  The vendored copies also carried gitignored plan filenames into a tracked tree, in nineteen
+  provenance comments across eleven files of the authoring repo. Rewritten at the source to name
+  the subject instead, keeping every phase and FR reference.
+
+- **Review round: the fourth message channel, and a resolver shape nobody catches.** All four
+  findings were low and all four were consistency gaps rather than reachable bugs, which is what
+  the round was for.
+
+  `packs.html` grew a fourth message channel with `#seed-result`, and `load()`'s reset block --
+  extended three times already for `#problem`, `#empty` and `#meta` -- did not cover it, so
+  "6 published, 0 already there" sat over a table a later delete had changed underneath. The
+  one-line fix the finding proposed would have broken the feature: `seed()` writes its message and
+  *then* awaits `load()`, so resetting there deletes the only report of what the run did. `seed()`
+  now computes the message, awaits the re-render, and writes it last; `load()` owns all four
+  channels, and a test pins that ordering so the next person does not reintroduce it.
+
+  `tenant_of`'s docstring promises "an HTTP answer, or `HTTPException(400)`" and the handler
+  enumerated `ValueError` alone. `PlatoWiring.tenant_from_request` is a documented extension
+  point, and the obvious way to write one is `request.headers["X-Tenant-Id"]` -- a `KeyError`,
+  which escaped as exactly the 500-with-a-stack-trace this helper exists to prevent. Now
+  `LookupError` too; a `TypeError` from a resolver still surfaces, being a defect in it rather
+  than a missing header.
+
+  `wiring_local` pointed the pack unpack cache at `CACHE`, the assembled assistant-pack directory
+  that `_assemble_pack` marks and `rmtree`s on every boot and `pack_registries` then reads as a
+  pack root -- so digest directories would land beside `profile/` and the cache would be discarded
+  per boot. `PLATO_LOCAL_PACK_CACHE` gives it its own directory, as the archive bytes already had.
+  Nothing deployed was affected: `wiring_default` passes no `cache_root` and gets the tempdir
+  default. `.gitignore` covered `.plato-local-pack/` and neither sibling, so both would
+  show as untracked the first time the local wiring ran; one glob now covers all three.
+
+  And one test located the bundled pack by a CWD-relative literal where its sibling in the same
+  diff asks `default_seed_root()` -- the function that owns where seed packs live. It failed from
+  any directory but the repo root, which is how it is run from the consumer's venv.
+
+- **Inline review of the three rounds above, which found more.** Four things, two of them
+  defects this branch's own review rounds introduced.
+
+  The `#seed-result` fix was wrong in its failure path: `seed()`'s `!response.ok` branch still
+  wrote the element directly, before the `load()` that now clears it, so the final assignment
+  overwrote it with the empty string. A 403 from a strict posture reported *nothing at all* --
+  worse than the staleness being fixed. Every branch routes through one variable now, and the
+  test asserts the exact set of writes rather than just their order, because ordering was what
+  the previous test checked and this slipped past it.
+
+  `_evaluate_composite`'s `fallback` was not merely dead code. A `POLICY_NOT_ACTIVATED` composite
+  always has a child reporting that reason and carrying its text, so `fallback` could only ever
+  fire for a child that reported something else -- reintroducing exactly the mislabeling the
+  change was made to remove. Deleted rather than kept as defensiveness.
+
+  `parse_not_activated` matched any line containing `-- a/b:`. `warnings` is free text and the
+  annotation admits any producer, so an unrelated advisory could contribute a policy and rule id
+  to a finding that had neither. Now anchored on the prefix `format_not_activated` writes, which
+  is the point of the two living together. All three helpers are exported from
+  `fabric.canonical` alongside the rest of the refusal surface.
+
+  Two authoring mistakes in the pack corrections: the `notes:` keys added to two C&I rules are
+  silently dropped by `Rule` (pydantic default `ignore`), so they read as model fields while
+  being invisible to every consumer -- YAML comments, which is what they are. And the new `$2M`
+  availability leg had no test reaching it at all, in either repo: the suites passing said nothing
+  about it. Four parametrized cases now cover both legs, including the permissive one the finding
+  named, plus a check that the conductor supplies the dollar field the rule reads.
+
+  A second inline pass over that delta found no further defects, and one coverage gap:
+  `dscr_core` had a seed-pack test loading it through `Pack.from_manifest` and `ci-spread-core`,
+  whose rule shape this branch changed, had none. `load_policies()` on a file proves the YAML
+  parses; it does not prove the manifest declares it, that `is_policy_document` accepts it, or
+  that a combinator survives the route plato publishes and reads through. Both packs are now
+  pinned there -- six policies and eleven rules for one, forty-one for the other.
+
+- **Review round: a bundled pack that could not load, and the typed refusal it should have been
+  from the start.**
+
+  `ci-spread-core`'s bundled manifest bound `experts.*.class`, `conductor.class`,
+  `conductor.pipeline` and `modes.evaluator.class` to `jaci.*` symbols, and
+  `evaluation.gold_cases_path`/`runner` to paths inside the authoring repo. japes declares no
+  `jaci` dependency, so `Pack.conductor` -- a `cached_property` that resolves on plain attribute
+  access -- raised `ModuleNotFoundError` on a pack `POST /packs/initialize` publishes into any
+  tenant. The previous round had recorded this as `TODO(seed-pack-vendoring)` on the reasoning
+  that the pointers "fail when something resolves them, not on load", which was simply wrong about
+  `conductor`. The bindings are gone from the snapshot and the declarative config they sat beside
+  stays; `dscr_core`'s `gold_cases_path` went the same way. The bundled copy is a filtered copy of
+  the authoring repo's now, not a verbatim one, and
+  `test_a_bundled_seed_pack_is_loadable_in_a_japes_only_process` touches everything on `Pack` that
+  resolves a symbol, so re-vendoring verbatim fails there rather than shipping.
+
+  `ComplianceResult.refusals: list[Refusal]` replaces the string round trip. `Refusal` is the
+  SDK's "declined, as data rather than an exception" carrier, it lives in the module the sentence's
+  formatter had been added to, `statemachine.engine` already mints one for the identical
+  `ThresholdNotActivated` condition, and it has slots for both the refs (`domain_extensions`) and
+  what would clear it (`remediation`) -- which the sentence never carried. `warnings` keeps its
+  `list[str]` shape and is rendered *from* `refusals`, so the list a caller displays and the one
+  it reads structurally cannot disagree; `format_not_activated`, `parse_not_activated`, the prefix
+  and the anchored regex are all deleted. Third finding on that pair, and the one that removed it
+  rather than tightening it.
+
+  Smaller consistency work in the same pass. `blocked_gate_outcome` joins `gate_blocks` beside the
+  evaluator dispatcher: the predicate had been hoisted and the outcome it gates left written out
+  at each call site, where `segment.py` dropped `action` and `check.py` kept it. `is_assistant_manifest`
+  gives the seeder the discriminator `is_assistant_pack` exists to own, rather than a second
+  spelling of `"assistant_id" in manifest`. `withheld("published packs")` keeps `packs=[]`, as its
+  three sibling routes keep their collection keys. `tenant_of` composes a sentence for a
+  `LookupError` instead of serving a `KeyError`'s bare quoted key, through the same
+  redact-and-collapse as every other served-text path. And the dead awaitable branch in `_store`
+  is gone, along with a factory docstring that omitted the route it registers.
+
+  `not_yet_effective` is now its own list on both `StalenessReport` and `PolicyResolutionResult`.
+  `is_active` covers the whole window, so a policy authored `status: active` with a future
+  `effective_date` failed it and was reported as *stale* -- telling a caller to review and update
+  a policy that has not started, and answering `detect_stale_pinned_policies`' "since been
+  superseded" with one superseded by nothing. `Policy.is_not_yet_effective` is the shared
+  predicate, because the same `not is_active` list existed one function away.
+
+  Two corrections to comments that overclaimed. `Threshold`'s `extra="forbid"` note said a
+  misspelled governance key is a refusal; it is only that once `looks_authored` has recognised the
+  mapping, which keys on `provenance`/`status` -- so a mapping whose *sole* governance key is
+  misspelled is not read as governance at all, is never coerced, and `get` returns the raw dict.
+  That is the deliberate price of letting an unrelated mapping through untouched, now stated and
+  pinned. And `_apply_applicability_gate` claimed to mirror `check_compliance` "exactly", which
+  stopped being true when that function gained its field-precedence check; its `not_applicable`
+  list is renamed `withheld`, since a blocked gate is INDETERMINATE.
+
+  One test guard was holding nothing: it filtered the readiness list on `"Pack archive"`, which no
+  note in `wiring_default` has ever contained -- its wording is lowercase. It asserts the whole
+  list now, and re-adding the note fails it.
+
+- **Review round: the typed refusal dropped the shape it replaced, and a predicate narrowed for
+  the third time.**
+
+  `policy_violations_to_findings` read `refusals` and stopped reading `warnings`, but
+  `ComplianceResult` is exported and a pack expert written against the older shape fills
+  `warnings` and not the field this became. That answered `[]` -- a clean spread for a deal the
+  expert refused, which is the exact failure the function's own docstring says it closed.
+  `warnings` is read again when `refusals` is empty, for its text alone: the in-repo producer sets
+  both from one list, so preferring the typed field cannot double-count. The docstring had also
+  gone stale against its own loop.
+
+  `looks_authored` keyed on `provenance` *or* `status`, and `status` is an ordinary word in a
+  bucket that holds arbitrary pack data: `{status: enabled, region: west}` under `custom` was read
+  as a claimed threshold, failed `Threshold(**found)`, stayed a dict and was then refused by
+  `get` -- profile data that used to resolve, raising. `provenance` alone is unambiguous and still
+  counts on its own; `status` counts only alongside a `value`. Third narrowing of this predicate:
+  it keyed on `value` first, which coerced mappings that had nothing to do with thresholds, then
+  on either governance key. What both got wrong is that only one of the two words means anything
+  specific here.
+
+  Two reporting fixes from widening `is_active`. `detect_staleness` built its reason as
+  `not_in_force() or <status sentence>`, so a policy that is *both* draft and future-dated was
+  reported purely as a window problem -- telling the reader to update a policy whose real problem
+  is that nobody approved it, and losing the deprecation on a deprecated-and-expired one. Both
+  causes are joined now, as `Rule.activation_block` already joined its own. And the Governor's
+  citation check logged "cites rule from deprecated policy" for any `not policy.is_active`, which
+  since the widening includes a policy that has not started; it names the policy's own reason
+  instead. The stub in its test carried `is_active` and nothing else, so the missing attributes
+  raised inside an `except Exception` and the warning the test asserts on became a debug line --
+  widened to what the check actually reads.
+
+  Smaller: `PackVersionExists` and `is_assistant_manifest` re-export from `jazzx_sdk.pack`
+  alongside the siblings they were added beside, so `plato/seed.py` imports from the facade like
+  its neighbours; `blocked_gate_outcome`'s docstring described neither call site; and the dead
+  `effective_date is None` guard in `is_not_yet_effective` is gone, `effective_date` being
+  required on `Policy`.
+
+  `TODO(refused-rule-field-claim)` records the one finding left as a deferral: a refused rule
+  `continue`s before claiming its field, so a lower-precedence rule on that field still evaluates
+  and can cite the threshold an overlay was meant to supersede. `allowed` is already False, so the
+  cost is a misleading entry rather than a wrong verdict, and the EVIDENCE_MISSING branch beside
+  it has always behaved the same way -- whether a rule that established nothing may claim a field
+  is a governance question, and both branches should move together.
+
+- **Review round: the pin that read one spelling, and a posture rule that lost its override.**
+
+  `test_which_seed_pack_files_name_consumer_modules_is_pinned` detected the consumer with
+  `"jaci." in text`, which only ever matched a dotted module path -- so `jaci/scripts/...`,
+  "jaci's own MetricResult shape", and this branch's own comment on the manifest were invisible.
+  Nine files carry the name; the pin listed six, and its docstring is the thing that says a guard
+  reading a fraction of the tree is worse than none. It matches the bare word now.
+
+  `_refuse_unless_relaxed` moved out of `packs_api` into `posture.relaxed_only`, beside
+  `withholding`/`withheld` (the read side) and `require_if_match` (a mutating-request
+  precondition) -- a posture rule written inside one router is one the next router writes again.
+  `config_api` keeps its own gate: its admission differs (auth is enough there) and its refusal is
+  a route replacement with a dict detail, so folding both in would add code rather than remove it.
+  The move dropped the `strict=` pass-through the closure had captured, which no test caught
+  because they all set the posture through the environment; both call sites pass it and the test
+  now exercises an explicit override.
+
+- **Review round: the served refusal named a Python type, and the suite trusted a shell
+  variable.**
+
+  `tenant_of` routed a resolver's message through `failures.reason`, which *always* prefixes the
+  exception class -- so the shipped deployed resolver's 400 read `ValueError: X-Tenant-Id is
+  required...`, a type name handed to an unauthenticated caller and worse than the bare `str(exc)`
+  it replaced. It also passed no `SERVED_REASON_LIMIT`, which twelve other served-text paths in
+  plato do. Both go through one local `served()` now: collapse, redact, bound, no type name;
+  `reason` stays in the log lines, where the type is useful and nothing is served. And the
+  `if not found` branch -- the one a `.get`-style resolver reaches, which is what both shipped
+  resolvers are -- answered "could not resolve a tenant for this request", naming nothing. It
+  names the conventional header, and none of the three paths drop the cause any more.
+
+  `PLATO_SEED_PACKS_DIR` was not stripped in the packs tests. Thirteen of them reach
+  `default_seed_root()`, four took the fixture that cleaned the environment, and every assertion
+  about the *bundled* packs was really about whatever that variable pointed at -- the suite would
+  pass or fail on a shell setting. Stripping it is autouse now, precisely because making it
+  opt-in is how nine tests ended up uncovered.
+
+  `pack_archive` moved from `plato/seed.py` to `jazzx_sdk.pack.store`, beside `MANIFEST_NAMES` and
+  for its reason: the archive shape is the store's contract, `store_db._unpack` is the reader that
+  has to agree with it, and a writer living in a consumer drifts from the reader. `settings_store._actor`
+  became `acting_user_id` at its second importer, where the underscore stopped being true.
+
+  The deployed `pack_store_for` passed no `cache_root`, so the wiring that runs in a container was
+  the one falling back to `<tempdir>/japes-packs` while the laptop wiring had its own directory:
+  `PLATO_PACK_CACHE_DIR` sits beside `PLATO_PACK_BLOB_DIR` now, and `.gitignore` covers both
+  deployed defaults, which it did not.
+
+  Three smaller ones. `_manifest_of` returned the first parseable dict, so a `pack_manifest.yaml`
+  with no `pack_id` shadowed a complete `manifest.yaml` beside it and the directory reported no
+  identity -- the readable-but-anonymous twin of a shadowing case already fixed for unparseable
+  files. The "not a durable backend" warning was posture-gated in both halves, so a typo on a
+  laptop wrote to local storage in silence; a typo is a typo anywhere, and only the durability
+  sentence is the posture's business. And `pack_inventory`'s "versions newest-first" is
+  `published_at` order, which puts a backport first -- the distinction the code makes two
+  functions down and the docstring and the page both blurred.
+
+  Two things declined with the measurement. `TODO(seed-digest-drift)`: comparing
+  `record.content_digest` against `pack_archive(pack_dir)` to tell an operator the bundled bytes
+  drifted is one call away and would be wrong, because `zipfile.write` records each file's mtime
+  and a rebuilt image with byte-identical content digests differently (measured) -- it needs a
+  content-only digest first. And the guard around `sorted(latest, key=...)` is gone rather than
+  kept: its own comment said `PackVersionRecord` is frozen with every field defaulted and
+  `pack_id` is a non-null primary key, so nothing could make it raise.
+
+- **Review round: two branches that skipped a check, and one fix that opened the opposite hole.**
+
+  Widening `Policy.is_active` to cover the effective window made `detect_staleness` route a
+  future-dated ACTIVE policy into its first branch, which `continue`d before the third check --
+  so a pinned version that had been superseded stopped being reported, and
+  `detect_stale_pinned_policies` reads `stale_policies` only, so `not_yet_effective` compensated
+  for neither. The three `continue`-separated checks are now independent facts gathered
+  independently, with the pin evaluated first and unconditionally: whether a pin has been
+  superseded is a fact about the pin, not about whether the policy is in force today. A policy
+  that is both scheduled and holding a stale pin appears in both lists rather than whichever the
+  branch order reached first.
+
+  The `warnings` fallback added last round converted *every* string into a
+  `POLICY_VIOLATION`/`Severity.POLICY` finding, and `warnings` is documented one file over as
+  "mostly non-blocking". A real consumer appends "Confidence below group threshold: 0.72
+  (min 0.85)" there and sets no `refusals`, so an `allowed=True` result grew a policy violation
+  for something that violated nothing. It now fires only for the case it exists for: a refusal
+  with no violations to show.
+
+  `as_utc` moved to `jazzx_sdk.manifest.lifecycle`, the dependency-free module this branch created
+  for exactly this problem when `PolicyStatus` moved there. A pure datetime coercer living in
+  `policy.py` forced `fabric/guidance/schema.py` to import it from inside a function to dodge the
+  cycle; that deferred import is gone, and the six private copies of the same three lines across
+  `manifest`, `pack`, `agents`, `observability`, `audit` and `queue` now have somewhere public to
+  land. `fabric.canonical` re-exports it, so no consumer path changed.
+
+  `_UNTESTED_RATIONALE` described three of `IndeterminateReason`'s four members and let the fourth
+  reach the fallback sentence, so a fifth added later would silently be described as missing
+  inputs -- the false assertion that map was introduced to stop. Every member is mapped now and an
+  unmapped one raises at import. `pack_archive` also skips `.git`: it is exported for consumers
+  publishing arbitrary directories since last round, and a pack that is its own checkout would
+  have embedded the object store.
+
+  Deleted rather than kept: `" and ".join(causes) or "not active"`, whose fallback was
+  unreachable inside a branch that guarantees at least one cause.
+
+- **Review round: a posture guarantee the gate did not enforce, and a row its own archive
+  contradicted.**
+
+  `relaxed_only` gated on `strict_mode()`, and `JAPES_STRICTNESS=relaxed` loosens every tier
+  except `production` -- so a `staging` replica with that variable set accepted a pack delete and
+  a seed write, unauthenticated, because no shipped wiring sets `auth`. The docstring, the served
+  403 and this module's own header all promised "local, dev-daily". It reads `environment_tier()`
+  now, which is the question actually being asked and is the one thing that variable cannot
+  loosen.
+
+  Seeding published a row whose archive disagreed with it. `pack_archive` takes the whole
+  directory and every reader of it prefers `MANIFEST_NAMES` order, so a `pack_manifest.yaml` that
+  is unreadable or declares no `pack_id` -- exactly when the manifest search falls through to
+  `manifest.yaml` -- was published under the sibling's identity while the archive still led with
+  the bad one: `compose_domain_packs` logged "could not be loaded", the pack reached no registry,
+  and `/packs` showed it with `has_archive: true`. An authoring error returned as a success. Such
+  a directory is now reported with a reason naming both files. The test that covered this asserted
+  the pack *was* published, so its expectation was the thing that had to change; what it was
+  originally for -- a broken manifest must not make the directory invisible -- still holds, since
+  the reason names it.
+
+  Three claims corrected where the code had moved underneath them: the guard around building the
+  inventory `entry` had no reachable trigger for the same reason given two lines above for putting
+  no handler on the sort, and a comment called both "load-bearing"; "a pack row cannot exist with
+  zero live versions" is true of a snapshot but `list_packs()` and `versions()` are two reads, so
+  a concurrent retire between them yields the empty list the comment calls impossible; and the
+  page still named `_actor()`, renamed to `acting_user_id` in the same branch.
+
+- **Review round: the posture gate lost its other direction, and the drift lint had a blind
+  spot the fix would have walked into.**
+
+  Moving `relaxed_only` off `strict_mode()` last round fixed the loosening direction and dropped
+  the tightening one: `JAPES_STRICTNESS=strict` -- the variable `check_settings` documents as
+  turning the refusal back on -- left the two pack writes open on a dev-daily replica while
+  `PATCH {prefix}/config` on that same replica was refused, and an unauthenticated delete burns a
+  version number permanently. It reads `strict_mode() or environment_tier() not in (LOCAL,
+  DEV_DAILY)` now; all six tier/strictness combinations are pinned, where the test added last
+  round covered only loosening. Second defect in this one gate in two rounds.
+
+  `find_profile_literal_drift` inspected a rule's `condition` and `applicability` only when their
+  kind was `expression`, so a declaration nested inside an `all_of` was invisible. That mattered
+  immediately: `DSCR-IO-MIN-LOAN`'s description promised "minimum loan amount of $250,000 **and**
+  minimum FICO 640" while encoding only the amount, and `profile.custom.fico_min_io` sat at 640
+  with no rule reading it -- so an interest-only loan at FICO 620 returned SATISFIED, and the
+  policy registry hands `description` back verbatim as guidance text, telling a caller a check
+  ran that did not. Encoding the second leg as an `all_of` would have moved *both* declarations
+  out of the lint's reach while the diff appeared to add one. The lint walks composites now and
+  labels the slot it found (`condition[1]`), the corpus went from 8 visible declarations to 10,
+  and the consumer's pin uses the lint's own traversal rather than a second copy of it.
+
+  Also from this round: `plato_settings_catalog`'s "the exact set `wiring_default` consults and no
+  more" stopped being true when the pack-store variables arrived, and adding them would be the
+  failure that docstring warns about rather than a fix -- `pack_blobs` resolves once in `build()`
+  and `_rewire` re-reads only the bootstrap keys, so a PATCH would render as accepted and change
+  nothing. Stated as deploy-time variables instead, with what making them editable would require.
+  And two comments in the bundled manifest recorded what it used to bind and to which repo:
+  archaeology in shipped data, held in place by the very pin that tracks consumer references.
+  They state the rule now, so `pack_manifest.yaml` has left that pin.
+
+- **Review round: the first `high` of the branch, and one declared-asset channel left dark.**
+
+  Two of three slices passed. The one that did not found a permissive silent pass in the bundled
+  DSCR corpus: `DSCR-OVER-2M-DSCR` states the >$2M floor as a `ratio` condition, which reads
+  INDETERMINATE on a No Ratio file, so `check_compliance` skipped it and a $2.5M no-ratio loan
+  returned `allowed=True` with zero violations *and* zero warnings -- while the same loan with a
+  documented DSCR of 0.9 was denied. The corpus' own notes describe this hazard and prescribe the
+  fix (a twin rule keyed on `dscr_documentation_type`), and it had been applied to two of the
+  three sites. `DSCR-OVER-2M-NO-RATIO` is the third.
+
+  The remaining bare-ratio rule, `DSCR-HIGH-LTV-DSCR`, needs no twin: a no-ratio file is capped at
+  75% CLTV, below its own `cltv_pct > 80` gate, so the case cannot arise -- verified by running a
+  no-ratio file at 85% and watching the cap deny it. Masked rather than absent, which is now
+  recorded on the rule, because raising that cap would open the hole silently.
+
+  `ci-spread-core` ships `evidence_types.yaml` with seven ids in the shape the loader reads, and
+  the manifest declared no `evidence_types:` key -- so `Pack.evidence_types` was `[]` while the
+  same manifest's `convergence_evidence_required` named three of those ids. The tool registry
+  derives its requestable set from that list, so an Investigator built from this pack could
+  request nothing. One line, and it is the argument `dscr_core`'s manifest already makes for its
+  own `profiles:` block.
+
+  Four claims in the pack notes had gone stale, three of them from this branch's own changes:
+  the paragraph saying composite drift-lint coverage is a japes gap (closed last round, and this
+  diff depends on the recursion) -- which was the stated reason four PPP literals were left
+  unlinked, so linking them is now possible; the rule-shape table's counts, which drifted every
+  time a rule was added and are now stated corpus-wide rather than per-group; and
+  `fico_min_io`'s place on the orphaned-keys list, which it left when the rule grew the leg its
+  description had always promised. `pack_inventory`'s manifest comment claiming `pipelines.yaml`
+  is "the declarative form of the same pipeline" is a `TODO(conductor-pipeline-from-yaml)` now:
+  nothing reads that file, and letting a manifest name a YAML pipeline is a japes change.
+
+  And the consumer-reference pin says what it checks. It matches the repo name, so two files
+  naming consumer-only *symbols* (`load_deal_special_instructions`, `CIConductor`) are invisible
+  to it; a detector for "a symbol japes cannot import" would be an open-ended list of names
+  rather than a guard, so those two are recorded in the docstring instead of matched.
+
+- **Review round: two claims that were mine, and two one-line coverage gaps.**
+
+  `not_yet_effective`'s field description said it was "withheld from execution like a stale one",
+  and nothing withholds either list: `resolve()` builds `precedence_order` without consulting
+  `is_active`, and `check_compliance` iterates it referring to neither list. No behaviour changed
+  when that description arrived -- the claim did. It now says reported-not-enforced and points at
+  `TODO(activation-vs-active-rules)`, which is where the enforcement gap already sits. Two
+  sibling docstrings describing `is_active`'s pre-window meaning went with it
+  (`current_policies`, `active_only`).
+
+  `pack_archive` returned a valid, empty 22-byte zip for a directory that does not exist or holds
+  no archivable files, so a caller's path mistake came back as an ordinary archive -- published,
+  a row whose archive `_unpack` can never find a manifest in, surfacing at `materialize()` far
+  from the cause. It raises now. The one shipped caller finds a manifest first, so nothing
+  reached it; the function is exported from `jazzx_sdk.pack`, so the next caller need not be here.
+
+  `find_profile_literal_drift` iterated `policy.rules` only. `Policy._all_rules()` exists in this
+  same branch precisely because "an exception rule is a rule, and gating only `rules` left a seed
+  one absent from both" -- so a `profile_custom_key` on an `exception_rules` entry was never
+  checked, the same silent coverage loss the composite recursion closed one collection over.
+
+- **Review round: a refusal that crashed, and an approval nobody gave.**
+
+  `PolicyProfile.get` built its refusal message with `sorted(found)`, which raises `TypeError` on
+  mixed key types -- and YAML parses a bare `2024:` as an int, so an edition-keyed governance
+  block reached it. That `TypeError` escapes every handler that catches
+  `ThresholdNotActivated`/`KeyError`/`ValueError`, at all three sites that catch one
+  (`statemachine.engine`, `finance.validation`, `condition_evaluator`), so a refusal surfaced as
+  a crash. `sorted(map(str, found))` at both sites. The parametrization covering this swept string
+  keys only, which is why it missed the single key type that changes the exception.
+
+  `get_threshold` wrapped a plain mapping as `status=active, is_executable=True, value={...}` --
+  an affirmative approval for something nobody approved, which is the one statement this type
+  exists to withhold. `get` still hands unrelated `custom` data back untouched, deliberately;
+  asked for the *record*, a mapping that claims no governance now has none. The bare-value
+  contract is unchanged: a scalar still reads back active and unattributed.
+
+  `pack_key(manifest)` joins `MANIFEST_NAMES`, `pack_archive` and `is_assistant_manifest` in
+  `jazzx_sdk.pack.store`. The `(pack_id, pack_version)` derivation was spelled twice, and the
+  four-line comment on the second copy existed only to say the two had to stay in step -- which
+  they had not: a padded value missed the seeder's pre-check, reached `publish`, and came back as
+  `failed: ValueError` instead of `skipped`.
+
+  `_no_seed_root_override` moved to `tests/conftest.py`. Per-file was not enough twice: it began
+  opt-in, leaving nine of thirteen tests in one file asserting about "the bundled packs" while
+  really asserting about a shell variable; made autouse there, a second file then borrowed
+  `default_seed_root()` without the guard. Suite-wide, a third cannot.
+
+  Smaller: `wiring_default`'s pack cache and local blob root now `.resolve()`, as
+  `default_seed_root()` and both of `wiring_local`'s equivalents already did (the image's runtime
+  WORKDIR is `/app` and does not move, so this is consistency, not a live fault -- checked). The
+  0004 migration's index comment claimed "every read filters on it ... the one predicate they
+  share"; all three reads filter `tenant_id` *and* `retired_at IS NULL`, and `retired_at` is NULL
+  for essentially every row, so the index matches the ORM model rather than serving those queries.
+  And `TODO(seed-pack-vendoring)` still said the bundled packs name resolvable entry points after
+  the bindings were stripped -- it defers one thing now, which is that nothing keeps the copies in
+  step.
+
+- **Review round: the halves a shared builder left behind.** Slice 1 passed; every finding was
+  a family this branch's own fixes half-converted.
+
+  `inapplicable_gate_outcome` joins `blocked_gate_outcome` beside `gate_blocks`. Hoisting the
+  blocked branch's builder and leaving its NOT_APPLICABLE twin written out at the call site meant
+  that twin went on dropping `action` -- the exact drift the pair exists to stop, surviving in the
+  half the fix skipped. Both are exported from `fabric.canonical` now; only one was, so the three
+  call sites imported them from two different places.
+
+  `find_profile_literal_drift` spelled `(*policy.rules, *policy.exception_rules)` inline while its
+  own comment named `Policy._all_rules()`, added in this same branch for that reason. It calls it.
+  That accessor's `TODO` claimed "no caller reads these accessors yet", which reading it made
+  false -- corrected to name the one caller that now does.
+
+  `detect_staleness`' docstring still said "three independent checks, first match wins per
+  policy" after the body was rewritten to gather every cause and join them, which is what lets a
+  policy that is both deprecated and holds a superseded pin report both. And
+  `manifest/lifecycle.py`'s `__all__` listed `PolicyStatus` alone, omitting the `as_utc` its own
+  module docstring tells six siblings to migrate onto.
+
+- **Review round: an overlay evaluating as core, and a blank value serving as approved.**
+
+  A pack shipping an overlay in the same policy corpus had it evaluated as *core*.
+  `DefaultPolicyExpert` defaults `core_policy_ids` to every policy it holds, and field precedence
+  is registry order, so `ci-spread-core`'s `RB-CI-LEVERAGE-CEILING` claimed `leverage_x` ahead of
+  the institution policy it narrows -- purely because `conventions.yaml` sorts before
+  `core.yaml` -- and both core leverage rules stopped running. `leverage_x=3.2` produced zero
+  findings. It survived only because the overlay's placeholder ceiling happens to equal core's.
+
+  `PolicyScope` carried the answer all along: its docstring states the ladder ("product takes
+  precedence over institution"), the pack declares `scope: product` on the overlay, and nothing
+  in japes read the field. `Pack.core_policy_ids` and `Pack.overlay_policy_ids` derive from it, so
+  a consumer hydrates the expert from the pack instead of guessing. Core governs by default and
+  `program_id` activates the overlay, which is what `supersedes_core_rule` always claimed and
+  never did.
+
+  The first cut of that split was worse than the bug. Keying it on "is not institution" put a
+  policy with *no* declared scope in the overlay set -- `Policy.scope` is optional and defaults to
+  `None`, so `dscr_core` came back with an empty `core_policy_ids`, i.e. a consumer evaluating no
+  policies at all. It splits on an explicit `PolicyScope.PRODUCT` now; an undeclared scope is the
+  base of the ladder, and `DEAL` arrives per call rather than sitting in a registry. Caught by
+  checking the second pack rather than by the round that followed.
+
+  `Threshold.value` accepted `None`. YAML reads `value:` with nothing after it as null and `Any`
+  took it, so one character separated a refusal from an *official-source, active, executable*
+  threshold whose figure was `None` -- and the field's own description promised a number. Two of
+  its three consumers turned that into a crash rather than a refusal (`decimal.InvalidOperation`
+  in `evaluate_guard`, `TypeError` from the ratio evaluator's `float()`), neither caught by the
+  handlers around them. Refused at validation now, as an omitted `value:` already was.
+
+  Four test assertions read `profile.thresholds[...]` directly and would have broken against a
+  `Threshold` object the first time a profile adopted the governance form the gate exists for.
+  They use `get()`, which is the contract.
+
+- **Inline pass over the round above, which found three things it had left.**
+
+  The `Threshold.value` validator refused `None` and nothing else, so `value: ""`, a
+  whitespace-only scalar, `value: []` and `value: {}` all still built an approved threshold that
+  reached the same `decimal.InvalidOperation` -- the defect the validator was added for, in four
+  further shapes one character apart. It refuses empty now. Deliberately *not* non-numeric: the
+  shipped profile's `custom` holds `ineligible_states` and `high_ltv_eligible_property_types` as
+  lists and the drift lint compares against them, so a non-numeric figure is legitimate. Zero is a
+  figure and passes.
+
+  `inapplicable_gate_outcome` had been applied to one of *two* hand-built sites, and it was the
+  narrower of the two shapes: `check_graph`'s copy kept the gate's own `inputs` -- which say which
+  values made the rule inapplicable -- where `run_segment`'s kept only a verdict summary. Adopting
+  either side's shape would have silently narrowed the other, which having three copies concealed.
+  The builder carries both, all three sites use the pair, and the only `NOT_APPLICABLE`
+  construction left in the SDK is inside the builder itself.
+
+  `Pack.core_policy_ids` returning `[]` for a pack whose every policy is `scope: product` is
+  correct -- it contributes no core policy -- but it looks exactly like the bug where an
+  *undeclared* scope emptied the set, so the distinction is written down rather than left to be
+  rediscovered.
+
+- **Review round: PASS, and four claims of mine that had drifted from the code beside them.**
+  No defect survived the reviewer's own verification.
+
+  `_value_is_present` had made `get_threshold` raise `pydantic.ValidationError` out of an accessor
+  whose contract names `ThresholdNotActivated` and `KeyError` -- and made the two accessors
+  disagree about whether a key resolves at all: `get` served `""` where `get_threshold` raised.
+  Refused in the documented currency now, on the mapping precedent: `get` hands back what is
+  there, and asked for a *record* of an empty figure there is none to give.
+
+  `policy_violations_to_findings`' two newer branches set `detail["source"]` and cite "the
+  violations loop above" for keeping their keys uniform -- while that loop, the one case this
+  function has always produced, set no `source` at all. A consumer switching on it to tell a
+  violation from a refusal got `None` for the commonest kind.
+
+  Both `not_yet_effective` descriptions pointed a reader at `TODO(activation-vs-active-rules)` for
+  why the list is reported rather than enforced. That TODO records the `_all_rules`/`active_rules`
+  divergence and says nothing about it -- and correcting the TODO earlier in this branch is what
+  left the pointer aimed at an unrelated deferral. The descriptions say the thing directly.
+
+  And `as_utc`'s docstring named six modules carrying private copies as having "somewhere public
+  to land", which reads as though they were converted. None is: each is module-private with
+  in-repo callers and identical behaviour, so it is duplication rather than drift, and the
+  conversion is available work rather than something that happened.
+
+- **Review round: a vocabulary the pack's own matchers reject, and a guard that outgrew its
+  tuple.** Slice 1 passed with no defect surviving verification; slices 2 and 3 blocked.
+
+  The bundled `ci-spread-core` ontology enumerated `loan_type` as
+  `abl | revolver | term_loan | ddtl` while all five matchers in the pack spell the fourth
+  `delayed_draw_term_loan`, so a facility authored to the pack's own documented vocabulary matched
+  none of them and fell through `diagnose_map`'s fallback to the ABL revolver playbook. Wrong
+  guidance rather than an empty result.
+
+  Two fields the pack's rules read were declared nowhere. `excess_availability_pct` meant
+  `CI-ABL-MIN-AVAILABILITY` could return VIOLATED or INDETERMINATE and never SATISFIED, since
+  `check_compliance` skips an indeterminate rule without recording it -- and the comment above
+  that leg had reasoned twice about the *denominator* without asking whether the field existed.
+  Sweeping every field the rules read against the ontology then found a second the finding had not
+  named.
+
+  `plato/guide.md` gained the two `/packs` routes the nav had already gained, and
+  `test_the_guide_lists_the_withholding_on_every_gated_route` now covers all four routes that
+  withhold -- it had stayed at three while `packs` became the fourth, so the guard passed while
+  its own name stopped being true.
+
+  A `plato/seed.py` comment credited a test name that no longer exists, and the
+  missing-field deferral in the bundled DSCR notes discharged its risk by pointing at a schema
+  that exists only in the authoring repo: for this copy, four of the fourteen PPP rules report
+  NOT_APPLICABLE rather than denying when the field is absent, which the notes now say.
+
+  **A mechanical break, and the guard that was missing.** One of those pack edits used a `replace`
+  whose `old` string matched as a *substring* of a more-indented line, so `s.count(old) == 1`
+  passed and the key was silently dedented out of its block -- five tests failed on unparseable
+  YAML. The same hazard had already been observed once in this branch and noted as luck rather
+  than defended against. Every YAML touched is parse-checked per edit now, not at the end of a
+  batch: it is the class of defect a reading pass cannot see and one command catches.
+
+- **Review round, slice 4: the guard that was not guarding.** Every finding was in a test of
+  mine, and the first was the one holding the most important line.
+
+  `test_a_bundled_seed_pack_is_loadable_in_a_japes_only_process` used
+  `getattr(pack, attribute, None)`, and `AttributeError` is exactly what `_resolve` raises when a
+  pointer's module imports but the symbol is missing -- so the default swallowed half the
+  resolution failures the test exists to catch. Demonstrated: a manifest pointing at
+  `plato.seed.NoSuchSymbol` returns `None` through the default and raises on direct access. The
+  same default hid a dead entry: `conductor_pipeline` is not a `Pack` attribute at all, so one of
+  fourteen names checked nothing. Direct access now, with every name asserted to exist first.
+
+  `page.count("headers: headers(") == 3` counted the fetches that *do* carry the tenant header,
+  not the fetches -- so a fourth `fetch(` without one would have left it green while answering 400
+  on a deployed replica, the regression the test names in its own docstring. The two counts are
+  compared to each other.
+
+  Two more from the same family: the loadability test was parametrized on a literal pair of pack
+  ids while its sibling nine lines up already iterates the tree, so a third bundled pack would
+  have got the sibling's registry check and never the conductor/experts resolution where the
+  unresolvable bindings lived; and that sibling hardcoded `pack_manifest.yaml` outside its own
+  `try`, where `MANIFEST_NAMES` has two entries and `seed_packs` publishes either -- a pack
+  carrying only `manifest.yaml` would have errored instead of reporting through `broken`. Both now
+  go through the tree and `_manifest_of`.
+
+- **A rule can be authored, cited and reviewed before it may execute.** `Policy.status` was the
+  only gate, and it is the wrong grain for a transcribed corpus: one policy holds forty rules of
+  which two are approved, so promoting the policy promotes all forty. `PolicyStatus` gains `seed`
+  (transcribed from a source that is not the approved edition -- nobody is drafting it, and it must
+  never yield a number) and `suspended` (withdrawn without a successor, which `deprecated` implies).
+  `Rule` gains `status`, `effective_from`, `effective_to` and `approval_refs`, plus
+  `activation_block` -- a sentence rather than a bool, because a caller answering "why can I not
+  evaluate this" has to report it. `Policy.executable_rules` and `activation_blocks` are the
+  publish-everything, compute-with-the-approved-few pair.
+
+  A rule may restrict itself below its policy and may not promote itself above it. The first
+  version read the rule's own status outright, so `status: active` inside a seed policy executed,
+  which is self-promotion out of an ungoverned corpus and what a bulk edit over dozens of
+  transcribed rules does by accident.
+
+  Nothing in the evaluation path reads any of it. Most packs here are `draft`, so gating evaluation
+  on status would stop them all evaluating; this is vocabulary plus an opt-in query, and wiring it
+  in is a later, deliberate change.
+
+- **`IndeterminateReason`, because "no answer" has causes that need different handling.** Missing
+  inputs are a request for evidence; a derivation that could not run is a retry; a rule that exists
+  but may not execute is a configuration problem -- and that last one is indistinguishable from the
+  first two from outside, while the fix is to pin an approved source rather than go and find a
+  document. Four values, a validator refusing the field on any verdict but `INDETERMINATE`, and
+  `RuleOutcome.not_activated` to build the outcome an unapproved rule owes its caller.
+
+  Deliberately not a new closed outcome enum: `Verdict` already carries satisfied/violated/
+  not-applicable/indeterminate with an algebra, and its docstring already separates indeterminate
+  from not-applicable. Routings like pre-review and waiver are `RuleAction.ESCALATE` and
+  `REQUIRE_APPROVAL`. A second vocabulary over the same ground would have duplicated both.
+
+- **A threshold can be held without being usable.** `PolicyProfile.get` was fail-closed on an
+  absent key; the case it could not express is a key that is present and must not be served -- a
+  grid restated from a source nobody approved, where handing the figure back as though it were the
+  institution's policy is the risk. `Threshold` carries value, `ThresholdProvenance`, status and
+  citation. `get` resolves it to its value, so arithmetic at the call site is unaffected by a
+  profile adopting the richer form, and raises `ThresholdNotActivated` when the status does not
+  allow it -- not a `KeyError`, because "no such threshold" and "present, not approved" need
+  different handling. `get_threshold` returns the record for a report, wrapping a bare value as
+  institution-authored and active, which is what authoring one has always meant. Wrapping defaults
+  to `seed`: a threshold is wrapped because its provenance is in question, so the refusing status
+  is the right default rather than the one you must remember.
+
+  All three buckets `get` searches are gated, not just `thresholds`.
+
+- **`PolicyStatus` moved to `jazzx_sdk.manifest.lifecycle`,** re-exported from
+  `fabric.canonical.policy` so every existing import resolves. `profiles` needs it and importing it
+  from `policy` cycles (`policy` reaches `finance.periods`, which imports `PolicyProfile`). It is
+  `autonomy.py`'s shape: a vocabulary several layers share, depending on nothing.
+
+  The review round on all of the above found the gate did nothing in any real pack. It fired on a
+  `Threshold` *instance*, and YAML -- the only authoring path a shipped pack has -- yields a plain
+  dict, so `get` returned the whole mapping and `get_threshold` reported a seed/secondary-source
+  figure as institution-authored and active. An affirmative false statement about provenance, on
+  the one feature whose purpose is refusing unapproved figures, and every test passed because they
+  all built `Threshold` in Python. Coerced at validation now, bounded to mappings that carry
+  `value` and nothing but `Threshold`'s own fields, and tested through `from_yaml`.
+
+  Three more in the same round. `executable_rules` gated on `status` alone, so a policy outside its
+  own window reported every rule executable and no blocks -- it checks `effective_date` too, which
+  `is_active` does not. `effective_status` discarded the rule's own status whenever the policy was
+  not active, so an `archived` rule in a `draft` policy answered `draft`, losing a restriction it
+  had declared and contradicting the docstring; the test for that direction only covered the active
+  policy. And blame was inferred by comparing the resolved status against the rule's own, so a draft
+  rule in a draft policy read "rule is draft" when the rule adds nothing.
+
+  `ThresholdNotActivated` also escaped the two handlers that catch `KeyError` only: the statemachine
+  guard now returns `guard_not_activated` and the ratio evaluator an `INDETERMINATE` carrying
+  `policy_not_activated`. Nine sibling sites in `condition_evaluator` -- the default evaluation
+  path, unlike the adjudication one first annotated -- name their cause. `profiles` imports
+  `PolicyStatus` from `manifest.lifecycle`, which is the decoupling that module was added for and
+  did not take.
+
+  A second round on the same code, answered mostly by deleting. `effective_status` promised the
+  narrower of a rule's status and its policy's over a set with no ordering, so each version was
+  wrong in whichever direction the last had fixed -- `archived` rule in a `draft` policy answering
+  `draft`, then `draft` rule in an `archived` policy answering `draft`. It is gone;
+  `activation_block` names both causes when both block and nothing ranks them. `RuleOutcome.
+  not_activated` is gone too: no caller, and its default status string was a third pack vocabulary
+  beside the `INDETERMINATE` everything else uses. And `Threshold.value` no longer claims to hold a
+  table cell, since `tables` has no gate -- a nested shape rather than a wider version of this one,
+  recorded as `TODO(threshold-grid-provenance)` rather than built on a round that had already found
+  two coercion defects.
+
+  The coercion was one of them: keyed on "every key is a `Threshold` field", a bare `{value: 7}`
+  became a *seed* threshold and `get` refused profile data that had always resolved. Breaking a
+  working profile to gate a problem it does not have is the worse failure, so a governance field is
+  required as well. `ThresholdNotActivated` subclasses `ValueError` and `finance.validation` had a
+  pre-existing `except ValueError` around a `profile.get`, which swallowed the refusal and let the
+  finding take its default severity -- invisibly, which is the mode this feature exists to prevent.
+  And the composite `all_of`/`any_of` outcome dropped its children's `indeterminate_reason`, so a
+  seed threshold nested in a composite reported no cause at all.
+
+  A third round found the consumer nobody had checked. `fabric.graph.check.finding_from` derives
+  its rationale from `verdict == INDETERMINATE` and *asserts* the cause -- "the case does not supply
+  <reads>" -- so a rule blocked by an unapproved threshold produced a governance-facing escalation
+  saying the case had withheld values it had in fact supplied. Adding a producer and not visiting
+  the consumers is the symmetry rule failing on its own subject. Each cause now says what it means,
+  with the missing-inputs sentence kept for `EVIDENCE_MISSING` and for an outcome carrying no reason.
+
+  `executable_rules` and `activation_blocks` read `rules` only, while `get_rule` and
+  `PolicyRegistry` both treat `exception_rules` as first-class -- so a seed exception rule was
+  missing from the executable set and from the blocks, invisible in both directions. The threshold
+  coercion could also fail a whole profile load: `{value: 5, status: ok}` matched the predicate and
+  then raised, reported against `custom.status` rather than `custom.<key>.status`. It leaves a
+  mapping as authored when it will not construct.
+
+  Three copies of "read a naive bound as UTC" became `_as_utc`, one of them pre-existing in
+  `is_active`. `manifest` exports `PolicyStatus` beside `AutonomyLevel` and `SurfaceType`. The
+  reason validator no longer adds a second error when `verdict` itself failed validation. And the
+  composite's reason pick is described as arbitrary, which it is.
+
+  A fourth round found the feature answering `allowed=True` on adoption. `check_compliance` skips
+  every `INDETERMINATE` as "required context data missing", so a rule whose ratio threshold was
+  declared-but-unapproved was dropped from `applied_policies`, raised no violation, and returned
+  "No policy violations detected" about a governing rule nobody had cleared -- `warnings=[]` was
+  hardcoded at both return sites. `POLICY_NOT_ACTIVATED` withholds the allow and names the rule
+  now; missing data still skips. The adjudication applicability gate had the same shape, recording
+  `NOT_APPLICABLE` -- whose field doc reads "a structural applicability check said this rule doesn't
+  apply" -- for a rule that does apply.
+
+  The grid TODO's justification was false. "No shipped profile authors a grid" was read off a grep
+  of this repo; the consumer's own profile carries 150 cells across five grids from the same
+  unapproved document as its seven `thresholds:`, so the gate covers seven of its numbers and not
+  the rest. Not a regression, and now stated.
+
+  `as_of` was left as passed while the bound was normalised, so a naive one -- the documented pack
+  shape -- raised `TypeError`; the bound-side test covered half the comparison. `is_active` defers
+  to the same window as `executable_rules`, so a future-dated policy no longer reads active in the
+  governor and staleness paths. `get_threshold` no longer reports a mapping the coercion declined as
+  institution-authored and active. `finance.validation` catches `KeyError` as well, a pre-existing
+  crash on the line being edited. And `as_utc` is public on `fabric.canonical` rather than a private
+  name imported across modules, which retired a fourth open-coded copy in the staleness path.
+
+  A fifth round found the same defect one `if` above the one just fixed. `check_compliance`'s
+  *applicability* branch still skipped every non-SATISFIED gate, so a rule whose gate read an
+  unapproved threshold answered "All policy gates passed" -- and the adjudication twin, whose
+  docstring says it mirrors this function exactly, had received the branch while this had not. Both
+  share one warning builder now, which also carries `policy_id`, since two policies in precedence
+  order can hold the same rule id.
+
+  The composite masked it too: `reasons[0]` picked by child order, so a first child that was merely
+  missing data hid an unapproved sibling and the composite read as a data gap. The comment called
+  that pick arbitrary while it had become load-bearing for the allow decision. `POLICY_NOT_ACTIVATED`
+  wins. The rationale also reported only the unapproved count when a run had both, dropping the
+  violation text for any caller that surfaces it rather than iterating `policy_violations`. And
+  `policy_lint.find_profile_literal_drift` compared a `Threshold` object against a literal, so an
+  *approved* wrapped value reported drift and the assert form raised on a profile that had not
+  drifted; it reads through `get_threshold().value`.
+
+  What a mapping claiming governance it cannot back does has now taken three positions: it failed
+  the profile load, then was served as authored while `get_threshold` refused it, and now both
+  accessors refuse the key and the load succeeds. The middle one had `get` -- the accessor feeding
+  arithmetic -- as the lax one, which is what made it wrong. One `_looks_authored` predicate decides
+  for both so they cannot drift apart again.
+
+  A sixth round found the third applicability-gate site and, more usefully, named why two rounds had
+  missed it: the rule was written inline in three callers instead of once beside the dispatcher they
+  all use. `gate_blocks` sits there now. The missed site was the worst of the three -- `check_graph`
+  builds findings for VIOLATED and INDETERMINATE only, so recording `NOT_APPLICABLE` dropped the
+  rule from the result with no signal at all, and the `_UNTESTED_RATIONALE` entry added for exactly
+  this cause was unreachable from the gate path.
+
+  Making `is_active` cover the whole window had a consequence one caller away: `detect_staleness`
+  reported "status is 'active' (or past expiry), not active" for a future-dated policy. `not_in_force`
+  is public, so the reason is the policy's own sentence. `policy_lint` was still reading the wrong
+  bucket -- the previous fix went through `get_threshold`, which searches `thresholds` first, so a
+  key in both was compared against the wrong value under a message naming `custom`, and a refusal
+  could raise out of a function documented to return findings.
+
+  `ComplianceResult.warnings` described itself as non-blocking while `allowed` is now derived from
+  it. The composite warning no longer degrades to a bare "not activated": the refusal sits in a
+  limb. And a find/replace had turned `fabric.graph.check`'s module docstring into a 210-character
+  line quoting text the code never emits.
+
+  A seventh round found the same class as the fourth, one field over. `_looks_authored` required
+  ``value``, so a block declaring `status: seed` and forgetting its number was not a threshold at
+  all: `get` handed the raw mapping to arithmetic and `get_threshold` called it institution-authored
+  and *active*. The governance claim is the whole test now, value or not.
+
+  `policy_violations_to_findings` read `policy_violations` only, so `allowed=False` with an empty
+  violation list produced no findings and `validate_package` reported a clean spread for a deal the
+  expert had refused -- the in-repo instance of the caller shape the rationale fix two rounds earlier
+  was reasoning about, fixed where it was looked at and not in the sibling. The nested-limb search
+  went one level, so a grandchild refusal lost the threshold key.
+
+  `_all_rules` does not apply the `legacy_alias` filter `active_rules` does, so a sunset rule reports
+  executable and is never evaluated; `TODO(activation-vs-active-rules)` records it rather than
+  changing what `active_rules` means for a caller that does not exist yet. Two docstrings corrected,
+  one of which contradicted a sibling three lines above it.
+
+  An eighth round, and the first with no high finding. Four of its five were the seventh round's own
+  debris: the warning findings carried no `policy_id`/`rule_id` in `detail` while the sibling loop
+  twelve lines above carries both, so a consumer keying its review picker on `rule_id` gave two
+  unapproved rules in one policy the same key and kept one; the adjudication gate hardcoded
+  `POLICY_NOT_ACTIVATED` where its sibling propagates the gate's own reason, which is wrong the
+  moment `gate_blocks` admits a second; `policy_lint` reached through `PolicyProfile._looks_authored`,
+  so the predicate is public; and two docstrings, one of them the previous round's own rewrite.
+
+  Left as it stands, with the reason: a policy with `status: active` and a future `effective_date`
+  now reports in `stale_policies`, which means the opposite of what happened. A second bucket on
+  `StalenessReport` is a change to the expert contract for a case neither repo authors, and
+  enforcement is unaffected -- `resolve` builds `precedence_order` from the pack's own ids, never
+  from `is_active`.
+
 - **Plato serves a published domain pack.** The answer to *what consumes one*: it had no notion of
   a domain pack at all -- every pack path was the assistant kind that `build_from_manifest` binds,
   so a `Pack` had nowhere to land and a domain pack could be published, materialized, and still

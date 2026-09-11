@@ -1,0 +1,238 @@
+--- adversarial_review.sh.bak	2026-09-09 20:51:12.886491777 +0000
++++ adversarial_review.sh	2026-09-11 03:34:49.439582115 +0000
+@@ -50,6 +50,12 @@
+     upstream="HEAD~1"
+ fi
+ 
++# Resolved once, here. Everything downstream -- the diff, the transcript header, the baseline the
++# next round reads -- has to name the same commit, and `HEAD` does not stand still: this loop
++# commits and amends while a review is running, so a later `git rev-parse HEAD` answers about a
++# tree this pass never saw.
++reviewed_head="$(git rev-parse HEAD)"
++
+ # `.$$` on every working file: two reviews at once -- a push while a loop round is running, or
+ # two repos pushed together -- otherwise share these paths and read each other's diff.
+ run="${TMPDIR:-/tmp}/$REPO-push-review.$$"
+@@ -66,7 +72,11 @@
+     # itself with "nothing changed since the last review". A killed round must cost a re-run, not
+     # a silently skipped one.
+     [[ -n "${transcript:-}" ]] && grep -q '^VERDICT:' "$transcript" 2>/dev/null || return 0
+-    printf '%s\t%s\t%s\n' "$upstream" "$(git rev-parse HEAD)" "$transcript" > "$state_file"
++    # The commit that was *reviewed*, not `HEAD` as it stands at exit. A fix committed or amended
++    # while the pass was still running moves HEAD, and a baseline naming a commit these findings
++    # were never about is worse than no baseline: the next round then diffs from a tree nobody
++    # reviewed, and silently calls the result "since the last review".
++    printf '%s\t%s\t%s\n' "$upstream" "$reviewed_head" "$transcript" > "$state_file"
+ }
+ trap 'rm -rf "$run".* 2>/dev/null || :; save_state' EXIT
+ 
+@@ -108,46 +118,63 @@
+                 || saved_upstream=""
+         fi
+     fi
+-    # The label match is necessary and not sufficient: `saved_upstream` is a *label* like `HEAD~1`,
+-    # which compares equal to itself while resolving somewhere else entirely after a squash or a
+-    # branch switch. What the state has to mean is "the last reviewed head is a prefix of what is
+-    # being reviewed now", so that is what is checked -- an ancestor test, on the commit itself.
++    # What the baseline has to support is `git diff <saved_head> <reviewed_head>`, which is a
++    # two-tree diff: it reads both trees and does not care how their histories relate. The
++    # ancestry between them is therefore the wrong question, and asking it was the bug -- this
++    # loop amends every round, an amended commit is NOT an ancestor of its replacement, and the
++    # same-tree fallback cannot rescue it because the round's whole purpose is to change the
++    # tree. So every round fell through to the full range, and the incremental mode this state
++    # exists to drive had never once run.
++    #
++    # What is still worth checking is that the baseline belongs to the work being reviewed rather
++    # than to some other branch, so that the two trees are two versions of one change and not two
++    # unrelated ones. That is an ancestry test on the *upstream*, not on the head: whatever
++    # `saved_head` is now, it grew from the same base.
+     #
+-    # Three outcomes, because the wrong one is silent:
+-    #   * an ancestor            -> narrow to `<it>..HEAD`, the loop's whole point
+-    #   * not an ancestor, same tree -> the history was rewritten and the content was not (an
+-    #     `--amend` that changed the base, a squash), so there is genuinely nothing new to review
+-    #   * neither                -> the state describes history this HEAD does not contain; do not
+-    #     narrow, or the diff mixes two unrelated trees and reports their difference as a change
++    # An identical tree needs no special case: the diff below comes out empty and the run already
++    # reports "nothing changed since the last review" and exits.
+     if [[ -n "${saved_head:-}" && "${saved_upstream:-}" == "$upstream" ]] \
+        && git cat-file -e "$saved_head^{commit}" 2>/dev/null; then
+-        if git merge-base --is-ancestor "$saved_head" HEAD 2>/dev/null; then
+-            prior_head="$saved_head"
+-            [[ -r "${saved_transcript:-}" ]] && prior_transcript="$saved_transcript"
+-        elif [[ "$(git rev-parse "$saved_head^{tree}")" == "$(git rev-parse 'HEAD^{tree}')" ]]; then
++        if git merge-base --is-ancestor "$upstream" "$saved_head" 2>/dev/null; then
+             prior_head="$saved_head"
+             [[ -r "${saved_transcript:-}" ]] && prior_transcript="$saved_transcript"
+         else
+-            echo "  --  state names $(git rev-parse --short "$saved_head"), which is not in HEAD's" \
+-                 "history and has a different tree; reviewing the full range"
++            echo "  --  state names $(git rev-parse --short "$saved_head"), which did not grow" \
++                 "from $upstream; reviewing the full range"
+         fi
+     fi
+ fi
+ 
+ diff_file="$run.diff"
+ if [[ -n "$prior_head" ]]; then
+-    base="$prior_head"
+-    range_label="$(git rev-parse --short "$prior_head")..HEAD (since the last review)"
+-    diff_range="$prior_head HEAD"
+-    git diff $diff_range > "$diff_file" 2>/dev/null || : > "$diff_file"
++    git diff "$prior_head" "$reviewed_head" > "$diff_file" 2>/dev/null || : > "$diff_file"
+     if [[ ! -s "$diff_file" ]]; then
+         echo "  ok  nothing changed since the last review ($(basename "${prior_transcript:-none}"))"
+         exit 0
+     fi
++    # The upstream check above says the baseline grew from the same base; it cannot say it is a
++    # version of *this* work, because `.state` is keyed by the upstream's label and two branches
++    # can share one. The trees answer it: a real prior round is nearer to HEAD than the upstream
++    # is, so a "delta" bigger than the whole branch is two unrelated changes held against each
++    # other. Prefer the full range, which is at least true.
++    narrow_lines=$(wc -l < "$diff_file" | tr -d ' ')
++    full_lines=$(git diff "$upstream...$reviewed_head" 2>/dev/null | wc -l | tr -d ' ')
++    if [[ "$narrow_lines" -gt "$full_lines" ]]; then
++        echo "  --  state names $(git rev-parse --short "$prior_head"), whose delta against HEAD" \
++             "($narrow_lines lines) is larger than the whole branch ($full_lines); it is not a"
++        echo "      prior round of this work — reviewing the full range"
++        prior_head=""
++        prior_transcript=""
++    fi
++fi
++if [[ -n "$prior_head" ]]; then
++    base="$prior_head"
++    range_label="$(git rev-parse --short "$prior_head")..HEAD (since the last review)"
++    diff_range="$prior_head $reviewed_head"
+ else
+     base="$upstream..."
+     range_label="$upstream...HEAD"
+-    diff_range="$upstream...HEAD"
++    diff_range="$upstream...$reviewed_head"
+     git diff $diff_range > "$diff_file" 2>/dev/null || : > "$diff_file"
+ fi
+ lines=$(wc -l < "$diff_file" | tr -d ' ')
+@@ -168,13 +195,16 @@
+ : > "$transcript"
+ ln -sf "$transcript" "$(git rev-parse --show-toplevel)/scripts/local/.last-review.md"
+ 
+-# Bounded, so a long session does not accumulate them without limit.
+-ls -t "$review_dir"/*.md 2>/dev/null | tail -n +"${REVIEW_KEEP:-30}" | xargs rm -f 2>/dev/null || :
++# Bounded, so a long session does not accumulate them without limit. `+N` starts printing AT the
++# Nth, so the bare `REVIEW_KEEP` deleted the newest-but-29 and kept one fewer than it advertised --
++# which bites exactly when a long loop makes the older rounds worth reading.
++ls -t "$review_dir"/*.md 2>/dev/null | tail -n +"$(( ${REVIEW_KEEP:-30} + 1 ))" \
++    | xargs rm -f 2>/dev/null || :
+ {
+     echo "# adversarial review -- $REPO"
+     echo
+     echo "- when: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+-    echo "- range: $range_label ($(git rev-parse --short HEAD))"
++    echo "- range: $range_label ($(git rev-parse --short "$reviewed_head"))"
+     echo "- diff: $lines lines"
+     echo
+ } >> "$transcript"
+@@ -223,8 +253,21 @@
+ Report at most three [NOTE]s and put them after the defects and symmetry findings. Do not raise a
+ [NOTE] whose only substance is that prose could be worded better -- say nothing instead.
+ 
+-For each finding give: file:line, one sentence on the defect, and the concrete input or state that
+-triggers it. If you are not confident it is a real defect, tag it [NOTE] or leave it out.
++Start every finding on its own line, in exactly this shape and nothing else -- no `#` heading, no
++bold, no bullet, nothing at all before the tag:
++
++  [DEFECT] path/to/file.py:120 :: short-slug -- one sentence on the defect
++
++`path:line` is where it lives. `slug` is two to four hyphenated lowercase words naming the defect
++itself rather than the file -- `fico-floor-not-encoded`, `naive-as-of-not-coerced`,
++`orphaned-wrap-fragments`. Give the same defect the same slug in every round even after its line
++moves, and never reuse one slug for two defects in a file: `path :: slug` is the key a later round
++matches on to tell "still open" from "new", and it is how a finding can be retired without being
++re-argued. Then, on the lines after it, the concrete input or state that triggers it. If you are
++not confident it is a real defect, tag it [NOTE] or leave it out.
++
++Do not use `##` headings anywhere in your reply. This reply is concatenated with others into one
++transcript and `##` is what separates them.
+ 
+ Then rate every finding, on its own line, as `IMPORTANCE: high|medium|low -- <blast radius>`:
+ 
+@@ -244,11 +287,21 @@
+ A `TODO(...)` already sitting on the code is a claim about blast radius, and it is checkable like
+ any other. Check it, then act on the result:
+ 
+-  * the claim holds -- say so in one line under a `CHECKED:` heading and do NOT raise it as a
+-    finding. The author has weighed it; repeating it costs a round and changes nothing.
++  * the claim holds -- say so on one line beginning `CHECKED:` (a plain line, not a heading) and
++    do NOT raise it as a finding. The author has weighed it; repeating it costs a round and
++    changes nothing.
+   * the claim is wrong, or the code is worse than the `TODO` admits -- raise it, rate it, and say
+     which part of the deferral does not hold. A `TODO` is not cover for a `high`.
+ 
++Some findings have already been reported and accepted as they stand -- an extraction artifact in a
++vendored corpus nobody will re-run, a shape the author has decided to live with. They arrive below
++under `ACCEPTED FINDINGS`, one `path :: slug` per line. Those are settled, and a settled finding is
++not a defect this diff introduces. Do not report one again, do not re-argue it, and do not restate
++it as a [NOTE]: write `ACCEPTED: <path :: slug>` once, and nothing else about it. The one exception
++is the same one that applies to a `TODO`: if the code around it has changed so that it is now worse
++than its key describes, raise that as a new finding and say which part of the acceptance stopped
++holding.
++
+ A test carrying a `skip` marker whose reason names a `TODO` is parked deliberately. Do not raise
+ findings about it, and do not count it as missing coverage: say `PARKED: <test> (<todo>)` once and
+ move on. If you believe a parked test hides a defect in *shipped* code, raise that defect on the
+@@ -265,6 +318,28 @@
+ hold them. They are for the author to weigh, not a gate.
+ PROMPT
+ 
++# Findings the author has retired without fixing them. `TODO(...)` on the code and a `skip` marker
++# on a test are the only two closures the prompt above offers, and both are code constructs: a row
++# in a pack YAML has nowhere to put either, so a corpus finding the author declines can only be
++# reported again next round, and again after that. This file is the channel those findings lack --
++# one `path :: slug` per line, `#` comments and blank lines ignored.
++accepted_file="$state_dir/accepted.md"
++if [[ -s "$accepted_file" ]]; then
++    # Two plain greps rather than one alternation: `\?` in a BRE is a GNU extension and this
++    # script runs wherever the checkout is.
++    accepted_keys="$run.accepted"
++    grep -v '^[[:space:]]*#' "$accepted_file" | grep -v '^[[:space:]]*$' > "$accepted_keys" || :
++    if [[ -s "$accepted_keys" ]]; then
++        echo "  --  carrying $(wc -l < "$accepted_keys" | tr -d ' ') accepted finding(s)"
++        {
++            echo
++            echo "── ACCEPTED FINDINGS ─────────────────────────────────────────────────────────"
++            echo
++            cat "$accepted_keys"
++        } >> "$prompt_file"
++    fi
++fi
++
+ # What the last round concluded, appended to the prompt so this one verifies instead of
+ # re-deriving. Without it an incremental diff is strictly less information than a full one: the
+ # reviewer would see this round's edits with no idea which finding they answer.
+@@ -276,11 +351,13 @@
+         echo "The diff you were given is ONLY what changed since that round. These were its"
+         echo "findings, verbatim:"
+         echo
+-        sed -n '6,'"${REVIEW_PRIOR_LINES:-120}"'p' "$prior_transcript"
++        # 120 was about one slice of a four-slice transcript, so the accounting step below was
++        # being asked about findings it had mostly not been shown.
++        sed -n '6,'"${REVIEW_PRIOR_LINES:-800}"'p' "$prior_transcript"
+         echo
+         echo "Do two things, in this order:"
+         echo
+-        echo "1. For each finding above, one line: \`WAS: <file:line or its first few words> --"
++        echo "1. For each finding above, one line: \`WAS: <path :: slug> --"
+         echo "   FIXED | STILL OPEN | REGRESSED\`, and for anything but FIXED say in a clause what"
+         echo "   still holds. Judge it against the tree, not against the diff -- a finding can be"
+         echo "   fixed by a change this diff does not contain. Do not re-argue a finding the"
+@@ -301,7 +378,10 @@
+     claude -p --disallowed-tools "Edit,Write,NotebookEdit" -- "$(cat "$prompt_file")" \
+         < "$slice_diff" > "$out" 2>&1
+     sed 's/^/    /' "$out"
+-    { echo; echo "## $label"; echo; cat "$out"; } >> "$transcript"
++    # `<<<` rather than `## $label`: the reviewer emits its own `##` headings, so the slice
++    # boundary and the slice content were the same shape and no round could be read back
++    # mechanically -- not by the next round, and not by anything counting findings.
++    { echo; echo "<<<REVIEW $label>>>"; echo; cat "$out"; } >> "$transcript"
+     grep -q "^VERDICT: BLOCK" "$out" && return 1
+     grep -q "^VERDICT: PASS" "$out" && return 0
+     return 2

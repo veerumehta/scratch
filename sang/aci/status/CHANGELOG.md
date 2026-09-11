@@ -27,6 +27,244 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
   DSCR's six sites are converted. The rest of the repo still counts directories; converting
   them is mechanical but wide, and each scenario deserves its own pass.
 
+### Fixed — pack corpus corrections (branch `japes-2.5.1`)
+
+Found by adversarial review of the japes branch, which vendors copies of `dscr_core` and
+`ci-spread-core` as plato seed data and so read them properly for the first time.
+
+- **Two C&I checklist requirements were extraction debris.** `checklist_ci.yaml`'s
+  Purpose-Specific Documents section carried `- schedule` and `- available)` where the source
+  PDF has "Equipment purchase: vendor quote / invoice, purchase agreement, delivery schedule"
+  and "Acquisition: LOI, purchase agreement, target financials, quality of earnings (if
+  available)" -- two wrapped table cells whose first lines the extractor dropped, keeping only
+  their continuations. Any package assessment asked for documents literally named `schedule`
+  and `available)` and never for the two that were listed. Restored verbatim from the source;
+  all twelve sections audited against it, and those are the only two wrapped cells in the
+  document.
+
+- **`CI-ABL-MIN-AVAILABILITY` enforced half of what it says.** "10% of borrowing base or $2M,
+  whichever is greater" is both legs at once, and only the percentage was encoded, so a $10M
+  base with $1.5M available read SATISFIED against a floor of $2M. The source document states
+  the dollar leg (`min_excess_availability: "$2M or 10% BBC"`); it is now an `all_of`, and the
+  conductor passes the dollar figure beside the ratio it already computed.
+
+  Both figures share one guard. `BorrowingBase.excess_availability` defaults to `0.0`, so a
+  deal with no borrowing-base data would have been reported as $0 available and the dollar leg
+  returns VIOLATED -- which dominates the missing-data INDETERMINATE inside `all_of`, a denial
+  manufactured from a figure nobody supplied. Also recorded in the rule: the percentage is
+  computed against total availability, not the borrowing base its description names.
+
+- **A 2-4 unit application inherited the single-unit prepayment gates.**
+  `residential_unit_count` defaulted to `1` with nothing reconciling it against
+  `property_type`, so `{property_type: two_to_four_unit}` with the count unset tripped
+  Mississippi's single-unit PPP restriction and Ohio's `<= 2` on a loan neither rule covers --
+  a denial in the restrictive direction, which the Governor enforces. The rules were authored
+  correctly; the schema was the defect. The count is now derived from `property_type` where
+  that is unambiguous and left unset for a 2-4 unit property, so the gate is INDETERMINATE: a
+  data gap rather than a verdict.
+
+- **`DSCR-SUB-1-DSCR-FICO` was outside the drift lint.** It hardcoded `640` with no
+  `profile_custom_key`, while its twin `DSCR-NO-RATIO-FICO` -- same sentence in the source,
+  same threshold -- declares one. Recalibrating `profile.custom.fico_min_no_ratio` would have
+  left this rule on the old number with the lint green. Nine twins covered now, not eight.
+
+- **Provenance comments named gitignored plan documents**, in nineteen places across eleven
+  pack files. Rewritten to name the subject instead, keeping every phase and FR reference.
+
+- **`ENCODING_NOTES.md` contradicted the corpus beside it**: it said no rule used
+  `all_of`/`any_of` and that the state prepayment rules were unauthored (ten rules use them,
+  nine of those being those rules), that `pack_manifest.yaml` was "still not wired" (it
+  declares both corpora), and that eight profile twins were covered. Counted and corrected,
+  along with a false provenance claim on the owner-compensation ceiling: `addbacks.yaml`'s cap
+  is symbolic and this pack ships no profile, so the literal is the number's only home.
+
+### Fixed — pack corpus, second review pass (branch `japes-2.5.1`)
+
+- **An Illinois loan could omit the rate its own PPP rule gates on.** `DSCR-PPP-IL-2`'s `all_of`
+  applicability reads `interest_rate > 8`; an absent rate makes that limb INDETERMINATE, which
+  leaves the gate neither satisfied nor blocking, so `check_compliance` skips the rule and a loan
+  that should have been denied passes in silence. ENCODING_NOTES section 1a settled the same
+  problem for the attestation booleans by choosing defaults that block; a rate has no safe
+  default, so it is required exactly where a rule reads it -- Illinois, individual borrower, over
+  $250,000 -- and the gap surfaces as a validation error at intake instead.
+
+- **"Less Cash Taxes" was bound to the accrued book tax.** `spread_template_rb.yaml` pointed the
+  row at `income_tax_expense` off the income statement while
+  `income_taxes_paid_net_of_refunds` sits in the same pack's chart of accounts as the cash-flow
+  figure the row asks for, so any deferral, refund or timing difference put the wrong number in
+  the Adjusted Fixed Charge Coverage numerator under a label saying "Cash". `Cash Interest` eight
+  lines down is deliberately left unbound on exactly this objection.
+
+- **Two warning rules described a band they do not encode.** `CI-LEVERAGE-WARNING` said "above
+  3.0x but below 3.5x" and `CI-FCCR-WARNING` "between 1.15x and 1.25x", each with a single
+  threshold predicate, so both also fire well past the stated band. The behaviour is a defensible
+  superset (the hard floor fires alongside) and the text is what a caller renders, so the
+  descriptions now say what the predicates are.
+
+- **Counts corrected.** ENCODING_NOTES' rule-shape table said the 14 PPP rules were "8 plain
+  `expression`, 6 `all_of`" and a later line said "6 of the 14" while naming nine; it is 5 and 9,
+  which is what makes section 3's "10 of the 41" add up. And `metrics.yaml`'s header said what
+  stays in Python is "behavior, not knowledge" while seven ids the spread templates reference
+  resolve only against `analytics.py::compute_metrics` -- definitions, not behaviour, now recorded
+  as the gap they are.
+
+### Fixed — the unit-count field, both directions (branch `japes-2.5.1`)
+
+- **`residential_unit_count` had a hole on each side, and the first fix opened the second.** It
+  defaulted to `1`, so a `two_to_four_unit` application that left it unset read as single-unit and
+  tripped Mississippi's single-unit prepayment restriction and Ohio's `<= 2` on a loan neither
+  rule covers: a wrong denial. Leaving it unset instead closed that and opened the opposite hole,
+  which is worse: the gates read INDETERMINATE, `check_compliance` skips a rule whose gate is not
+  SATISFIED and records nothing, so a genuine two-unit Ohio property cleared with a penalty Ohio
+  requires bought out -- permissive, and silent.
+
+  Neither direction is a default's job. A 2-4 unit property's unit count is known at intake and
+  three rules read it, so it is required there, which is the same answer `interest_rate` got for
+  Illinois and for the same reason: require the field where a rule reads it. The Illinois fix
+  should have been generalized to this family at the time and was not.
+
+  The tests moved to the production path with it. Every case in the eligibility table hands the
+  evaluator a context dict and sets the count itself, which is why neither failure appeared there.
+
+- **Two documentation claims corrected.** `workbook_layout.yaml` said every `key` resolving
+  against the chart of accounts and metric catalog "is this file's own load-time acceptance check
+  (see workbook_layout.py's validator)" -- there is no such validator and no such file:
+  `load_workbook_layout` checks shape only, so an unresolvable key loads clean and writes a
+  labelled empty row. It is an authoring rule, now stated as one. And ENCODING_NOTES still
+  described `residential_unit_count` as defaulting to `1`, which is the behaviour the first fix
+  above removed.
+
+### Fixed — interest-only FICO floor, and three claims (branch `japes-2.5.1`)
+
+- **`DSCR-IO-MIN-LOAN` enforced half of what it says.** Its description reads "minimum loan amount
+  of $250,000 and minimum FICO 640" and the condition checked only the amount, so an
+  interest-only loan at FICO 620 returned SATISFIED. `profile.custom.fico_min_io` was authored at
+  640 with no rule reading it, which is the same omission seen from the profile side. And
+  `rule.description` is not inert prose: the policy registry returns it verbatim as guidance
+  text, so a caller was told a 640 check ran when none did. Both legs are encoded now, each
+  declaring its profile key.
+
+  This needed a japes fix first: `find_profile_literal_drift` only inspected a rule's top-level
+  `condition`/`applicability`, so wrapping the rule in an `all_of` would have moved *both*
+  declarations out of the lint's reach while appearing to add one. The lint walks composites as
+  of japes `e0f8442`, and this pack's drift test now uses its traversal rather than a second copy.
+
+- **Three claims corrected.** ENCODING_NOTES enumerated `PropertyType` as including a bare
+  `condo`; there is no such member (`warrantable_condo` and `non_warrantable_condo` are the two
+  spellings, which is what every rule matches on) and the bare-state prepayment rules were
+  justified by that list. `core.yaml` said FCCR, ABL and LIEN "remain in registry.py until
+  similarly extracted" after `conventions.yaml` had authored all three beside it, sending a reader
+  editing an FCCR threshold to a file the deployment does not have. And `checklist_ci.yaml`'s
+  provenance field named `sha256` held sixteen hex characters, so it is `sha256_prefix` now --
+  the full digest is not recoverable from it and nothing verifies the source against it.
+
+### Fixed — a No Ratio file could clear the >$2M DSCR floor (branch `japes-2.5.1`)
+
+- **The first high-severity finding of this arc, and a hazard the corpus documents.**
+  `DSCR-OVER-2M-DSCR` states the floor as a `ratio` condition, which reads INDETERMINATE on a No
+  Ratio file, so `check_compliance` skipped it: a $2.5M no-ratio loan returned `allowed=True` with
+  zero violations and zero warnings, while the same loan with a documented DSCR of 0.9 was denied.
+  ENCODING_NOTES G2 describes exactly this and prescribes a twin rule keyed on
+  `dscr_documentation_type`; that fix was applied to `DSCR-SUB-1-DSCR-CLTV` and `-FICO` and not
+  here. `DSCR-OVER-2M-NO-RATIO` is the third site.
+
+  Swept the corpus for the same shape: two rules have a bare `ratio` condition, and the other,
+  `DSCR-HIGH-LTV-DSCR`, needs no twin because a no-ratio file is capped at 75% CLTV, below its own
+  `cltv_pct > 80` gate — verified by running a no-ratio file at 85% and watching the cap deny it.
+  Masked rather than absent, so the rule now records that raising the cap would open the hole.
+
+- **`evidence_types.yaml` was never declared.** The file ships with seven ids in the shape the
+  loader reads and the manifest named no `evidence_types:` key, so `Pack.evidence_types` was empty
+  while `convergence_evidence_required` in the same manifest named three of those ids. The tool
+  registry derives its requestable set from that list, so an Investigator built from this pack
+  could request no evidence at all.
+
+- **Four stale claims in the pack notes**, three of them made stale by this branch: the paragraph
+  saying nested `profile_custom_key` declarations are not lint-checked (they are, as of japes
+  `e0f8442`, and this corpus depends on it — which also means the four PPP literals left unlinked
+  for that reason can now be linked); the rule-shape counts, now stated corpus-wide rather than
+  per-group because the per-group breakdown drifted on every rule added; and `fico_min_io`'s place
+  on the orphaned-keys list, which it left when the interest-only rule grew its second leg.
+
+### Fixed — an overlay evaluating as core (branch `japes-2.5.1`)
+
+- **`RB_CI_OVERLAY` displaced the institution policy it narrows.** It ships in
+  `conventions.yaml` inside the `dir: policies` corpus, so a consumer hydrating
+  `DefaultPolicyExpert` from `Pack.policy_registry` got all six policies as core — and field
+  precedence is registry order, so the overlay's `RB-CI-LEVERAGE-CEILING` claimed `leverage_x`
+  ahead of `CI_CORE_LEVERAGE_POLICY` purely because `conventions.yaml` sorts before `core.yaml`.
+  Both core leverage rules stopped running: `leverage_x=3.2` produced zero findings where
+  `CI-LEVERAGE-WARNING` should have fired. Silent, and it survived only because the overlay's
+  placeholder 3.5x happens to equal the core ceiling.
+
+  The pack already declared the distinction: `RB_CI_OVERLAY` is `scope: product` where the core
+  policies are `scope: institution`, and `PolicyScope`'s own docstring states the ladder
+  ("product takes precedence over institution"). Nothing in japes read it. `Pack.core_policy_ids`
+  and `Pack.overlay_policy_ids` (japes `6e5cc24`+) now derive from it, so hydration is mechanical
+  rather than guessed. With them, core governs by default and `program_id: rb` makes the overlay
+  supersede core exactly as its `supersedes_core_rule` declares — which is also what fixes
+  `RB-CI-FCCR-FLOOR` never evaluating.
+
+- **`evidence_types.yaml` authored for dscr_core**, from the eight ids its own rules already name
+  in `parameters.evidence_types`, and declared in the manifest. Until now `Pack.evidence_types`
+  was empty for this pack, so a tool registry built from it derived a requestable set of nothing —
+  the same gap ci-spread-core's declaration was added for one round earlier, in the half of the
+  family that was missed.
+
+- **Three claims and a binding.** `CI-ABL-MIN-AVAILABILITY` described its percentage leg as "10%
+  of borrowing base" when it is computed against total availability: on a $30M base with the line
+  capped at $10M, $2.5M clears both legs while 10% of the base is $3.0M. Restated rather than
+  re-encoded, because a base-relative leg needs a figure no producer supplies and picking that
+  denominator is a credit decision.
+
+  The description names *both* forms. Saying only "borrowing base" told a caller a test had run
+  that had not, since this text is returned verbatim as guidance; saying only "total availability"
+  was the opposite error, making the pack misstate its own authority, which records "$2M or 10%
+  BBC". An SME comparing pack to source has to be able to see the gap, so it is written down. "Cash Interest" is bound to `interest_paid`, like its tax twin
+  three rows up and as both are already bound elsewhere in the pack. And ENCODING_NOTES' `all_of`
+  enumeration named ten of twelve rules, omitting the two added since, while its version note
+  stopped at 1.2.0 where the file ships 1.3.0.
+
+### Fixed — a vocabulary mismatch, two undeclared fields, contradicting rating bands
+
+- **The ontology named a `loan_type` value no matcher accepts.** It enumerated
+  `abl | revolver | term_loan | ddtl`, while all five matchers in the pack spell the fourth
+  `delayed_draw_term_loan` (diagnose_map's three term-loan rules, two manifest `applies_to`
+  lists). A facility authored to the pack's *own* documented vocabulary matched none of them and
+  fell through diagnose_map's fallback to **the ABL revolver playbook** — wrong guidance for a
+  delayed-draw term loan, not an empty result. `ddtl` appeared in exactly one place; it is gone.
+
+- **Two fields rules read were declared nowhere.** `CI-ABL-MIN-AVAILABILITY`'s first leg reads
+  `excess_availability_pct`, which appeared only at its use site, so the rule returned
+  INDETERMINATE on any context lacking it — and `check_compliance` skips that without recording,
+  meaning the rule could return VIOLATED or INDETERMINATE and *never* SATISFIED. Declared on
+  `BorrowingBaseResult` as the derived figure it is. Sweeping every field the pack's rules read
+  against what the ontology declares then found a second, `owner_compensation_addback_amount`,
+  which no finding had reported; that sweep is now clean.
+
+- **`term_loan.md` contradicted itself by a full notch.** §term-005's leverage bands rated
+  3.5–4.5x SPECIAL MENTION and >4.5x SUBSTANDARD; §term-007 rates 3.0–3.5x SPECIAL MENTION and
+  >3.5x SUBSTANDARD. A borrower at 4.0x read one from each, and both reach the Reasoner as
+  guidance on the same playbook. §term-007 is the one that maps onto the encoded policy
+  (`CI-LEVERAGE-WARNING` 3.0x, `CI-LEVERAGE-CEILING` 3.5x), so §005 keeps its structuring
+  guidance and defers the rating scale to it rather than restating it differently.
+
+- **`DSCR-ITIN-LOAN-MAX`'s $1,000,000 is linked to the profile** as every other loan-amount bound
+  in the file already was — and as ENCODING_NOTES already claimed it was, while it was a bare
+  literal the drift lint could not check.
+
+- **The missing-field deferral said where it does not hold.** ENCODING_NOTES discharged the
+  silent-skip risk on `residential_unit_count`/`interest_rate` by requiring them on
+  `LoanApplication` — which is authoring-repo code. The pack ships only rules, so any other
+  consumer, including plato's vendored copy where no such schema exists, still gets the skip:
+  four of the fourteen PPP rules report NOT_APPLICABLE instead of denying. The IR cannot gate on
+  a field's presence, so the pack cannot close it; it now says so.
+
+- **The truncated-digest rename covers all four sites** (`source_sha_prefix`, the scaffold's
+  `sha256_prefix=`, the ontology field), not the one renamed last round, and `abl_revolver.md`
+  carries the availability caveat the rule's own description got. Plus corrected counts: seven
+  ratio thresholds not six, and six of eighteen profile keys unreferenced rather than two.
+
 ### Changed — japes 2.5.0
 
 - **The `[litellm]` extra is gone from the japes pin.** Not optional: japes 2.5.0 removed the

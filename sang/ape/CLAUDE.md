@@ -241,7 +241,34 @@ by Claude Sonnet etc
 `openai-agents = ">=0.17.0"`, not `^0.17.0`. (To pick up a newer release, update the installed/locked
 version, not the spec.) Other JazzX repos may use `^`; in our repos prefer `>=`.
 
-## 7. Symmetry & cross-cutting consistency
+## 7. Closing a review finding: TODO slugs
+
+The adversarial review keys every finding `path :: slug`. **Use that same slug in the `TODO(...)`
+that closes it**, so the deferral names the finding rather than leaving the reviewer to infer the
+connection: a finding keyed `checklist_ci.yaml :: orphaned-wrap-fragments` is answered by
+`TODO(orphaned-wrap-fragments): <why, and what would change it>` in that file.
+
+**This works in YAML.** A `# TODO(slug)` comment in pack data is read and honoured exactly as one
+in Python is — `TODO(conductor-pipeline-from-yaml)` in `ci-spread-core/pack_manifest.yaml` has been
+picked up under `CHECKED:` and not re-reported. Findings in pack YAML repeat because nobody wrote
+a TODO, not because the file cannot hold one.
+
+**Never use a structured field for this.** `notes:` was tried on two rules in `conventions.yaml`
+and pydantic dropped both — `Rule` takes the default `extra="ignore"`, so the keys read like model
+fields while being invisible to every consumer. `Threshold` fails the other way, with
+`extra="forbid"`, where an undeclared key is a hard error. A comment has neither failure mode.
+
+Two closures, and they mean different things:
+- `TODO(slug)` in the file — deferred, still intended, with the reason. The default for pack data,
+  because it sits at the row a future author edits.
+- `.reviews/accepted.md` — weighed and being lived with, no intent to fix. For findings with
+  nothing to fix, like an extraction artifact in a vendored corpus nobody will re-run. A `high`
+  never belongs there.
+
+Both are claims about blast radius, and the reviewer checks them. A TODO whose claim has stopped
+holding is raised again, correctly — so when a fix makes one stale, update it in the same pass.
+
+## 8. Symmetry & cross-cutting consistency
 
 **Enumerate the family before editing, not after.** Grep for the pattern, list every hit, and fix
 all of them in that change or say which you are leaving and why. "Check the siblings afterwards"
