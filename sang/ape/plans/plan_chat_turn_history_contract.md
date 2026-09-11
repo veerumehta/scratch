@@ -69,14 +69,14 @@ size of what the user just typed.
 Ordered by how confident I am each is real. The first four are observed; the rest are designed for
 and should be read as predictions.
 
-### S1 — the follow-up (observed, and the defect)
+### S1: the follow-up (observed, and the defect)
 
 > "What is the DSCR minimum?" → "And for a condo?"
 
 The second message is meaningless alone. A gate that sees it alone refuses it as out of scope or
 routes it to the wrong branch. **Needs:** the gate sees recent turns.
 
-### S2 — the drift, which pulls the other way (observed in shape, not in the wild)
+### S2: the drift, which pulls the other way (observed in shape, not in the wild)
 
 > ten turns about a loan → "write me a poem"
 
@@ -96,7 +96,7 @@ answer by itself.
 `gate_history_turns=0` restores today's behaviour exactly, for a gate that is a pure content policy
 and wants no context.
 
-### S3 — history that does not live in japes (observed)
+### S3: history that does not live in japes (observed)
 
 The canonical assistant's queue ingress fetches the conversation from the Assistant API; its socket
 ingress reads a KH `CanonicalConversation`. Neither is japes' conversation store, and the agent is
@@ -104,12 +104,12 @@ run with no session at all. **Needs:** injectable history. This is the scenario 
 contract -- a design where history can only be store-resolved cannot serve the assistant we already
 have.
 
-### S4 — history that does live in japes (observed)
+### S4: history that does live in japes (observed)
 
 A simpler assistant uses `InteractiveAgent`'s own store and supplies nothing. **Needs:** unchanged
 behaviour, which the empty default gives.
 
-### S5 — the prompt budget (observed)
+### S5: the prompt budget (observed)
 
 Long conversations must be bounded, and every consumer must agree on the bound. **Needs:** the byte
 budget of §3. Today japes has no size-based compaction at all: its four strategies (`summarize`,
@@ -117,13 +117,13 @@ budget of §3. Today japes has no size-based compaction at all: its four strateg
 `memory._char_count` counts **characters, not bytes** -- which understates a non-ASCII
 conversation's real cost against a model limit by up to four times.
 
-### S6 — the escalation gets what the gate saw (predicted)
+### S6: the escalation gets what the gate saw (predicted)
 
 `escalate_step` hands the turn to a heavier engine. Today that turn carries no history, so the
 escalation path re-derives it or does without. With history on the turn, the reasoner sees exactly
 what the gate judged. **Needs:** nothing new; it falls out.
 
-### S7 — grounding that depends on the conversation (predicted)
+### S7: grounding that depends on the conversation (predicted)
 
 > "show me the other one"
 
@@ -132,14 +132,14 @@ caller can already close over whatever it likes -- but it cannot close over hist
 resolved, because today there is none. **Needs:** history resolved before `ground` runs, which the
 stage order already gives.
 
-### S8 — replay and evaluation (predicted, and the most valuable of the predictions)
+### S8: replay and evaluation (predicted, and the most valuable of the predictions)
 
 A golden case is a fixed conversation plus a question, and its whole point is determinism. Injected
 history is exactly that: the case supplies the list, no store is touched, and the same case
 produces the same gate decision every run. Today a chat golden case either has no history or needs
 a pre-seeded store, which is state a case should not carry.
 
-### S9 — two ingresses, one conversation (predicted)
+### S9: two ingresses, one conversation (predicted)
 
 A turn arrives over the queue, the next over a socket. Each ingress supplies history from its own
 system; the pipeline holds no opinion. Works by construction rather than by design, which is the
