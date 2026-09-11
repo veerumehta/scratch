@@ -2,6 +2,11 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+## [2.5.2] - unreleased
+
+*SDK 2.5.2, Plato 0.1.3. Work lives on the `v2.5.2` branch, cut from `dev` after 2.5.1 squash-merged
+(`e4eabd4`). Nothing has landed yet beyond the version bump.*
+
 ## [2.5.1] - 2026-09-08
 
 *SDK 2.5.1, Plato 0.1.3. All 2.5.1 work lives on the `v2.5.1` branch so it can land on `dev` as one
