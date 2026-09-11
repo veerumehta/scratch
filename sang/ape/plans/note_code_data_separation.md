@@ -63,9 +63,9 @@ but measured against the builders it is the *maximal* set, not what a default bu
 
 | Pipeline | `steps` declares | `build_*()` default produces |
 |---|---|---|
-| `vocabulary_build` | + `decide`, `merge` | without them (`with_decide=False`, `with_merge=False`) |
+| `vocabulary_build` | + `decide`, `merge` | neither (`with_decide`/`with_merge` default False) |
 | `policy_extract` | + `decide` | without it (`with_decide=False`) |
-| `investigation_loop` | + `sentinel`, `persist` | without them (`with_sentinel=False`, `with_persist=False`) |
+| `investigation_loop` | + `sentinel`, `persist` | neither (both flags default False) |
 
 That is a defensible semantic -- "every step this pipeline can have" -- and it is nowhere written
 down. A reader checking the catalog against a running pipeline finds a mismatch and cannot tell
