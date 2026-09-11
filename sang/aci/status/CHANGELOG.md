@@ -11,6 +11,15 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ### Changed — japes 2.5.1 (branch `japes-2.5.1`, needs an unreleased japes)
 
+- **An unstated prepayment-penalty structure now denies where a state requires a buyout.**
+  `prepayment_penalty_requested` defaulted to `"no_prepay"`, the one value satisfying every
+  `DSCR-PPP-*` rule, so a loan whose prepay terms nobody had asked about reported clean in all
+  13 states with a buyout requirement. The default is `"unspecified"`, which satisfies none of
+  them. Not `None`: that reads INDETERMINATE and `check_compliance` skips the rule silently,
+  restoring the same pass. Four new cases build the context through `LoanApplication` so the
+  default is what the rule sees; every existing case set the field itself, which is why the
+  suite stayed green over it.
+
 - **Pack paths resolve through one seam instead of counting directories.** Modules computed
   their own root by walking up from `__file__` -- `parents[4]`, `parents[5]`, `parent` five or
   six times -- each count correct only for the nesting of the file it sat in, so moving a
@@ -264,6 +273,21 @@ Found by adversarial review of the japes branch, which vendors copies of `dscr_c
   `sha256_prefix=`, the ontology field), not the one renamed last round, and `abl_revolver.md`
   carries the availability caveat the rule's own description got. Plus corrected counts: seven
   ratio thresholds not six, and six of eighteen profile keys unreferenced rather than two.
+
+### Fixed — the fourth `applies_to`, and counts my own edits made stale
+
+- **The `ddtl` vocabulary pass covered three of four `applies_to` lists.** `pb-ci-loanpkg-001` was
+  `[abl, revolver, term_loan]` — every facility type except the one term-loan variant — while
+  `pb-ci-memo-001` beside it carries all four. The ontology comment written in that same pass
+  claimed "the manifest's two playbook `applies_to` lists", counting the two that already had the
+  long spelling and treating the manifest as covered.
+
+- **Counts corrected in the row that was correcting counts.** Fixing "6 ratio thresholds" to 7 left
+  "11 custom scalars" and "those 18 keys" stale, because the same change added
+  `itin_loan_amount_max` to `custom:`. The profile holds 7 + 12 = 19; six are still unreferenced.
+  And `term_loan.md`'s new parenthetical called §term-007 "the only [rating scale] in this
+  playbook" while §term-004 also assigns ratings — agreeing ones, so nothing contradicts, but the
+  claim was wider than the file.
 
 ### Changed — japes 2.5.0
 

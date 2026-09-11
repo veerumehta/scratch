@@ -899,6 +899,165 @@ including in the two files both branches had touched.*
   carrying only `manifest.yaml` would have errored instead of reporting through `broken`. Both now
   go through the tree and `_manifest_of`.
 
+- **First incremental round: 503 lines instead of 12,526, and the churn rate became visible.**
+  The review's narrow mode had never once run -- its ancestry test asked whether the saved head is
+  an ancestor of HEAD, and this loop amends every round, so an amended commit is never an ancestor
+  of its replacement and every round fell through to the full range. Fixed in the script, and the
+  first `WAS:` accounting the loop has produced accounts for all 26 of the previous round's
+  findings: 16 FIXED, 10 STILL OPEN, 0 REGRESSED.
+
+  What that made measurable: **three of this round's five new items were manufactured by last
+  round's fixes.** The `ddtl` vocabulary pass landed on three of four `applies_to` lists, missing
+  the loan-package scaffold -- and the ontology comment written in that same pass claimed "the
+  manifest's two playbook `applies_to` lists", counting the two that already had the long
+  spelling. Correcting "6 ratio thresholds" to 7 left "11 custom scalars" and "18 keys" standing
+  while the same change added a twelfth custom key. And a new parenthetical called one rating
+  scale "the only one in this playbook" where a second section has one. On a whole-branch diff a
+  fix-introduced defect is indistinguishable from a pre-existing one; on a per-round delta it is
+  just visible.
+
+  Also closed from the standing list: the `TODO(seed-pack-vendoring)` docstring had been left
+  ending mid-sentence at "...without that consumer's checkout. Two" by an earlier rewrite of
+  itself, and `as_utc`'s docstring said six private copies where seven named helpers exist -- it
+  omitted `plato/reference/model_overlay`, counting only the SDK ones, and an eighth module
+  coerces inline without defining a helper at all.
+
+  `relaxed_only` inherits `environment_tier()`'s fail-open: an unrecognised `JAPES_ENVIRONMENT`
+  (`stg`, or a typo) reads as `local` and admits the pack writes. Recorded as
+  `TODO(relaxed-only-fails-open-on-unknown-tier)` rather than fixed, because `deployed_posture`,
+  `withholding` and `check_settings` all read that value the same way and `JAPESSettings`
+  validates the name separately -- tightening this one gate would make it disagree with its three
+  siblings. The TODO carries the review's own finding slug, which is the convention now in
+  CLAUDE.md §7: a `# TODO(slug)` comment closes `path :: slug`, and it works in pack YAML as
+  readily as in Python.
+
+- **The deferral was wrong, so the gate is fixed instead.** `relaxed_only` inherited
+  `environment_tier()`'s fail-open, and last round that was recorded as a `TODO` on the reasoning
+  that `JAPESSettings` validates the tier name loudly elsewhere. It does not for this process:
+  nothing in plato constructs it, and its `env_prefix="JAPES_"` binds `JAPES_ENVIRONMENT` alone --
+  not the `JAPES_ENV`, `ENVIRONMENT` or `APP_ENV` that `environment_tier` also reads. Two of the
+  deferral's three claims held; the load-bearing one did not.
+
+  So `ENVIRONMENT=prodution` on a deployed replica resolved LOCAL and let an unauthenticated
+  caller retire a published pack version -- no startup error, an ordinary 200. The gate refuses an
+  unreadable tier now and names the variable to fix. Mapping an unknown name to LOCAL stays right
+  for `environment_tier` itself: refusing to start a laptop over a typo is the correct trade for a
+  startup check and the wrong one for a destructive write, which is the asymmetry this encodes.
+
+  Both of this round's findings were against claims written in the previous one: that deferral,
+  and a comment corrected from "two `applies_to` lists" to "all four" when three is the answer --
+  `pb-ci-abl-001` is `[abl, revolver]` and correctly names no term-loan variant.
+
+  The round itself: 160 lines against the previous 503 and 12,526 before that, 7 FIXED / 3 STILL
+  OPEN / 0 REGRESSED, and the first five `ACCEPTED:` suppressions -- each carried finding answered
+  in one line instead of being argued again.
+
+- **All four findings this round were in the thirty lines written the round before.** The
+  unreadable-tier gate closed a real fail-open and introduced three problems of its own, which is
+  the churn rate the incremental mode now makes visible.
+
+  It read `os.getenv` directly, so a posture variable that is *set but empty* -- a compose
+  passthrough whose host variable is unset, a bare line in an env file -- counted as an
+  unrecognised tier and refused the pack writes on a laptop where every other reader resolves
+  `local`. `envvars` already owns that distinction: `env_text` exists because blank means *not
+  configured*. Second time in this branch an emptiness check handled `None` and forgot `""`.
+
+  The predicate moved to `jazzx_sdk.config.envvars.unreadable_tier_vars()`, beside the two other
+  readers of those variables, instead of being built inline in a Plato helper reaching across the
+  package for two private names.
+
+  And hardening the write gate alone was the wrong shape. `environment_tier` maps an unknown name
+  to LOCAL, so `ENVIRONMENT=prodution` resolves "not deployed" in `wiring_default`'s store and
+  Knowledge Hub choices too -- a production replica quietly running an in-process store against a
+  Mock Knowledge Hub, which is worse than the write it was admitting. `check_settings` refuses to
+  start on an unreadable tier now, which is what covers readers a per-request gate cannot reach;
+  the gate keeps its own refusal as defence in depth. The earlier argument that tightening one
+  gate would make it disagree with its siblings was right, and the answer was to fix the siblings
+  rather than to defer.
+
+  Also: the summary line still described only the relaxed-posture refusal, and
+  `if blocked and unrecognised` carried a term with no predicate of its own.
+
+- **A job walked past the boot refusal.** Last round's claim that "refusing once at boot is what
+  covers those" held for a serving role and not for `JAPES_RUN_MODE=job:*`: `load_wiring()` has
+  already chosen sqlite and a Mock Knowledge Hub from the unreadable tier, `check_posture` printed
+  the refusal, and control reached `run_job` -- the job completed its writes through the wrong
+  backend. The schema refusal one block down already had the guard this needed; the posture
+  refusal did not. A job exits 6 now, and the comment above the block says which role the
+  `create_plato_app` backstop actually covers.
+
+  `unreadable_tier_vars` also restated `env_text`'s blank-means-unset rule with `os.getenv` and
+  two `.strip()` calls, in the module that defines `env_text` and while citing it by name. It
+  calls it.
+
+  Two docstrings and a vacuous test: `check_settings`' summary described only the
+  identity refusal and not the unconditional tier one, and did not mention that passing
+  `environment=` explicitly -- which the next paragraph recommends for tests -- skips it. And the
+  test asserting the startup half never reached the entry point that decides what a refusal
+  costs: its first version exited 4 on wiring resolution and passed for the wrong reason, so it
+  now stubs `load_wiring` and fails with `0 == 6` against the unfixed code.
+
+- **The bundled `dscr_core` notes described a prepay default that no longer passes.** The pack's
+  `ENCODING_NOTES.md` §1b stated `prepayment_penalty_requested` defaults to `"no_prepay"` and
+  cited that as the reason no gold case needed updating. The consumer's default is `"unspecified"`
+  now, so the 13 state buyout rules deny until the structure is stated, and the notes said the
+  opposite of what the rules do. Corrected in the bundled copy, which is identical to the
+  consumer's. The behaviour itself is the consumer's schema, not this repo's.
+
+- **A `high`: every `job:*` role computed its exit code and then hung.** The boot contract
+  promised a job exits 4, 5 or 6; only row 1 actually did. A `fabric.db` sqlite store runs one
+  non-daemon `aiosqlite` worker thread per connection and nothing closed the pool, so the moment a
+  role got far enough to open a store -- a posture refusal, a stale schema, *or a healthy sweep* --
+  the interpreter never shut down and the code was never delivered. An ACA Job sat until its
+  platform timeout, which a supervisor cannot distinguish from work in progress.
+
+  `plato.wiring.release_wiring` closes the pools after the role decides its code, on every path
+  including the serving ones, and `DatabaseHandle.dispose_all` drains the stores a `/v1/config`
+  database swap retired -- which is what its own docstring already promised the process end would
+  do. `run_role` split into a resolve-and-release shell plus `_run_resolved`, so one `finally`
+  covers every branch.
+
+  Closing the pools is not enough on its own, which the first cut of this fix got wrong: a raising
+  `dispose` leaves the same thread alive, so swallowing that error kept the code and lost the exit.
+  Delivering the code is the contract, so `plato.__main__` ends the process outright and
+  `release_wiring` keeps the shutdown clean rather than making it possible. The exit handlers run
+  by hand first -- `os._exit` runs none, and `jazzx_sdk.llm.config` registers the unlink for a
+  decoded service-account key, so forcing the exit without them left a plaintext credential on
+  disk after every run. Both are pinned: one test sabotages `dispose` and still expects the row's
+  code, another runs a job with `GOOGLE_APPLICATION_CREDENTIALS_B64` set and expects no key left
+  in `TMPDIR`.
+
+  The test that was supposed to hold row 6 to its code path is the reason this shipped: it stubbed
+  `load_wiring`, which is precisely the call that opens the store, so it asserted a return value
+  from a process that in production never ended. Both untested rows are now subprocesses under a
+  timeout that fails naming the hang, and both fail against the unfixed code. Checked and not
+  changed: `KnowledgeFabric` has no `dispose()`, but neither sqlite shape leaks a thread through
+  it, so the gap is Plato's rather than the SDK's.
+
+- **A `high`: shipped behaviour changed without its declared contract.** `plato/boot_contract.py`
+  is the single owner of the boot policy, and `plato/__main__.py`'s own rule is "a change to the
+  policy is a change to `BOOT_CONTRACT`". The previous round made a job exit 6 on a posture
+  refusal and left the row saying `job_exit=SERVES` -- so `JOB_EXIT_CODES`, the table rendered into
+  `docs/DEPLOYMENT_ENV.md`, and the docs sentence calling those codes "the only exit codes worth
+  branching on" all described behaviour the code no longer had. An orchestrator branching on 4/5
+  would see an undocumented 6 while the documentation said the job ran.
+
+  Invisible to the suite, which is the part worth keeping: the doc-table test asserts the docs
+  equal `as_markdown_table()`, and both derive from the same row, so a change to the *code* alone
+  drifts in all three artefacts at once without failing anything. Row 1 (`PLATO_WIRING` unset) had
+  a test holding its code against its row; this row did not.
+
+  The row, `JOB_EXIT_CODES` and the rendered table are in step, and the missing test now lives
+  beside row 1's, asserting `entry.main([]) == rule.job_exit` rather than a literal 6 -- which is
+  the assertion that would have caught this. Verified in both directions: a stale row fails
+  `6 == None`, stale code fails `0 == 6`.
+
+  Two attempts at that test were discarded first, both for the reason this session keeps
+  finding: without `PLATO_WIRING` it exits 4 on wiring resolution and never reaches the posture
+  check, and with `wiring_default:build` the subprocess blocks. It runs in-process with
+  `load_wiring` stubbed, and the source-scraping guard written in between was dropped once the
+  real-path version worked -- one guard that reaches its claim beats two that approximate it.
+
 - **A rule can be authored, cited and reviewed before it may execute.** `Policy.status` was the
   only gate, and it is the wrong grain for a transcribed corpus: one policy holds forty rules of
   which two are approved, so promoting the policy promotes all forty. `PolicyStatus` gains `seed`

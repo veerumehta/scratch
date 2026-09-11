@@ -1,6 +1,6 @@
 # Claude Session Status
 
-**Last Updated**: 2026-09-11
+**Last Updated**: 2026-09-08
 
 ## Working Principles
 
@@ -201,15 +201,6 @@ When your changes create orphans:
 
 The test: Every changed line should trace directly to the user's request.
 
-**The exception, and it is the one that has cost the most.** When the change answers a review
-finding that names a family -- one call site of thirteen, one of four `applies_to` lists, one of two
-sibling docstrings -- the family is the unit of the fix, not the site the finding happened to cite.
-"Surgical" then means every member, or an explicit note of which ones you are leaving and why (§8).
-Read instead as "change only what was reported", this section licenses exactly the one-site edit §8
-forbids, and it wins, because the reported site is concrete and the family is not yet enumerated.
-Five consecutive review rounds went that way: each fix was locally correct, and what broke every
-time was the invariant across them.
-
 ## 4. Goal-Driven Execution
 
 **A test is not evidence until two things are true: it fails against the old code, and its stubs
@@ -300,41 +291,6 @@ into japes properly rather than patching only the one reported instance.
 - Prefer the more architecturally consistent shape over the fastest patch, given japes's exposure
 (number of existing external consumers depending on current behavior) is still comparatively small —
 this is the window to fix a leaning wall, not wallpaper over it.
-
-## 9. Checking your own fix before you commit it
-
-Most of what review finds in a fix is in lines the fix itself wrote, in three shapes. All three are
-checkable from the fix's own diff in under a minute, and none of them is a judgement call — each is
-a command you either ran or did not.
-
-**The prose your fix adds is a claim, not a description of it.** List what you just wrote —
-`git diff -U0 | grep '^+' | grep -E '#|"""|description:'` — and for each line name what would
-falsify it, then check that. "All four `applies_to` lists" → count them. "is the only one in this
-playbook" → grep the playbook. "validates the name separately and loudly" → find the construction
-site. This one fails reliably when skipped, for a specific reason: the sentence was written from the
-intent, so re-reading it confirms the intent. It is falsifiable only against the code. Five of the
-last sixteen review findings were sentences a fix had just added, each wider than what the fix did.
-
-**Look for the rule before writing one.** Before adding a predicate, a parse or a lookup inside a
-fix, grep the module — and the module it imports from — for the one that already exists. `env_text`
-was re-implemented as `os.getenv` plus two `.strip()` calls twice, in the same file as `env_text`,
-with the docstring citing it by name as the reason the rule exists. In tests this is absolute: never
-assert a literal that the code derives from a named source. `assert code == 6`, where the sibling
-test reads `rule.job_exit`, is how a contract goes stale with the whole suite green.
-
-**A behavior change is a change to whatever declares that behavior.** Before committing one, ask
-what owns it — a contract object, a table, an enum, a rendered doc — and grep for the old value.
-`plato/__main__.py:20` already states this for boot policy ("A change to the policy is a change to
-`BOOT_CONTRACT`") and it was missed anyway: `run_role` began exiting 6, the contract row still said
-`SERVES`, `docs/DEPLOYMENT_ENV.md` rendered from that stale row, and every test compared the
-artifacts to each other rather than to observed behavior — so all three agreed, all three were
-wrong, and CI could not see it. When the tests derive from the artifact under test, nothing detects
-drift between the artifact and the code; at least one assertion has to come from running the thing.
-
-Run all three against the fix's delta, not the branch. The delta is small by construction — the
-review loop's rounds are 120 to 500 lines — and every instance above was a `BLOCK` one round later,
-at the cost of a full fix cycle.
-
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
