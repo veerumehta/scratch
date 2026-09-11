@@ -997,6 +997,41 @@ including in the two files both branches had touched.*
   costs: its first version exited 4 on wiring resolution and passed for the wrong reason, so it
   now stubs `load_wiring` and fails with `0 == 6` against the unfixed code.
 
+- **The mock Knowledge Hub answers the codes the real one does, so a caller's error branching can
+  be trusted.** The HTTP double existed to give a pack a real round trip through the generated
+  client, and then collapsed four service behaviours into `400`: a duplicate entity name, a schema
+  validation failure, a missing `json_value` and a genuinely malformed body were indistinguishable.
+  A consumer branching on `409` or `422` therefore passed against the double and broke against the
+  service, which is the one bug class an HTTP double exists to catch. Verified against the Hub's own
+  source rather than a consumer's comment: its v1 entity create enforces name uniqueness and
+  answers `409`, and validation errors map to `422`.
+
+  Uniqueness is enforced by the **app**, not the client double, and the first cut got that wrong.
+  A client-level mock that raised on a duplicate handed its callers a path production cannot
+  produce: the real `KnowledgeHubClient.create_entity` logs the status and returns `None`, which
+  is what `EntityStore.create` documents and what `CanonicalStore.store_policy`'s `result is None`
+  branch is written against. So the client keeps creating and only the HTTP app refuses, on a
+  `(collection_id, name)` set it records as it creates -- the service is what enforces uniqueness,
+  so the service stand-in is where it belongs.
+
+  `MockKnowledgeHubClient` gained `EntityValidationError`, a `ValueError` subclass so anything
+  already catching `ValueError` around a mock write is unaffected. Both the create and the update
+  route map it to `422`, and both answer `409` on a name already taken in that collection --
+  update included, because the real v1 PATCH maps its own `EntityValidationError` to `422` and an
+  `IntegrityError` to `409`, and fixing only the create left the same collapse one route over. A
+  rename frees the name it left, which is the only way a name is released (there is no delete
+  route), so the app cannot refuse a name nothing holds.
+
+  Nine tests, seven of which were watched to fail against the behaviour they pin: a duplicate
+  create accepted as `201`, two `400`-vs-`422` cases (create schema, update schema), a missing
+  `json_value` at `400`, a rename silently overwriting at `200`, and a vacated name still refused
+  at `409` twice over -- once for a rename and once for a blanked name, the empty-string edge that
+  keying the release on a *truthy* new name had skipped. The other two are controls that stop the
+  change being satisfied by refusing everything: the same name in a second collection, and the
+  client returning two entities rather than raising. The
+  missing-scalar-field `400` stays, now with a `TODO(missing-fields-still-400)` recording why: the
+  real route's detail shape differs too, so matching the code alone would be half a fix.
+
 - **The close budget is one budget, and the retired stores stay on the list until they use it.**
   `dispose_all` emptied the retired list before disposing anything, so a current store that stalled
   or raised took the rest with it -- dropped having been neither closed nor recorded, which
