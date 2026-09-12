@@ -36,7 +36,12 @@ on the one they are building: two turn shapes instead of one, which is worse tha
 ## 2. The design
 
 **A streaming step publishes its deltas to a sink and returns its final value.** The conductor's
-contract is untouched -- one step, one emitted value -- and the deltas travel out of band:
+contract is untouched -- one step, one emitted value -- and the deltas travel out of band.
+
+**The sink is the adapter's, not the pipeline's** (`note_assistant_turn_requirements.md` R7). A
+turn produces a result and an adapter delivers it, because two ingresses answer *what is a turn
+recorded as* differently. So the pipeline decides *when* to publish and the consumer decides *how*;
+owning the transport would take back exactly the separation that requirement protects.
 
 ```python
 def answer_stream_step(agent, sink):
