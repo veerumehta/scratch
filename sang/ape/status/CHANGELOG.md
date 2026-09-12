@@ -4,8 +4,56 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 ## [2.5.2] - unreleased
 
-*SDK 2.5.2, Plato 0.1.3. Work lives on the `v2.5.2` branch, cut from `dev` after 2.5.1 squash-merged
-(`e4eabd4`). Nothing has landed yet beyond the version bump.*
+*SDK 2.5.2, Plato 0.1.4. Work lives on the `v2.5.2` branch, cut from `dev` after 2.5.1 squash-merged
+(`e4eabd4`).*
+
+- **Plato 0.1.4 -- `PLATO_WIRING` values must change.** `plato.wiring_default:build` is now
+  `plato.wiring.default:build`, and `plato.wiring_local:build` is `plato.wiring.local:build`. No
+  compatibility shim: there is one deployment and we own it, so a flag day beats carrying two
+  paths. An unmigrated value fails loudly rather than quietly -- `load_wiring` raises
+  `WiringError`, a `job:*` role exits 4 and a serving replica comes up on `/info` with the reason,
+  which is what the boot contract is for.
+
+  `plato/` had 27 modules and 6,171 lines flat at its root. Now ten, with `api/` (the eight
+  routers, `_api` suffix dropped on the way in), `boot/` (the contract, posture and schema check
+  `__main__` consults before serving), `auth/` (oidc and tenancy), and `wiring/` (the contract plus
+  the two shipped implementations; the contract is re-exported so `from plato.wiring import
+  PlatoWiring` is unchanged, while `default` and `local` deliberately are not -- importing one by
+  accident is how a local wiring reaches a deployed process). `migration/` became `kernel_sync/`,
+  because a data migration off kernel and the alembic `migrations/` tree next door are not the
+  same kind of thing and the names differed by one letter.
+
+  Three modules located files relative to their own `__file__` and silently pointed one level too
+  deep once moved: the info router's `static/` pages and `guide.md`, and two separate resolutions
+  of `alembic.ini`. Each names the package root once now rather than repeating the assumption per
+  asset. The suite caught all three, which is the argument for moving in steps.
+
+- **Which modes are catalog-only is data, and checked.** `MODE_REGISTRY` declares thirteen modes
+  and the SDK ships a `BaseMode` subclass for seven; which seven lived only in a `stubs.py`
+  sentence, which had drifted. It named four catalog-only modes where there are six: `conductor`
+  and `curator` have no `BaseMode` subclass either. Neither is absent -- `conductor` is the
+  pipeline engine in `jazzx_sdk.conductor` and `curator` is a set of functions in
+  `modes/evolve/curator.py` -- they are not implemented *as runnable modes*, which is the
+  distinction a pack author greping for `ConductorMode` needs and the prose obscured. The set is
+  `CATALOG_ONLY_MODES` now, and a test asserts both directions: nothing declared catalog-only has
+  an implementation, and nothing lacking one goes undeclared. The sentence also named a consumer
+  repo, which shipped SDK code should not.
+
+- **The pipeline catalog's `steps` is checked against a pipeline, not against itself.** It was the
+  one field in `PipelineContract` nothing verified, and it had drifted: `ground` landed in the chat
+  pipeline and the entry never gained it. Three tests named `*_contract_matches_its_real_module`
+  looked like the check and were not -- `assert contract.turn_type == "ChatTurn"` is the registry
+  compared to literals restating the registry, and would pass with the class deleted. The
+  importability test beside them already covered `module`/`turn_type`/`entrypoint` for real, so
+  those three were redundant as well as misnamed; a name claiming to match a real module, on a body
+  that reads no module, is what stops someone writing the check that is missing.
+
+  `steps` now says what it means -- the **maximal** set, every optional stage included, since a
+  default build yields a subset -- and a parametrized test builds each pipeline with every boolean
+  flag on and compares. `PipelineContract` gained `builder`, because a module can define more than
+  one (`build_gate_pipeline` sits beside `build_chat_pipeline`) and a test that guessed would pick
+  by `dir()` ordering. Verified against three kinds of drift: a missing step, a renamed step id,
+  and a builder name that no longer resolves.
 
 ## [2.5.1] - 2026-09-08
 
