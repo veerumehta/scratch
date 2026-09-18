@@ -53,3 +53,13 @@ tests/test_policy_rule_activation.py :: activation-boundary-untested
 # comment beside the declaration states the same derivation. Inside the pack would be the wrong
 # place for it.
 plato/data/seed_packs/ci-spread-core/policies/conventions.yaml :: availability-pct-has-no-producer
+
+# A settings-layer failure is logged and not put on `/info`. Asked for twice, tried once, reverted:
+# `/info` computes `configured` as `not degraded` and `--health` exits on `configured`, which is the
+# image's HEALTHCHECK -- so a boot note there makes the replica permanently unhealthy and stops it
+# taking traffic, over a condition where it serves correctly from the environment's own values. The
+# boot contract makes `reported` and `healthy` mutually exclusive deliberately: everything else in
+# that list is a reason not to take traffic, and this is not one. Closing it properly means a field
+# on `/info` that does not feed `configured` -- a change to the info contract, not to the wiring --
+# and the condition is already logged once per distinct cause by `DbSettingsStore.read`.
+plato/wiring/default.py :: settings-failure-not-at-info

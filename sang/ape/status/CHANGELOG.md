@@ -7,6 +7,88 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 *SDK 2.5.2, Plato 0.1.4. Work lives on the `v2.5.2` branch, cut from `dev` after 2.5.1 squash-merged
 (`e4eabd4`).*
 
+- **One history per turn.** The gate classified `turn.message` alone while the answer ran against
+  store-loaded history, so two stages of one turn disagreed about what the conversation was, and a
+  follow-up whose meaning lived in the conversation ("and for a condo?") was judged as if it had
+  arrived cold. `ChatTurn` carries `history` now, and `turn_messages` is what every stage reads.
+
+  Injectable rather than only store-resolved, because a real assistant's conversation often lives
+  outside japes -- an assistant API, a KH conversation -- and its agent runs with no session at all.
+  Supplying both is refused loudly: the store would prepend its own copy and the turn would answer
+  over every message twice, which is unattributable afterwards. A turn that supplies nothing is
+  unchanged.
+
+  The budget is UTF-8 bytes over `history + [question]` together, applied once. Trimming the
+  question separately lets a turn exceed the budget by exactly what the user just typed, and bytes
+  rather than characters because a non-ASCII conversation costs up to four times what a character
+  count suggests. `ByteBudgetStrategy` (registered as `byte_budget`) is the reusable half; japes
+  had no size-based compaction at all, only turn-count and structural.
+
+  The gate sees a small window rather than all of it, defaulting to two exchanges: more history
+  resolves a follow-up and *hurts* scope drift, since a gate handed a wholly in-scope conversation
+  routes an out-of-scope outlier as in-scope. The classifier prompt now says which message it is
+  scoring, having said "the user's message" in the singular while being handed several.
+
+- **Plato's links follow the gateway mount.** A gateway that routes `/plato` to the container
+  strips the prefix before forwarding, so the routes sit at `/api/v1` while the browser's address
+  bar says `/plato/api/v1`. Every link the pages emit was absolute and unaware of it: the nav,
+  `/docs`, `/health`, `/openapi.json` and the `__API_PREFIX__` the dashboard's own fetches are
+  built from. The page would load and every link on it would leave the mount.
+
+  `prefix.mount_prefix(request)` reads `X-Forwarded-Prefix` and the render functions take a
+  `mount` they prepend. Routing is untouched, because the prefix is stripped before Plato sees it;
+  only link generation changes. The header is client-supplied and lands inside an href, so it is
+  accepted only as plain `/segment` parts and anything else reads as absent, degrading to the
+  links a direct visit needs.
+
+  Not moved into `jazzx_sdk`: nothing there serves HTML with absolute links, so there is no second
+  caller yet. It moves the day one appears. Most services need none of this -- a JSON API emits no
+  links, which is why they route today with no equivalent code; Plato is the odd one because it
+  ships a dashboard.
+
+  The first cut fixed four of the six `HTMLResponse` sites. The packs page and the degraded
+  replica's dashboard kept emitting unprefixed links, so the nav link the fixed dashboard now
+  points at led to a page whose own `fetch` left the mount and rendered a 404. The sweep that
+  missed them checked `/` alone; it is parametrized over every HTML page now, asserts the
+  `const PREFIX` the pages' fetches are built from, and covers the degraded dashboard separately
+  since `create_plato_app` does not serve it. Both defects fail it when reverted.
+
+  The degraded dashboard registers through `app.add_route` rather than `@app.get`: it is the one
+  route there that needs the request, every fastapi import in `plato/__main__.py` is function-local
+  so a `job:*` role never pays for the server stack, and FastAPI resolves annotations against
+  module globals -- so `request: Request` read as a query parameter and answered 422.
+
+- **Plato has a mark, from one source.** A portico: Material Icons' `AccountBalance` (Apache 2.0),
+  which is the Greek reference the name asks for and, in this domain, the finance glyph too. It
+  replaces a blue circle that had been copy-pasted into four files.
+
+  Still inlined, which was the right call and stays one: a `<link>` to a file costs a request per
+  page, and no link at all costs a `/favicon.ico` 404 per load. What changes is that the four
+  copies become `FAVICON`, fed through the same `__PLACEHOLDER__` mechanism the nav already uses.
+  `static/logo.svg` carries the same path for use outside the served pages, and a test holds the
+  two together.
+
+- **The streaming chat turn is a real pipeline.** `stream_chat_turn` ran `validate` and `gate`
+  through the conductor and then branched by hand, so `ground` and `finalize` did not exist while
+  streaming and no step could be overridden. A consumer with post-answer work -- citations,
+  persistence, an output check -- had nowhere to put it, which is most of why the canonical
+  assistant hand-rolls its turn instead of adopting this.
+
+  `answer_stream_step` resolves the contract mismatch: a conductor step emits one value and a token
+  stream is many, so the deltas leave through a sink and the step returns what the stream
+  assembled. Every stage then runs on both paths, and `stream_chat_turn` takes the same
+  `components` dict `run_chat_turn` does. The sink is the caller's: a turn produces a result and an
+  adapter delivers it, so the pipeline decides when to publish and never how.
+
+  Publishing is a rendezvous rather than a buffer -- the sink waits for the consumer to have
+  yielded, not merely taken. Any buffering lets the answer step finish the whole stream before a
+  `cancel` set mid-read is observed, turning a barge-in into a fully delivered answer. Only the
+  reference `answer` impl is swapped for the streaming one, so a caller's own component survives.
+
+- **`InteractiveResponse.outcome`.** `blocked`, `incomplete` and `cancelled` are independent, so a
+  response can carry more than one and every adapter decided precedence for itself. One property
+  resolves it: cancellation wins, then refusal, then incompleteness.
+
 - **Plato 0.1.4 -- `PLATO_WIRING` values must change.** `plato.wiring_default:build` is now
   `plato.wiring.default:build`, and `plato.wiring_local:build` is `plato.wiring.local:build`. No
   compatibility shim: there is one deployment and we own it, so a flag day beats carrying two
@@ -27,6 +109,436 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
   deep once moved: the info router's `static/` pages and `guide.md`, and two separate resolutions
   of `alembic.ini`. Each names the package root once now rather than repeating the assumption per
   asset. The suite caught all three, which is the argument for moving in steps.
+
+- **A connection string that does not parse can be corrected without a redeploy.** SQLAlchemy
+  answers every malformed value with one sentence -- "Could not parse SQLAlchemy URL from given URL
+  string" -- and omits the value, correctly, because it carries a password. So an empty string, a
+  missing `postgresql+asyncpg://` scheme, a libpq `host=... dbname=...` string, an ADO
+  `Server=...;Database=...` one, a value the deployment wrapped in quotes and an unsubstituted
+  `<placeholder>` were the same line in the log, with nothing to act on.
+
+  `connection_string_complaint()` describes the shape and never the value, and the schema refusal
+  carries it, so `/info` and the startup log say which of those it is. Two tests hold the safety
+  property: no complaint may contain the configured string, asserted over the whole case list so a
+  branch added later is covered. It lives in the wiring rather than beside `check_schema`, because
+  that module reads no environment variable by design -- an escape hatch on a safety check outlives
+  the incident it was added for -- and describing a misconfiguration means reading two.
+
+  The backend's default is the posture's, not a constant: sqlite on a laptop, `common` deployed. Two
+  sites already spelled that and a third copy would have complained about a missing
+  `DB_ASYNC_CONNECTION_STR` on every local run, so it is `resolved_db_backend()` now.
+
+  **And the variable is editable.** It joins `BOOTSTRAP_KEYS` and the settings catalogue, marked
+  secret so the GET masks it, which is what makes the fix reachable: the surface that repairs a
+  broken database must not itself need one. Applying it clears `common`'s two module-level memos --
+  the settings object *and* the engine -- without which a swap rebuilt the `DbStore` and handed it
+  back the engine built from the old string. A failed swap leaves the serving store alone, since
+  `DbStore` caches its own sessionmaker and a store that never built one has nothing to lose.
+
+- **The image bundles an assistant pack, so a replica serves something with no configuration.**
+  `PLATO_PACK_DIR` had no default and could not have had one: the two bundled `seed_packs` are
+  *domain* packs -- `pack_manifest.yaml`, no `profile/` -- which `plato.packs.loader` refuses, and
+  `plato.wiring.local`'s demo profile defaults to a sibling checkout absent from every container.
+  So the degraded note pointed an operator at a wiring that could not help, and nothing in the
+  artefact could satisfy the variable.
+
+  `plato/data/demo_pack` is a frozen snapshot of jaci's `clinical-intake-core/agent` -- two
+  declarative skills, a persona, no Python bindings, which is why it loads in a japes-only process
+  where `ci-spread-core` needed its `jaci.*` bindings stripped. Clinical rather than a lending
+  domain because it was the only pack in jaci with an agent profile at all; `dscr_core`,
+  `cre_underwriting_core`, `aml_investigation_core` and `insurance_diligence_core` carry no
+  `profile.yaml` in any layout, and authoring a DSCR persona here would have meant inventing
+  credit-analysis content owned elsewhere.
+
+  **Frozen deliberately**, which is not the debt `TODO(seed-pack-vendoring)` records next door:
+  those snapshots track packs somebody is still editing, and this one tracks nothing. It exists so
+  a replica has an assistant before a deployment publishes its own, and activation supersedes it.
+  The only reason to touch it is a format change -- a required field added to `AssistantManifest`,
+  or a change to what a profile must contain -- and `test_the_bundled_demo_pack_loads` is what
+  reports that, since a silently unloadable default reads as a correctly set variable.
+
+  Its `manifest.yaml` is generated through `jazzx_sdk.manifest.AssistantManifest` rather than
+  written by hand: eight fields are required and a hand-rolled file failed validation on all eight.
+
+- **A pack can be uploaded.** `POST {prefix}/packs` takes a multipart `.zip`, reads the manifest
+  from it and publishes it as a new version. The store layer already did the work -- content-
+  addressed blobs with dedup, immutable versions, member-path checks before extraction -- so what
+  was missing was the ingress: a pack authored offline had no way in but the bundled-seed route.
+
+  `manifest_from_archive` sits beside `pack_archive` in `jazzx_sdk.pack.store`, for the reason that
+  function's docstring already gives: the archive shape is the store's contract, and a reader living
+  in a consumer is a reader that drifts from the writer. It also carries the decompression cap,
+  which is where a bomb can still be refused cheaply -- the existing member-path check is the
+  traversal defence and was never a decompression one.
+
+  **Not `relaxed_only`, unlike seeding and deletion.** A pack is authored offline and arrives
+  continuously, production included, so a rule that refuses outside local and dev-daily is a
+  registry nobody can fill. Upload takes `/config`'s rule instead: accepted in any posture once the
+  deployment supplies an auth dependency. No shipped wiring sets one, so the 403 names exactly that
+  rather than leaving an operator to guess.
+
+  **Publishing is not activating**, deliberately: the version lands in the store and nothing that is
+  serving changes, so a pack can be pushed without coordinating with a release and a rollback is
+  re-activating a predecessor. Activation is the second step and ships in this release, below.
+
+  What stops an archive surviving is three conditions, not one, and the guard now asks all three
+  through `pack_archive_complaint()`. Keying on the backend alone let `PLATO_PACK_BLOB_BACKEND=azure`
+  with no `STORAGE__CONNECTION_STRING` past it: the upload then reached `common.core.storage`, which
+  raises `Azure Storage connection string is required` on the *write*, from a module with no idea it
+  was serving a Plato route -- after Plato had told the caller its own check was satisfied. The
+  container name is the third. `_pack_blob` warns about the missing credential at boot too, because
+  that raise otherwise waits for the first publish, which on a relaxed-only route may be weeks.
+
+  `pack_archives_are_durable()` stays as it was and keeps keying on the backend name, deliberately:
+  it answers *which store to build*, and falling back to local because credentials are absent would
+  write archives to container disk and report success -- the silent loss the whole guard exists to
+  prevent. Raising there is the better failure; the complaint is the other question.
+
+  The durability refusal asks `pack_archives_are_durable()`, exported from `plato.wiring.default`
+  beside the store it guards, rather than testing the backend string for `"local"`. That spelling
+  is the bug `_pack_blob`'s own comment records having already fixed once: `BlobStore` treats every
+  non-`azure` value as local, so `Azure` with a capital or `azure-blob` would have passed the guard
+  and still written to the container filesystem with `has_archive: true` on the row.
+
+  `manifest_from_archive` also runs `_unpack`'s member-path check, not just its manifest search.
+  Without it an archive holding a `../escaped.yaml` parsed, published, and then raised on every
+  `materialize` -- a version number permanently burned on a pack that can never be served, with the
+  row immutable. And everything `zipfile.read` raises becomes a `ValueError`: an encrypted member is
+  a `RuntimeError`, an unsupported compression method a `NotImplementedError`, a bad CRC a
+  `BadZipFile`, so a password-protected upload answered 500 with a traceback instead of naming the
+  problem with the file.
+
+  Two refusals worth naming. An upload over `PLATO_PACK_UPLOAD_MAX_BYTES` answers 413, measured
+  while reading rather than trusted from `Content-Length`, because the archive is resident twice --
+  once in the route, once in `_unpack`'s `BytesIO`. And an upload on a deployed tier whose
+  `PLATO_PACK_BLOB_BACKEND` is still local answers 503: the bytes would go to a filesystem that does
+  not survive a restart while the row would, and this route is the only place that can be enforced,
+  since `_pack_blob`'s boot note is deliberately outside the readiness list.
+
+- **`dev` is a deployed tier now, reading as `dev-daily`.** It mapped to `local`, on the grounds
+  that it reads as "my laptop" and means that in jaci's `.env.template`. The reversal is about who
+  can fix each mistake. A cloud container is provisioned by another team, so the tier variable it
+  carries is whatever their convention sets -- and `dev` resolving to local left a deployed replica
+  with identity off, the sqlite fallback in place of Postgres and every deployed-only readiness
+  check skipped, while `/info` reported `environment: local`. Correcting that meant asking for a
+  per-service variable and waiting. A laptop is the machine its owner edits, so the same mistake
+  there is one line in a file they already control: `local`.
+
+  `test` stays local, deliberately -- nothing provisions a container as `test`, so the asymmetry
+  with `dev` is the point rather than an inconsistency.
+
+  **Two variables that disagree now resolve to the stronger tier, not the first one set.** That was
+  a safety property the old mapping supplied by accident: `environment_tier` took the first
+  *deployed* signal, which covered the masking case only while every alias below `dev-daily` was
+  non-deployed. With `dev` deployed, `JAPES_ENVIRONMENT=dev` beside `ENVIRONMENT=production` would
+  have answered `dev` and run a production replica relaxed. `_strongest_signal` is the one reader
+  both `environment_tier` and `deployed_posture` go through; ties keep variable order, so the list
+  still expresses precedence between equals. Two existing tests pinned the masking case and pass
+  unchanged, which is what says the property survived rather than being restated.
+
+  **`JAPESSettings` no longer fills in localhost URLs for `dev`.** Three validators returned
+  `http://localhost:8000` / `:8001` / `:8080` for the Knowledge Hub, kernel and process URLs on the
+  premise that `dev` was a laptop. Left in place, a deployed replica would look configured to every
+  check that asks whether a URL is *set* and answer from nothing -- the silent-success shape this
+  release has been removing elsewhere. They return empty now, so the gap is reported.
+
+  The same three now resolve the tier through `tier_of` rather than comparing the configured string,
+  which fixes a defect that predates this release: they tested `env == "prod"`, so `production` --
+  the canonical name, and the one the field's own documentation recommends -- filled in nothing
+  while `prod` filled in the production URLs. `tier_of` is also what `strict_for` had spelt inline,
+  so there is now one place a configured name becomes a tier.
+
+  A laptop still on `JAPES_ENVIRONMENT=dev` will start demanding Postgres, a tenant list and
+  `X-Tenant-Id` per request, and will report the gaps at `/info` rather than serving quietly.
+  jaci's `.env.template` carries `JAPES_ENVIRONMENT=dev` and wants `local`.
+
+- **`/info` says which container is answering.** Everything it reported described the *image* --
+  versions, commit, tier, schema revision -- and two revisions of one Container App report all of
+  them identically. So an operator holding the environment of a container deployed months earlier
+  had nothing to contradict it, and a debugging session drew every conclusion from the wrong
+  replica. `config.host` adds the container app's name, its revision, the replica name, `APP_NAME`
+  and the hostname, rendered as a Host card on the details page.
+
+  Safe unauthenticated, which this route has to be: `/info` is the one router without the
+  `withholding` gate, deliberately, because it is what an operator reads when a replica will not
+  start -- exactly when no identity middleware is running and no `auth` dependency exists to unlock
+  anything. The block is names and a revision string. The hostname is reported only on a container
+  platform, where it *is* the replica name; on a laptop it is the name of somebody's machine, which
+  an open endpoint has no business publishing.
+
+  **An unlabelled container is `dev-daily` now, not `local`.** Nothing set resolved to `local`,
+  which is the right default for a laptop and permissive everywhere else: identity stops being
+  required, the posture-gated readiness checks are skipped, and each consumer reading
+  `deployed_posture()` takes its local branch. The only symptom was `/info` reporting
+  `environment: local` -- also what a correct laptop reports, so there was nothing to notice. The
+  deployment that ran this way had `JAPES_ENVIRONMENT` *declared and empty*, and a blank value is
+  not-configured everywhere else here (`env_text`), so it is not-configured for this too.
+
+  An injected platform variable (`CONTAINER_APP_NAME` and its siblings, or
+  `KUBERNETES_SERVICE_HOST`) *proves* the process is in a container, so the promotion rests on
+  evidence rather than a guess. **It stops at `dev-daily`, and that ceiling is the whole safety
+  argument**: dev-daily is deployed but relaxed, so an inferred tier can only add refusals and
+  reports -- it cannot open anything, and it cannot refuse a boot. `staging` and `production` are
+  never inferred, because `check_settings` *does* refuse a strict tier with identity off and a
+  guess must not be able to do that; a container at either must name it. `JAPES_ENVIRONMENT=local`
+  is the opt-out, and a named tier always wins over the inference.
+
+  The tier is not read from the container's **name**, only from the platform variables' presence. A
+  container app's name is chosen by whoever provisioned it and validated by nothing, so reading a
+  tier out of it would make renaming the app -- an ordinary action taken for unrelated reasons -- a
+  change to that deployment's security posture. It is also not the tier: dev-daily's own app is
+  `dev-env-jaxi-japes-plato`, where `dev-env` is the Azure environment's resource name.
+
+  `check_settings` still logs that the tier was inferred, and `/info` carries the sentence beside
+  the identity that makes it legible. That warning sits *before* the posture branch rather than
+  inside its `not posture` arm -- an inferred tier is a deployed posture, so the arm it used to
+  live in is no longer reached on the deployment it was written for.
+
+  `.env.dev-daily` is a review list rather than a set of instructions now: the container is
+  terraform-managed (`japes_plato_*` in `module-dev/aca`, values in `Jazzx/jaxi/dev` on the `dev`
+  branch), and an `azurerm_container_app` env list is declarative -- so a variable entered by hand
+  in the portal and absent from the module is removed by the next apply. Which makes anything in
+  that file terraform does not set a gap in the module, and one was: `OTEL_SAMPLER_RATIO`. Plato is
+  the only container app in that module with no env block for it, the environment already sets the
+  module-wide variable to `0.2`, and the application's own default is `1.0` -- so an apply would
+  have dropped the hand-entered value and started tracing every request. The database name was
+  wrong here too: the postgres module creates `japes_plato_db`, and this file and the deployment
+  doc both said `plato_db`, which nothing creates.
+
+  `.env.dev-daily` now marks which of its assignments restate a code default (`PLATO_DB_BACKEND`
+  on a deployed tier, `OTEL_SERVICE_NAMESPACE`, `ENABLE_TELEMETRY`) and which are load-bearing
+  (`JAPES_RUN_MODE`, whose default is `queue`; `OTEL_SAMPLER_RATIO`, whose default traces every
+  request). A test holds each marker against whatever declares the default, so a changed default
+  cannot leave a false claim in the file devops works from -- and the marker sits on the comment
+  line above, never inline, because an inline comment in that file would be pasted into the value.
+
+- **Activating a published pack, without a restart.** The store held versions nobody could serve:
+  `PLATO_PACK_DIR` is a filesystem path read once at boot and the pack store knew nothing about it,
+  so `docs/plans/plan_pack_upload.md` §4c's two missing halves -- a pointer saying which published
+  version this deployment serves, and a reload -- were what stood between an upload and a running
+  assistant. `POST {prefix}/packs/{pack_id}/{version}/activate` is both.
+
+  `PLATO_ACTIVE_PACK` is the pointer, `[tenant/]pack_id/version`, and it is durable rather than
+  in-process: the activation outlives the replica that made it, so a restart serves the same version
+  instead of falling back to whatever path the container was built with. The tenant may be omitted
+  and fills with `DEFAULT_TENANT`, which is where a pack published without one already lands, rather
+  than a fourth sentinel beside `PLATFORM_TENANT` and the two local ones. Read-only on `/config`: a
+  PATCH there would move the pointer and keep serving the old pack.
+
+  The reload is a rebinding, not a restart. `registries=` is handed to `AssistantRuntime` as a
+  lambda closing over two names, so replacing them is visible to the next request and to nothing in
+  flight -- the same shape `DatabaseHandle` uses for the store, and the reason neither needs a lock.
+  The version is materialised through the pack store's digest-keyed cache rather than copied, so
+  activating a version twice is a cache hit and activating one whose blob is gone raises rather than
+  serving a stale tree.
+
+  **Rebinding the pair was not enough, and the doc said it was.** `AssistantRuntime` consults
+  `registries` on a cache miss only, so every assistant a replica had already answered a turn for
+  stayed bound to the retired pack's profile and skills: the route answered `activated: true`, the
+  pointer moved, and a warm replica kept serving the pack the operator had just rolled back from --
+  an apparently-applied rollback, which is worse than a refused one. `invalidate_all()` is the
+  missing half. `invalidate` could not express it: the stale set is not one assistant's, it is
+  everything bound against the previous registries. It also fixes the effect's scope in
+  `docs/DEPLOYMENT_ENV.md`, which claimed immediacy "because the runtime resolves its registries per
+  request" -- and states the honest limit, that activation reloads **the replica that served the
+  request** and the others pick the version up when they next restart.
+
+  Two refusals. A version that loads to no assistants is declined rather than swapped in: replacing
+  a serving pack with an empty one takes a replica from answering to answering 503, which is worse
+  than a 409 saying so. And a failed activation records no boot note -- the third instance in this
+  release of one rule. `_registries` notes when a pack will not load, which is right at boot and
+  wrong at runtime: the previous pack is still serving correctly, but a note reaches
+  `readiness_provider`, `/health` answers `ready: false`, and `_WIRING_NOTES` clears only at the top
+  of `build()` -- so one operator trying a bad pack would have taken the replica out of rotation for
+  the life of the process. The boot path still notes, deliberately: there the deployment is serving
+  assistants it did not choose.
+
+  `docs/DEPLOYMENT_ENV.md` is now held against the code rather than maintained by hand. Every key
+  `plato_settings_catalog()` and `plato.defaults` expose must appear there, one test case per
+  variable. It found `JAPES_SPAN_TEXT_MAX_CHARS` undocumented on its first run, and it matches
+  variable *tokens* rather than searching the file for a substring -- a substring passes for a key
+  that is a strict prefix of a documented one, and for one mentioned only in a sentence saying it is
+  unsupported.
+
+- **The vendored `common`'s dependencies are declared, and checked.** `common` is a git submodule
+  japes *packages* (`{include = "common"}`) rather than takes as a path dependency -- it cannot be
+  one, since `common/pyproject.toml` sets `package-mode = false` -- so poetry never reads its ~60
+  declared dependencies and japes re-declares by hand the subset its own code reaches. Five were
+  missing.
+
+  The one that shipped: `common/core/db.py` imports `sqlmodel`, and it is the module `fabric.db`
+  loads for the `common` backend -- `DbStore`'s default and Plato's deployed one. Every database
+  question on the deployed replica answered `ModuleNotFoundError`, reported as a degradation rather
+  than raised, so the image built, started, passed the Dockerfile's import check and served. Schema
+  unverifiable, pack inventory unavailable, seeding failed, durable settings unreadable: one missing
+  distribution behind all of it.
+
+  The others were dormant. `common/utils/telemetry.py` imports `azure-monitor-opentelemetry-exporter`
+  and `opentelemetry-exporter-otlp-proto-http` at module level with no guard, on a path
+  `CommonSettings` construction reaches whenever `enable_telemetry` is true -- which is its default,
+  so that container could not have telemetry switched on without dying at import. `fabric.blob`
+  reaches `azure-storage-blob`, whose sibling `azure-storage-queue` was declared and it was not.
+
+  **Four of the five are extras, not core dependencies**, and the split is drawn on whether absence
+  is survivable. Every japes caller of `common.utils.telemetry` guards `ImportError` and logs --
+  `observability/trace_context.py`, `observability/telemetry.py` -- and `common/core/__init__.py`
+  wraps its own auto-setup the same way, so the three OpenTelemetry/Azure Monitor distributions cost
+  telemetry when absent and break nothing. `azure-storage-blob` sits behind
+  `BlobStore._backend == "azure"`, which a deployment opts into. All four are in the `plato` extra
+  (and a `telemetry` extra for a consumer who wants Application Insights without the rest), so the
+  image and CI still install and check them, while jaci, k9 and macer stop carrying an Azure
+  Monitor exporter for an SDK they use without it.
+
+  `sqlmodel` stays core, and that is the same test giving the opposite answer:
+  `DbStore._sessionmaker` does *not* guard, and `common` is `DbStore`'s default backend, so a
+  consumer that installs no extra and calls `DbStore()` gets exactly the `ModuleNotFoundError` this
+  work removed.
+
+  A fifth followed from fixing the detector: `opentelemetry-instrumentation` is the base API and
+  ships no FastAPI instrumentor, so declaring it covered `common/utils/telemetry.py`'s unguarded
+  `FastAPIInstrumentor` import not at all. Every image built so far had telemetry dead behind one
+  logged `ImportError`, and the in-image check that would have caught it could not have built.
+
+  A test now does mechanically what nobody was doing by memory: parse every `common` module japes
+  imports at runtime, follow its imports transitively -- relative forms resolved, since `common`
+  wires most of its own graph that way -- and assert each third-party module resolves. Imports the
+  code guards behind `try`/`except ImportError` are treated as the declared optionals they are, as
+  are `if TYPE_CHECKING:` blocks and japes' own extras. The Dockerfile's build check now imports the
+  module behind each of the five, so this class of gap fails the build rather than the deployment.
+
+  The sweep asserts against **what the image installs**, not against the venv running pytest. Importability
+  alone is the wrong question: the image installs `--only main` from the lock, so a module that
+  resolves for a developer because a standalone wheel happens to be sitting in their environment
+  passes an import check and fails the build -- which is exactly how the FastAPI instrumentor hid.
+  Each reached module is attributed to a distribution through its own file, since no rule turns
+  `opentelemetry.instrumentation.fastapi` into `opentelemetry-instrumentation-fastapi` while
+  `opentelemetry.instrumentation.logging` comes from `opentelemetry-instrumentation`. "What the
+  image installs" is resolved rather than approximated: every `name =` in the lock counts the dev
+  group and the extras `--extras plato` omits, so the set is the transitive closure of the main
+  dependency table over the lock's own graph, with markers evaluated the way
+  `test_ci_extras_coverage` already evaluates them. A namespace package is left unattributed
+  instead of credited to whichever distribution the filesystem lists first.
+
+- **A durable layer that is down says so once.** The warning was emitted per read, and
+  `settings_api` reads twice per `GET /config` -- once for the ETag, once for the body -- so a
+  dashboard polling a replica whose database could not be reached filled all 500 lines of the log
+  buffer with one sentence and pushed out the tracebacks that explained it. Deduped on the failure
+  *reason* rather than a flag, so a durable layer that starts failing a new way is still reported,
+  with an `info` line when it comes back.
+
+- **A Plato deployment sets one variable.** `CommonSettings` declares `api_v1_prefix`, `debug`,
+  `project_name`, `version` and `description` with no defaults, so a container missing any of them
+  died with a pydantic validation error naming the field -- which reads as nothing like the missing
+  configuration it is. All five are Plato's own identity or the prefix every sibling service
+  already uses, so `plato/defaults.py` supplies them, applied from `plato/__init__.py`: the only
+  module guaranteed to run before anything reaches `common.core`.
+
+  `PLATO_WIRING` joins them, defaulting to `plato.wiring.default:build`. Unset, it produced a
+  replica serving `/info` alone -- and so no database, no settings store, and nothing an operator
+  could correct from the dashboard, which is the surface that exists to correct exactly this. A
+  deployment naming its own factory still wins, and the boot contract's row now describes a spec
+  that will not import rather than an absent one.
+
+  `DB_ASYNC_CONNECTION_STR` deliberately gets none: a default there points a replica at a database
+  nobody chose, and refusing to start is the better answer to that. A variable declared and left
+  blank counts as unset throughout, so a container platform rendering an empty declaration as `""`
+  gets the default rather than an empty `project_name` reported as configured.
+
+- **Plato migrates itself.** `job:migrate` and `POST {prefix}/database/migrate` run the migrations
+  the image carries, so bringing a database to head needs neither a shell on the container nor a
+  separate job definition -- the replica already holds the migration tree, `alembic.ini` and the
+  credentials it connects with. The endpoint reports `expected`, `before`, `after` and `applied`,
+  answers 503 where the wiring names no database, and is confined to relaxed postures the way pack
+  seeding is: a migration is irreversible, and the tier gate is what keeps the route from existing
+  in staging or production at all. Concurrency is `migrations/env.py`'s advisory lock -- several
+  replicas asked at once serialise, and all but the first find the work done.
+
+  `job:migrate` is the one role exempt from the stale-schema refusal every other `job:*` takes,
+  because a job whose whole purpose is to end that state cannot be refused for being in it. The
+  boot contract row names the exemption rather than leaving the rendered table claiming an exit
+  the code does not take.
+
+  Running alembic in-process applies `alembic.ini`'s logging section, whose `disable_existing_loggers`
+  defaults to true and switches off every logger the ini does not name -- which is every `plato.*`
+  and `jazzx_sdk.*` one. A replica that migrated from the dashboard would have served the rest of
+  its life silently, and the first symptom would have been an incident with no logs. The caller
+  opts out through `config.attributes` now, and the command-line path stops disabling loggers it
+  never configured.
+
+  `upgrade_to_head(db)` migrates the `db` it is handed. `migrations/env.py` resolved its own store
+  from the environment, so the database that got migrated and the database that got reported could
+  be two different ones: with `PLATO_DB_BACKEND=sqlite` and no path they are separate `:memory:`
+  databases, the whole chain applied to a throwaway, and the read-back reported the untouched one.
+  The store identity travels through `config.attributes` -- an equivalent store rather than that
+  store, since alembic runs in its own thread and an async engine cannot cross event loops -- and
+  `DbStore` grew the `backend`/`sqlite_path` accessors that makes it possible. The version table's
+  schema now follows the dialect of the connection in hand rather than re-reading
+  `PLATO_DB_BACKEND`, which was the same second source of truth one level down.
+
+  And reaching a revision that is not head is a failure. `None` means "never migrated", which is
+  the one value that cannot be the outcome of a successful upgrade, yet `before == after == None`
+  read as "nothing to apply" with exit 0 and HTTP 200 -- so an operator running `job:migrate` to
+  clear the exit-5 refusal saw success and watched the next job exit 5 again. `upgrade_to_head`
+  raises `SchemaStaleError`, because the claim was already in its docstring and putting the check
+  in each caller would have been two rules.
+
+  The route says who asked (the line `delete_pack_version` already writes, this being the other
+  irreversible write a relaxed posture allows), reports the reason rather than a bare 500, and no
+  longer publishes the `_` auth parameter that `Depends(auth) if auth else None` turned into a
+  query string field. Its docstring claimed the tier gate kept it "from existing in staging or
+  production at all", which is false -- `relaxed_only` refuses the call and does not unregister the
+  path, and that sentence was rendered into the published OpenAPI description of a route the same
+  document lists.
+
+  An in-memory sqlite store is refused before anything runs, as `UnmigratableStoreError`. Passing
+  the identity does not rescue that case: `DbStore` gives every `:memory:` store its own
+  `StaticPool`, so the database exists only inside the store that opened it and the equivalent one
+  alembic builds is a second, empty database -- the exact configuration `python -m plato` resolves
+  with no `PLATO_SQLITE_PATH`. Diagnosed after the fact it reads as the wrong database rather than
+  as no reachable database, so both callers answer it the way they already answer "the wiring names
+  no database": 503 from the route, exit 3 from the job.
+
+  The route's audit line moved below the write it describes. Written above it, in the past tense,
+  it recorded a successful migration for every migration that failed; a failure is now logged with
+  its reason as well as returned, so the record does not stop at the attempt.
+
+  Every spelling of in-memory is refused, not just an unset path: `":memory:"` is the one that says
+  it out loud, and a truthiness check let it through the guard written to catch it. It is a value
+  an operator can type, `PLATO_SQLITE_PATH` being a bootstrap key the dashboard's config panel
+  edits and a write there rebuilding the engine from it.
+
+  A migration that raises inside alembic -- a DDL failure, a statement timeout on an ALTER queued
+  behind a live reader -- is audited too. Enumerating the two refusals this code raises left the
+  one irreversible operation on the route with no record of who asked, while part of the revision
+  chain may have applied.
+
+  **Controls a replica would refuse are no longer rendered.** The pages carry a server-rendered
+  verdict rather than fetching one, and three of the four were latent before the migrate button
+  made the rule explicit: `packs.html` offered Delete and Initialize, both `relaxed_only`, and
+  `dashboard.html` a config save. Each failed on click instead of being absent.
+
+  What the pages ask is `relaxed_only`'s own predicate, not a copy of it. Strictness is one of its
+  three conditions -- the others are a tier outside local/dev-daily and a tier variable it cannot
+  read -- so gating on strictness alone offered all three controls under
+  `JAPES_ENVIRONMENT=staging JAPES_STRICTNESS=relaxed` and under a misspelt `ENVIRONMENT`, both of
+  which then answered 403. `relaxed_write_allowed()` is that decision as a question rather than a
+  refusal, `relaxed_only` is built on it, and the pages render it.
+
+  The `strict=` override each router accepts reaches the pages too. It short-circuits every tier
+  condition, so a page that did not forward it asked a different question from the routes beside
+  it: a `strict=True` packs router on a laptop kept rendering Delete and the seed panel while every
+  click answered 403. `create_plato_app` now binds one value for the three `relaxed_only` routers
+  and the pages that render controls for them. The details page needs it passed explicitly --
+  `migrate_strict` -- because its button belongs to a route the database router owns; it also hides
+  that button where `omit_nav` says this app mounts no database router at all, since there the
+  route is absent rather than refused and the click would 404.
+
+  The config save asks a different question from the other three, which is the part worth stating:
+  `/config`'s PATCH is not `relaxed_only` and is always registered -- a strict, unauthenticated
+  replica swaps in one answering 403, because an absent route reads as a bad URL -- while a strict
+  replica built *with* an auth dependency accepts the write. Gated on the tier it would have hidden
+  the control from exactly the configuration that 403 tells operators to adopt, so the page renders
+  `withholding(strict, auth)`, the same call the router makes.
 
 - **Which modes are catalog-only is data, and checked.** `MODE_REGISTRY` declares thirteen modes
   and the SDK ships a `BaseMode` subclass for seven; which seven lived only in a `stubs.py`
@@ -54,6 +566,12 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
   one (`build_gate_pipeline` sits beside `build_chat_pipeline`) and a test that guessed would pick
   by `dir()` ordering. Verified against three kinds of drift: a missing step, a renamed step id,
   and a builder name that no longer resolves.
+
+- **soupsieve 2.8.4 -> 2.9.2 in the lock.** Two Dependabot alerts on `main` (polynomial-time ReDoS,
+  O(n^2), in the `IDENTIFIER` and `VALUE` selector sub-patterns). It is a transitive pin only:
+  `beautifulsoup4 >=4.12.0` pulls it and asks for `soupsieve >=1.6.1`, so nothing in `pyproject.toml`
+  changed and the lock's content hash is unchanged. `poetry update soupsieve --lock` touched that one
+  entry and no other.
 
 ## [2.5.1] - 2026-09-08
 
