@@ -2,10 +2,799 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+## [2.5.4] - unreleased
+
+- **Two more Plato stores are SDK code.** `plato/packs/draft.py` is
+  `jazzx_sdk.pack.draft_db`, beside the `store_db` it is the mutable half of, and
+  `plato/reference/model_overlay.py` is `jazzx_sdk.llm.model_overlay_db`, beside the `cost` and
+  `model_cards` tables it writes into. Neither imported a framework or anything from Plato, and
+  both re-declared `DEFAULT_TENANT` next to an SDK that already had one. Plato keeps the routes,
+  the lifespan and the migrations; `plato/reference/` held nothing else and is gone. The overlay
+  tests split the same way: the store and its rules in `tests/test_model_overlay.py`, the route
+  and lifespan in `tests/test_plato_model_overlay.py`.
+
+- **Each pack loader says which pack shape it reads.** `plato.packs.loader` takes an *assistant*
+  pack (manifest, profile, persona, skills) and `jazzx_sdk.pack.loader` takes a *domain* pack
+  (ontologies, policy bundles). The matching names were the whole confusion; neither reads the
+  other's directory.
+
+- **A backend name nothing recognises is said, not silently defaulted.** Each dispatch takes one
+  name and treats everything else as its default, so `blob_backend=azuer` wrote bytes to local
+  disk behind rows claiming durability and logged nothing. `jazzx_sdk.backend_names` holds the
+  recognised set per surface and one `check_backend` that warns and *returns* the name actually
+  used, so a store keeps the backend it dispatches on rather than the typo -- `DbStore.backend`
+  answered `sqllite` while every read went through `common`. Wired at all five dispatches (`blob`,
+  `db`, `conversation`, `guidance`, and the run tracer), not just the one where it was found. A
+  warning rather than a refusal: these are built in tests and notebooks with partial
+  configuration, and the deployment-level refusals already live in `jazzx_sdk.config.posture`.
+
+  Plato's `_pack_blob` keeps its own warning. It coerces the backend to `local` before constructing
+  the store, so the SDK check never sees `PLATO_PACK_BLOB_BACKEND` and the durability half of that
+  message is posture-gated in a way the library cannot be.
+
+- **The pack inventory is SDK code: `jazzx_sdk.pack.pack_inventory`.** Store in, dict out, no
+  framework. What it encodes is a fact about `PackVersionStore`, not about one page: `versions()`
+  answers in `published_at` order rather than version order, so a backport reads oddly and the
+  newest row is `last_published_version`, never `latest`. A second operator surface would
+  re-derive that or get it wrong. `_MANIFEST_KEYS` went with it as `MANIFEST_SUMMARY_KEYS`. The
+  routes, the prefix, the nav entry and `packs.html` stay in Plato; those are the service's own
+  surface.
+
+- **Review carry-overs closed.** The statement map no longer carries a second `@lru_cache` on top
+  of the cached `owned_tables()` it is built from, and its test asserts the two properties that
+  matter (the quoted registered name, the bound `:limit`) rather than restating the template the
+  code derives. `run_tests.sh`, `scripts/README.md` and `net_safety.py` name the oidc module and
+  test where they now live.
+
+- **Seeding a pack store is SDK code: `jazzx_sdk.pack.seed_packs`.** It was most of
+  `plato/seed.py` (198 lines, 52 left) with no framework import and no service state: a store, a
+  directory, and four buckets back (`published`, `skipped`, `not_packs`, `failed`). Any consumer
+  with an empty database and a
+  checkout of authored packs now has one call rather than its own loop. `root` is a required
+  argument, because *which* directory holds a deployment's bundled packs is the service's business;
+  `plato.seed` keeps `PLATO_SEED_PACKS_DIR` and the bundled default and hands the answer in, which
+  is all that is left of it.
+
+- **`acting_user_id` moved to `jazzx_sdk.identity`.** It lived in `server/settings_store_db.py`,
+  which made it FastAPI-tiered for no reason: its body is one `CallerIdentity.from_context()` call
+  and nothing about it is a settings store. Lifting the seeder exposed that -- `pack` importing
+  `server` is a layer violation `lint-imports` catches -- so it now sits beside the `CallerIdentity`
+  it reads. All five importers were repointed; there is no re-export.
+
+- **Inbound token verification is SDK code: `jazzx_sdk.oidc`.** It was `plato/auth/oidc.py`, and
+  its own docstring is the argument -- *nothing in this estate verifies an inbound token; every JWT
+  reference in japes and common is outbound*. 436 lines, no framework import, no service state, and
+  no caller in Plato: written, tested and unwired, so the next service to need it would have
+  written it again. Flat beside `identity.py`, which is what it produces, rather than under
+  `server/`, which is FastAPI-tiered.
+
+- **The table read picks a statement rather than building one.** `read_table` allowlisted the name
+  and then interpolated it, which CodeQL still reads as a query built from a request. Every
+  `SELECT` is now built from `owned_tables()` and the request only chooses which, so no request
+  byte reaches the SQL even if the lookup were wrong -- provenance rather than validation.
+
+- **Choosing a pack opens its row again.** `expanded` is keyed by tenant and pack together, and
+  the picker added the bare `pack_id`, so the key matched nothing and the chosen row always
+  rendered closed while a comment above it described the opposite.
+
+*SDK 2.5.4, Plato 0.1.6. Work lives on the `v2.5.4` branch, cut from `dev` after 2.5.3
+squash-merged.*
+
+- **A stale schema names the revision gap instead of failing in the driver.** A serving replica
+  comes up on an out-of-date schema by design -- `check_schema` reports rather than exits -- so the
+  first request to a table a later migration adds answered
+  `relation "pack_draft" does not exist`, which names neither the revision nor the fix. The draft
+  routes now answer 503 with *this replica expects 0005_pack_draft and the database is at 0004;
+  migrate it from the Details page*, and the packs page shows it rather than hiding the panel.
+
+  `schema_gap` is asked only after a call has already failed, so it costs one round trip on a path
+  that was returning an error anyway and nothing on the ordinary one. It is a diagnosis and never a
+  trigger: migrating stays `job:migrate`'s work or an operator pressing Migrate, because a schema
+  write driven by whichever request arrived first is what those two exist to prevent.
+
+  Which way the gap runs decides the advice. A database carrying a revision this image does not
+  ship is a replica older than its schema -- what a rolling deploy looks like while `job:migrate`
+  has already run -- and telling that one to migrate points at a job that is finished. It is told
+  to deploy the newer image instead. The driver's own sentence is still logged with the diagnosis,
+  since the gap explains the failure rather than replacing it.
+
+- **One tenant's activation no longer erases another's.** `pins_for` cleared the whole pin map on
+  any miss, so with a multi-entry `PLATO_ACTIVE_PACK` the second entry wiped the first at boot,
+  and the first composition for a previously unseen tenant silently reversed every other tenant's
+  rollback -- only the last entry ever took effect. It drops the keys from a previous store now,
+  which is what the clear was for. The caches beside it are recomputable and safe to clear
+  wholesale; a pin is operator intent and is not. A read no longer creates an entry either: a
+  composition asks about every tenant it serves, so inserting one per tenant grew the map with
+  every distinct id a request carried, where the clear it replaced had capped it at one.
+
+- **`read_table` allowlists the table itself.** The check lived in the route with a comment saying
+  the caller does it, which holds until the second caller, and the name is interpolated into a
+  `SELECT` because no dialect binds a table name. The row limit is bound rather than interpolated,
+  and `owned_tables()` is cached, since checking in both places rebuilt the whole registration
+  twice per request.
+
+- **A pack can be edited in the console: `pack_draft` and `pack_draft_file`, migration 0005.**
+  `plan_plato_authoring.md`'s stage 2. A draft is the mutable working copy `pack_version` refuses
+  to be: one per `(tenant_id, pack_id)`, files as rows rather than an archive, because an archive
+  is what publish produces and rows are what an editor reads a path at a time. Publish builds the
+  same zip an upload carries and goes through the same `_publish_archive`, so `PackVersionExists`
+  still refuses a re-publish and `pack_version` is never edited. The draft survives publication:
+  the next edit opens the next version rather than starting again.
+
+  Opened from a published version (`Edit` on any version row), from a bundled sample, or empty.
+  Paths are checked on the way in, where the editor can say so, rather than at publish: a draft
+  becomes a zip, so a `../` stored here would be a `../` in the archive.
+
+  **A textarea, not an SPA.** The plan calls for React under the same prefix, and that is a real
+  change to what the image is -- a build step, `node_modules` in CI, a bundle in the layer. A file
+  picker and an editor are enough to change a persona or a threshold without leaving the console,
+  and they cost none of it. The diff view and comment threads the plan wants next are what would
+  justify the build; this does not pretend to be them.
+
+  Every pack write goes through one `_refuse_unless_author` -- upload, sample and each draft edit
+  -- rather than three copies of the same 403. The draft store is built from the request's tenant:
+  without it every tenant on the page shared one set of drafts, which a store-level test could not
+  see because the store was never the thing that was wrong. Opening reports the members it could
+  not bring along, rather than logging them and publishing a pack quietly missing a file.
+
+- **Four sample assistant packs ship with the image, and the packs page publishes one.**
+  `plato/data/sample_packs` holds the demo-tenant packs that existed only as rows in a local
+  database, generated by a gitignored script: nothing reviewable, nothing another machine could
+  reproduce. `GET /packs/samples` lists them and `POST /packs/samples/{name}` publishes one into
+  the calling tenant, through `pack_archive` and `store.publish` -- the upload route's own two
+  calls, so a sample meets every rule an uploaded pack does. Not in `seed_packs`: `initialize`
+  sweeps that directory into whichever tenant pressed the button, and `seed_packs` refuses an
+  assistant pack by design.
+
+- **The packs page says what a pack is made of, and links the quickstart.**
+  `docs/DOMAIN_PACK_QUICKSTART.md` was linked from the README and from nothing an operator about
+  to publish could see. The page now names the minimum layout and links it; `plato/guide.md`
+  gained a Packs section doing the same, since it had covered running Plato and not authoring for
+  it. A test holds each sample against `check_assistant_pack`, which is what caught the first cut
+  of them dropping `pack_version_range` -- they zipped and published fine and would have failed at
+  the first chat turn. Publishing is one `_publish_archive` shared by the upload route and
+  the sample route, because the two were the same rule twice and had already drifted on
+  whether an empty key is a 422.
+
+## [2.5.3] - unreleased
+
+*SDK 2.5.3, Plato 0.1.5. Work lives on the `v2.5.3` branch, cut from `dev` after 2.5.2 squash-merged.*
+
+- **Plato's mark is the one the sidebar already gives it.** The browser tab showed a portico
+  (`AccountBalance`) while dev-daily's sidebar showed two stacked racks (`Dns`), and the portico
+  was another service's glyph anyway. `LOGO_PATH` is the `Dns` path now, which moves the favicon
+  and `static/logo.svg` together -- a test already holds those two to the same mark.
+
+- **Claude Opus 5.5 is priced and carded.** `claude-opus-5-5` at $4/$20 per million against Opus
+  5's $5/$25, 1M context, 128k output, adaptive thinking, knowledge cutoff June 2026. Its cache
+  reads are 0.05x input rather than the 0.1x every other Claude model uses, which the pricing page
+  footnotes as an exception; taking the multiplier for granted would have priced them double. The
+  Anthropic default stays `claude-sonnet-5`, which is still the cheaper model at $2/$10.
+
+- **A model's rate or card can be corrected without a release.** `plato.reference.model_overlay`
+  had the durable half built and tested -- append-only table, newest row per model wins, applied
+  into the process rather than read on the costing path -- and nothing reached it: no route, no
+  boot application, and the refresher never started. `GET/POST {prefix}/models/overlay` records a
+  correction and applies it before answering, so the caller's next request is priced at what they
+  just set; other replicas pick it up within the refresh interval. The payload is built through
+  the same rule the applier uses, `build_overlay`, and refused 422 if it will not construct:
+  stored first, a typo answered 200, failed to apply with only a log line, and -- newest row per
+  model winning -- buried the last correction that did work. Values are checked as well as keys:
+  a dataclass does not type-check, so `{"input": "3.0"}` built a `ModelPricing` happily and failed
+  much later inside `compute_cost` as `float * str`, for every tenant and every replica. A card's
+  window and output cap are checked the same way, since a string there fails wherever a consumer
+  compares a prompt against it instead.
+
+  The refresh runs in the serving replica rather than as a job, which is the opposite of what
+  `plato.jobs` argues for a sweep and right for the same reason: a reaper mutates shared rows, so
+  one run per replica multiplies the work, while this mutates only the in-process registry that a
+  job could never reach. `create_app` grew a `lifespan` parameter to hold it, since a boot-time
+  `asyncio.run` cannot own a task that has to outlive the loop it started on.
+
+  Scoped to `DEFAULT_TENANT` deliberately: `register_model_pricing` writes a process-global table,
+  so applying one tenant's overlay would price every other tenant's calls with it. The column
+  stays for a future where the registry is scoped too.
+
+- **The OpenAI default is `flex_gpt-6-luna`.** Half the cost of `flex_gpt-5.6-luna` for the same
+  turn ($0.00150 against $0.00320 at 20k+2k), newer, and six reasoning efforts instead of four.
+  Every consumer that has not set `JAPES_LLM_MODEL` moves with it. `DEFAULT_VISION_MODEL` in
+  `tools/documents/classify.py` still names 5.6 Luna: that one is a classification-accuracy choice
+  rather than a cost one, so it wants its own check before it moves.
+
+- **The GPT-6 line is flex-eligible, and flex eligibility is data now.** OpenAI serves all three on
+  the cost-optimized tier at half the standard rate, so `flex_gpt-6-luna` costs $0.0015 for a
+  20k+2k turn against `flex_gpt-5.6-luna`'s $0.0032 -- half, where the two standard tiers differ by
+  6%. `FLEX_ELIGIBLE` was a literal in `model_identity.py`; it reads `pricing.flex` from
+  `model_data.json` now, so a new model stays one JSON edit. The flag rides on the pricing row
+  rather than the card because eight of the seventeen eligible models carry no card.
+
+- **The 5.6 cards understated their reasoning efforts.** All three list `none, low, medium, high`
+  while the model pages give six, so asking for `xhigh` or `max` drew a warning saying the value
+  was not carded. The test that covered that warning had used `xhigh` as its out-of-range value
+  and went green against a card that was wrong; it derives an impossible value now.
+
+- **The GPT-6 line is priced and carded.** `gpt-6-astra` at $10/$50 per million, `gpt-6-sol` at $2/$10 and
+  `gpt-6-luna` at $0.10/$0.50, each with a 1.05M window, 128k output, and the long-context tier
+  above 272k prompt tokens (2x input and cache rates, 1.5x output). Cache-write rates are recorded
+  for all three, which the 5.6 rows omit. Astra carries five reasoning efforts where the other two
+  carry six: its page does not list `none`. No bare `gpt-6` alias, which no model page mentions.
+  One JSON edit, no code.
+
+- **The Knowledge Hub bulk archive reader catches what a corrupt member actually raises.** It
+  caught `BadZipFile` only, so a member whose deflate stream is corrupt, or is encrypted or uses
+  an unsupported method, escaped instead of reaching the per-document fallback the handler exists
+  for. Same family as the pack-manifest read above.
+
+  Its single-document sibling had the reverse problem, and a worse one: opening and reading sat in
+  one `try`, and `zf.read` answers a corrupt member with `BadZipFile` as well, so that arm returned
+  the whole archive as the document's bytes -- silently, under the document's name, for every
+  `fabric.docs.materialize` consumer. Only the open can mean "not a zip", so the two are separate
+  now and a read failure reaches `_fetch`, which drops the document with a warning. `_permanent`
+  classifies an unreadable archive as permanent alongside a denial and a missing capability: the
+  hub returns the same bytes each attempt, so retrying only burned the backoff before the drop.
+
+- **A pack member with a corrupt deflate stream is a refusal, not a traceback.** `zlib.error` is
+  not a `BadZipFile`, so it escaped the conversion every other read failure goes through and
+  reached the upload route as a 500. Corrupting the head of a member's compressed payload
+  reproduces it: zlib rejects the block type before any CRC is checked.
+
+- **A migration that cannot read the current revision is still attributed.** That read sat outside
+  the `try`, so a database that failed there skipped the log line naming who asked and answered a
+  bare 500 -- on the one irreversible action a relaxed posture allows.
+
+- **The packs page never reads a tenant its picker is not showing.** A tenant remembered in
+  `localStorage` that `PLATO_TENANTS` no longer lists went into the hidden field while the select
+  stayed on its first option, so every read, expand and delete went to a tenant the page was not
+  naming -- under a heading that said "All tenants". `chooseTenant` now decides, keeping a saved
+  value only where the deployment still serves it, and the picker follows the field
+  unconditionally. Its own function because a test runs it: the first cut of that test greped the
+  page for two source lines and missed a defect on the line between them, where a remembered `"*"`
+  against an empty tenant list stored the text "undefined" as the tenant.
+
+- **One pack file is read bounded, not read whole and then sliced.** `read_text` pulled an entire
+  member into memory to return 20,000 characters of it, and a member's size is capped only by the
+  256 MB archive cap. Same shape as the manifest read, with the newline normalising text mode did
+  kept explicitly.
+
+- **The mount sweep covers the dashboard's fetch prefix again.** It matched `const PREFIX` only,
+  and the dashboard's is `const prefix` since it stopped deriving one from the `api-info` href, so
+  that page's prefix went unchecked while a comment claimed it was covered.
+
+- **A cancelled chat stream no longer abandons a task on the delta queue.** Cancellation lands
+  inside the `asyncio.wait` on that queue, where the pending `get` is a task of its own; only the
+  run was cancelled, so it waited on a queue nothing would fill and asyncio logged "Task was
+  destroyed but it is pending!" for every abandoned turn. The `GeneratorExit` arm needs no such
+  line: it is thrown at a yield, and the getter is settled at every one.
+
+- **`byte_budget` says what to set instead of raising a TypeError.** Its factory read the budget
+  with `or`, so `max_chars=None` -- documented as "no char budget" -- reached `ByteBudgetStrategy`
+  and failed its `< 1` check on a `NoneType` comparison. It reads `max_chars` as a budget in bytes
+  and says so; the `max_bytes` it also looked for is not a field `CompactionPolicy` has, and
+  `extra="ignore"` would have dropped one written in a spec.
+
+- **Activating a version that was never published answers 404.** Everything `activate` raised
+  became one 409, so a caller branching on the status could not tell a missing version from a pack
+  that loaded no assistants.
+
+- **The forged-mount test checks the rendered page, not only its hrefs.** The pattern stops at the
+  first quote, so a payload that closed the attribute and added another was read as a clean href
+  and passed.
+
+- **A pack archive's manifest member is capped at 1 MB.** `MAX_ARCHIVE_UNCOMPRESSED_BYTES` is a
+  sum over the archive, so a single member could declare all 256 MB of it, pass the gate, and be
+  read whole and YAML-parsed: measured at 50 MB, a 48 KB upload held a worker for 85 seconds and
+  131 MB. The manifest is now read through `open` with a bounded read, so the refusal costs the
+  first megabyte rather than the whole member. `store_db._unpack` had the member-path check and no
+  size check at all, and it is the call that writes to disk and also runs on archives already in
+  the store; it applies the same gate before extracting.
+
+  Raised in review as a zip bomb defeating the declared-size check. That mechanism does not hold:
+  CPython bounds a member's output at the declared size, so a lying-small header truncates and
+  fails CRC rather than expanding. The cap is worth having for the reason above instead. Raised a
+  second time against `_unpack`, where the claim was that `extractall` writes every member with no
+  limit; measured, a 48 KB archive declaring 0 bytes writes 0 bytes and raises. A test pins that
+  bound, since it is what makes the gate sufficient rather than merely cheap.
+
+  `manifest_from_archive` no longer takes `max_uncompressed_bytes`. `_unpack` cannot learn a
+  caller's override, so a publish admitted under a raised cap would be a version that can
+  never materialize, on a row that is immutable. One cap, read from the constant on both sides.
+
+- **`PROJECT_NAME` is documented as `japes-plato`.** `DEPLOYMENT_ENV.md` said `plato` while
+  `plato/defaults.py` has set `japes-plato` since it was written, which is the OTEL service name
+  when `APP_NAME` is unset. That table is hand-written, unlike the boot table below it, and nothing
+  held it to the code; a test now pins every row of it to `COMMON_DEFAULTS`.
+
+- **The packs page offers the tenants this deployment serves.** The `X-Tenant-Id` field was a
+  blank box on a page that refuses to read without one, so an operator had to already know the
+  answer. It is now a picker backed by `PLATO_TENANTS`, read from the same variable the routes
+  use -- through `_tenants`, the wiring's own rule, so the local posture's single default tenant
+  is offered too rather than an empty picker. A select rather than a datalist, which shows nothing
+  until the field is clicked and so left the page opening as a blank box over a refusal.
+
+  **It opens on every tenant.** Production serves one, and that is this view with one entry rather
+  than a different view. The page fans out over the configured tenants, one tenant-scoped request
+  each, and merges the answers into one table with a `Tenant` column, so no cross-tenant read
+  exists on the server and the route keeps requiring `X-Tenant-Id`. A tenant that refuses is named
+  beside the packs that read rather than replacing them. Every per-version read, file read and
+  delete carries the tenant of the row it came from; publishing and initializing ask for a single
+  tenant, since neither has a meaning across four.
+
+- **The nav is pages; a JSON route is linked from the page that renders it.** It carried two
+  rows -- four pages, then eight raw routes -- so `Packs` and `packs` sat beside each other
+  meaning different things, and `packs` was a link a browser could not follow at all, being the
+  one tenant-scoped route there. Now: Dashboard, Details, Packs, Guide, the same on every page.
+  Each dashboard panel links the route it renders, the details page links `/info`, and `health`,
+  `openapi` and `info` sit together on the dashboard. The packs page links nothing: `/packs`
+  needs `X-Tenant-Id`, which an anchor cannot carry, and that is the same reason it left the nav.
+
+  `dashboard.html` read the API prefix by parsing the `info` link's `href`, which is what made
+  removing it hazardous (a `TODO(omit-info)` recorded that). It now reads the substituted
+  `__API_PREFIX__`, as `packs.html` already did.
+
+- **The unnamed-tier advisory is logged once per process.** `check_settings` has two boot callers,
+  so every dev-daily startup log carried that paragraph twice.
+
+- **A published version can be looked through.** The packs page listed packs and versions and
+  could not show what was in one. `GET /v1/packs/{pack_id}/{version}` returns the manifest and the
+  file list, and `?path=` one file's text; a version row expands into both, and a file row into
+  its contents. Through `materialize`, so opening the same version twice reads the digest-keyed
+  cache rather than the blob store. The path is matched against what was listed rather than joined
+  onto the root, dotfiles are excluded (the unpack cache's own marker is not pack content), and
+  the text is bounded.
+
+  Every operator-facing failure reason across `plato/` now reports the exception's message, not
+  just its type: the pack list and version read, the per-table count and the table read on the
+  database panel, and the seed report. "RuntimeError" told an operator nothing about which
+  failure it was.
+
+- **The logs panel takes a level.** It was fixed at whatever the root logger captured; a selector
+  now narrows it, reloading that panel alone. The buffer holds what the logger let through, so a
+  level below `effective_level` returns nothing rather than more, and the meta line says
+  "captured" to keep that distinction.
+
+  It selects one level rather than a floor, and both of the panel's sentences now say so: the
+  options read "ERROR only", an empty view reads "No ERROR records among the 143 kept", and the
+  meta line counts the filtered records against the unfiltered total. `/logs` returns that total
+  alongside `capacity`. Before this, picking `ERROR` over a buffer of INFO claimed "Nothing logged
+  at INFO or above since this replica started", which was false, and the stale count from the
+  previous read stayed on screen beside it -- every panel's empty path clears its meta now.
+  The response echoes the level it was filtered by, so a sentence describes the answer it has
+  rather than a selector that may have moved while the fetch was in flight.
+
+- **The pack inspect route reports an unreadable store instead of failing.** `read_pack_contents`
+  guarded `materialize` and not the `store.get` above it, so an unreachable database answered 500
+  and the page showed "HTTP 500" rather than the store's own sentence. Same rule as `pack_inventory`.
+  Opening a file showed `detail` only, so that sentence became "could not read <path>"; it reads
+  `reason` too, as the version row already did.
+
+- **The raw `packs` link is gone from the nav's JSON row.** It is the only tenant-scoped route
+  there, so a browser that cannot set `X-Tenant-Id` got a 400 from it; `Packs` reaches the page
+  that can. The packs page now also says which field to fill when a read is refused for want of a
+  tenant -- the server's own sentence, plus where to fix it. No tenant is guessed: naming one for
+  the operator is the cross-tenant read the refusal exists to prevent.
+
+- **Seeding refuses a non-durable archive, like uploading already did.** `POST /v1/packs`
+  refused on a deployed replica whose blob backend is not `azure` -- the row commits and outlives
+  the bytes -- while `POST /v1/packs/initialize` wrote the same archives to the same store with no
+  such check. A rule about whether the bytes survive cannot depend on how they arrived.
+
+- **An activation is a per-tenant pin, and it reaches requests.** Once requests composed from
+  the store, `activate` was rebinding a pair nothing on the request path read: activating
+  `hc 1.0.0` while 2.0.0 was published logged "now serving 1.0.0", returned 200, and 2.0.0 kept
+  serving, so a rollback was a silent no-op. `published_registries` takes `pinned`, a
+  `pack_id -> version` map, and serves the pinned version in place of the most recently published
+  one; `activate` records the pin for the tenant it names and drops that tenant's composition.
+  This is the versioning model: each tenant holds the version it is on, and a rollout or rollback
+  is an operation on one tenant.
+
+  The same change closes a leak. The pair `activate` used to rebind was also every tenant's
+  fallback, so with no `PLATO_PACK_DIR` a `mortgage` request answered from `healthcare`'s
+  activated pack. The pair is now the image's pack and nothing rebinds it; resolution is the store
+  with pins, then the image's pack, then nothing. A pin naming an unpublished version warns and
+  serves the published one.
+
+  **`PLATO_ACTIVE_PACK` holds one reference per tenant and pack**, comma-separated like
+  `PLATO_TENANTS`, and boot restores each on its own. As one scalar it kept only the last
+  activation across a restart, which undid every other tenant's rollback silently. Pins are keyed
+  on the live store like the caches beside them, so a database swap does not carry a version from
+  one database to another. A pin that will not materialise at boot is a boot note, as before:
+  the replica is not serving what it was told to, and `/health` says so. That this unreadies the
+  other tenants of a demo replica is accepted, because a deployment is one tenant.
+
+- **A boot note can be dropped by the recovery that resolves it.** Notes lived for the process:
+  a pin that failed at boot because the blob store was briefly unreachable kept `/health` at 503
+  after the same version was activated successfully at runtime. `record_boot_note` takes a
+  `key`, and `drop_boot_note(key)` forgets that one note; the boot activation records under the
+  reference and a runtime activation of it drops it. The migrate route uses the same primitive:
+  the entry point records the schema refusal under a key, and a successful migration through the
+  route drops it, which is the "never migrated" note that kept dev-daily's `/health` at 503 after
+  the migration had run. The key is the parsed reference, so `pack/1.0.0` and
+  `default/pack/1.0.0` are one pin.
+
+- **The dashboard expands a table into its rows, and the packs page has a pack selector.** The
+  database panel listed table names and row counts with no way to see what was in them; clicking a
+  table now fetches `GET /v1/database/tables/{table}` and renders the rows beneath it, fetched
+  once and kept across a collapse.
+
+  **Secrets stay masked.** `plato_setting` holds what `/config` serves masked -- the connection
+  string and every API key -- so the route masks the same keys, read from the settings catalog
+  rather than a second list. The table name is checked against `plato.models.owned_tables()`
+  before it reaches a `SELECT`, values are bounded (a manifest column is a whole document), and
+  the route is withheld under the same gate as the rest of the panel.
+
+  The packs page lists every pack in a selector; choosing one narrows the table to it and opens
+  it. Shown only when there is more than one pack, since the point is choosing between them.
+
+- **Each tenant serves its own published packs.** `AssistantRuntime` was constructed with
+  `registries=lambda _tenant: ...`, discarding the tenant, so one replica served one composed pack
+  set to everybody and `activate` rebound it process-wide: whichever tenant activated last won for
+  all of them. `registries_for(tenant)` now composes that tenant's published packs through
+  `published_registries`, which already existed for this and had no caller outside tests. Cached
+  per tenant and dropped for the one tenant an activation names.
+
+  Layered, not replaced: the pack the image ships stays the platform layer, and a tenant whose
+  store yields no assistants falls back to the process pair, so a tenant that has published
+  nothing serves what it served before. An unreachable store warns and falls back rather than
+  failing the turn, and both fallbacks are cached, since this is the chat path.
+
+  Which pack a tenant serves is resolved in one place. No route, handler or agent takes a
+  `pack_id`: they address a tenant, and the wiring answers.
+
+  The cache is keyed on `(tenant, id(handle.current))`, the convention the manifest, session and
+  pack stores beside it already follow, so a database swap cannot hand back registries composed
+  from the retired one. `pack_forgetter()` is the seam `plato.api.packs` calls after publish,
+  delete and seed; without it a warm replica kept serving a retired version while a freshly
+  started one served the new, with nothing reporting the difference.
+
+  **Publishing a pack now makes its assistant addressable.** `agent_for` resolves the manifest
+  from the manifest store and `upload_pack` never wrote there, so four uploaded packs answered 404
+  until something seeded it. Composition reconciles the two, which also repairs packs published
+  before this. Guarded on a real difference: `put` stores a new head and demotes the prior one,
+  and `release_id` is part of the agent cache key, so an unconditional write would rebuild every
+  agent on every turn.
+
+- **`--check-pack ""` read the working directory.** `Path("")` is `.`, so an unset variable in a
+  CI wrapper rglobbed and read every file under the cwd into memory before reporting `unloadable`:
+  measured from the repo root at 35,554 files, 922 MB, 1.13 GB peak RSS. In a memory-capped
+  container that is an OOM kill rather than an error. An empty source is now named, not read.
+
+- **A guardrail the profile names and nothing registers is reported.** The same declared-name join
+  the skill check already made, one layer out: `build_from_manifest` drops an unregistered
+  guardrail silently, so the bundled demo pack certified as clean while both of the clinical
+  governors its profile declares resolved to nothing. `check_assistant_pack` now compares the
+  declared names against the guardrails the bound agent actually carries and warns per name; the
+  pack still binds, so it is a warning. `bind` returns the agent alongside the failure, and
+  `bind_failure` is the wrapper for callers that only want the latter. `describe()` reports
+  findings and the bind confirmation together rather than one or the other.
+
+- **A database migrated under the old schema layout is refused, not re-migrated.** With the
+  revision row back in the default schema, a Postgres database carrying
+  `plato_control.alembic_version` reads as never-migrated, and an upgrade would build a second
+  copy of every table beside the orphaned ones. `current_revision` now looks for the legacy row
+  before answering `None` and raises naming the situation. No migration moves the tables; it is a
+  person's call.
+
+  The probe rolls the connection back first. Postgres aborts the transaction on the failed
+  `alembic_version` read, so without it the probe raised "current transaction is aborted" and the
+  guard never fired. Verified against a 16 cluster carrying the old layout: the refusal fires with
+  the rollback and does not without it.
+
+  The empty-source guard moved into `DirectoryPackSource.read`, which refuses a directory with no
+  `manifest.yaml` before walking it. `str(Path(""))` is `"."`, so a guard on the string alone
+  covered the argparse form and not a caller passing a `Path`.
+
+- **`compress_tool_output` no longer swaps a falsy compressor for the default.** The last
+  `x or Default()` of the family whose siblings became `is not None`.
+
+- **Citation rewriting absorbed unbalanced decoration.** `SourceBuilder.rewrite` walked left and
+  right independently, so a delimiter that was not adjacent to the anchor was eaten on one side
+  only: `(see loan_1_sarah.pdf)` came out as `(see MARKER` with the closing bracket gone, and
+  `[the file](loan_1_sarah.pdf)` lost its link destination. The existing test covered only the
+  symmetric-and-adjacent shapes hugging the token, which is why it passed. The walk now steps
+  outward in lockstep and absorbs a closer only when its opener is the character being absorbed on
+  the left. No caller wires `rewrite` yet; the failure would have been mangled answer text.
+
+- **A boot-time `asyncio.run` left every request talking to a dead event loop.**
+  `_apply_durable_settings` applies `/v1/config` settings before uvicorn starts, which means an
+  `asyncio.run` against the shared store, which builds `common`'s memoised engine inside a loop
+  that then closes. An asyncpg pool belongs to the loop that filled it, so every later request
+  touching the database failed `got Future attached to a different loop`. This predates the schema
+  work and is why Plato could not serve on Postgres at all.
+
+  `_drop_boot_loop_bindings` runs after **each** boot-time `asyncio.run` -- applying settings and
+  activating `PLATO_ACTIVE_PACK` are separate loops, and forgetting once at the end lets the
+  second rebind what the first cleared. It forgets `common`'s engine global (through
+  `_forget_common_engine`, which already existed for the swap path), the store's sessionmaker, and
+  the azure blob client, whose `AsyncBlobServiceClient` and lock bind the same way and which the
+  activation loop is what first opens. Reset rather than closed: `aclose_instance` needs the loop
+  that has gone, and `reset_instance` is the synchronous variant the provider ships for it.
+
+  Both halves are needed: `DbStore` caches its *sessionmaker* bound to the engine that existed
+  when it was built, so `engine()` rebuilt correctly while `session()` stayed on the dead pool.
+  `DbStore.forget_sessions()` drops it, and is a no-op on sqlite -- where the store owns the
+  engine, so clearing the sessionmaker alone would open a second `:memory:` database -- and on an
+  injected sessionmaker.
+
+  `current_revision` takes `own_engine` for the callers that run their own loop (`check_schema`),
+  and `DbStore.migration_engine()` builds from the connection string rather than resolving the
+  shared engine, since resolving it is what creates it on the wrong loop. The request-path callers
+  keep the pooled engine, its `connect_args` and its `application_name`.
+
+  `migrations/env.py` picks its failure message from whether a connection was in hand, not from
+  the exception's type. A wrong password and a bad revision chain are both `OperationalError` to a
+  caller inspecting them, and they send the reader to opposite places; `connect_failure` and its
+  new counterpart `statement_failure` share `fabric.db.dsn`'s redaction rule.
+
+- **Plato's tables move to the default schema, the convention the estate already runs.** The five
+  `plato_*` Postgres schemas were a boundary inside a boundary terraform already provides: every
+  service has its own database on the shared Flexible Server. They also did not work. The models
+  carry no `schema=` so they stay portable to sqlite, so the ORM emitted unqualified names against
+  schema-qualified tables, and after a correct migration the runtime could not read `pack_version`
+  at all. `/api/v1/database` reported "the schema may not be migrated" on a migrated database for
+  the same reason.
+
+  kernel puts everything in `public` across 84 revisions; juno runs ~35 tables inherited from a
+  shared gateway schema beside its own `juno_*` ones, in one database, no schemas. The rule is
+  prefix on collision, which Plato already followed for `plato_setting`. `plato/schemas.py`,
+  `TABLE_SCHEMAS` and `schema_for` are gone; the projection rule they carried survives as a
+  `projection_*` naming convention on `plato/models.py`.
+
+  **sqlite gains more than Postgres.** Every schema branch was a `if dialect == "sqlite"` fork, so
+  the suite (which runs sqlite) never executed the Postgres half of any of them, which is how all
+  of this survived. 26 such lines are gone and the two backends now run one path. It also fixes a
+  live sqlite bug: `include_object` filtered by schema, and a reflected sqlite table has none, so
+  `alembic revision --autogenerate` on sqlite silently considered no tables. It now filters by the
+  registered table names, identically on both.
+
+  Verified against a real 16 cluster: migrate an empty database through `POST /v1/database/migrate`,
+  tables land in `public`, `/v1/packs` reads, and `/v1/database` counts 8 of 8 with no complaint.
+
+- **Plato's Postgres migrations could not run.** `_take_migration_lock` set its two timeouts with
+  bound parameters, and a utility statement takes none: `SET lock_timeout = :value` reached the
+  server as `SET lock_timeout = $1` and failed with a syntax error before any revision ran. It
+  shipped in 2.5.0 and survived because the whole lock block is Postgres-only while the suite runs
+  sqlite, which skips it. Now `SELECT set_config(...)`, which is a function and does take a
+  parameter; verified against a real 16 cluster, where the values apply (`SHOW lock_timeout` =
+  `30s`) and the chain reaches `0004_pack_version_retired_at` with all five schemas and nine
+  tables.
+
+  A source guard in `tests/test_plato_migration.py` now rejects `SET x = :param` in `env.py`,
+  since nothing the suite can execute reaches that code.
+
+  **A failure after connecting is no longer reported as a failure to connect.** `env.py` wrapped
+  every exception in `connect_failure`, so the syntax error above surfaced as "could not connect to
+  the database (host=... port=...)", which points at the DSN, the firewall and the credentials.
+  `jazzx_sdk.fabric.db.dsn.is_connect_failure` now decides, and lives there rather than in `env.py`
+  because alembic's module cannot be imported outside alembic and so cannot be tested.
+
+- **A pack can be checked before it is served, and the bundled one was broken.** `load_pack`
+  raises on the first thing wrong, which is right for a serving path and wrong for an author: a
+  pack with three problems takes three attempts to find them, and the attempt happens on a
+  deployed replica. Nothing checked the joins that only fail at bind time at all.
+
+  `plato.packs.check.check_assistant_pack` collects instead of raising and goes one stage further
+  than loading: the manifest parses, the profile parses, every skill the profile names is present,
+  and the manifest binds against the registries the pack itself supplies. `python -m plato
+  --check-pack DIR` prints the findings and exits non-zero on an error, so CI and a pre-publish
+  step can gate on it. Findings reuse `PackLintFinding`, the vocabulary the domain-pack lint
+  already established, so a caller checking both halves of a pack reads one shape.
+
+  **It found a real defect on its first run, in the pack Plato ships as its default.**
+  `manifest.yaml` said `profile_ref: clinical-intake`, the assistant id, while the profile carried
+  `name: clinical_intake_agent`. Loading registers the profile and the skills and succeeds;
+  `build_from_manifest` resolves the reference and does not, and that happens on the first chat
+  turn. A replica with no configuration at all started clean, reported `configured: true`, and
+  would have failed on the first message. Fixed in the manifest.
+
+  Boot notes the same condition now. Not raised: the registries are real and the rest of the
+  deployment is fine, so an unbindable pack is a readiness fact rather than a reason to refuse the
+  pack. It honours `record=False`, so a runtime activation still cannot take a serving replica out
+  of rotation over a pack its caller is about to be refused.
+
+  **The bind check binds the way the replica does.** Both the boot note and `--check-pack`
+  first bound without the `llm_manager` the serving path passes, so a pack declaring
+  `out_of_scope_check_model` (a documented manifest field) was reported as unbindable when it
+  binds correctly: at boot that reaches `/health` and takes a working replica out of rotation,
+  and in CI it rejects a good pack. One shared `plato.packs.check.bind_failure` is now the only
+  bind path for a caller that wants to know whether a pack would serve rather than to serve it,
+  and it supplies a stand-in manager where the manifest asks for one. Neither caller keeps the
+  agent it builds, and the guardrail only closes over the manager, so the check stays structural
+  and needs no LLM configured.
+
+  `--check-pack ""` now checks rather than starting the role, so an unset variable in a CI
+  wrapper fails the step instead of booting a server.
+
+- **Tool-call recall catches a narrower repeat, not just an identical one.** `recall_tool_output`
+  keyed on a hash of the arguments, so it caught a file re-read whole and nothing else. The
+  measured run that motivated the seam read one file across 50 distinct line ranges, most of them
+  inside a range it had already read: by key alone, all 50 were misses.
+
+  `covers` is an optional predicate over (earlier arguments, this call's arguments). The caller
+  owns the rule, because only it knows which argument is a range, a page set or a filter; japes
+  owns the scan. Without it the behaviour is unchanged, so a caller that supplies no rule gets no
+  guessing.
+
+  `line_range_covers` ships the rule for `read_document`, keyed on its real parameter names with
+  `end_line=None` as end of file. It lived only in a test before, under argument names no tool in
+  the repo uses, so no caller could have passed it.
+
+  Two rules in the scan, both pinned by mutation. Newest first, because a wider recent result is
+  likelier to still be in the model's context than an older exact one. And an empty earlier result
+  never covers: there is nothing to read back, so pointing a later call at it would hide a real
+  answer rather than defer it.
+
+  A covered call is not recorded, and that is deliberate rather than an oversight: it never
+  produced content, so there is nothing to point a later call at.
+
 ## [2.5.2] - unreleased
 
 *SDK 2.5.2, Plato 0.1.4. Work lives on the `v2.5.2` branch, cut from `dev` after 2.5.1 squash-merged
 (`e4eabd4`).*
+
+- **`SourceBuilder` can canonicalise an answer's citation markers, not just read them.**
+  `build` scans an answer for anchors and resolves them to grounded `Source`s. `rewrite` is the
+  other direction, and the half a renderer needs: a model writes its citations in whatever
+  punctuation it lands on that turn, so a consumer parsing them with a regex gets a different
+  shape each time, and a prompt cannot fix that. Canonicalising the delivered text is the same
+  answer this module already gives for provenance, which is never taken from the model directly.
+
+  `render(source, token)` owns the emitted form, because what a marker must look like is the
+  consumer's contract rather than this module's; a caller wanting one marker per page emits them
+  itself. japes owns the parts that are the same everywhere: span tracking, replacement in
+  last-match-first order so an emitted marker longer than the token it replaces does not shift
+  every span after it, and absorbing decoration the model already put around the anchor rather
+  than wrapping it again, which would otherwise turn an already-parenthesised citation into a
+  doubly-parenthesised one and break a strict consumer regex just as badly.
+
+  `_` is deliberately not decoration: it is a valid filename character, so stripping it would eat
+  real text from a compound token with no separating space.
+
+  Extraction has to run first, and a test pins it: rewriting replaces the anchor with the marker,
+  so the raw tokens are gone from the result. `build` reads the model's answer, `rewrite` produces
+  what is shipped.
+
+- **The MCP surface works on `mcp` 2.x.** 2.0 renamed `FastMCP` to `MCPServer` and moved it from
+  `mcp.server.fastmcp` to `mcp.server.mcpserver`. All four modules under `jazzx_sdk/mcp/` imported
+  the old path, so on 2.x every one of them raised `ModuleNotFoundError` at import, and that took
+  `jazzx_sdk.JazzXMCPServer` with it: the lazy export in `jazzx_sdk/__init__.py` defers the cost of
+  that import, not its failure. `test_import_boundary`'s "every exported name actually resolves"
+  caught it the moment an environment had 2.x installed.
+
+  `jazzx_sdk/mcp/compat.py` resolves the class under either major and the modules import from
+  there, so the declared floor stays a floor: no ceiling was added. Only the name and location
+  moved, verified against 2.1.1 for everything japes touches, namely the positional server name,
+  the `.tool()` decorator, and `run_streamable_http_async`'s `host`/`port`.
+
+  `tests/test_mcp_server.py` drove `ToolManager.call_tool` directly, which gained a required
+  `context` parameter in 2.x. The 15 call sites go through one helper that decides from the
+  signature, rather than the suite being pinned to whichever major happens to be installed.
+
+- **A migration that cannot reach the database says which database.** `alembic -c
+  plato/alembic.ini upgrade head` against an unreachable host emitted about a hundred lines of
+  driver internals ending in a bare `TimeoutError`, naming no host, no port and no database. That
+  is the only question worth asking when a migration will not run, and the engine already holds
+  the answer. It is also the command `schema_version` tells an operator to copy and paste, so the
+  raw traceback is what they meet.
+
+  `fabric.db.dsn.connect_failure` builds the message from `dsn_summary`, which is where the
+  never-carry-the-DSN rule already lives because it carries the password. `run_migrations_online`
+  wraps the connect and re-raises with it, chained from the original so nothing is swallowed. Both
+  migration paths go through that function, so the in-process `job:migrate` gets it too.
+
+  A timeout earns one extra sentence and nothing else does: it is the shape that looks like a code
+  fault and is not, because the socket opened and the handshake never completed, which makes it the
+  network path rather than the credentials or the database name. A refusal or an auth failure
+  reports itself by name already, and adding a guess there would mislead.
+
+- **The Azure DocIntel tests run with the extra installed too.** They only ever ran without it.
+  `analyze` builds a real `AnalyzeDocumentRequest` when `azure-ai-documentintelligence` is present
+  and falls back to a dict when it is not, and the assertions subscripted the body, so installing
+  the extra turned two passing tests into `KeyError: 'bytes_source'`. A third asserted the
+  "install the extra" error while depending on the extra genuinely being absent, so with it
+  installed it built a real client and reached `DefaultAzureCredential` against the network.
+
+  The assertions read the field from either shape now, and the absence is simulated rather than
+  inherited from the environment. Verified both ways: without the package, and with the request
+  model stubbed in. Reverting the accessor fails the two tests under the stub, which is the
+  environment that reported them.
+
+  Two corrections to that simulation, from review. It blocked `azure.identity`, which is a
+  mandatory dependency (`pyproject.toml:31`) rather than part of the `azure` extra, so it stood in
+  for a state no install can reach; and it did not block the `.models` submodule, which a dotted
+  import resolves against before its parent. It now blocks the two names the extra actually
+  provides.
+
+  CI never installed the `azure` extra, so the request-model branch had no coverage there and the
+  fix was only ever exercised on a developer machine. `tests.yml` installs it now, the pre-push
+  hook's `CI_EXTRAS` moves with it, and `azure` comes off the excluded list in
+  `test_ci_extras_coverage` -- its reason there, "gates no tests", had stopped being true. That
+  guard is what caught the omission, which is what it exists for. The workflow comment said
+  `azure` stayed out, one line above the command that installs it, and now carries its reason
+  beside the others.
+
+  The coverage gap moved rather than closed, and a `TODO(dict-arm-now-uncovered)` says so: with
+  the extra installed, the dict fallback is the arm CI no longer reaches. It is reachable in
+  production only by an install without the extra that also injects a client, and there is no
+  such caller here.
+
+  The subset guard now runs over both exclusions that claim to be a strict subset of `plato`
+  rather than `bpmn` alone; `telemetry` made the same claim and nothing checked it. Adding a
+  package to `telemetry` that `plato` lacks fails it.
+
+- **`anyio >=4.14.2`.** Two Dependabot alerts on the default branch, one critical
+  (GHSA-82r6-8w77-94w6, GHSA-5p39-cfhj-2xmp). Transitive only, and widely so: httpx, openai,
+  anthropic, starlette, sse-starlette, mcp, google-genai and watchfiles all pull it, with the
+  lock sitting at 4.11.0.
+
+  A floor in `pyproject.toml` rather than a lock bump, which is the shape the rest of that block
+  uses and the correction the soupsieve review made: an install that does not consume this lock
+  resolves the package freshly, and no dependent caps it below the fix (the tightest are `<5`),
+  so the floor is the constraint that actually holds. The relock moved anyio and nothing else.
+
+- **`PROJECT_NAME` defaults to `japes-plato`.** Every japes consumer carries the japes prefix
+  across the platform, so the container app is `dev-env-jaxi-japes-plato`, the image is
+  `ghcr.io/jazzx-llc/japes-plato`, the database is `japes_plato_db` and the pack-archive container
+  is `japes-plato`. The one place that still said plain `plato` was the service's own name.
+
+  It matters because `CommonSettings` resolves the OTEL service name as `app_name or project_name`.
+  A deployment that sets `APP_NAME` never noticed, which is every one that exists today; one that
+  does not would report itself under a name the rest of the platform does not use.
+
+  The test that pinned the old value now reads it from `COMMON_DEFAULTS` rather than spelling it
+  again. A second copy of a name is how a rename lands in the code and leaves a test asserting the
+  old one, which is what happened here: two assertions, one updated and one missed on the first
+  pass.
+
+- **A tool call this run already made comes back as a marker, not a second copy.**
+  `tools/agent/tool_compression` already owned one half of this: an output too big to sit in
+  context goes to a run-scoped `ReferenceStore` and comes back as a preview plus a
+  `read_reference` id. `tool_recall` is the other half, and it is a different problem: a small
+  output repeated ninety times costs more than a large one returned once, because each result
+  becomes another conversation item re-sent on every later turn.
+
+  The shape came from a measured agent run: about three quarters of file reads re-read a file the
+  same run had already read, and those repeats were roughly half of all tool-output bytes; a
+  similar share of searches re-ran a query already run; and an empty result invited a reworded
+  retry of the same term. The calls themselves are milliseconds, so the cost is entirely the
+  prompt they accumulate in.
+
+  `recall_scope` plus `recall_tool_output(text, tool=, arguments=)`. A repeat returns a marker
+  naming the `read_reference` id of the first result, so nothing is lost. An empty result is
+  recalled as "already tried these arguments and matched nothing" rather than as a reference to
+  nothing, which is the case that was inviting the reworded retry. Argument order does not defeat
+  the key. Outside a scope it is the identity function, so a client that has not opted in is
+  unaffected.
+
+  A recall scope joins an enclosing compression scope rather than opening a competing one, so one
+  `read_reference` expands markers from either half. That is why `active_reference_store()` is now
+  exported: it is how the second seam finds the first one's store.
+
+  **It also found a real defect in the first seam.** `compression_scope(store)` read
+  `store or ReferenceStore()`, and `ReferenceStore` defines `__len__`, so an empty store is falsy
+  and a caller-supplied one was silently replaced by a fresh one at every scope open, which is
+  exactly when it is empty. Every reference written afterwards went somewhere the caller could not
+  read. Fixed to `is not None`, with the same trap avoided in both new constructors.
+
+  The pattern `x or SomeDefault()` appears at 27 sites in `jazzx_sdk`, and it only bites where the
+  supplied object is falsy when empty. Every other default-able class at those sites (tracers,
+  providers, config and key objects) defines neither `__len__` nor `__bool__`, so they are always
+  truthy and always used. The two stores in this seam were the exception.
+
+- **A turn that stops to ask reports the choice as data.** `InteractiveResponse` carried
+  `blocked`, `incomplete`, `cancelled` and `truncated`, and nothing for "this turn needs a human
+  to pick". An agent that had to ask ended its turn with the question inside `answer`, leaving
+  every caller to parse prose to discover that it was asked at all, what the options were, and
+  which one the agent preferred.
+
+  `needs_decision: list[Decision]`, each a question plus ranked `DecisionOption(value, label,
+  description, recommended)`. `outcome` gains `"needs_decision"`, placed after `refused` and
+  before `incomplete`: a turn that stopped to ask reached a decision point, and reporting it as
+  incomplete would put it in the same bucket as a loop that ran out of turns.
+
+  The paired invariant is the part worth having: `output` is forced to None whenever
+  `needs_decision` is non-empty, so a partial structured result can never be read as a finished
+  one while the turn is still waiting to be told what to produce. `answer` still carries the
+  question in prose for a caller that renders text only.
 
 - **One history per turn.** The gate classified `turn.message` alone while the answer ran against
   store-loaded history, so two stages of one turn disagreed about what the conversation was, and a

@@ -1,6 +1,10 @@
 # Lifting the pack-store surface out of Plato and into the SDK
 
-Status: plan, 2026-09-10. Nothing moved. Written against japes `d3db880` on `v2.5.1` (unpushed).
+Status: done, 2026-09-23. §2.5 landed earlier; §2.1 to §2.4 landed on `v2.5.4`.
+Two more went with them, both the same shape and neither in this plan:
+`plato/packs/draft.py` -> `jazzx_sdk/pack/draft_db.py` and
+`plato/reference/model_overlay.py` -> `jazzx_sdk/llm/model_overlay_db.py`.
+Written against japes `d3db880` on `v2.5.1` (unpushed).
 
 Companion to `plan_pack_store.md`, which decides the *schema* and table placement. This one decides
 which of the **code** added around that schema is Plato's and which is the SDK's. The two do not
@@ -27,7 +31,10 @@ now costs less than it ever will again.
 
 ## 2. What moves, and the evidence
 
-### 2.1 `seed_packs` / `_manifest_of` → `jazzx_sdk/pack/` (strongest)
+### 2.1 `seed_packs` / `_manifest_of` → `jazzx_sdk/pack/` (strongest) — landed
+
+Landed as `jazzx_sdk/pack/seed.py`, exported from `jazzx_sdk.pack`. `root` is a required
+argument; `plato/seed.py` is 52 lines and answers only which root.
 
 `plato/seed.py` is 196 lines, imports no framework, and has exactly one `plato` import
 (`acting_user_id`, which §2.2 dissolves). It takes a `PackVersionStore` — an SDK type — and a
@@ -42,7 +49,10 @@ The four-bucket result (`published` / `skipped` / `not_packs` / `failed`) moves 
 distinctions were paid for in this branch — conflating the middle two claimed rows existed that
 never did — and a second consumer re-deriving them would re-derive that bug.
 
-### 2.2 `acting_user_id` → SDK
+### 2.2 `acting_user_id` → SDK — landed
+
+Landed in `jazzx_sdk/identity.py`. It was already SDK code, but in `server/`, so §2.1
+tripped the `pack` → `server` layer contract; all five importers were repointed.
 
 A best-effort read of `CallerIdentity.from_context()`, which is already SDK, wrapped in a
 `try`/`except` so attribution can never fail a write. Nothing about it is Plato's. It also lost its
@@ -50,7 +60,10 @@ underscore this round on reaching two importers, which is the same signal one st
 
 Moving it is what lets §2.1 move cleanly.
 
-### 2.3 `pack_inventory(store)` → SDK
+### 2.3 `pack_inventory(store)` → SDK — landed
+
+Landed as `jazzx_sdk/pack/inventory.py`, exported from `jazzx_sdk.pack`, with
+`_MANIFEST_KEYS` renamed `MANIFEST_SUMMARY_KEYS` on becoming public.
 
 Pure: store in, dict out, no framework. The subtlety it encodes — `versions()` is `published_at`
 order, which is *not* version order, so a backport reads oddly and `last_published_version` is
@@ -60,7 +73,12 @@ operator surface elsewhere would either re-derive it or get it wrong.
 The routes around it (`GET`, `DELETE`, `POST .../initialize`), the prefix, the nav entry and
 `packs.html` all stay in Plato. Those are the service's own surface.
 
-### 2.4 The unrecognised-backend warning → the `BlobStore` boundary
+### 2.4 The unrecognised-backend warning → the `BlobStore` boundary — landed
+
+Landed as shape (1), and at all five dispatches rather than `blob` alone:
+`jazzx_sdk/backend_names.py` holds the recognised set per surface. Plato's
+`_pack_blob` warning stays, because it coerces the backend before constructing the
+store, so the library never sees the name it is complaining about.
 
 `BlobStore` dispatches on `self._backend == "azure"` and treats **everything else** as local,
 silently. `Fabric.__init__` passes `config.blob_backend` straight through with no check.
@@ -78,7 +96,11 @@ Prefer (1) — it is smaller and cannot be bypassed. (2) additionally collapses 
 stores (a deployment may want pack archives in their own container), so collapsing them is a
 separate decision and not obviously right.
 
-### 2.5 `tenant_of`, `relaxed_only`, `withholding`, `withheld`, `require_if_match` → `jazzx_sdk/server/`
+### 2.5 `tenant_of`, `relaxed_only`, `withholding`, `withheld`, `require_if_match` → `jazzx_sdk/server/` — landed
+
+Landed, but not where this section proposed: posture in `jazzx_sdk/config/posture.py` and
+`tenant_of` in `jazzx_sdk/fabric/tenancy.py`, neither of which imports FastAPI at module
+scope. `server/` would have tiered them above every non-HTTP caller for no gain.
 
 The posture *policy* is already SDK: `strict_mode()` and `environment_tier()` live in
 `jazzx_sdk.config.envvars`. What sits in `plato/posture.py` and `plato/tenancy.py` is that
