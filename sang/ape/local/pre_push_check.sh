@@ -61,7 +61,7 @@ done
 
 # CI's extras, verbatim from tests.yml. mlflow/litellm/gemini/streaming/azure are deliberately out
 # there, so a test needing one of them skips in CI and may well run here.
-CI_EXTRAS="mcp templating finance pptx mlflow gemini plato"
+CI_EXTRAS="mcp templating finance pptx mlflow gemini plato azure"
 # Repo the Dependabot alerts are read from (step 2c).
 REPO_SLUG="JazzX-LLC/japes"
 fail=0

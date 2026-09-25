@@ -4,6 +4,162 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 ## [2.5.4] - unreleased
 
+- **Authoring over HTTP, in the SDK.** Router factories any shell mounts, with no Plato import:
+  - `server.policy_extract_api`: `POST {prefix}/{pack_id}/runs` (multipart documents, `policy_id`,
+    `representation`: `jtbd` | `obligations` | `python`) converts each upload through the SDK's
+    `to_markdown` and starts a `PolicyExtractionService` run; `GET {prefix}/runs/{id}` and
+    `GET {prefix}/{pack_id}/runs` poll. Runs are in-process tasks with an in-memory registry,
+    tenant-scoped through `tenant_of(request)`; proposals land in the `ProposalStore` as proposed,
+    so a restart loses the run record, not the work. `default_components(representation, ...)`
+    builds the pipeline for each representation.
+  - `create_proposal_review_router` (the vocabulary review router, now also for rules): the
+    proposal view carries `rule`; `drafts=` mounts `POST {prefix}/{pack_id}/merge-rules` (accepted
+    `<policy_id>:*` rule proposals into the pack draft via `merge_rules_into_draft`, merged ones
+    recorded back as `merged`); `comments=` mounts proposal comment threads, author from the caller
+    identity.
+  - `fabric.graph.proposal_comments`: `ProposalComment`, in-process and `DbProposalCommentStore`
+    (`proposal_comment` table, tenant-scoped at construction).
+  - `DbProposalStore` is tenant-scoped at construction (`tenant_id=`), its table renamed
+    `vocabulary_proposal` -> `proposal` with `tenant_id` in the key, since it now holds rules too
+    and Plato requires tenant in every key. No consumer outside japes used it.
+  - The extraction router refuses a submit in a deployed posture without `auth` and a resolvable
+    caller, passes the tenant to `components_for` / `pack_for` (so each tenant writes its own
+    proposal store), refuses an upload with no usable filename, and keeps at most `MAX_RUNS` run
+    records. A comment's `parent_id` must be a comment on the same proposal.
+  - The review router resolves its stores per request when given `store_for` / `drafts_for` /
+    `comments_for`, so a tenant reviews its own queue.
+  - `PolicyTurn.pack_id` files proposals under a pack when no `Pack` object is given; without it
+    they were filed under an empty pack id.
+- JTBDSet export replays a block verbatim only while its condition, title (the rule description)
+  and reference documents all match what was imported; any edit renders from structure.
+
+- **JTBDSet in and out: `jazzx_sdk.pipelines.jtbdset`.** `import_jtbdset(artifact, pack_id=...)`
+  turns a policy-workbench / MACER JTBDSet into pack policies: one `scope: institution` policy per
+  section with a `procedure` rule per JTBD (Purpose, Step N, Deterministic Validation Rules and
+  Outcomes headings map to purpose, steps, checks and outcome criteria; reference documents and
+  metadata such as `loan_metrics`, `assistant` and `sequence` ride in `domain_extensions`), plus one
+  `scope: product` policy per program block. An overlay block composes with the base rule, as its
+  "applied on top of" wording says; `NOT_APPLICABLE` becomes a `suppresses`; `NO_CHANGE` becomes
+  nothing. The result carries `programs` for the manifest. `export_jtbdset` inverts it, so MACER can
+  still be fed. Structure round-trips; markdown whitespace does not. A block with no step headings
+  imports and exports whole, as one step.
+- `PythonExtractor.extract` names a clause's rule by its marker as written, like
+  `ModalClauseExtractor`.
+
+- **Generated Python rules: `kind: python`.** `PythonCondition` holds one module, an entrypoint
+  (`check(ctx) -> bool | (bool, dict)`), `reads`, `derived_from` and author-written `cases`.
+  - `python_check.check_python_rule` is a static gate, not a sandbox: it must parse, define the
+    entrypoint with one parameter, import only math/decimal/fractions/statistics/datetime/re, use
+    no `exec`/`eval`/`open`/`getattr`-style builtins or dunder attributes, and read the context
+    only by literal keys named in `reads`.
+  - `PythonEvaluator` runs through a `PythonExecutor` found at
+    `context[PYTHON_EXECUTOR_CONTEXT_KEY]` and passes it only the declared reads. None ships:
+    Every way it cannot run (no executor, source failing the check, which is never sent, the
+    executor failing, a malformed result) is `policy_not_activated`, which withholds an allow
+    instead of skipping. Every read is required.
+  - `lint_pack` reports `unsafe_python` at any nesting.
+  - `pipelines.policy_code.PythonExtractor` generates one from a clause or an existing rule
+    (`formalize`, keeping its citations); source failing the check is a failed segment. A generated
+    rule does not replace what it formalizes; retiring the English rule is left to an author.
+- `programs:` accepts a bare string for one overlay (it was split into characters), and
+  `lint_pack` warns `overlay_in_no_program` for a `scope: product` policy no program lists.
+
+- **Programs are pack data: manifest `programs:`.** `programs: {program_id: [overlay policy ids]}`
+  is read by `Pack.overlay_map`, and `DefaultPolicyExpert.from_pack(pack)` wires registry, core
+  policies and that map. Until now the program-to-overlay map existed only in consumer Python
+  (jaci's `OVERLAY_MAP`s), which a pack served by Plato cannot have. `lint_pack` reports
+  `unknown_program_policy` and `program_policy_not_overlay` (a program naming a policy that is not
+  `scope: product`, which therefore also runs as core). Seed `ci-spread-core` declares
+  `rb-abl-2026`, jaci's id. The `overlay_map` docstring no longer says overlays win "for any field
+  both define", which stopped being true when field-claiming was retired.
+
+- **Policy precedence is declared per rule; field-claiming is retired.** `check_compliance` used
+  to skip every lower-precedence rule reading a field a higher-precedence rule had evaluated. That
+  was replace-by-field and implicit: an overlay tightening a cap switched the core cap off instead
+  of composing with it, and a replacement removed every rule on the field rather than the one
+  meant. Now:
+  - `Rule.replaces: list[str]` names lower rules this one stands in for, taking effect only where
+    the replacing rule applies (its applicability gate passes). A shared rule id replaces the same
+    way, which is how the deal special-instructions file already overrides a program rule.
+  - `Policy.suppresses: list[RuleSuppression]` (rule id, reason, citations) removes lower rules
+    wherever the policy applies: a program making a base provision inapplicable.
+  - Everything else evaluates, so tightening composes and the tightest threshold binds.
+  - `ComplianceResult.metadata["superseded"]` lists the rules skipped this case and why.
+  - A replacement refused for unapproved thresholds still replaces (the allow is withheld
+    anyway); one short of data replaces nothing, so the base rule still runs. This settles
+    `TODO(refused-rule-field-claim)`.
+  - Replacement chains: a rule that is itself replaced (the deal file reusing an overlay rule's
+    id) passes on what it replaced, so the core rules the overlay retired stay retired.
+  - A conditionless rule with a gate replaces where its gate passes.
+  - `lint_pack` reports `dangling_relation` for a `replaces`/`suppresses` naming no rule in
+    another policy.
+
+  Migration, behaviour-preserving: the plato seed `ci-spread-core` RB overlay now declares
+  `replaces` for the core ceiling/floor *and* warning tiers it used to shadow (its
+  `supersedes_core_rule` parameter named only the ceiling/floor; the parameter is gone). jaci's
+  CRE MAA/CFI overlays and its `ci-spread-core` copy got the same, in jaci.
+
+  Found by a survey of every overlay/core pair sharing a field: AML's
+  `OPS-AUTONOMY-CEILING-HIGH-RISK` ("cannot be overridden by Overlay") shares `risk_tier` with
+  `BSA-EDD-HIGH-RISK` in an earlier core policy and was being skipped whenever that rule
+  evaluated. It now evaluates. The two also compare against `HIGH` and `high` respectively; left
+  as found.
+
+- **Accepted rules go into a pack draft: `jazzx_sdk.pack.rule_merge.merge_rules_into_draft`.**
+  The rule counterpart of `KGAgent.merge`. Every accepted `Proposal(kind="rule")` is folded into
+  one policy in a draft file (default `policies/<policy_id>.yaml`); an id already in the file is
+  replaced, new ids are appended, other policies and top-level keys in the file are kept, and the
+  merged proposals come back `merged` for the caller's store. It writes a draft only, so publishing
+  stays the act that puts rules into force; the written policy is ACTIVE by default for that
+  reason. It also reports whether the draft's manifest actually loads the file: `policies.dir` is
+  not recursive, so `policies/jtbd/x.yaml` under `dir: policies` would publish and never be
+  enforced. `manifest_reaches` states the loader's rules for that check.
+
+- **Jobs to be done from a policy corpus: `jazzx_sdk.pipelines.policy_jtbd`.** The `procedure`
+  representation of policy extraction, plugged into its two seams. `SectionSegmenter` splits every
+  document at its markdown headings and clause markers (long pieces at paragraphs), labels the
+  units `U1..Un`, and asks one LLM call to group unit ids into sections; the model only groups, so
+  each section's text and citations come from the units themselves, and a unit the plan leaves out
+  lands in an "Unassigned provisions" section instead of disappearing. `JtbdExtractor` makes one
+  call per section and turns each job into a `procedure` rule citing the units it came from.
+  `JtbdTemplate` (YAML) is the pack's say: section taxonomy, step outline, outcome vocabulary, and
+  the evidence type ids and context fields a job may name. Names the template does not declare
+  are dropped and recorded in the candidate's reasoning, never passed to the rule.
+  `scripts/policy_jtbd_extract.py` runs it over real documents with the configured model and writes
+  the DRAFT policy YAML.
+
+  The policy pipeline's spine grew what that needed. `ClauseSegment.parts` makes a segment a
+  composite of the clauses it was built from, `documents` names every document it draws on (so a
+  section spanning two documents counts as two sources), and `label` is the handle a prompt uses.
+  Extractors may be async and run `extract_concurrency` segments at a time. An extractor raising on
+  a segment used to vanish without a trace; it is now logged and listed in
+  `CorpusObligations.failed_segments`, and the step emits `ExtractedCandidates`. A candidate's
+  `excerpt` is what the reviewer reads, instead of the whole segment.
+
+- **Policy extraction takes a `Segmenter`.** `build_policy_components(segmenter=...)` decides how
+  the corpus becomes units of extraction; `ClauseSegmenter` (the existing clause-marker split) is
+  the default, so nothing changes for current callers. A segmenter sees every document at once as
+  `(name, text)` pairs, because a topic-level unit such as a JTBD section draws on several
+  documents, and it may be async.
+
+- **A JTBD is a condition kind: `procedure`.** `ProcedureCondition` holds a purpose, ordered
+  steps, checks stated in prose, the pack's evidence types the steps review, `reads`, and a
+  declared set of `ProcedureOutcome`s, each a pack status (`PASS`, `CONDITIONAL`, ...) with the
+  `Verdict` it counts as. The pack decides what `CONDITIONAL` means; the SDK does not guess. A
+  procedure must be able to pass and to fail, and no outcome may be `INDETERMINATE`, which is the
+  evaluator's own answer. `ProcedureEvaluator` is LIVE and stochastic, runs the steps through the
+  `ReasoningAgent` in context, and maps the status the model names onto its declared outcome; a
+  status the procedure never declared comes back `INDETERMINATE` (`condition_unevaluable`) rather
+  than being coerced. Conditions the outcome carries land in `RuleOutcome.narrative`. Round-trips
+  through `load_policies`, including shape-sniffing when `kind` is omitted.
+
+  Adjudication's batch path no longer assumes every LIVE rule is `natural_language`: it asserted
+  so, and a procedure rule would have crashed the segment. Each LIVE evaluator now renders itself
+  into the batch and reads its own answer back (`BatchableEvaluator`), a batch item carries
+  `status` beside `satisfied`, and a LIVE kind that cannot batch is reported `INDETERMINATE`
+  instead of dropped. `lint_pack` reports `unknown_evidence_type` for an evidence type a rule
+  reviews that the pack does not declare; it needs no ontology, so it runs on packs without one.
+
 - **Two more Plato stores are SDK code.** `plato/packs/draft.py` is
   `jazzx_sdk.pack.draft_db`, beside the `store_db` it is the mutable half of, and
   `plato/reference/model_overlay.py` is `jazzx_sdk.llm.model_overlay_db`, beside the `cost` and

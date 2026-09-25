@@ -12,6 +12,14 @@
 # pins the module at ?ref=main), and PR 2's body says so.
 set -euo pipefail
 
+echo "STALE: the terraform repos were updated externally and now carry this change." >&2
+echo "  terraform-azure-jaxi-modules/main already has all six plato env vars and the 3 variables." >&2
+echo "  terraform-azure-jaxi/dev already passes them and sets japes_plato_pack_blob_container." >&2
+echo "  Still unset in devenv.auto.tfvars: japes_plato_environment, japes_plato_tenants," >&2
+echo "  japes_plato_pack_blob_backend. Re-derive before running anything here." >&2
+exit 1
+
+
 usage() {
     cat <<'USAGE'
 usage: tf_plato_env_publish.sh <1|2|both>

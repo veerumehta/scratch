@@ -14,6 +14,14 @@
 # Edits and commits LOCALLY only. Nothing reaches GitHub until you push.
 set -euo pipefail
 
+echo "STALE: the terraform repos were updated externally and now carry this change." >&2
+echo "  terraform-azure-jaxi-modules/main already has all six plato env vars and the 3 variables." >&2
+echo "  terraform-azure-jaxi/dev already passes them and sets japes_plato_pack_blob_container." >&2
+echo "  Still unset in devenv.auto.tfvars: japes_plato_environment, japes_plato_tenants," >&2
+echo "  japes_plato_pack_blob_backend. Re-derive before running anything here." >&2
+exit 1
+
+
 REPO="${TF_ENV_REPO:-/Users/sangit/src/terraform-azure-jaxi}"
 BRANCH="feat/add-plato-env-vars-dev-daily"
 BODY="${TMPDIR:-/tmp}/plato_pr2_body.md"

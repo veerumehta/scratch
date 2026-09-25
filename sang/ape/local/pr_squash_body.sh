@@ -102,10 +102,10 @@ plato=$(version_of plato/_version.py)
     echo
     echo "## Ancestry"
     echo
-    echo "A squash gives main this content without linking it to the $(git rev-list --count --first-parent --no-merges "$range") commits it came"
-    echo "from, so the next \`$BRANCH -> $BASE\` merge sees no common ancestor for anything either side"
-    echo "touched. \`scripts/local/record_squash_on_main.sh\` records the link afterwards; run it once"
-    echo "this is merged."
+    echo "A squash gives \`$BASE\` this content without linking it to the $(git rev-list --count --first-parent --no-merges "$range") commits it came"
+    echo "from. That only needs repairing if \`$BRANCH\` lives on: run"
+    echo "\`BRANCH=$BRANCH BASE=$BASE scripts/local/record_squash_on_main.sh --apply\` to record the link."
+    echo "A branch that retires here needs nothing."
 } > "$BODY"
 
 echo

@@ -153,16 +153,16 @@ These govern **invocation and observability** of the learning code, which the pr
 
 - **Repo:** `japes` — `jazzx_sdk/agents/interactive/knowledge.py` (`resolve_knowledge`, `docs:` branch)
 - **Status correction:** the *replacement* already shipped — `Skill.reads` generates per-source list/read/search tools over `fabric.docs` (landed v2.3.2). The legacy push path is still in the tree and still fails quietly: it appends `[doc] {name}` with no content, and swallows any listing exception as best-effort.
-- **Change, in order:** (a) migrate remaining callers onto `reads:`; (b) then make the legacy branch fail loud. **(b) is breaking** — follow the precedent set for mode prompts: a `strict_*` flag, a new typed error, a CHANGELOG "Breaking" heading, and pre-landing checks against dependent packs.
+- **Change, in order:** (a) migrate remaining callers onto `reads:`; (b) then make the legacy branch fail loud. **(b) is breaking.** 3.4 is the precedent, and it took no flag: the fallback was removed outright once its callers were checked. Same discipline here (a typed error, a CHANGELOG "Breaking" heading, pre-landing checks against dependent packs), with the flag only if a caller audit finds one that needs it.
 - **Do not put a day estimate on this** — there is no tracked, sized plan for the push-path migration.
 - **Size:** unknown until callers are enumerated. **Blocked by:** a caller audit.
 
-### 3.4 Make `BaseMode.system_prompt` fail loud on a missing pack asset **[R]**
+### 3.4 Make `BaseMode.system_prompt` fail loud on a missing pack asset **[R]** — DONE
 
 - **Repo:** `japes` — `jazzx_sdk/modes/base.py`
-- **Problem:** it catches `FileNotFoundError` and substitutes a nine-word generic prompt, contradicting `resolve_mode_prompt`'s documented contract that it raises. A pack with a misnamed mode file runs on a generic prompt and reports nothing.
-- **Change:** same `strict_prompts` flag pattern as 3.3(b).
-- **Size:** small. **Blocked by:** the same breaking-change discipline.
+- **Shipped** in `56700fe`: the `FileNotFoundError` catch and the generic prompt are gone, so a missing
+  asset raises `resolve_mode_prompt`'s error. No flag: the fallback had no callers worth keeping.
+  Pinned by `tests/test_modes_framework.py::test_system_prompt_raises_on_missing_asset_not_silently_falls_back`.
 
 ---
 
