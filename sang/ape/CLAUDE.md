@@ -1,6 +1,62 @@
 # Claude Session Status
 
-**Last Updated**: 2026-09-11
+**Last Updated**: 2026-09-25
+
+## Where things stand
+
+**Working branch is `v2.5.5`**, cut from `dev`. `v2.5.4` is retired: its content reached `dev` as
+one squash and `plato` as another, and it carries nothing either lacks. Work lands on `v2.5.5` and
+reaches `dev` and `plato` by periodic squash merges.
+
+**v2.5.5's primary item, the chat pipeline as an application turn engine, is built** (local,
+unpushed, `a1aa7f79`..`f70c8f10`): `compose`/`persist` stages, `overrides=`, `pipeline_for`,
+`error_code`, `GateDecision.verdict`/`refusal`, `ChatTurn.metadata`/`publish`. Design and the
+jazzx-assistant mapping in `status/done_chat_turn_engine.md`; next is jazzx-assistant adopting it.
+
+**Eval control plane moving into the SDK** (decided 2026-09-25; Plato and eval-service become thin
+hosts, eval-service eventually retired). Plan in `plans/plan_sdk_eval_control_plane.md`. Steps 1-6
+built on `v2.5.5` (datasets, experiments, custom scorers, Plato hosting, comparison, optimization;
+`server/eval_api.py`); adversarial review clean after 4 rounds. `plato` was pushed at `188d1c2e`, one
+squash commit with v2.5.5's tree at that point. Step 7 is queued as a branch in eval-service.
+
+**Feedback service moving into the SDK** (decided 2026-09-26). Plan in `plans/plan_feedback_service.md`.
+Steps 1-7 (records, config, processing, Plato hosting, retrieval/export/aggregate, into learning,
+semantic via fabric.rag) built on `v2.5.5`. Step 8 (turn injection) waits on PR #54. Adversarial review
+over the feedback range (`51b0b572..6a166508`) clean after 4 rounds. `plato` is pushed at `07919ee2`; local `d0e2543b`
+on top carries PR #75 rounds 6-9 (tree = v2.5.5), awaiting `scripts/local/push_plato_feedback.sh`.
+Round 9 is `f7510cb3` on local `dev` (carried to v2.5.5 as `9ffce263` + `2ab89df8`, the latter
+withholding eval/feedback reads), from a full-range review of `origin/main..dev` that is now clean;
+awaiting `scripts/local/push_dev_pr75_r9.sh`. **Run the full-range review
+(`REVIEW_UPSTREAM=origin/main`) before a PR round, not only per-commit ones:** per-commit reviews
+cannot see untouched code, which is what the bot kept finding. `scripts/local/pr_new_comments.sh <pr>` lists bot comments
+since your last reply; `scripts/local/resolve_pr75_threads.py` replies to and resolves threads.
+PR fix rounds go on `dev` first.
+
+**`plato` is ahead of `dev`** by v2.5.5 (one squash commit, pushed 2026-09-26), which also carried
+`cryptography >=50.0.0` and `mlflow >=3.16.1` over. `dev` gets v2.5.5 when you squash it there.
+
+**`origin/main` is an ancestor of `dev` again** (`record_squash_on_main.sh`, run after PR #74
+merged). The next `dev -> main` starts from there rather than replaying from v2.5.3.
+
+**Squash merges break ancestry, so `git log A ^B` overstates what is missing.** Compare trees:
+walk the source branch for the commit whose tree matches the target, and take the delta from
+there. A `git merge --squash` from a long-diverged branch hits stale-base conflicts every time;
+where the target provably carries no work of its own, `git read-tree -u --reset <source>` is exact
+and conflict-free. **Check that precondition first** -- `dev` had diverged with a security fix
+`v2.5.4` lacked, and a tree copy there would have reverted three CVE alerts.
+
+## The adversarial review runs on Claude
+
+`scripts/local/adversarial_review.sh` drives `claude -p` by default (`REVIEW_ENGINE=claude`),
+pinned to `claude-opus-5-5` at high effort and read-only (`dontAsk` plus an allow-list of read and
+`git` tools). `REVIEW_ENGINE=codex` runs `codex exec` instead, on Codex's own configured default
+model and effort unless `REVIEW_MODEL` / `REVIEW_EFFORT` are set; Codex hit its quota on
+2026-09-25, which is what prompted the switch. Claude reads this file directly; `AGENTS.md` is a
+gitignored symlink to it for Codex.
+
+Findings weighed and closed live in `scripts/local/.reviews/accepted.md`; the loop reads it and
+will not re-report them. Two are recorded there now, both deliberate breaking changes to import
+paths in an unreleased version.
 
 ## Working Principles
 
@@ -14,23 +70,25 @@
 
 ## Sibling Repos (local checkouts)
 
-Every JazzX repo is checked out at `/Users/sangit/src/<name>` — look there before reaching for the
+Every JazzX repo is checked out at `/Users/sangit/src/<name>` -- look there before reaching for the
 GitHub API. `./scripts/local/sister_repo_activity.sh` surveys recent commits across them; per-repo
 roles and the traps worth knowing (`assistant` vs `jazzx-assistant` are different repos) live in
 memory rather than here, where the list only went stale.
 
 ## Related repos
-- **jaci** (`/Users/sangit/src/jaci`) — the primary real consumer validating this version.
-  Its `dev` venv has japes editable-installed against this checkout (`pip show japes` →
-  `Editable project location: /Users/sangit/src/japes`), so it's always running live
-  against whatever's in the working tree here, regardless of jaci's own git-pin/lockfile
-  state (which is separately known-stale — see jaci's own CLAUDE.md).
+- **jaci** (`/Users/sangit/src/jaci`) -- the primary real consumer validating this version.
+  **Its venv is not editable against this checkout** (checked 2026-09-26): `pip show japes` reports
+  a site-packages install of 2.5.3, so jaci does not see v2.5.5 work (eval, feedback,
+  `FeedbackApiSink`). Run jaci tests against the working tree with
+  `PYTHONPATH=/Users/sangit/src/japes .venv/bin/python -m pytest ...`, and for a live demo install
+  editable (`uv pip install -e ../japes` in jaci). The ci_spread feedback-to-Plato wiring is
+  uncommitted in jaci's tree.
 
 ## Notes
 - Always update CLAUDE.md after significant discoveries or decisions
 - This file is gitignored (see .gitignore:67) - local session tracking only
 - Purpose: Maintain context across Claude sessions after accidental quits
-- Keep this section current, not an append-only log — replace stale status rather than
+- Keep this section current, not an append-only log -- replace stale status rather than
   stacking a new dated section on top of old ones; git history already has the archive.
 
 ---
@@ -85,12 +143,12 @@ docs/DOCUMENT_CHUNKING.md             ✅ "How to use chunking in your pack"
 
 Plans and design notes live in **`docs/plans/`**, never in `docs/` itself. Both `docs/plans` and
 `docs/status` are symlinks into `/Users/sangit/src/.scratch/sang/ape/`, which is **its own git
-repository** — so these files never enter japes' history (satisfying the "do not commit planning
+repository** -- so these files never enter japes' history (satisfying the "do not commit planning
 documents" rule above) but are still version-controlled where they live. Treat them as tracked
 files, not scratch.
 
 **The lifecycle is a move, not a rewrite.** A file lands in `plans/` while it is live, and moves to
-`status/` once it is done, stale, or superseded — renamed with the prefix that says which:
+`status/` once it is done, stale, or superseded -- renamed with the prefix that says which:
 `done_*`, `superseded_*`, `stale_*`. Nothing is deleted, and nothing live sits in `status/`.
 
 ```
@@ -100,7 +158,7 @@ docs/plans/plan_<topic>.md          live: being written, argued, or built agains
             docs/status/stale_<topic>.md       overtaken by events, not replaced
 ```
 
-**Move with `git mv`, from the `.scratch` repo root** — a plain `mv` plus an untracked add loses the
+**Move with `git mv`, from the `.scratch` repo root** -- a plain `mv` plus an untracked add loses the
 rename, and the rename is the record of what happened to that plan:
 
 ```
@@ -111,7 +169,7 @@ git -C /Users/sangit/src/.scratch mv sang/ape/plans/plan_<topic>.md \
 Naming: `plan_*` for a plan, `design_note_*` or `note_*` for an assessment that decides nothing.
 
 **Read `status/` before writing a new plan.** It holds finished and superseded designs, which is
-exactly where a new plan's prior art is — and a plan written without it duplicates work and
+exactly where a new plan's prior art is -- and a plan written without it duplicates work and
 contradicts decisions already made. `PLATO_PACK_TABLE_DESIGN.md` was written twice for this reason.
 Grep both directories for the subject first; if a status doc covers it, revise against that doc
 rather than starting from the code.
@@ -139,11 +197,11 @@ When implementing a new feature:
 - **NEVER** run `git push origin <branch>` automatically
 - User must review commits and decide when to push
 - User needs to verify attribution and commit messages (no Co-Authored-By trailer or other
-  AI-attribution marker — see "Documentation and attribution" below; commits should read as
+  AI-attribution marker -- see "Documentation and attribution" below; commits should read as
   if the user wrote them)
 - Before saying work is "ready to push" (or recommending it), check open Dependabot alerts
   on `main` (`gh api repos/JazzX-LLC/japes/dependabot/alerts -q '.[] | select(.state=="open")'`)
-  — alerts reflect the default branch's dependency graph, not whatever branch is being worked
+  -- alerts reflect the default branch's dependency graph, not whatever branch is being worked
   on, so they're easy to miss otherwise. Flag anything open, don't just push past it.
 
 **Rationale:**
@@ -191,8 +249,11 @@ When editing existing code:
 Mechanics that have cost real work here:
 - Apply edits one at a time, writing each immediately. A helper that batches five and writes once
   at the end discards all five when the third pattern misses -- and the fixes get reported as done.
-- Never `git checkout <file>` to undo a temporary change; it destroys uncommitted work in the same
-  file. Copy the file aside and copy it back.
+- Never `git checkout -- <file>` to undo a temporary change; it destroys uncommitted work in the
+  same file. Copy the file aside and copy it back. (`git checkout <rev> -- <file>` is a different
+  command and is safe: it restores a named commit's version deliberately. The dangerous one is the
+  form with no revision, which silently takes HEAD. Both were used in one session and only the
+  first cost anything -- twice.)
 - Read (or check for) a file before `Write`. Assuming a module is new has clobbered an existing one.
 
 When your changes create orphans:
@@ -240,13 +301,35 @@ For multi-step tasks, state a brief plan:
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
 ## 5. Documentation and attribution
-- Code should not look like it came from AI, including any comments or commits that say Co-authored
-by Claude Sonnet etc
-- CHANGELOG, README, and ARCHITECTURE md files should be regularly updated
-- If signitificant changes, the bump up at least patch version. For major version update, enquire
+
+Every rule here is checkable against a diff, and the review is expected to check them.
+
+- **No em-dashes.** Not in code, comments, docstrings, commit messages, the CHANGELOG, docs or
+  chat. Recast the sentence, or use a comma, colon, full stop, parentheses or ` -- `. A blind
+  sweep picks the wrong punctuation, so `scripts/local/dedash.py` takes a hand-written mapping
+  and reports whatever it did not cover.
+- **Every new file's docstring carries `Author: Virendra Mehta <virendra.mehta@jazzx.ai>`.**
+  Verified by `scripts/local/check_attribution.py`.
+- **No AI attribution anywhere, ever.** No `Co-Authored-By` trailer, no "generated by", no model
+  name in a comment, a commit, a docstring or a file header. Nothing in the repository should
+  suggest how the code was written.
+- **Never bump a version without being asked.** Not patch, not minor, not major. This is the
+  standing rule and it overrides anything in this file that reads otherwise: work folds into the
+  version already in progress, and cutting a new one is a decision the user makes out loud.
+- **Comments state what is true now.** No archaeology: do not describe what the old code did, do
+  not say "this replaced X", and do not survey a function's callers in its docstring. The reason a
+  rule exists is worth one clause; the story of how it got there belongs in git and the CHANGELOG.
+- **Commit messages are the headline and nothing else.** Detail goes in the CHANGELOG, which may
+  be as expansive as it needs to be.
+- **Never name a gitignored file in a commit message or a code comment.** `plan_*.md`,
+  `done_*.md`, `docs/status/CHANGELOG.md` and this file are all gitignored, so a reference to one
+  is a dangling pointer for everybody but the author.
+- **No magic numbers.** Page sizes, timeouts, retry counts, size caps and thresholds come from
+  config or a named constant that says what it is, never a bare literal at the use site.
+- CHANGELOG, README, and ARCHITECTURE md files should be regularly updated.
 
 ## 6. Dependency version specs
-- Use `>=` floors, never `^` or upper caps — don't lock us into a version ceiling. e.g.
+- Use `>=` floors, never `^` or upper caps -- don't lock us into a version ceiling. e.g.
 `openai-agents = ">=0.17.0"`, not `^0.17.0`. (To pick up a newer release, update the installed/locked
 version, not the spec.) Other JazzX repos may use `^`; in our repos prefer `>=`.
 
@@ -258,24 +341,24 @@ connection: a finding keyed `checklist_ci.yaml :: orphaned-wrap-fragments` is an
 `TODO(orphaned-wrap-fragments): <why, and what would change it>` in that file.
 
 **This works in YAML.** A `# TODO(slug)` comment in pack data is read and honoured exactly as one
-in Python is — `TODO(conductor-pipeline-from-yaml)` in `ci-spread-core/pack_manifest.yaml` has been
+in Python is -- `TODO(conductor-pipeline-from-yaml)` in `ci-spread-core/pack_manifest.yaml` has been
 picked up under `CHECKED:` and not re-reported. Findings in pack YAML repeat because nobody wrote
 a TODO, not because the file cannot hold one.
 
 **Never use a structured field for this.** `notes:` was tried on two rules in `conventions.yaml`
-and pydantic dropped both — `Rule` takes the default `extra="ignore"`, so the keys read like model
+and pydantic dropped both -- `Rule` takes the default `extra="ignore"`, so the keys read like model
 fields while being invisible to every consumer. `Threshold` fails the other way, with
 `extra="forbid"`, where an undeclared key is a hard error. A comment has neither failure mode.
 
 Two closures, and they mean different things:
-- `TODO(slug)` in the file — deferred, still intended, with the reason. The default for pack data,
+- `TODO(slug)` in the file -- deferred, still intended, with the reason. The default for pack data,
   because it sits at the row a future author edits.
-- `.reviews/accepted.md` — weighed and being lived with, no intent to fix. For findings with
+- `.reviews/accepted.md` -- weighed and being lived with, no intent to fix. For findings with
   nothing to fix, like an extraction artifact in a vendored corpus nobody will re-run. A `high`
   never belongs there.
 
 Both are claims about blast radius, and the reviewer checks them. A TODO whose claim has stopped
-holding is raised again, correctly — so when a fix makes one stale, update it in the same pass.
+holding is raised again, correctly -- so when a fix makes one stale, update it in the same pass.
 
 ## 8. Symmetry & cross-cutting consistency
 
@@ -286,29 +369,29 @@ not its twin, adding a guard to two of three functions, converting one call site
 instance was found by review a round later, after the work was reported done. An enumeration in the
 message is the only version of this that holds.
 - Japes is v2; the services built on it (juno, kernel, assistant, knowledge-hub) are still v1-shaped.
-That gap is real leverage, not just cleanup debt — japes can absorb patterns those services already
+That gap is real leverage, not just cleanup debt -- japes can absorb patterns those services already
 proved out and make them the consistent default, rather than leaving each service to re-derive its
 own version.
 - When a fix or feature touches one client/module, ask "does this same gap exist in the sibling(s)?"
 before calling the work done. Precedent: adding `request_headers_provider` to `KernelClient` because
 `KnowledgeHubClient` already had it. The same question applies to any other family that shares a
-shape — e.g. `fabric.db` vs `fabric.blob`, other client wrappers, conductor entry points.
+shape -- e.g. `fabric.db` vs `fabric.blob`, other client wrappers, conductor entry points.
 - Check the full family, not just the nearest sibling. If three modules share a pattern and only one
-got the fix, the other two are latent bugs until proven otherwise — not intentional differences.
+got the fix, the other two are latent bugs until proven otherwise -- not intentional differences.
 - When a cross-repo survey (kernel/assistant/knowledge-hub/juno/macer) surfaces a gap, generalize it
 into japes properly rather than patching only the one reported instance.
 - Prefer the more architecturally consistent shape over the fastest patch, given japes's exposure
-(number of existing external consumers depending on current behavior) is still comparatively small —
+(number of existing external consumers depending on current behavior) is still comparatively small --
 this is the window to fix a leaning wall, not wallpaper over it.
 
 ## 9. Checking your own fix before you commit it
 
 Most of what review finds in a fix is in lines the fix itself wrote, in three shapes. All three are
-checkable from the fix's own diff in under a minute, and none of them is a judgement call — each is
+checkable from the fix's own diff in under a minute, and none of them is a judgement call -- each is
 a command you either ran or did not.
 
-**The prose your fix adds is a claim, not a description of it.** List what you just wrote —
-`git diff -U0 | grep '^+' | grep -E '#|"""|description:'` — and for each line name what would
+**The prose your fix adds is a claim, not a description of it.** List what you just wrote --
+`git diff -U0 | grep '^+' | grep -E '#|"""|description:'` -- and for each line name what would
 falsify it, then check that. "All four `applies_to` lists" → count them. "is the only one in this
 playbook" → grep the playbook. "validates the name separately and loudly" → find the construction
 site. This one fails reliably when skipped, for a specific reason: the sentence was written from the
@@ -316,23 +399,23 @@ intent, so re-reading it confirms the intent. It is falsifiable only against the
 last sixteen review findings were sentences a fix had just added, each wider than what the fix did.
 
 **Look for the rule before writing one.** Before adding a predicate, a parse or a lookup inside a
-fix, grep the module — and the module it imports from — for the one that already exists. `env_text`
+fix, grep the module -- and the module it imports from -- for the one that already exists. `env_text`
 was re-implemented as `os.getenv` plus two `.strip()` calls twice, in the same file as `env_text`,
 with the docstring citing it by name as the reason the rule exists. In tests this is absolute: never
 assert a literal that the code derives from a named source. `assert code == 6`, where the sibling
 test reads `rule.job_exit`, is how a contract goes stale with the whole suite green.
 
 **A behavior change is a change to whatever declares that behavior.** Before committing one, ask
-what owns it — a contract object, a table, an enum, a rendered doc — and grep for the old value.
+what owns it -- a contract object, a table, an enum, a rendered doc -- and grep for the old value.
 `plato/__main__.py:20` already states this for boot policy ("A change to the policy is a change to
 `BOOT_CONTRACT`") and it was missed anyway: `run_role` began exiting 6, the contract row still said
 `SERVES`, `docs/DEPLOYMENT_ENV.md` rendered from that stale row, and every test compared the
-artifacts to each other rather than to observed behavior — so all three agreed, all three were
+artifacts to each other rather than to observed behavior -- so all three agreed, all three were
 wrong, and CI could not see it. When the tests derive from the artifact under test, nothing detects
 drift between the artifact and the code; at least one assertion has to come from running the thing.
 
-Run all three against the fix's delta, not the branch. The delta is small by construction — the
-review loop's rounds are 120 to 500 lines — and every instance above was a `BLOCK` one round later,
+Run all three against the fix's delta, not the branch. The delta is small by construction -- the
+review loop's rounds are 120 to 500 lines -- and every instance above was a `BLOCK` one round later,
 at the cost of a full fix cycle.
 
 ---

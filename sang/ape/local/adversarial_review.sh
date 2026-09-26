@@ -23,7 +23,10 @@
 # files apart and says which one is being reviewed.
 #
 # Exits 1 when the review reports a defect, 0 otherwise (including when it cannot run: a missing
-# `claude`, an empty diff, or a diff too large to review in one pass are not failures).
+# reviewer CLI, an empty diff, or an inconclusive review are not failures).
+#
+# `REVIEW_ENGINE` picks the reviewer: `claude` (the default) or `codex`. Both read the same prompt
+# and diff on stdin, run read-only against the checkout, and must end with the same VERDICT line.
 
 set -uo pipefail
 
@@ -32,13 +35,24 @@ cd "$(git rev-parse --show-toplevel)" || exit 1
 REPO="${1:-$(basename "$(git rev-parse --show-toplevel)")}"
 # A diff this size does not fit one useful pass, and a review that skims is worse than none.
 MAX_LINES="${REVIEW_MAX_LINES:-4000}"
+REVIEW_ENGINE="${REVIEW_ENGINE:-claude}"
+# Claude is pinned to the top tier at high effort: see the invocation in `review_one` for why this
+# is not left to the CLI's own config. A full model name, not an alias, for the same reason: an
+# alias moves when a new model ships. Codex takes its own configured default unless overridden.
+case "$REVIEW_ENGINE" in
+    claude) default_model="claude-opus-5-5"; default_effort="high" ;;
+    codex)  default_model=""; default_effort="" ;;
+    *) echo "  ! REVIEW_ENGINE must be claude or codex, not '$REVIEW_ENGINE'"; exit 2 ;;
+esac
+REVIEW_MODEL="${REVIEW_MODEL:-$default_model}"
+REVIEW_EFFORT="${REVIEW_EFFORT:-$default_effort}"
 
 say() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 
-say "adversarial review of what is being pushed ($REPO)"
+say "adversarial review of what is being pushed ($REPO, $REVIEW_ENGINE ${REVIEW_MODEL:-default model})"
 
-if ! command -v claude >/dev/null 2>&1; then
-    echo "  ! claude not on PATH — skipping the review"
+if ! command -v "$REVIEW_ENGINE" >/dev/null 2>&1; then
+    echo "  ! $REVIEW_ENGINE not on PATH — skipping the review"
     exit 0
 fi
 
@@ -209,8 +223,8 @@ ls -t "$review_dir"/*.md 2>/dev/null | tail -n +"$(( ${REVIEW_KEEP:-30} + 1 ))" 
     echo
 } >> "$transcript"
 
-# Read-only by construction: the diff arrives on stdin and edit/write tools are denied, so the
-# reviewer cannot alter the tree it is judging.
+# The diff arrives with the instructions on stdin. The reviewer runs read-only (see
+# `run_reviewer`) so it can inspect the checkout without altering the tree it is judging.
 prompt_file="$run.prompt"
 cat > "$prompt_file" <<'PROMPT'
 You are reviewing a diff that is about to be pushed. Report only defects you can point at in this
@@ -371,12 +385,54 @@ if [[ -n "$prior_transcript" ]]; then
     } >> "$prompt_file"
 fi
 
+# The reviewer CLI: prompt and diff on stdin, the final message into "$1", diagnostics into "$2".
+# Read-only either way: Codex by its sandbox; Claude by `dontAsk`, which denies every tool not
+# named in `--allowedTools`, with the writing tools also disallowed outright.
+run_reviewer() {
+    local out="$1" log="$2"
+    case "$REVIEW_ENGINE" in
+        codex)
+            # `--output-last-message` keeps Codex progress and diagnostics out of the verdict text.
+            local pins=()
+            [[ -n "$REVIEW_MODEL" ]] && pins+=(-m "$REVIEW_MODEL")
+            [[ -n "$REVIEW_EFFORT" ]] && pins+=(-c model_reasoning_effort="$REVIEW_EFFORT")
+            codex -a never exec --sandbox read-only ${pins[@]+"${pins[@]}"} \
+                --output-last-message "$out" - > "$log" 2>&1
+            ;;
+        claude)
+            # `-p` prints only the final message, so stdout is the verdict text.
+            claude -p --model "$REVIEW_MODEL" --effort "$REVIEW_EFFORT" \
+                --permission-mode dontAsk --no-session-persistence \
+                --allowedTools Read Grep Glob "Bash(git diff:*)" "Bash(git log:*)" \
+                    "Bash(git show:*)" "Bash(git grep:*)" \
+                --disallowedTools Edit Write NotebookEdit \
+                > "$out" 2> "$log"
+            ;;
+    esac
+}
+
 # One pass over one diff. Echoes the findings indented; returns 1 for BLOCK, 2 for no verdict.
 review_one() {
-    local slice_diff="$1" label="$2" out
+    local slice_diff="$1" label="$2" out log
     out="${review_out}.$(echo "$label" | tr -c 'A-Za-z0-9._-' '_')"
-    claude -p --disallowed-tools "Edit,Write,NotebookEdit" -- "$(cat "$prompt_file")" \
-        < "$slice_diff" > "$out" 2>&1
+    log="$out.log"
+    # A failed invocation is inconclusive even if it wrote a partial reply.
+    #
+    # Claude's model and effort are pinned rather than inherited from the CLI's own config. This
+    # is the one task that is paid for by what it does *not* miss, so it takes the top tier and
+    # the high effort whatever the interactive default is set to. Codex runs on its configured
+    # default unless `REVIEW_MODEL`/`REVIEW_EFFORT` say otherwise.
+    if ! { cat "$prompt_file"; printf '\n\n── DIFF TO REVIEW ──\n'; cat "$slice_diff"; } \
+        | run_reviewer "$out" "$log"; then
+        echo "  ! $REVIEW_ENGINE review did not complete"
+        tail -n 20 "$log"
+        return 2
+    fi
+    if [[ ! -s "$out" ]]; then
+        echo "  ! $REVIEW_ENGINE returned no review"
+        tail -n 20 "$log"
+        return 2
+    fi
     sed 's/^/    /' "$out"
     # `<<<` rather than `## $label`: the reviewer emits its own `##` headings, so the slice
     # boundary and the slice content were the same shape and no round could be read back

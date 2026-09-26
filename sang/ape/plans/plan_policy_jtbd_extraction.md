@@ -5,11 +5,14 @@ Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 Status: plan, 2026-09-24. Written against japes `5534f5e` on `v2.5.4`, and policy-workbench at its
 local checkout.
 
-> **Progress (v2.5.4, local, unpushed):** steps 1-4 built (`procedure` kind + evaluator, `Segmenter`,
-> `policy_jtbd` segmenter/extractor/template + `scripts/policy_jtbd_extract.py`, `rule_merge`). Step 5's
-> SDK half built: `Rule.replaces`, `Policy.suppresses`, field-claiming retired, `dangling_relation`
-> lint; jaci CRE/CI overlays migrated (uncommitted in jaci, which is on `dev`). Open: dscr-core split
-> (content scope question), live smoke on Acra docs, steps 6-11.
+> **Progress (v2.5.4, local, unpushed):** built in japes: steps 1-4 (`procedure` kind, `Segmenter`,
+> `policy_jtbd`, `rule_merge`), step 5's SDK half (`Rule.replaces`, `Policy.suppresses`, field-claiming
+> retired, manifest `programs:`), step 6 (extraction + review routers, comments, tenant-scoped
+> `DbProposalStore`), step 7 (`authoring_chat`, not mounted in Plato: its assistants get no tools yet),
+> step 8 (Plato `authoring` routes, migration 0006, `packs.html` panel), step 10 (`jtbdset`
+> import/export), step 11 (`python` rules behind a `PythonExecutor` seam). jaci overlay migration and
+> `programs:` edits are uncommitted in jaci (on `dev`). Open: dscr-core split (scope question), step 9
+> (jaci script replacement), live smoke on Acra docs, a shipped `PythonExecutor`.
 
 Prior art read first: `policy-ir-abstraction.md` (P8 shipped: open `Condition` union,
 `natural_language` kind), `plan_policy_extraction_kg.md` (why `Proposal(kind="rule")` exists and

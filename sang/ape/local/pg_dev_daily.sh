@@ -16,8 +16,8 @@
 # another account, and postmaster.pid lives in PGDATA and is not relocatable. The binaries are
 # world-executable, so only the data directory has to move.
 #
-# Writes the environment to .env.local (gitignored at .gitignore:52), which nothing loads:
-# Plato reads the process environment. `set -a; . .env.local; set +a` puts it there.
+# Prints the two lines Plato needs; put them in .env, which `python -m plato` reads for whatever
+# the environment leaves unset. Nothing is written: .env is hand-assembled, .env.local a template.
 
 set -euo pipefail
 
@@ -34,7 +34,6 @@ SOCKET_DIR="${PLATO_PG_SOCKET:-/tmp}"
 DB_NAME="japes_plato_db"
 DB_USER="${PLATO_PG_USER:-plato}"
 DB_PASS="${PLATO_PG_PASSWORD:-plato}"
-ENV_FILE=".env.local"
 
 export PATH="${PG_PREFIX}/bin:${PATH}"
 command -v initdb >/dev/null || { echo "no postgresql@${PG_VERSION} at ${PG_PREFIX}"; exit 1; }
@@ -75,12 +74,6 @@ psql_ -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'" | 
 
 # localhost, not the socket: this is the DSN Plato uses, and it must be the TCP form dev-daily has.
 DSN="postgresql+asyncpg://${DB_USER}:${DB_PASS}@localhost:${PORT}/${DB_NAME}"
-cat > "${ENV_FILE}" <<ENV
-# Written by scripts/local/pg_dev_daily.sh. Nothing loads this; export it:
-#   set -a; . ${ENV_FILE}; set +a
-DB_ASYNC_CONNECTION_STR=${DSN}
-PLATO_DB_BACKEND=common
-ENV
 
 export DB_ASYNC_CONNECTION_STR="${DSN}" PLATO_DB_BACKEND=common
 python -m alembic -c plato/alembic.ini upgrade head
@@ -89,4 +82,6 @@ echo
 psql_ -d "${DB_NAME}" -c \
   "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY 1"
 psql_ -d "${DB_NAME}" -c "SELECT version_num FROM alembic_version"
-echo "cluster ${PG_DATA} on port ${PORT}; environment in ${ENV_FILE}"
+echo "cluster ${PG_DATA} on port ${PORT}. For .env:"
+echo "DB_ASYNC_CONNECTION_STR=${DSN}"
+echo "PLATO_DB_BACKEND=common"

@@ -2,7 +2,1075 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+## [2.5.5] - unreleased
+
+- **`python -m plato` reads `.env` on a workstation.** Every variable the environment leaves unset
+  is filled from `.env` at the working directory (or the file `JAPES_ENV_FILE` names) before a role
+  or wiring resolves, and the startup log lists the names it filled as `env_file=.env (...)`. A
+  value already in the environment wins, blank or not. Skipped on a container platform (ACA or
+  Kubernetes, by their injected variables); the image copies no `.env` either.
+  - `jazzx_sdk.config.envvars.load_env_file()` / `env_file_path()`. The SDK never calls them; an
+    entry point does, once. In Plato the call sits in the `__main__` block rather than `main()`,
+    which tests call in-process.
+  - `.env` is the only gitignored env file. `.env.local` is now a committed template for the
+    `local` tier, beside `.env.dev-daily` and `.env.template`; a developer assembles `.env` from
+    them (e.g. dev-daily's posture against a local Postgres and the Mock Knowledge Hub).
+  - `scripts/plato-local.sh` no longer parses `.env.local`; its defaults (tier, wiring, tenants,
+    run mode, sqlite fallback, port) yield to anything the environment or `.env` names.
+    `PLATO_PROFILE=local` sets `JAPES_ENVIRONMENT=local` over `.env`, since the profile was asked
+    for by name.
+  - `llm.config`'s `dotenv_from=` lookup (`resolve_key`, `llm_from_env`, `ensure_google_credentials`)
+    parses with python-dotenv instead of by prefix: `OPENAI_API_KEY` no longer matched an earlier
+    `OPENAI_API_KEY_OLD=` line, and `export NAME=` lines now resolve.
+  - Tests: `conftest.py` points `JAPES_ENV_FILE` at `/dev/null` for every subprocess and clears
+    `JAPESSettings`' own `env_file`, so a developer's `.env` reaches no test. That second one was
+    latent before: `test_a_blank_variable_is_unset_for_every_field_kind` failed for anyone whose
+    `.env` set `JAPES_ENVIRONMENT`.
+
+- **Feedback and evaluation you can see: an SDK sink, a Plato page, and jaci feeding it.**
+  - **`FeedbackApiSink`** (`jazzx_sdk.evaluation.feedback_sink`) submits a `Feedback` to any host of
+    the SDK's feedback routes (`server.feedback_api`; Plato today) and returns the stored
+    `FeedbackRecord`. Tenant as `X-Tenant-Id`, optional bearer token, an optional `EntityRef` the
+    feedback is filed under, the caller's identity headers forwarded, and `feedback_id` as the
+    idempotency handle so a retry returns the stored record. Not best-effort: a refusal raises.
+    - It is a `FeedbackSink`, not a `FeedbackStore`: the module already decided that a submitter to
+      another service offers write only. `FeedbackSink` is now generic over the acceptance record
+      (`FeedbackSink[FeedbackAcceptedV1]` for eval-service, `FeedbackSink[FeedbackRecord]` here),
+      and the identity-header logic the two share moved to one helper. The submit timeout is the
+      named `DEFAULT_SUBMIT_TIMEOUT`.
+    - `FeedbackSubmit` gains `decision_id`, `outcome_id` and `pack_id`, the three `Feedback` fields
+      it lacked, so a `Feedback` sent over HTTP arrives whole.
+  - **Plato's evaluation page, `/api/v1/evaluation/ui`** (in the nav as Evaluation). Feedback with
+    review-status counts, filters and a detail view (processing, context and overall summaries,
+    quality, actionable items); approve, reject, process again, and add a piece of feedback to a
+    dataset as a case. Datasets with their cases, experiments with pass rate and mean score and a
+    comparison against another experiment or the entity's baseline (and "make this the
+    baseline"), and optimization jobs. Self-contained like the other pages; tenant and identity
+    fields shared with the packs page.
+    - Write controls render only where both gates the routes apply would admit the write:
+      Plato's `withholding` and the SDK routers' refusal of an unauthenticated deployed write.
+    - Mounted with or without a database, so the nav link never 404s; without one the page says
+      feedback and evaluation are not mounted. The degraded app omits it from its nav.
+    - A test reads the page's own `call(...)` routes and checks each is mounted, so a renamed
+      route cannot leave the page calling a 404.
+    - README and `plato/guide.md` list it.
+  - **`…/feedback/{id}/to-dataset` refuses a blank case and says when it added nothing.** A None or
+    blank `input`/`expected` is a 422, checked in the library (`feedback_learning.check_case_value`,
+    called by `feedback_case`) and by `FeedbackToDataset`. The case id comes from the feedback id,
+    so a blank case stored once blocked the corrected one for good. The response gains `added`,
+    false when the case was already there. The page checks both fields before sending, says when
+    a case was already present, and says when its list shows only the newest page of what the
+    filters match.
+  - **jaci's ci_spread demo sends Jazz feedback to Plato** when `JACI_PLATO_URL` is set (tenant,
+    token and the assistant id it is filed under are settings too); unset, it stays in the
+    session. The question and the answer travel as `metadata["turn"]`, which is what Plato's
+    processing summarizes when it does not host the assistant. A failed submission shows a
+    warning instead of breaking the chat. Tested in jaci against the real Plato app over ASGI.
+
+- **PR #75 review: fixes for v2.5.4 code, also carried to `dev`.**
+  - **A missing deployment dependency withholds instead of raising, and is checked before the
+    evidence.** `RatioEvaluator` and `MatrixEvaluator` (no `PolicyProfile` in context) and
+    `NaturalLanguageEvaluator` and `ProcedureEvaluator` (no `ReasoningAgent`) now return
+    `INDETERMINATE` / `POLICY_NOT_ACTIVATED` with the reason under `NOT_ACTIVATED_INPUT_KEY`,
+    the contract `PythonEvaluator` already had for a missing executor. They share one helper.
+    - Why both halves: missing evidence excuses a rule, so asking for the dependency after the
+      reads let a case with a missing field silently pass a rule this deployment could never
+      run. Asking first while still raising would instead crash every case, since
+      `check_compliance` does not catch evaluator raises. Withholding is the governed answer.
+    - Behavior change: `check_compliance({}, {})` on a ratio or matrix rule with no profile used
+      to allow (the fields were missing) and now withholds the allow. A consumer that relied on
+      the old `ValueError` for a missing profile or agent now gets the outcome instead.
+    - Authoring errors still raise: a `RatioCondition.threshold` that is not `profile:<key>`, a
+      malformed matrix `table`, a half-set `compare_field`/`direction`.
+    - The first attempt at this round reordered the two agent checks but kept the raise; the
+      follow-up review caught that it turned a silent allow into an uncaught exception.
+  - **`create_policy_extract_router(before_write=...)` accepts an async hook.** It is awaited
+    through `call_maybe_async`, as `tenant_of` already was. An async hook used to be called and
+    its coroutine dropped, so its refusal never happened.
+  - **Opening a Plato draft `from_version` tells a missing version from an unreachable store.**
+    `PackNotFound` is a 404; any other `materialize` failure is a 503, where before every failure
+    was a 404 and a blob-store outage read as "that version does not exist". The activate route
+    already made this split.
+  - `DbPackDraftStore.delete_file` stamps the draft's `updated_at` and author only when a file
+    was deleted. A delete of a missing path used to record an edit that changed nothing.
+  - **Round 3.**
+    - **`check_python_rule` closes the module-reach class, not one shape of it.** The bot's
+      `__builtins__['exec']` report was one instance; the adversarial review then found five more
+      over four rounds (an aliased `from fractions import __builtins__`, `from fractions import
+      sys`, `import re._parser` binding `re`, `m = fractions; m.sys`, a nested re-import winning
+      last), each defeating the previous patch. The gate now enforces one rule set:
+      - imports sit at the rule's top level, name an allowlisted module exactly (no submodules),
+        bind each name once, and never use `*`;
+      - a name bound by `import` is used only as `module.attr`, and `attr` must not itself be a
+        module (checked against the real module, so `fractions.sys` is refused and
+        `fractions.Fraction` is not);
+      - `from <allowed> import <name>` refuses a module-valued or dunder `name`;
+      - any bare dunder name is refused, alongside the existing dunder-attribute rule.
+      - Behavior change: a rule that imports inside `check()` is now refused. The policy-code
+        prompt says so ("once each and at the top of the source, used as module.name").
+      - The module still says it is a gate, not a sandbox; the executor is the isolation
+        boundary.
+    - `DbProposalCommentStore.add` (author, body) and both `DbPackDraftStore` write paths
+      (`open`'s seed and `write_file`) strip the real NUL byte and real lone surrogates through a
+      new `jazzx_sdk.safety.sanitize.strip_unstorable_chars`. Postgres text rejects the first and
+      UTF-8 encoding the second, which surfaced as a 500. Unlike `sanitize_text`/`strip_nulls`, it
+      leaves the escaped-literal text (a backslash-u-0000 sequence) alone: in a draft that is
+      rule source or YAML, and stripping it rewrote the file silently. Draft files carry merged
+      model-written rule text, so the draft store had the same exposure as the comment store the
+      bot named.
+    - `merge_rules_into_draft` turns a YAML syntax error in the draft's policy file or manifest
+      into a `ValueError` naming the file, which the merge route already answers with a 409
+      instead of a 500.
+    - `create_policy_extract_router` names an oversized upload by its sanitized basename in the
+      413, not the raw client-supplied filename.
+    - `PolicyExtractionService.submit` refuses with `ExtractionBusy` (a 503 at the route) when all
+      `MAX_RUNS` slots hold runs that are still running. Only finished runs were ever evicted, so
+      sustained concurrent submits grew the registry without bound. The route asks
+      `has_room()` (side-effect free) before reading or converting any upload, so a saturated
+      service refuses cheaply; eviction happens only when a run is actually admitted.
+    - Declined, with reasons:
+      - `_split_batchable` letting `get_condition_evaluator`'s `KeyError` escape for an
+        unregistered kind. That lookup fails loudly by design (its docstring says so), a condition
+        kind is a closed discriminated union whose every member registers at import, and the
+        segment fails as a unit into `failed_segments` rather than crashing adjudication.
+      - `DbProposalCommentStore` using `db.register_metadata`: `DbStore.register_metadata` exists
+        (`jazzx_sdk/fabric/db/store.py`).
+      - `Policy.model_validate` needing a `ValidationError` catch: pydantic v2's
+        `ValidationError` subclasses `ValueError`, so the route's `except ValueError` already
+        answers 409. A test now pins that.
+  - **Round 4.** `import_jtbdset` takes a rule's priority from `sequence` only when it is a whole
+    number (`4`, `"4"`, `4.0`); anything else (`"N/A"`, `"1.5"`, NaN) leaves `Rule`'s default
+    rather than aborting the whole import with a `ValueError`. The raw `sequence` stays in the
+    rule's metadata. The bare `100` default at the call site is gone: `Rule` owns it. Declined
+    in the same round: `DbPackDraftStore` using `register_metadata`, which exists.
+  - **Round 5.** A batched LLM rule missing a field it reads is EVIDENCE_MISSING before the batch,
+    as `NaturalLanguageEvaluator`/`ProcedureEvaluator.evaluate` answer on a single call. Before,
+    `_split_batchable` sent it to the model with `field: None` in its evidence, so the same case
+    could be excused singly and violated in a batch. The check is one helper,
+    `condition_evaluator.missing_evidence`, now used by the natural-language, procedure and Python
+    evaluators and by the splitter. Declined in the same round: `vocabulary_review` "not importing"
+    `CallerIdentity`, which the router factory imports and its handlers close over.
+  - **Round 6.**
+    - `check_rel_path` returns the normalized path (`a//b`, `./a/b` and `a/./b` are `a/b`), so one
+      file spelled two ways is one draft row on every read, write and delete.
+    - `check_python_rule` refuses async anywhere in a rule: `async def`, `await`, `async for`,
+      `async with` and async comprehensions. A nested coroutine is never what a synchronous
+      check means.
+    - `merge_rules_into_draft` refuses a `policies:` that is not a list of mappings, a falsy `{}`
+      included, with a `ValueError` naming the file (409 at the route) instead of an
+      `AttributeError` (500).
+    - Declined: exempting names imported from allowed modules from the forbidden-builtin check
+      (`from re import compile`). Tried and reverted in the same round: `del` or `global` on the
+      imported name brings the builtin back, so a forbidden builtin name is refused whatever binds
+      it; `import re` + `re.compile` is the supported form. Also declined: a procedure answer in
+      the wrong batch field being "silently dropped"; it is excluded from the vote and a rule no
+      replica answered is CONDITION_UNEVALUABLE with a reason.
+  - **Round 7.** A malformed `programs:` entry is a lint finding, not a crash. `programs: {p: 1.5}`
+    used to raise `TypeError` out of `Pack.overlay_map`, which `lint_pack` turned into a 500. Now
+    `PackManifestLoader.programs()` leaves out a value that is not a policy id or a list of ids
+    (whole numbers count as ids and are stringified; booleans and floats do not), and the new
+    `malformed_programs()` names each one by manifest path (`programs`, `programs/<id>`), which
+    lint reports as `malformed_program`. The bot suggested dropping bad entries silently; that
+    would have left a program applying nothing with no signal.
+  - **Round 8 (declined, pinned).** The bot asked that a `suppresses` directive always cut a rule's
+    replacement chain, even when a higher-precedence policy had already replaced that rule. That
+    would let a lower-precedence suppression undo a higher-precedence replacement. Behaviour is
+    unchanged: the first directive by precedence sets how a rule is superseded.
+    `test_replacing_and_suppressing_one_rule_is_decided_by_precedence` pins both orders, and a
+    comment at the suppression merge says so.
+  - **Round 9: a full adversarial review of the PR range (`origin/main..dev`), with the bot's round.**
+    The per-commit reviews only saw each fix, so v2.5.4 code nobody had touched kept surfacing a
+    few findings per bot push. One review of all 172 files found these, fixed together:
+    - **Authoring reads are withheld where pack-draft reads are.** In a strict posture without an
+      auth dependency or required identity, every GET under the authoring extract and review
+      routers is a 403 (an include-level dependency, so extraction runs are covered too).
+      Proposals carry verbatim policy text. A deployed tier cannot start without
+      `require_identity`, so this is the strict-but-not-deployed posture. On v2.5.5 the same gate
+      covers Plato's eval and feedback routers (their `_tenant` refuses a GET there too, and
+      `create_eval_router`/`create_feedback_router` take `identity_required`): feedback carries
+      what users wrote and the turn it was about.
+    - **Every publish obeys the upload size cap.** The check moved into `_publish_archive`, so a
+      draft publish over `PLATO_PACK_UPLOAD_MAX_BYTES` is a 413, as the upload of that archive is.
+    - **`check_rel_path` refuses `.`, `./` and `./.`**, which name no file and published a
+      version that could never materialize.
+    - **`DbPackDraftStore.write_file` and `delete_file` lock the draft row** (`blocking_locked_first`)
+      before counting or deleting, in one order, so concurrent writes cannot pass the
+      `MAX_DRAFT_FILES` check together.
+    - **Model overlays are validated in the SDK store.** `put_pricing`/`put_card` raise
+      `ValueError` for a payload `build_overlay` rejects; the Plato route maps it to 422 and no
+      longer validates separately.
+    - **Python rules:** `ctx` may appear only as `ctx[key]` or `ctx.get(key)` (so `dict(ctx)`,
+      `{**ctx}` and `g = ctx.get` are refused, which had made every field reachable), and a
+      dunder `as` name in `from ... import` is refused at the import.
+    - **Two uploads with one name are a 422** before a run starts, not a run that fails.
+    - **The unpack cache's marker** (now `store_db.UNPACK_MARKER`) is not offered as a draft file
+      when a draft is opened from a published version.
+    - **A withheld rule's warning reads "rule withheld --"**, since an unevaluable condition lands
+      there too; the `RULE_NOT_ACTIVATED` reason code is unchanged.
+    - The example adjudication harness collapses on the verdict, not the pack's status words.
+    - Prose: stale `net_safety`/`path_safety` names, a stale field-precedence sentence in
+      `segment.py`, a tautological guard in `check_compliance`, em-dashes in the sample-pack
+      README and the packs page, the seed overlay's "matches core" descriptions, and `Author:`
+      lines on the five `safety/`/`ui` modules that lacked them.
+    - Tests: the output-type sweep resolves from the file, not the cwd, and asserts it checked
+      something; the not-activated assertions read the reason, not the prefix; a literal refusal
+      key uses `NOT_ACTIVATED_INPUT_KEY`.
+    - Deferred: `TODO(draft-merge-lost-update)`, a merge's read-then-write with no compare-and-set
+      on the draft file.
+    - Declined: the bot's gate-evaluator try/except on a superseded rule (evaluators raise only
+      on authoring errors, unguarded on the main path too, by design); `Policy(...)` outside the
+      merge route's try (the request model types `policy_type` and `scope`, so FastAPI answers
+      422 first); the Plato 0.1.6 version note (requested).
+  - Not a defect: the review flagged `DbProposalStore`'s table rename (`vocabulary_proposal` to
+    `proposal`) as orphaning rows. No Plato migration ever created `vocabulary_proposal` and no
+    sibling repo constructs a `DbProposalStore`, so there were no rows to orphan.
+
+- **Feedback, review round 1.**
+  - **`feedback_id` is per tenant.**
+    - `japes_feedback` is keyed `(tenant_id, feedback_id)`, in migration `0010`, edited in
+      place since it never left this branch.
+    - Before, a caller-chosen id another tenant already used failed with a 500, which also
+      revealed that the id existed.
+  - **Every mutation reads under a row lock** (`fabric.db.locking.blocking_locked_first`) and
+    writes in the same transaction.
+    - This covers `edit`, `set_review_status`, `delete`, `mark_duplicate` and
+      `update_processing`.
+    - A concurrent change is waited for rather than overwritten by a whole-record write.
+  - **Processing opens review but never overrules it.** `update_processing` applies
+    `review_status` only while the record is still `pending_review`. A reviewer who approved
+    during a moderation call used to have the approval reverted to `under_review`.
+  - **A backlog drains oldest first.** `FeedbackQuery.oldest_first`; `process_pending` used to
+    take the newest of each status, so a steady stream of new submissions starved the oldest.
+    Queries break `created_at` ties by id.
+  - **Edits are checked and processed like submissions.**
+    - `PUT /feedback/{id}` checks the category against the entity's config.
+    - A text or category change is processed again in the background.
+    - A metadata-only edit keeps both statuses, since metadata is not reviewed.
+    - An edit that changes nothing returns the record untouched.
+  - **Duplicates cannot point at duplicates.** Marking against a record that is itself a
+    duplicate is refused, naming its canonical record. Two records could otherwise mark each
+    other and both drop out of learning.
+  - **Status filters are validated.** `FeedbackQuery` and the list, export and aggregate
+    parameters type `review_status` and `processing_status`, so a typo is a 422 rather than an
+    empty result.
+  - **Context for processing, honestly.** An assistant keeps history only when it is built with a
+    conversation store, and Plato's wirings pass none.
+    - `AssistantFeedbackContext` reads the history when there is one, and otherwise the turn
+      the submission carried in `metadata["turn"]` (`TURN_METADATA_KEY`): messages or text.
+    - A missing assistant now means no context rather than a `failed` record.
+    - `docs/ARCHITECTURE.md` no longer claims the conversation is always used.
+  - Export and aggregate fix their window at the first page (`until`), so an insert mid-export
+    cannot shift pages.
+  - Knowledge Hub collection names carry a digest of the exact tenant, type and id, so
+    `loan chat` and `loan-chat` no longer share one.
+  - A retrieval test computes its expected counts from `MAX_FEEDBACK_PAGE`.
+  - Round 2:
+    - `FeedbackQuery.since` and `until` are read as UTC when naive, for every route and
+      repository. A naive `until` compared with an aware "now" raised in export and aggregate,
+      giving aggregate a 500 and export a 200 with a truncated body. A naive bound sent to
+      Postgres would also have been read in the host's zone.
+    - `mark_duplicate` locks both records, in id order, and checks the target under its lock,
+      so two opposite marks made at once cannot both pass.
+
+- **Semantic feedback retrieval through `fabric.rag`.** Seventh step of hosting feedback.
+  Knowledge Hub embeds and searches, so the SDK has no embedding layer of its own.
+
+  - `evaluation.feedback_index.RagFeedbackIndex(rag, tenant_id)` indexes approved, live,
+    non-duplicate feedback as one KH document per record, in a collection per tenant and entity
+    (`collection_name`). KH search has no metadata filter, so the collection is the scope.
+  - `sync(record)` is the one rule: it removes the record's documents (found by `feedback_id`
+    metadata) and adds one back only if the record still qualifies. `search` returns
+    `(feedback_id, score)` pairs. `FeedbackIndex` is the protocol.
+  - `similar_feedback(index=, mode="auto"|"lexical"|"semantic")`: `auto` is semantic when an
+    index is given, else lexical.
+    - Semantic results are thresholded at the entity's `similarity_threshold`, and `min_score`
+      if higher.
+    - It over-fetches `SEMANTIC_OVERFETCH` times, then re-checks each record, because the index
+      can trail a review change.
+    - `semantic` without an index is a 422 on the route.
+  - `create_feedback_router(index_for=)`: review, edit, delete and duplicate changes are synced
+    to the index. A failed sync is logged, not raised, since the record did change and its next
+    change syncs again. `SimilarRequest.mode` selects the mode.
+  - `RAGStore.collection_id(name, create=)` is new: a collection's id by name, optionally
+    creating it.
+  - Plato passes the client layer's `fabric.rag` when it has a fabric, and indexes per tenant.
+    A fabric that will not build is logged and retrieval stays lexical, so Knowledge Hub cannot
+    stop Plato starting.
+  - Em-dashes removed from `fabric/rag/store.py`.
+  - Not covered: an approved record whose summaries arrive after approval is indexed with its
+    text alone until its next change.
+
+- **Feedback into learning.** Sixth step of hosting feedback.
+
+  - `evaluation.feedback_learning.add_feedback_case(datasets, dataset_id, record, input=,
+    expected=)` adds a feedback record to a dataset as a case in the next version.
+    - The caller supplies input and expected output: feedback says what was wrong, not what
+      right looks like.
+    - The case id is `feedback-<feedback_id>`, so a second add returns the dataset unchanged.
+    - The case carries the feedback's category as a tag, and its ids as metadata.
+    - `feedback_case` builds the case alone.
+  - `POST /feedback/{id}/to-dataset {dataset_id, input, expected}` on the feedback router when a
+    host passes `datasets_for=`. Plato does, against the tenant's eval datasets.
+  - `OptimizationSpec.include_feedback` gives an optimization the entity's newest approved,
+    non-duplicate feedback (`FEEDBACK_FOR_OPTIMIZATION`), snapshotted on the job as
+    `OptimizationJob.feedback`. It steers the proposer through `optimize_prompt(feedback=)`.
+    `synthesize_feedback_cases` also turns it into training cases.
+  - `OptimizationRunner(feedback=)` is the repository it reads; creation refuses when
+    feedback is asked for and none is wired. Plato wires its feedback store.
+  - A seed failure on a synthesized case is named `synthetic #n`, since those cases follow the
+    dataset's own.
+
+- **Reading feedback back: similar, export, aggregate.** Fifth step of hosting feedback.
+
+  - `evaluation.feedback_retrieval.similar_feedback(repository, configs, entity=, text=,
+    top_n=, min_score=)` returns an entity's approved, non-duplicate feedback most like a text,
+    best first, as `ScoredFeedback`. `top_n` defaults to the entity's configured `max_results`.
+  - Scoring is lexical, so it works on sqlite and Postgres alike. `lexical_similarity` is shared
+    terms over the smaller term set, which lets a short feedback item fully contained in a long
+    turn score 1. Terms shorter than `MIN_TERM_LENGTH` and common `STOPWORDS` are left out, so
+    unrelated texts do not match on "the" and "for". Only the newest `MAX_FEEDBACK_PAGE`
+    approved records are scored.
+  - The config's `similarity_threshold` is for semantic retrieval (step 7), since word overlap
+    and cosine similarity are different scales. Lexical retrieval takes `min_score`.
+  - `iter_feedback` pages through every matching record up to `EXPORT_MAX_ROWS`.
+    `aggregate_feedback(query, group_by)` counts records by review or processing status,
+    source, reaction, category, entity, day or ISO week.
+  - Routes on the feedback router:
+    - `POST /feedback/similar`.
+    - `GET /feedback/export?format=csv|ndjson`, streamed; CSV columns are `EXPORT_COLUMNS`.
+    - `GET /feedback/aggregate?group_by=`.
+    - List, export and aggregate share one set of filter query parameters.
+
+- **Plato hosts feedback.** Fourth step: the SDK's feedback routes for Plato's own assistants.
+
+  - `/api/v1/feedback/...` and `/api/v1/feedback-config/...` (`plato/api/feedback.py`), per
+    tenant, whenever Plato has a database. Writes are refused unauthenticated in a strict
+    posture, like authoring and eval. A submission carries the governed trace id when its body
+    has none.
+  - Each new submission is processed in the background with the assistants' own LLM, so the
+    local wiring stays keyless. `POST .../feedback/{id}/process` runs it again, from the start
+    for a failed record. Without an LLM, feedback is stored and reviewed but not processed.
+  - Context for the summary comes from `server.feedback_api.AssistantFeedbackContext`: the last
+    `CONTEXT_MESSAGES` messages of the conversation the record names, read through the new
+    `InteractiveAgent.history(session_id)`. It returns nothing for other entity types, a
+    missing conversation, or an agent that keeps no history.
+  - The SDK router takes `processor_for=`: it processes new submissions in the background and
+    mounts `.../process`.
+  - `job:feedback-process` (`plato.jobs.FEEDBACK_PROCESS_ROLE`) processes every tenant's
+    unfinished feedback. It exits 3 without a database or an LLM, and warns over no tenants.
+  - Migration `0010_feedback`: `japes_feedback`, `japes_feedback_history`,
+    `japes_feedback_config`. Checked against the models with `compare_metadata`.
+  - **Plato's "no feedback table" rule is retired.** Its test now asserts that no Plato table
+    takes eval-service's `feedback` name, and that `japes_feedback` exists. The eval-service
+    pass-through router is removed; no shipped wiring mounted it. Its sink tests move to
+    `tests/test_eval_service_feedback_submission.py`.
+  - Docs: `docs/ARCHITECTURE.md` gains the feedback paragraph and one-writer wording, and
+    `plato/guide.md` the feedback routes and job.
+
+- **Feedback processing.** Third step of hosting feedback.
+
+  - `evaluation.feedback_processing.FeedbackProcessor(repository=, configs=, llm=, context=)`
+    runs three stages, each moving `processing_status`, so a stopped run resumes where it left
+    off:
+    1. **validate**: moderation flags (toxic, spam, pii, low_quality) through the LLM, and
+       `potential_duplicate` when the entity has feedback from the last 30 days with word
+       overlap of at least `DUPLICATE_TEXT_OVERLAP`. Flags are tags for a reviewer, never a
+       rejection. Review moves from `pending_review` to `under_review`, recorded in history as
+       `PROCESSOR_ACTOR`.
+    2. **summarize**: a summary of the turn when the host's `FeedbackContextProvider` supplies
+       its text, and an overall summary of the feedback.
+    3. **enrich**: `assess_feedback_quality` and `extract_actionable_items` when quality is
+       enabled. This stage is best-effort: its failure is logged and the record still completes.
+  - A failure in stage 1 or 2 marks the record `failed` with the reason.
+  - `process_pending(limit=)` works through unfinished records, oldest first, for a job.
+  - Prompts come from the entity's config when set, else `DEFAULT_CONTEXT_SUMMARY_PROMPT` and
+    `DEFAULT_OVERALL_SUMMARY_PROMPT`. They are filled by plain replacement (`fill`), so an
+    operator's prompt may contain other braces. Every LLM call uses the config's
+    `summary_model`.
+  - `FeedbackRepository.update_processing(feedback_id, revision=, changes=)` writes results
+    against the revision processing started from. An edit made meanwhile wins and the stale
+    results are dropped (`None`). Only `PROCESSING_FIELDS` may be written.
+  - `FeedbackRecord.quality` is a `FeedbackQuality` and `actionable_items` a list of
+    `ActionableItem`, the types the quality functions return (they were a dict and a string).
+  - `FeedbackConfig.quality_metrics` is removed. Nothing read it, and the quality check scores
+    useful, actionable and specific rather than a configurable metric list.
+
+- **Feedback config per entity, with a tenant default.** Second step of hosting feedback.
+
+  - `evaluation.feedback_config.FeedbackConfig`: summary model, moderation on/off, context and
+    overall summary prompts (None uses the pipeline's own), quality on/off and metrics, allowed
+    categories, similarity threshold and max results (`DEFAULT_SIMILARITY_THRESHOLD`,
+    `DEFAULT_MAX_RESULTS`).
+  - `FeedbackConfigStore.resolve(entity)` returns the entity's own config, else the tenant
+    default, else the built-in, with its `source`. An entity config replaces the default whole
+    rather than merging, so what an operator reads for an entity is what applies.
+  - `put(base_revision=)`: `None` creates; otherwise it names the revision it replaces.
+    `FeedbackConfigConflict` when stale. `DbFeedbackConfigStore` writes table
+    `japes_feedback_config`, keyed by tenant and scope.
+  - `create_feedback_router(configs= | configs_for=)` mounts `/feedback-config` (resolved, with
+    `?entity_type&entity_id`), `/feedback-config/stored`, and `GET`/`PUT`/`DELETE` on
+    `/feedback-config/default` and `/feedback-config/{entity_type}/{entity_id}`. `PUT` needs
+    `If-Match` to replace a stored config (428/409).
+  - With a config store, a submission whose category is not in its entity's allowed list is
+    refused (422). Feedback with no category is always accepted, since positive feedback usually
+    carries none.
+
+- **Feedback records with a review lifecycle.** First step of hosting feedback in the SDK.
+
+  - `evaluation.feedback_records`: `FeedbackRecord` wraps a submitted `Feedback` with the entity
+    it is about, a `processing_status` (unprocessed through processed, failed, skipped) and a
+    `review_status` (`pending_review`, `under_review`, `approved`, `rejected`), processor output
+    fields, a duplicate link, soft delete and a `revision`. `FeedbackRepository` is the store
+    protocol:
+    - `create` is idempotent on `feedback_id`: a retry returns the stored record.
+    - `query(FeedbackQuery)` filters by entity, statuses, source, category, turn refs, text
+      substring, time range, deleted and duplicate rows, capped at `MAX_FEEDBACK_PAGE`.
+    - `edit(base_revision=)` resets both statuses (what was reviewed is no longer what is
+      there) and records old and new values. A stale revision raises `FeedbackConflict`.
+    - `set_review_status`, soft `delete`, `mark_duplicate` / `duplicates_of`, and `history` of
+      every review change, edit, duplicate mark and delete.
+  - `parse_reaction` accepts `Reaction` values and the thumbs spellings UIs send.
+  - `DbFeedbackStore` implements both `FeedbackStore` (`append` / `list` / `clear`, unchanged
+    for callers) and `FeedbackRepository`.
+    - `japes_feedback` grows tenant, entity, category, text, both statuses, duplicate, delete
+      and revision columns beside the JSON record. `japes_feedback_history` is new.
+    - The store is tenant-scoped at construction (`tenant_id=`, default `DEFAULT_TENANT`).
+    - `append` is now idempotent rather than raising on a repeated id.
+    - The ORM class is `FeedbackRow`; `FeedbackRecord` is the model.
+    - An edit's revision check repeats in the UPDATE, so a lost race is a conflict.
+  - `server.feedback_api.create_feedback_router(repository | repository_for=, prefix=, auth=,
+    trace_id_for=)`:
+    - `POST /feedback` answers 201 new or 200 for a retry, and fills a missing `trace_id` from
+      the request.
+    - List with every filter; get; `PUT` gated on `If-Match` (428/409); `PATCH .../review`;
+      soft `DELETE`.
+    - `.../history`, `.../duplicates`, `POST`/`DELETE .../duplicate`.
+    - Writes without auth fail closed in a deployed posture.
+  - `feedback.py` and `feedback_sink.py` docstrings state the current boundary: a host stores
+    feedback for the entities it owns, and eval-service keeps its own. The sink's docstring no
+    longer names a gitignored plan file. Em-dashes removed from `feedback.py`.
+
+- **Evaluation datasets: versioned case sets with a store and HTTP routes.** First step of moving
+  eval-service's control plane into the SDK so Plato and eval-service can both be thin hosts.
+
+  - `evaluation.datasets`: `DatasetStore` over named datasets of `GoldenCase`s. Each version is
+    immutable and carries a content digest (`dataset_digest`, order-independent), its parent, and
+    a change summary from `diff_case_sets`. `revise(..., base_version=)` opens the next version
+    and raises `DatasetConflict` when the base is stale; identical cases open nothing. `fork`
+    copies a version into a new dataset and records its origin, which is also how a dataset moves
+    to a different entity. Status is `draft`, `published` or `archived`; names are unique per
+    tenant; a version holds at most `MAX_DATASET_CASES`; duplicate `case_id`s are refused.
+  - `DbDatasetStore` on `fabric.db`, tenant-scoped at construction, tables `eval_dataset` and
+    `eval_dataset_version`. A unique `(dataset_id, version)` turns a lost revision race into
+    `DatasetConflict` rather than a second copy of one version. Exported lazily from
+    `jazzx_sdk.evaluation`.
+  - `server.eval_api.create_datasets_router(store | store_for=, prefix="/eval", auth=)`: list
+    (by status or entity), create, get (any version), versions, `PUT .../cases` gated on
+    `If-Match` through `check_if_match` (428 without it, 409 when stale), `PATCH` for name,
+    description, tags and status, and fork. Responses carry the latest version as `ETag`. Writes
+    without `auth` fail closed in a deployed posture. Not yet mounted in Plato.
+- **Evaluation experiments: a dataset version, run against an entity, scored by a template.**
+  Second step of the eval control plane.
+
+  - `evaluation.experiments`: `Experiment` snapshots what decides its result at creation (dataset
+    id, version and digest, the entity, the `EvalTemplate`, the invoker config), so two
+    experiments with equal snapshots are comparable. `ExperimentSpec` is what a caller submits;
+    `ExperimentRunner.create` resolves it, taking the dataset's latest version and bound entity
+    when none is given, and refuses a template naming a scorer the registry lacks.
+  - `Invoker` is the host's seam: `invoke(entity, case, config=) -> Invocation(output, trace_id,
+    trace)`. `trace` reaches scorers as `context["trace"]` (the operational scorers read it) and
+    is not stored. Scorers also get `context["input"]` and `context["case_id"]`.
+  - `ExperimentRunner.start` claims and launches a background task; `run` claims and executes in
+    the caller's task, for a job or a worker; `execute` runs every case not yet completed with
+    `concurrency` at once (`DEFAULT_CASE_CONCURRENCY`), so restarting a failed experiment
+    resumes it. A case whose invocation or scoring raises is recorded as a failed `CaseRun` and
+    the rest continue; anything that stops the experiment marks it `failed` with the reason.
+    `rerun` creates a new pending experiment from the same snapshot, linked by
+    `source_experiment_id`.
+  - `ExperimentSummary`: pass rate over all cases (failed invocations count against it), mean
+    score over scored cases, and per-scorer mean score and pass rate keyed by `ScorerSpec` key.
+  - `DbEvalExperimentStore` on `fabric.db`, tables `eval_experiment` and `eval_case_run`, the
+    full model as JSON beside the filtered columns. `claim` is a conditional UPDATE on status, so
+    one of two concurrent starts wins. Named `EvalExperimentStore` because `ExperimentStore` is
+    already the MLflow run-record store.
+  - `server.eval_api.create_experiments_router(runner | runner_for=, templates=, prefix=, auth=)`:
+    list (by dataset, status, entity), create with an inline template or a `template_name` from
+    the host's `EvalTemplateRegistry`, get, case runs, `POST .../start` (202; 409 unless pending
+    or failed), `POST .../rerun`. The datasets and experiments routers share the entity filter
+    and the deployed-posture write guard.
+  - Not yet: nothing reclaims an experiment left `running` by a process that died; a host's job
+    role owns that until Plato wires one.
+
+- **Custom scorers and a scorer catalog.** Third step of the eval control plane.
+
+  - `evaluation.custom_scorers`: `CustomScorerDefinition` is a scorer as data. `natural_language`
+    holds guidelines graded by `LLMJudgeScorer`; braces in the guidelines reach the judge
+    literally. `python` holds a script defining `score(case)` over `input`, `expected`, `actual`
+    and `context`. It is checked on save by the policy rules' `check_python_rule` (allowlisted
+    imports, no forbidden builtins, reads only those four keys) and runs only through the
+    `PythonExecutor` protocol the policy rules already use, never in process. It may return a
+    number in [0, 1], a bool, or `{"score", "passed", "comment"}`. Each kind refuses the other's
+    body. Guidelines and scripts are bounded by `MAX_GUIDELINES_CHARS` and `MAX_SCRIPT_CHARS`.
+  - Revisions are immutable; a scorer's name and kind are fixed at creation.
+    `CustomScorerStore.revise(..., base_revision=)` raises `CustomScorerConflict` when stale.
+    Archiving stops new pins, and revisions already pinned still resolve.
+  - `ScorerCatalog(scorers, custom=, llm=, python_executor=)`: a host's built-in `ScorerRegistry`
+    plus one tenant's custom scorers. A template names one as `custom:<name>` or
+    `custom:<name>@<revision>`. `pin` rewrites bare references to the latest active revision,
+    keeping the result key unpinned so summaries group across revisions. `build_template`
+    resolves a template into its composite, raising `ValueError` for anything that does not
+    resolve, including a kind whose LLM or executor the catalog lacks. `describe` lists
+    built-ins, then active custom scorers.
+  - `ExperimentRunner(scorers=)` takes a `ScorerRegistry` or a `ScorerCatalog`. `create` pins
+    the template before storing it, so an experiment keeps scoring with the revision it was
+    created against.
+  - `DbCustomScorerStore` on `fabric.db`, tables `eval_custom_scorer` and
+    `eval_custom_scorer_revision`.
+  - `server.eval_api.create_scorers_router(catalog | catalog_for=, templates=, prefix=, auth=)`:
+    - `GET /eval/scorers` lists the catalog; `POST /eval/scorers/score` scores one case, guarded
+      like a write because it runs a judge or a script (502 when the scorer itself fails).
+    - `GET /eval/templates` and `GET /eval/templates/{name}`.
+    - Custom scorers: list, with `include_archived`; create; get any revision; list revisions;
+      `PUT` gated on `If-Match`; archive and restore. These answer 404 when the catalog has no
+      store.
+  - Not built: the agent-judge kind (scorers bound as tools to an `InteractiveAgent`), until a
+    real use needs it.
+
+- **Plato hosts evaluation.** Fourth step of the eval control plane: the SDK's eval routers,
+  mounted for Plato's own assistants.
+
+  - `/api/v1/eval/datasets`, `/eval/experiments`, `/eval/scorers`, `/eval/templates` and
+    `/eval/custom-scorers` (`plato/api/eval.py`). They are mounted whenever Plato has a database
+    and use per-tenant stores, like the packs and authoring routes. Writes are refused
+    unauthenticated in a strict posture, through the same `withholding` gate authoring uses.
+  - The built-in scorers are `evaluation.standard_scorers(llm)`: `exact_match`,
+    `within_tolerance`, `set_coverage`, `jaccard_overlap`, and `llm_judge` when there is an LLM.
+    The LLM is the one the assistants are wired with, now readable as `AssistantRuntime.llm`, so
+    the local wiring's judge is scripted and keyless.
+  - `server.eval_api.AssistantInvoker(runtime, tenant_id)` runs a case as one turn against an
+    `AssistantRuntime` assistant:
+    - The input is `{"messages": [...]}`, `{"query": "..."}` or a bare string. The scope comes
+      from `input["scope"]` merged with `config["scope"]`, and the config wins.
+    - Each case gets its own conversation.
+    - The output is the structured result when there is one, else the answer text.
+    - A turn with an `error_code`, or an entity that is not an assistant, fails the case.
+    - Bound to the request's tenant, so another tenant's assistant id resolves to nothing.
+  - One `ExperimentRunner` per tenant for the life of the process, so the background task a
+    started experiment runs on stays referenced.
+  - `job:eval-reclaim` (`plato.jobs.EVAL_RECLAIM_ROLE`) fails experiments that have finished no
+    case for `DEFAULT_EVAL_IDLE_SECONDS`, across every tenant. Restarting one resumes it. The job
+    exits 3 when the wiring has no database, as `job:migrate` does.
+  - This rests on `EvalExperimentStore.reclaim_stale(idle_since=)`, with `heartbeat_at` moving on
+    claim and on every case run. The update is conditional on the heartbeat it read, so an
+    experiment that made progress in between is left running.
+  - Migration `0007_eval` creates the six `eval_*` tables. Checked against the models with
+    alembic's `compare_metadata` as well as the suite's table and column tests. Plato still has
+    no feedback table.
+  - Docs:
+    - `docs/ARCHITECTURE.md` gains the eval hosting decision and the one-writer rule.
+    - `plato/guide.md` gains the eval routes and the list of job roles.
+    - The README diagram now shows `job:*` and `eval`.
+
+- **Experiment comparison and baselines.** Fifth step of the eval control plane.
+
+  - `evaluation.experiment_comparison.compare_experiments(baseline, runs, candidate, runs)` pairs
+    two completed experiments' case runs by `case_id`.
+    - Each case is `improved`, `regressed` or `unchanged` on score; `unscored` when either side
+      failed; or `only_baseline` / `only_candidate`.
+    - Each case also carries a `flip` when its pass verdict changed: `fixed` or `broke`. This is
+      what a mean hides.
+    - `ExperimentComparison` carries the counts, `match_rate` over scored pairs, and pass-rate
+      and mean-score deltas overall and per scorer key.
+    - `same_case_set` says whether both ran the same dataset digest. Pairing holds either way.
+  - `check_ab_bars` now gates an `ExperimentComparison` as well as an `ABResult`, through a
+    `metrics()` both provide. A promotion gate can be `PassBar(metric="broke", maximum=0)` or the
+    default `match_rate >= 0.95`. It uses the same vocabulary as `guidance_ab` rather than a
+    second one.
+  - Baselines, one per entity: `EvalExperimentStore.set_baseline` / `get_baseline`, table
+    `eval_baseline`. `ExperimentRunner.set_baseline(experiment_id)` accepts only a completed
+    experiment. `ExperimentRunner.compare(candidate_id, baseline_id=None)` compares against the
+    entity's baseline when none is named.
+  - Routes on the experiments router:
+    - `GET /eval/experiments/{id}/compare?baseline=` (404 with no baseline; 409 unless both
+      completed).
+    - `POST /eval/experiments/{id}/baseline`.
+    - `GET /eval/baselines/{entity_type}/{entity_id}`.
+  - Plato migration `0008_eval_baseline`. The guide and `docs/ARCHITECTURE.md` mention
+    comparison.
+  - `guidance_ab`'s prose is cut to what is true now: the module docstring loses its phase
+    history, `validate_guidance` its note about an earlier extraction, and `compare_manifests` a
+    comment claiming the manifest version hash was duplicated (it calls the same
+    `content_version`). Its em-dashes are gone.
+- **Prompt optimization as a job.** Sixth step of the eval control plane.
+
+  - `evaluation.optimization_jobs`:
+    - `OptimizationRunner.start(spec)` snapshots the dataset version and digest, the pinned
+      template and an `OptimizationConfig`, then runs `optimize_prompt` in the background.
+    - The seed defaults to the target's current prompt.
+    - Each scored candidate is saved as it arrives, so `GET` shows progress. That save is also
+      the job's heartbeat.
+    - `apply(job_id)` hands the winner to the host and records where it went. It refuses unless
+      the job completed with an improvement and has not been applied, so a better score on a
+      dataset is evidence and applying it is a separate decision.
+    - `create` refuses without an LLM to propose with.
+  - `PromptTarget` is the host's seam: `current_prompt`, `predict(entity, inputs, prompt)` and
+    `apply`. A case input that is not a mapping arrives as `{"query": input}`.
+  - `ReflectiveOptimizer(on_candidate=)` reports each candidate as it is scored, the seed
+    first. It is a constructor argument, so the `PromptOptimizer` protocol that client backends
+    implement is unchanged.
+  - `DbOptimizationJobStore`, table `eval_optimization_job`, with `reclaim_stale`. A reclaimed
+    job is failed, not resumed; the search restarts cheaply.
+  - The experiment store and this one share `evaluation._reclaim.reclaim_stale_rows` rather than
+    two copies of the conditional sweep.
+  - `server.eval_api.create_optimizations_router`: start (202), list by entity, get, and
+    `POST .../apply` (409 when there is nothing to apply). Template resolution (inline or
+    `template_name`) is one `_resolve_template` shared with the experiments router.
+  - `server.eval_api.AssistantPromptTarget(runtime, tenant_id, apply=)`: the prompt is the
+    assistant's persona. Candidates run through the new
+    `AssistantRuntime.agent_with_persona(tenant, assistant, persona)`, which binds the same
+    manifest with only the profile's persona swapped and is not cached. The agent for a
+    candidate is kept until the next candidate arrives. It shares the turn shaping with
+    `AssistantInvoker`, and applying is the host's callable.
+  - Plato mounts `/api/v1/eval/optimizations`. Its apply writes the winner into the tenant's
+    **pack draft**, at the markdown file `profile/profile.yaml` names as the persona.
+    - It refuses when no draft of the assistant's pack is open, or when the profile names no
+      persona markdown file (inline or absent). The loader reads only a file the profile names,
+      so there is no default path to write.
+    - It never publishes: the draft goes through the packs routes like any other authoring
+      change.
+    - The proposer uses the assistants' own LLM.
+  - `job:eval-reclaim` now sweeps optimization jobs as well as experiments
+    (`plato.jobs.reclaim_eval_work`). Migration `0009_eval_optimization`.
+  - Deviation from the plan: no `PromptRegistry` alias promotion. The job record already keeps
+    every candidate, and the pack draft is where Plato's prompts are governed. A second store of
+    prompt versions would be a second answer to "which prompt is this assistant on".
+- **Eval control plane, review round 1.**
+  - **Skipped results are neither scores nor failures.**
+    - `summarize` counts a skipped case as passed, as `ScorerResult.skipped` defines, and leaves
+      it out of `mean_score`. The new `ExperimentSummary.skipped` counts such cases.
+    - A skipped sub-result is left out of `by_scorer`.
+    - `compare_experiments` reads a case skipped on either side as `unscored`, not as a score of
+      0 that could report `regressed`.
+  - **Optimization heartbeat moves on every case.**
+    - `OptimizationJobStore.touch` runs before each case, not only when a whole candidate has
+      been scored.
+    - A seed pass over a large dataset could otherwise outlast `DEFAULT_EVAL_IDLE_SECONDS`, and
+      `job:eval-reclaim` failed a live job.
+  - **A reclaimed row is not revived by its old process.**
+    - `OptimizationJobStore.save` no longer moves a failed row back to running or completed, and
+      returns False when it declines.
+    - `EvalExperimentStore.finish` keeps the state of an experiment that is no longer running.
+    - Before, the status flapped and a user who restarted on the failure ran two searches.
+  - **Applying is atomic.**
+    - `claim_apply` / `release_apply` on the job store use a new `applied_at` column, in
+      migration `0009`. It was edited in place: it had never left this branch.
+    - Of two concurrent applies, one applies. An apply whose target raises releases the claim,
+      so it can be retried.
+  - **A failed case is retried, and a prompt that still cannot be scored does not compete.**
+    `optimize_prompt` retries a case whose run or scoring raises (`CASE_RETRIES`, one extra
+    attempt). A candidate with a case that still fails is recorded with `score=0.0` and
+    `rationale="not scored: ..."`, and never becomes best. A seed that cannot be scored fails
+    the run, since there is nothing to improve on.
+    - One flaky turn no longer fails a whole optimization job, which was the round-1 finding.
+    - A failed case is not averaged in as a real 0, which would make a no-better prompt read as
+      `improved` and put it in the pack draft.
+  - **A missing assistant is a 404.** `evaluation.EntityNotFound(LookupError)` is the host's "no
+    such entity", and `AssistantNotFound` now subclasses it. The optimization routes catch it
+    by name, so an unrelated `IndexError` is not reported as a missing entity.
+  - **A finish lands only for the run it claimed.** `claim` stamps a fresh
+    `Experiment.run_token` (and a `run_token` column, in migration `0007`, edited in place).
+    `EvalExperimentStore.finish(..., run_token=)` is one conditional UPDATE on it. A process
+    that was reclaimed, then outlived a restart, can no longer write `completed` with a partial
+    summary over the new run.
+  - **A reclaimed optimization stops.** `execute` returns at once for a job that is not running.
+    When a save is declined mid-run, it stops rather than spending the rest of the search on a
+    job the store has failed.
+  - **A failed save after apply releases the claim**, so the record cannot read "unapplied"
+    while refusing a retry as "applied already".
+  - Round 3 (passed, two notes, both closed):
+    - A candidate that could not be scored has `Candidate.score = None` rather than a 0.0 that
+      reads as measured.
+    - A seed that fails on a case raises `optimization.CaseFailed` with the case's position,
+      and the job's error names the dataset `case_id`. `CaseFailed` is exported from
+      `jazzx_sdk.evaluation`; a caller of `optimize_prompt` that caught its pipeline's own
+      exception from a seed failure now gets `CaseFailed`, with the original as `__cause__`.
+  - **Custom scorer script check moved.** It now runs on save and again before each run, and a
+    stored revision loads without it. A tightened `check_python_rule` can no longer stop saved
+    revisions being listed or pinned, and still stops them running. Stores pass
+    `STORED_CONTEXT_KEY` in the validation context.
+  - **Request models extend their specs.** `ExperimentCreate` and `OptimizationCreate` subclass
+    `ExperimentSpec` and `OptimizationSpec`, so a default changed on a spec is not shadowed by a
+    copy in the router.
+  - `job:eval-reclaim` warns when it sweeps no tenants, as `job:session-reaper` does.
+  - `identity`'s docstring says "nothing from the SDK is imported at module level":
+    `with_trace_context` imports one lazily.
+
+- **One key for a scorer's case input, `SCORER_INPUT_KEY` (`"input"`).**
+  - Experiments passed `context["input"]`, while `optimize_prompt` and `run_ab_comparison` passed
+    `context["inputs"]`. A Python custom scorer therefore saw no input under optimization.
+  - All four sites now use the constant. `"input"` is also what eval-service's judges read.
+  - A scorer that read `context["inputs"]` must read `context["input"]`; nothing in japes, jaci
+    or jazzx-assistant did.
+- `scorers.py` and `optimization.py`: module docstrings cut to the rules they state, without the
+  provenance paragraphs, and their em-dashes removed.
+- **Plato 0.1.7.** `plato/_version.py`'s docstring is cut to the rule.
+
+- **One UTC coercion, `jazzx_sdk.utc.as_utc`.** It is the rule behind every read of a naive
+  timestamp (SQLite hands them back for timezone-aware columns; pack dates arrive naive), and it
+  passes `None` through.
+  - It replaces private copies in `llm.model_overlay_db`, `manifest.store_db`, `pack.draft_db`,
+    `pack.store_db`, `interactive.session_db`, `audit.events_db`, `queue.execution_db` and the
+    three eval stores.
+  - It also replaces inline coercions in `observability.span_mapping`,
+    `fabric.graph.proposal_comments` and `automation.schemas`.
+  - `manifest.lifecycle.as_utc` re-exports it, so existing imports keep working. Its docstring had
+    listed the copies as available work.
+  - `fabric.canonical.policy` and `fabric.guidance.schema` now import it from `jazzx_sdk.utc`
+    rather than reaching up into `manifest`.
+  - Em-dashes removed from the files this touched.
+
+- **Comments cut to what is true now** in files this change touched:
+  - `identity`: the module docstring, `security_context`, the default header provider (now a
+    precedence list), `default_request_headers`, `request_headers_allowlist`,
+    `with_trace_context`, `KERNEL_HEADER_ALLOWLIST`, `kernel_request_headers` and
+    `CallerIdentity`.
+  - Two claims were false and are fixed: the security-context comment named
+    `_security_context_headers` as `ClientLayer`'s default provider (it is
+    `default_request_headers`), and `kernel_request_headers` said `ClientLayer.kernel` uses it
+    (`ClientLayer.kernel` builds the same scoping over its own provider).
+  - `KernelClient`'s docstring pointed at `jazzx_sdk.handlers.kernel_request_headers`, and
+    `server/app.py`'s middleware comment at `handlers._default_request_headers`; both live in
+    `identity`.
+  - Em-dashes removed from `identity`, `clients/kernel_client`, `server/app` and
+    `evaluation/__init__`.
+
+- **`DEFAULT_TENANT` has one definition, `jazzx_sdk.identity.DEFAULT_TENANT`.** Nine stores
+  (`pack.store`, `manifest.store_db`, `interactive.session_db`, `audit.events_db`, `runs.store_db`,
+  `llm.model_overlay_db`, `fabric.graph.proposal_store_db`, `fabric.graph.proposal_comments`,
+  `evaluation.datasets_db`) each declared their own `"default"`, because `pack.store`'s copy sat
+  above most of them in the tier contract. `identity` is the bottom tier, so each now imports it;
+  the old module-level names still resolve, so `from jazzx_sdk.pack.store import DEFAULT_TENANT`
+  keeps working. Plato's wiring and model-overlay router import it from `identity`. The four
+  near-identical docstrings that justified the copies are gone, and `parse_pack_reference`'s
+  docstring is cut to the rule.
+
+- **Chat pipeline: what a consumer's own stages need.** Third step toward hosting
+  jazzx-assistant's turn.
+
+  - `InteractiveResponse.error_code`: a stable code for a failed stage. `default_step_error` sets
+    `<step>_failed` (`gate_failed`, `ground_failed`, `answer_failed`, ...). A consumer with its own
+    vocabulary (jazz: `gate_error`, `grounding_failed`, `agent_error`) or per-stage wording binds
+    a handler that calls `default_step_error` and updates the copy. Empty on the agent's
+    max-turns reply, which is what separates a failure from a loop out of turns now that both are
+    `incomplete=True`.
+  - `GateDecision.verdict` keeps the classifier's typed verdict in `state.emitted["gate"]` for
+    later stages and audit; `GateDecision.refusal` is a decline the gate wrote itself, which
+    `refuse_step` uses over its configured `decline`.
+  - `ChatTurn.metadata`: the caller's per-turn data (effective config, a program tag, ids), which
+    japes never reads.
+  - `ChatTurn.publish`: while `stream_chat_turn` runs, the sink any stage awaits to put an event
+    on the stream; `None` on the blocking path and after the stream ends. A bound `answer` can
+    now stream (tool events, reasoning, its own deltas), where before only the reference answer
+    could. The generator yields published events unchanged, so its annotation is
+    `AsyncGenerator[Any, None]`; a finished run still ends with `InteractiveStreamEvent(done=True)`.
+    A stage publishing a `done` event raises (it would reach the consumer ahead of `compose` and
+    `persist`, carrying the raw answer), and `chat.ttft_ms` is stamped at the first text delta,
+    not the first event of any kind.
+  - `structured_classifier_gate` keeps the parsed verdict on every `GateDecision` it returns,
+    including a bare route string, `None`, or a mapper's `GateDecision` that set none.
+  - A turn that produced no answer carries `error_code="no_answer"`, so it no longer reads as a
+    max-turns reply.
+  - The module docstring's streaming example skips events that are not `InteractiveStreamEvent`.
+  - `run_chat_turn`'s `pipeline=` is optional. Omitted, it is built from the components by the
+    new `pipeline_for(components, turn)`, the derivation `stream_chat_turn` already used, so a
+    bound `compose`, `ground` or `escalate` gets its stage without a flag. Before, a caller that
+    bound `compose` and passed `build_chat_pipeline()` got the branch's raw answer back, compose
+    silently skipped. An explicit pipeline still runs as given.
+- **Docs: the chat pipeline as a turn engine.** A new `docs/ARCHITECTURE.md` section: stages,
+  what a consumer binds at each, the decisions (stages over a hook spec, `InteractiveResponse` as
+  the envelope, caller-owned persistence, a sink rather than a transport, cooperative cancel) and a
+  worked multi-stage assistant, blocking and streaming, checked by running it against stubs. The
+  README's version lines name 2.5.5 in progress, 2.5.4 on `dev` and 2.5.3 as the last release on
+  `main`; they had stopped at 2.5.2 and 2.5.1.
+
+- **Chat pipeline: `compose` and `persist` stages, and `build_chat_components(overrides=...)`.**
+  Second step toward hosting jazzx-assistant's turn. A consumer whose turn is more than one agent
+  call now binds its own stages the way every other japes pipeline does, instead of the spec's
+  proposed `ChatSpec` of hooks, `ChatResult` type and persistence-policy enum.
+
+  `compose` is an optional stage (`build_chat_pipeline(with_compose=True)`) after the branches. A
+  bound one reads the answering branch's value from `state.emitted` and returns what the user
+  reads, as an `InteractiveResponse` carrying any application value on `.output`. It runs on
+  every route including refuse, and like `finalize` it is not cancel-guarded, since composing is
+  part of delivering an answer that exists. japes ships no reference compose.
+
+  `persist` is a stage (`with_persist=True`, the default) whose reference component,
+  `persist_step(agent)`, is the side-branch persistence that used to live inside `finalize_step`:
+  escalate and refuse are appended through `agent.persist_turn`, the direct answer is left to
+  `respond`. It now records what the user read, composed or not. `finalize_step()` is pure
+  resolution and takes no `agent` (breaking for a direct caller of `finalize_step(agent)`; none
+  exists outside `chat.py`), which also means overriding `finalize` no longer drops persistence.
+
+  `overrides` merges last and always wins, as in `build_investigation_components`. A `None` value
+  unbinds a step and drops its key: `{"persist": None}` is how a caller that owns its
+  conversation record (jazz's socket path commits before it delivers) turns japes' writes off.
+  `stream_chat_turn` derives `compose` and `persist` from the bound components as it already does
+  for `escalate` and `ground`.
+
+  A failing `compose` or `persist` is reported as the failed turn it is: `_final_response` now
+  falls back to the *latest* `InteractiveResponse` emitted (the failing step's `on_step_error`
+  substitute) rather than the first, which was the branch's own answer and made the failure
+  invisible on both entry points.
+
+  Every default pipeline gains a `Persist` stage in its `on_step` events. The catalog's chat
+  `steps` and the README pipeline table list `compose` and `persist`.
+
+- **Chat pipeline: the streaming path honours bound components, both paths resolve a turn alike,
+  and cancel is checked between stages.** First step of making `pipelines.chat` host
+  jazzx-assistant's turn (the `ReasoningEngine` spine).
+
+  `stream_chat_turn` built its pipeline from its kwargs (`escalate is not None`,
+  `bool(turn.sources)`), so a caller's `components["escalate"]` was dropped, and so was a
+  `components["ground"]` on a turn declaring no `sources`, which is how a consumer grounding
+  through one provider looks. It now builds from what is bound. The reference `ground_step` is
+  marked (as `answer_step` already was), so it alone is left out for a turn without sources and
+  `on_step` sees no empty Ground stage.
+
+  `run_chat_turn` now resolves its result through `_final_response`, the resolver the streaming
+  terminal event uses. Turns that returned `None` there now return what streaming returned: a
+  cancelled turn with no answer is `cancelled`; otherwise an escalation with no `escalate`
+  component declines (`block_reason="escalate_not_configured"`, wording `DEFAULT_DECLINE`), and
+  any other turn with no answer is `incomplete`. Cancellation is checked first, on both paths, so
+  a turn cancelled during a gate that chose escalation is not reported as a decline. The return
+  annotation drops `| None`.
+
+  `ChatTurn.cancel` was documented as checked between stages and was only checked before the
+  run and between stream deltas. `chat_guards` now keeps gate, ground, escalate, answer and
+  refuse from starting once it is set; `finalize` still runs, so an answer produced before the
+  cancel is delivered.
+
+  Stale prose from before v2.5.2's streaming rebuild corrected: the module docstring,
+  `build_gate_pipeline` (no longer used by `stream_chat_turn`), `ChatTurn.grounded`,
+  `ground_step`, `persist_side_branch`, `_notify_turn_complete` and `stream_chat_turn`.
+
+*SDK 2.5.5, Plato 0.1.7 (Plato hosts evaluation). Work lives on the `v2.5.5` branch, cut from `dev`.*
+
 ## [2.5.4] - unreleased
+
+- **Two PR #75 review fixes.** `DbPackDraftStore.open` now refuses seed files whose paths store
+  as one (`m.yaml` and `m.yaml `, collapsed by `check_rel_path`'s strip) with a `ValueError`, which
+  Plato's draft routes answer as a 422. Before, the file-path unique constraint fired, the
+  race handler swallowed it, and an `assert` on the re-read surfaced as a 500 (or returned `None`
+  under `python -O`). With seeds deduplicated, the `IntegrityError` handler covers only the
+  concurrent-open race it was written for; the assert is an explicit raise. Closes
+  `TODO(integrity-catch-too-broad)`.
+
+  `check_python_rule` now reports an `async def` entrypoint as "must be a plain def, not async
+  def" instead of "defines no top-level function", which sent the author looking for a function
+  that was there. The executor would otherwise have got a coroutine back and failed the rule as
+  a non-bool result.
+
+- **The schema check is SDK code: `jazzx_sdk.fabric.db.SchemaVersion`.** Four SDK stores
+  (`pack`, `manifest`, `llm.cost`, `agents.definition`) each tell their consumer that *table DDL
+  belongs in the consuming service's alembic*, and then hand it nothing to verify that with. Plato
+  had written the verifier; the next consumer would have written it again or skipped it.
+
+  Not a move. Three things in it were the service's, and each is now a constructor argument: the
+  alembic tree, an optional `on_unmigrated` hook (Plato refuses a database migrated under its old
+  `plato_*` schema layout, which is its own history and nobody else's), and the sentences an
+  operator reads. The upgrade command is derived from the tree rather than configured, so it
+  cannot name a path the service does not use. `PLATO_SQLITE_PATH` and `PLATO_DB_BACKEND` are
+  Plato's hints, passed in; the default says something true and generic.
+
+  `plato/boot/schema_version.py` is 115 lines and keeps its module-level names, so every caller in
+  the service is unchanged and the 50 existing tests pass as they stood.
+
+  Two hazards the generalization introduced, both caught in review and fixed. `_script_directory`
+  overrode the ini's `script_location` with `migrations` beside it, which for any service laying
+  its tree out elsewhere made it and `upgrade_to_head` read different directories -- the exact
+  drift a single place exists to prevent; the ini's own value is used now, with the sibling as a
+  fallback only when the ini names none. And `upgrade_to_head` states as a precondition, not an
+  aside, that the service's `env.py` must honour `config.attributes["store"]`: one reading
+  `sqlalchemy.url` instead migrates whatever the ini names, while the read-back inspects only the
+  store it was passed and reports success over a database it never touched.
+
+- **The SDK root is 14 modules, not 24.** What was left there had stopped saying anything about
+  the shape of the SDK, so four groupings now carry a feature each:
+
+  `jazzx_sdk.safety` holds the six guards on boundaries where input japes does not control meets
+  infrastructure it does: `oidc` (an inbound token), `net` (a caller-supplied URL), `paths` (a name
+  joined onto our directory), `sanitize`, `templating` (an untrusted template), `odata` (a filter a
+  value cannot break out of). `net_safety` and `path_safety` lose the stuttering suffix inside it.
+  It replaces `sanitize` in the tier contract, which it fits: the group depends only on
+  `concurrency` and `failures`.
+
+  `jazzx_sdk.closure` takes `closure` as its `__init__` and `bpmn` beside it, which is what their
+  own docstrings already described: `bpmn` reads a repository as "a reference graph `closure` can
+  walk". The `jazzx_sdk.closure` import path is unchanged.
+
+  `jazzx_sdk.aggregate` holds `portfolio` and `reconcile`, the two many-to-one shapes every domain
+  re-rolls. Not in `finance`: both say in their own docstrings that they impose no domain.
+
+  `jazzx_sdk.ui` becomes a package holding what the module held, leaving room for the thin-client
+  work and keeping its import path identical.
+
+  Consumers: juno imports one symbol from the SDK (`client_layer.ClientLayer`) and is untouched.
+  jaci's only affected imports are `jazzx_sdk.ui`, whose path did not move, so it is untouched too.
+
+- **Route prefixes are SDK code: `jazzx_sdk.server.prefix`.** `api_prefix()` and
+  `mount_prefix()` read `API_V1_PREFIX`, which the module's own comment says matches every sibling
+  service and the platform. Nothing in it was Plato's but the docstring. In `server/` because
+  mounting HTTP routes is what it is for.
+
+- **`cryptography` floor raised to 50.0.0, and mlflow to 3.16.1 to allow it.** mlflow was the
+  reason alert #98 (PKCS#7 EnvelopedData Bleichenbacher oracle) sat deferred: through 3.15.1 it
+  pinned `cryptography >=43.0.0,<50`, and forcing 50 dragged mlflow back to 3.2.0. 3.16.1 relaxed
+  that to `<51`, so the floor and the tracing backend can both move forward and all three
+  cryptography alerts close together.
+
+  The mlflow bump is exercised, not assumed: mlflow is an optional extra, so a plain
+  `poetry install` leaves the old one in place. Installed with the extras CI uses, and note that
+  poetry left `mlflow` at 3.15.1 with `mlflow-skinny`/`mlflow-tracing` at 3.16.1 until a forced
+  reinstall; the suite was re-run against the matched set.
+
+- **Superseded: the 49.0.0 step below.** Two Dependabot alerts: a verifier accepting wildcard
+  DNS names that escape `permittedSubtrees` (moderate), and exponential path-building on duplicate
+  self-signed intermediates (high). There is no 48.x patch release, so 49.0.0 is the first fix.
+
+  It does not hit the wall that alert #98 still sits behind: mlflow 3.15.1 pins
+  `cryptography >=43.0.0,<50`, which admits 49 and holds mlflow where it is. #98 needs 50.0.0 and
+  remains deferred for that reason.
+
+  The relock also moved `msal` 1.34.0 to 1.39.0, which is forced rather than drift: 1.34.0 pinned
+  `cryptography <49` and 1.39.0 allows `<51`. Nothing else moved.
+
+- **An upload's own content is extracted, not its temporary pathname.** The policy-extract
+  upload route wrote each upload's bytes to a temp path and then asked `to_markdown`, which takes
+  a path *or* inline markdown and returns anything it declines to treat as a path unchanged. A
+  filename carrying a newline makes the temp path one of those, so the document became its own
+  pathname and the run proposed rules from nothing. `httpx` percent-encodes such a filename, as
+  RFC 7578 asks; Starlette passes through one from a client that does not, which is the case the
+  test builds by hand. It calls `convert_document` now, the path-only entry point, whose raise the
+  route already turns into a 422 naming the file.
+
+  The rest of the family was checked and is correct: `classify`, `extract` and
+  `InteractiveAgent._read` all document path-or-text input and want the front door.
+
+- **The JTBD extraction CLI refuses a corpus it cannot cite, and reports a run that proposed
+  nothing.** Three ways a bad run looked like a good one:
+
+  `to_markdown` returns anything it cannot resolve to a file unchanged, which is the right
+  contract for a front door taking either a path or already-converted markdown. Every CLI argument
+  is a path, so anything it declines to convert was extracted as a document whose text was its own
+  path. It calls `convert_document` instead, which is the path-only entry point and raises. That
+  also reads two documents the front door would have declined: a path over its 512-character
+  limit, and a file whose text happens to equal its own path.
+
+  The CLI now passes `default_step_error` to `run_policy_extract`. It is opt-in, so a step that
+  raises, such as the corpus refusal below, left a traceback instead of the refusal `_main`
+  already knows how to print.
+
+  A repeated document name makes two documents cite as one, since a citation is the name plus the
+  clause marker. Refused in `segment_step` rather than in the CLI: the CLI and
+  `PolicyExtractionService` share that step, and a check on one entry point left the other
+  collapsing silently. Refused rather than disambiguated, which would put a machine's directory
+  layout into a pack's citations.
+
+  A run proposing no rules leaves `result.policy` as `None`, so nothing was written and the exit
+  code was 0. With `--out` pointing at an earlier run's policy, that presented the old file as
+  this run's artifact. It now says so on stderr and exits non-zero; the stale file is still left
+  alone rather than truncated, so nothing is lost either way.
+
+- **A composite reports the child that could not run, not the first one that stopped.**
+  `_composite_reason` special-cased only the unapproved reason and otherwise took child order, so
+  an `all_of` whose first child lacked data and whose second could not be evaluated reported the
+  data gap, which excuses the rule. Any withholding reason now outranks a data gap;
+  `POLICY_NOT_ACTIVATED` still ranks first among them, because it is the one whose refusal text
+  names the key an operator has to approve.
+
+- **A blank procedure status is refused.** Keying statuses for matching made a whitespace-only
+  status key to the empty string, which is also what a model answering nothing keys to, so a blank
+  answer resolved as that outcome's verdict. `min_length=1` on the field does not catch it, since
+  a space is one character.
+
+- **A split clause keeps its heading.** `_split_long` builds replacement segments and did not
+  carry the new field, so a clause long enough to split lost the qualification a short one kept.
+
+- **One rule matches a procedure status everywhere.** `JtbdExtractor._candidate` case-folded its
+  own way, so a template declaring `" PASS "` kept the template's generic criterion instead of the
+  generated requirement. It uses `outcome_key` now, as validation and lookup do.
+
+  Deferred, as `TODO(dependency-check-order)` in `condition_evaluator.py`: the natural-language,
+  procedure, ratio and matrix evaluators check evidence before their deployment dependency, so a
+  missing field masks a missing agent or profile the same way it masked the Python executor. They
+  `raise` where `PythonEvaluator` withholds, and `check_compliance` does not catch it, so
+  reordering alone turns a silent allow into an uncaught exception rather than a governed refusal.
+  Making them withhold is the right fix and is a change to four evaluators' error contract.
+
+- **A governing rule that could not run no longer passes silently.** `check_compliance` handled
+  only `POLICY_NOT_ACTIVATED` as withholding and skipped every other `INDETERMINATE` under a
+  comment that said "missing data". `CONDITION_UNEVALUABLE` is not missing data: it is the rule
+  failing to run at all. A procedure answering a status the pack never declared, or a Python rule
+  whose condition could not be read, came back inside `allowed=True` with empty warnings and "All
+  policy gates passed" -- the worst shape a compliance engine has, a gate nobody evaluated
+  reported as a gate that passed.
+
+  The split now lives in one named place, `WITHHOLDING_REASONS` behind `gate_blocks`, which the
+  three gate call sites already shared and which `check_compliance` now asks of a rule's own
+  condition too. `IndeterminateReason` has four members and a test pins which two withhold, so
+  the next one added has to answer the question rather than inherit a default.
+
+- **The Python executor is checked before the reads.** Whether an executor is installed is a
+  property of the deployment, not of the case, but it was asked second: a rule with a missing read
+  answered `EVIDENCE_MISSING` on a replica that could never have run it, and missing evidence
+  excuses the rule, so an unexecutable governing rule came back inside an allow. `PythonEvaluator`
+  already claimed in its docstring that every way it cannot run withholds; now it does.
+
+- **Two procedure statuses one lookup cannot tell apart are refused.** Uniqueness compared the raw
+  strings while `outcome()` case-folded, so a pack could declare `PASS -> SATISFIED` and
+  `pass -> VIOLATED`, pass validation, and have the violation resolve as the satisfaction.
+  `outcome_key` is now the one rule both use, so they cannot disagree again; it also strips, which
+  the lookup did to its argument and not to the declaration.
+
+- **`PythonExtractor` can build its output schema.** `_DraftCase.context` is an open dict, which
+  is invalid under the strict JSON schema `AgentOutputSchema` defaults to, so `AgentOutputSchema`
+  raised before any model call and every `extract` and `formalize` failed on construction. Built
+  non-strict, with a test that sweeps every `output_type` in the SDK rather than this one.
+
+- **A clause keeps the heading that qualifies it.** The heading was used only as a fallback
+  marker, so a numbered clause under "Only for loans above $1,000,000" reached the model as a bare
+  obligation and the rule extracted from it applied to every loan. `ClauseSegment.heading` carries
+  it beside `text`, and one `_render_unit` puts it in both prompts that show units; it was written
+  out twice and only one copy would have got this.
+
+- **`fabric` no longer imports `pack`.** Two `fabric.graph` modules took `DEFAULT_TENANT` from
+  `pack.store`, which is upward in the tier contract and failed `lint-imports` on the default
+  branch. Declared locally, as the five other stores outside `pack` already do.
+
+- **An authoring chat: `jazzx_sdk.pipelines.authoring_chat`.** `authoring_tools(service=, store=,
+  tenant_id=, reasoning=)` gives an `InteractiveAgent` five tools: `start_extraction` (document
+  text into a run), `extraction_status`, `list_rule_proposals`, `propose_rule_edit` and
+  `check_rule_ambiguity` (policy-workbench's ambiguity review, as one structured call).
+  `build_authoring_chat` wires them into `pipelines.chat` with `authoring_agent_spec` (tools as
+  direct skills). The chat writes only proposals: an edit is a new `<policy>:<rule>~edit-*`
+  proposal beside the original, reviewed and merged like any extracted rule. No router step: the
+  agent chooses the tool. Not yet mounted in Plato, whose assistants get no tools today (the
+  domain-pack runtime plan's 0.4).
+- `packs.html` reads every FastAPI `detail` shape (string, `{message}`, validation array).
+
+- **Plato: authoring routes.** `plato/api/authoring.py` mounts the SDK's extraction and
+  proposal-review routers at `{prefix}/authoring/extract/...` and `{prefix}/authoring/review/...`,
+  with stores built per request for the resolved tenant (`DbProposalStore`, `DbPackDraftStore`,
+  `DbProposalCommentStore`), writes behind the packs routes' author gate, and extraction on the
+  configured model. The JTBD template comes from the tenant's draft file `jtbd_template.yaml` when
+  there is one. Mounted only when a database is wired. Migration `0006_policy_authoring` creates
+  `proposal` and `proposal_comment`; `plato/models.py` registers both stores. Flow: upload documents
+  to a run, review and approve proposals, `merge-rules` into the pack draft, then the existing draft
+  publish. `packs.html` gets an "Author policy from documents" panel under the draft editor:
+  upload and extract, proposal cards (rule, steps or source, cited excerpt, reasoning) with the
+  lifecycle's own buttons and comment threads, and merge-into-draft.
+- The extraction router accepts an async `tenant_of`; the review router resolves the vocabulary per
+  request with `vocabulary_for_request` and its stores once per handler.
 
 - **Authoring over HTTP, in the SDK.** Router factories any shell mounts, with no Plato import:
   - `server.policy_extract_api`: `POST {prefix}/{pack_id}/runs` (multipart documents, `policy_id`,

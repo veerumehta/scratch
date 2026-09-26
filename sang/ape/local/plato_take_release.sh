@@ -63,7 +63,7 @@ fi
 
 echo
 echo "== what taking $RELEASE brings in"
-git --no-pager diff --stat "$RELEASE" HEAD | tail -1
+git --no-pager diff --stat HEAD "$RELEASE" | tail -1
 
 if [ "$APPLY" = "0" ]; then
     cat <<EOF

@@ -9,6 +9,19 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ## [Unreleased]
 
+### Changed: v0.20.7, japes 2.5.5 (branch `japes-2.5.5`, needs japes >= 2.5.4)
+- Overlays declare what they replace: japes retired field-claiming precedence, so an overlay rule
+  no longer silently switches off every core rule on its field. `RB_CI_OVERLAY`, `MAA_CRE_OVERLAY`
+  and `CFI_CRE_OVERLAY` now carry `replaces:` for the core rules they used to shadow (including
+  the RB ceiling/floor's warning tiers and both CRE LTV ceilings for MAA), so outcomes are
+  unchanged. Their `supersedes_core_rule` parameter is gone. Without this, MAA's 1.20x DSCR floor
+  would evaluate beside core's 1.25x.
+- `ci-spread-core` declares `programs: {rb-abl-2026: [RB_CI_OVERLAY]}`, so
+  `DefaultPolicyExpert.from_pack` wires the overlay without jaci's `OVERLAY_MAP`.
+- AML behaviour change from the same japes release: `OPS-AUTONOMY-CEILING-HIGH-RISK` now evaluates
+  beside `BSA-EDD-HIGH-RISK` (it was skipped whenever the latter read `risk_tier`). The two compare
+  `HIGH` and `high` respectively; not changed here.
+
 ### Changed — japes 2.5.1 (branch `japes-2.5.1`, needs an unreleased japes)
 
 - **An unstated prepayment-penalty structure now denies where a state requires a buyout.**
