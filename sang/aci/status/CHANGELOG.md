@@ -18,6 +18,10 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
   would evaluate beside core's 1.25x.
 - `ci-spread-core` declares `programs: {rb-abl-2026: [RB_CI_OVERLAY]}`, so
   `DefaultPolicyExpert.from_pack` wires the overlay without jaci's `OVERLAY_MAP`.
+- ci_spread feedback goes to Plato when `JACI_PLATO_URL` is set: each thumbs or correction on
+  Jazz's answers is submitted through japes' `FeedbackApiSink`, with the question and reply as the
+  turn, and shows on Plato's evaluation page. Unset keeps it in the session
+  (`scenarios/ci_spread/feedback.py`, `JACI_PLATO_*` settings).
 - AML behaviour change from the same japes release: `OPS-AUTONOMY-CEILING-HIGH-RISK` now evaluates
   beside `BSA-EDD-HIGH-RISK` (it was skipped whenever the latter read `risk_tier`). The two compare
   `HIGH` and `high` respectively; not changed here.

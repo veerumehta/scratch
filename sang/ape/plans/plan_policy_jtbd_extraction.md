@@ -5,14 +5,14 @@ Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 Status: plan, 2026-09-24. Written against japes `5534f5e` on `v2.5.4`, and policy-workbench at its
 local checkout.
 
-> **Progress (v2.5.4, local, unpushed):** built in japes: steps 1-4 (`procedure` kind, `Segmenter`,
-> `policy_jtbd`, `rule_merge`), step 5's SDK half (`Rule.replaces`, `Policy.suppresses`, field-claiming
-> retired, manifest `programs:`), step 6 (extraction + review routers, comments, tenant-scoped
-> `DbProposalStore`), step 7 (`authoring_chat`, not mounted in Plato: its assistants get no tools yet),
-> step 8 (Plato `authoring` routes, migration 0006, `packs.html` panel), step 10 (`jtbdset`
-> import/export), step 11 (`python` rules behind a `PythonExecutor` seam). jaci overlay migration and
-> `programs:` edits are uncommitted in jaci (on `dev`). Open: dscr-core split (scope question), step 9
-> (jaci script replacement), live smoke on Acra docs, a shipped `PythonExecutor`.
+> **Progress (2026-09-26):** steps 1-8, 10, 11 built; in japes via the v2.5.4 squash (`dev`, `plato`)
+> and hardened by PR #75 on `v2.5.5`. jaci's overlay `replaces` migration, `programs:` and version
+> 0.20.7 are committed on jaci branch `japes-2.5.5` (`22e0b33`), with the ci_spread feedback wiring
+> (`02e3b21`); jaci's suite passes against v2.5.5 via `PYTHONPATH` (its venv still holds 2.5.3).
+> Open: live smoke on the Acra docs, dscr-core split (scope question), step 9 (jaci
+> `extract_policy.py`), Plato extraction lint (no `Pack` passed), in-memory runs vs multiple
+> replicas, `TODO(draft-merge-lost-update)`, a shipped `PythonExecutor`, chat mounting (runtime plan
+> 0.4).
 
 Prior art read first: `policy-ir-abstraction.md` (P8 shipped: open `Condition` union,
 `natural_language` kind), `plan_policy_extraction_kg.md` (why `Proposal(kind="rule")` exists and
