@@ -8,6 +8,16 @@ v2.5.5 and v2.5.6 built (eval and feedback in the SDK, the chat turn engine, the
 executor, formal attestations). §1 still holds except where noted. Phase 0 is being built on
 `v2.5.6`; later phases follow it.
 
+**Progress on `v2.5.6`:** 0.1 + 0.2 `5042a42d` (runs wired, queue key per tenant, `job:run-reaper`);
+0.3 + 0.4 `f6311805` (no local activator needed: `PLATO_PROFILE=packs` runs the default wiring at
+the local tier; `CurrentFabric` for assistants); 0.5 `cf6aa992` (archive route); 0.6 + 0.8 + 5.2.1
+`763dc4e0` (check route; publish runs the check and refuses on blocking findings; an unregistered
+guardrail is an error, which exposed the demo pack's governors failing every turn, so 5.2.1's
+`policy_keywords` guardrail kind was pulled forward from Phase 1 to fix it). Next: 0.7 `PlatoClient`.
+Deviation from §8: a Python pointer blocks publish only where `Pack` would resolve it
+(`policies.registry`, `conductor.pipeline`); unread `class:` entries are warnings, which keeps
+jaci's `clinical-intake-core` (a `modes.evaluator.class`) publishable as Phase 0's acceptance needs.
+
 **Rev 2 changes, in one place:**
 - Migration numbers: `0006`-`0010` are taken (policy authoring, eval, feedback). Case runs take the
   next free one, `0011`, wherever this plan said `0006`.
