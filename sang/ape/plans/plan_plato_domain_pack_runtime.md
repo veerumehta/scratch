@@ -22,10 +22,16 @@ decisions (2026-09-28): state is rebuilt from the session's Evidence at close, n
 route calls the recorder (it does not use the chat turn engine, so Rev 2's persist-stage framing
 was wrong for Plato). Phase 1 review fixes `6981f24e`, `fa11cddd`. Phase 2 first slice `70648b2a`:
 4.2.1 (`pack.assessment` + `fabric.canonical.caps`; the DSCR seed pack matches all five jaci gold
-cases with no pack Python), 4.5's `assess` route, 4.6 domain activation pins. Remaining Phase 2:
-4.2.2 schemas, 4.2.3 evidence tools, 4.2.4 gates, 4.2.5 authoritative verdict, 4.2.6 engine stop,
-4.2.7 canonical output, 4.3 the `investigation_loop` conductor kind, 4.4 case runs (migration
-`0011`), the run routes, and the eval `pack` invoker for parity.
+cases with no pack Python), 4.5's `assess` route, 4.6 domain activation pins. Rest of Phase 2:
+`86c62521` (4.2.2-4.2.7 + 4.3: `pipelines.kinds`, `pack.schemas`, `pack.evidence_tools`, engine
+`stop_requested`, DSCR conductor block, `conductor_unrunnable` publish finding), `7c5f6fa4` (4.4 +
+4.5: `runs.case.CaseRunner`, `plato.api.runs`, `PlatoClient` case-run methods), `a5bc2498` (eval
+`pack` entity, `subset_match`; the five gold cases pass as an experiment). **Phase 2 is built**;
+review of `4766c97a..a5bc2498` pending. Deviations: gates are structured data, not expressions
+(the expression grammar is numeric, with no strings or dotted access); **no migration `0011`**
+(`kind` and `output` ride the run's JSON `data` column, a case's runs are found by queue key, and
+`SUSPENDED` waits for Phase 3); the authoritative override applies as the governor returns, so the
+narrator gate sees the verdict that stands.
 Review over `origin/dev...v2.5.6` clean at `7e99aeb9` (2026-09-28). Open, noted not fixed: the
 publish check binds against the pack's own guardrails only, so a profile naming a guardrail a host
 supplies at serve time is refused; `TODO(concurrent-close-writes-twice)`;
