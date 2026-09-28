@@ -13,7 +13,14 @@ executor, formal attestations). §1 still holds except where noted. Phase 0 is b
 the local tier; `CurrentFabric` for assistants); 0.5 `cf6aa992` (archive route); 0.6 + 0.8 + 5.2.1
 `763dc4e0` (check route; publish runs the check and refuses on blocking findings; an unregistered
 guardrail is an error, which exposed the demo pack's governors failing every turn, so 5.2.1's
-`policy_keywords` guardrail kind was pulled forward from Phase 1 to fix it). Next: 0.7 `PlatoClient`.
+`policy_keywords` guardrail kind was pulled forward from Phase 1 to fix it); 0.7 `7e9f9c4c`
+(`PlatoClient`); review fixes `d757c58a`, `ec7091e3`. **Phase 0 is done.** Phase 1: `95355a41`
+(`block_rule_id`, carried on `InteractiveResponse.block_refusal`), `434dbf82` (recorder, `record:`,
+protocol, close/outcome/record routes; acceptance test passes). **D3 is deferred** by decision
+(2026-09-28): an assistant pack declares `record:` and its protocol on the profile. Recorder
+decisions (2026-09-28): state is rebuilt from the session's Evidence at close, not held; Plato's
+route calls the recorder (it does not use the chat turn engine, so Rev 2's persist-stage framing
+was wrong for Plato). Next: Phase 2.
 Deviation from §8: a Python pointer blocks publish only where `Pack` would resolve it
 (`policies.registry`, `conductor.pipeline`); unread `class:` entries are warnings, which keeps
 jaci's `clinical-intake-core` (a `modes.evaluator.class`) publishable as Phase 0's acceptance needs.
