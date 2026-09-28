@@ -46,3 +46,9 @@ jazzx_sdk/pack/draft_db.py :: normalization-orphans-old-rows
 # modules behind an optional extra (mlflow, azure) cannot import where that extra is absent; their
 # import is covered by the extras' own suites. The sweep asserts it checked at least one type.
 tests/test_policy_extraction_prompts.py :: cwd-relative-sweep-vacuous
+
+# Publish refuses a pack carrying `conductor.pipeline` or `policies.registry`, which blocks jaci's
+# `ci-spread-core` and `cl_of_core` as they stand. Deliberate (Plato domain-pack runtime plan, D2):
+# Plato never imports Python a pack names, and a pack relying on a pointer cannot run there. Those
+# packs reach Plato through the conductor-kind path (Phase 2's `conductor_pipeline`), not as-is.
+plato/packs/check.py :: pointer-refusal-blocks-known-packs

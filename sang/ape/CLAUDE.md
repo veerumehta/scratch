@@ -1,12 +1,22 @@
 # Claude Session Status
 
-**Last Updated**: 2026-09-25
+**Last Updated**: 2026-09-28
 
 ## Where things stand
 
-**Working branch is `v2.5.5`**, cut from `dev`. `v2.5.4` is retired: its content reached `dev` as
-one squash and `plato` as another, and it carries nothing either lacks. Work lands on `v2.5.5` and
-reaches `dev` and `plato` by periodic squash merges.
+**Working branch is `v2.5.6`**, on `dev` at the PR #78 formal squash (`7a7a0950`). Its first
+slice (python executor) is squashed to `dev` (`da9a709d`) and `plato` (`6701d711`). Plato stays
+0.1.7 by decision. Main release: `/tmp/japes_release_v255_to_main.sh` (v2.5.5 + formal to `main`
+without 2.5.6) is written, for the user to run.
+
+**Plato domain pack runtime** (`plans/plan_plato_domain_pack_runtime.md`, Rev 2): Phases 0, 1 and 2
+built on `v2.5.6`, local and unpushed. Phase 2's tail (`86c62521` conductor kinds, `7c5f6fa4`
+case runs, `a5bc2498` pack eval entity, `c1fd38d8` review fixes) reviewed clean from `4766c97a`
+after 2 rounds; everything before was clean at `7e99aeb9`. A full-range review
+(`REVIEW_UPSTREAM=origin/dev`) is still owed before squashing to `dev`/`plato`. Phase 3 (human checkpoints, `SUSPENDED`, `/resume`) next.
+
+Work lands on `v2.5.6` and reaches `dev` and `plato` by periodic squash merges. The v2.5.5
+paragraphs below describe what shipped in it.
 
 **v2.5.5's primary item, the chat pipeline as an application turn engine, is built** (local,
 unpushed, `a1aa7f79`..`f70c8f10`): `compose`/`persist` stages, `overrides=`, `pipeline_for`,

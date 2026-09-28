@@ -27,7 +27,7 @@ cases with no pack Python), 4.5's `assess` route, 4.6 domain activation pins. Re
 `stop_requested`, DSCR conductor block, `conductor_unrunnable` publish finding), `7c5f6fa4` (4.4 +
 4.5: `runs.case.CaseRunner`, `plato.api.runs`, `PlatoClient` case-run methods), `a5bc2498` (eval
 `pack` entity, `subset_match`; the five gold cases pass as an experiment). **Phase 2 is built**;
-review of `4766c97a..a5bc2498` pending. Deviations: gates are structured data, not expressions
+review fixes `c1fd38d8`; `4766c97a..c1fd38d8` reviewed clean after 2 rounds. Deviations: gates are structured data, not expressions
 (the expression grammar is numeric, with no strings or dotted access); **no migration `0011`**
 (`kind` and `output` ride the run's JSON `data` column, a case's runs are found by queue key, and
 `SUSPENDED` waits for Phase 3); the authoritative override applies as the governor returns, so the

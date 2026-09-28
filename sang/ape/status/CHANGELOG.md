@@ -2,7 +2,252 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+## [2.5.6] - unreleased
+
+- **Plato streams assistant turns durably (domain-pack runtime plan, Phase 0.1-0.2).** Both
+  shipped wirings now build a run store, runner and dispatcher (`plato.wiring.durable_runs`), so
+  `POST /assistants/{aid}/chat/stream`, `GET .../runs/{id}/stream?from_seq=` and
+  `POST .../runs/{id}/stop` are mounted; before, neither wiring set them and the routes did not
+  exist.
+  - **A run is queued under a tenant-scoped key** (`plato.api.assistants.run_queue_key`: tenant,
+    assistant, conversation). The run store is one partition and FIFO-claims by that key, and with
+    the bare client `conversation_id` a drain could claim another tenant's queued run for the same
+    id and execute it with the wrong tenant's agent. Latent until now because the routes were not
+    mounted. The stream's first frame still reports the client's `conversation_id`.
+  - **`job:run-reaper`** (new role): fails running runs whose worker stopped heartbeating (the
+    SDK `Reaper`'s TTL) and purges finished runs and their journal after
+    `DEFAULT_RUN_RETENTION_SECONDS` (a week). Exits 3 when the wiring has no run store.
+  - **`PLATO_PROFILE=packs`** in `scripts/plato-local.sh` (Phase 0.3): `plato.wiring.default` at
+    `JAPES_ENVIRONMENT=local`, sqlite at `.plato-packs.db`. That combination already publishes to
+    local blob storage, activates, serves chat against the Mock Knowledge Hub and defaults the
+    tenant, so the plan's "give `local.py` an activator" was not needed; the gap was only that no
+    profile started it. dev-daily still refuses a publish to local blob storage.
+  - **Assistants get the fabric** (Phase 0.4): the shipped wiring's `agent_extra` gains
+    `fabric=CurrentFabric()`, which resolves the `ClientLayer`'s fabric on each use, so a profile
+    with knowledge bindings grounds instead of raising "no fabric was provided", and an assistant
+    bound before a `/v1/config` write sees the rebuilt layer's fabric. (`llm_manager` is still the
+    boot-time layer's LLM; whether that goes stale after a key is set over HTTP is not yet checked.)
+  - **`GET {prefix}/packs/{id}/{version}/archive`** (Phase 0.5): the published archive, verified
+    against `content_digest` and sent with it as the `ETag`; 404 for no such version, 403 where
+    pack contents are withheld. New `PackVersionStore.archive()` (abstract; `DbPackVersionStore`
+    implements it), which shares the fetch-and-verify step with `materialize`.
+  - **`POST {prefix}/packs/check`** (Phase 0.6): `plato.packs.check.check_pack_archive` checks an
+    archive of either shape without publishing. Assistant packs get `check_assistant_pack`; domain
+    packs are loaded as `Pack` and linted (`lint_pack`, YAML policies only), and manifest pointers
+    to Python are reported without being resolved: `policies.registry` and `conductor.pipeline` as
+    errors, unread `modes.*.class` / `experts.*.class` as warnings. **Publish runs the same check**
+    and refuses on `PUBLISH_BLOCKING` (unloadable, unaddressable, `python_pointer`,
+    `missing_skill`, `does_not_bind`, `guardrail_not_registered`) with 422 and the report; other
+    findings (lint quality such as `unverifiable_rules`) come back with the publish. Behavior change:
+    a pack with a pointer or an unregistered guardrail used to publish and then fail when served.
+    `store_db._unpack` is now public as `unpack_archive`.
+  - **An unregistered guardrail is an error** (Phase 0.8), not the "dropped silently" warning the
+    check reported: the agent binds and then raises on every turn. Found live: Plato's bundled
+    demo pack (the default `PLATO_PACK_DIR`) named `clinical_governor_in/out`, which only jaci
+    registered, so every chat turn against it raised before the model was called.
+  - **Guardrails as pack data** (Phase 1 item 5.2.1, pulled forward to fix the demo pack): new
+    `jazzx_sdk.agents.interactive.guardrail_kinds` (`load_pack_guardrails`, `policy_keywords`,
+    `GuardrailKinds` extended by the `jazzx_sdk.guardrail_kinds` entry point, `combined_catalog`).
+    `ProfileRegistry.register(spec, guardrails=)` / `guardrails_for`; `build_from_manifest` merges
+    the profile's pack catalog with the host's, fresh per build. `plato.packs.loader.pack_guardrails`
+    reads a pack's `guardrails.yaml` at all three profile-registration sites. The demo pack gains
+    `guardrails.yaml` and `policies/core.yaml` (the clinical-intake CI_ESC / CI_SCOPE policies), so
+    its governors block with the rule id (`Refusal.reason_code`, message `"[<rule_id>] ..."`).
+  - **`jazzx_sdk.clients.plato_client.PlatoClient`** (Phase 0.7): async httpx client for one
+    tenant: packs (list, check, publish, activate, archive), assistant sessions and chat, and
+    durable streams (`stream_chat`, `resume_run(from_seq=)`, `stop_run`) as parsed SSE frames.
+    Sends a fresh `X-Trace-Id` per call and `Idempotency-Key` per mutating call unless given;
+    raises `PlatoError(status_code, detail)` on a non-2xx. Case runs and session close/outcome
+    arrive with their routes (Phases 1-2).
+  - **A guardrail block names its rule** (Phase 1, 5.4): `InteractiveResponse.block_refusal` carries
+    the blocking guardrail's `Refusal`, and Plato's `ChatReply.block_rule_id` is its
+    `reason_code`. Taken from the guardrail run itself (`InteractiveAgent._guardrail_block`) rather
+    than `last_guardrail_refusal`, which is agent state a concurrent turn on the same bound agent
+    can overwrite between one turn's block and its read; `_run_guardrails` still sets it.
+  - Review fixes for the above: a `guardrails.yaml` policy file must be a file inside the pack
+    (`relative_name` plus containment; before, `policies: [/etc/x.yaml]` read the host's file and
+    a parse error echoed its keys into the check's finding); `parameters.keywords` must be a list
+    of non-empty strings (a bare string iterated to characters and `""` matched every text);
+    `agent_with_persona` carries the profile's pack guardrails, and `build_from_manifest` now calls
+    `profiles.guardrails_for` without a silent default; re-registering a profile without
+    guardrails drops the old ones; `PlatoClient` takes `request_headers_provider` through the
+    shared `install_request_headers_hook` like its siblings; the archive route maps a store
+    `ValueError` (digest mismatch, no blob store) to 409 with its reason instead of a bare 500.
+  - The check also refuses a guardrail listed on a phase it is not registered for
+    (`guardrail_phase_mismatch`, blocking), which binds and then raises on every turn of that
+    phase; a malformed `guardrails.yaml` (not YAML, not a mapping, an entry that is not a mapping)
+    raises `ValueError` naming it.
+  - **Recorded sessions** (Phase 1, 5.2.2-5.2.3 and 5.4): new `InteractiveAgentSpec.record`
+    (`SessionRecordSpec`: ontology/pack ids, evidence type, the scope key naming the subject, the
+    Trace's workflow, a `protocol` file beside `profile.yaml` that `from_dir` loads into
+    `sections`, and the terminal decision literals; strict, so a misspelt key fails at load). New
+    `jazzx_sdk.agents.interactive.recorder`: `SessionRecorder` (`record_turn`, idempotent `close`,
+    `outcome`, `record`) rebuilds a session from its evidence rather than holding state, and
+    `RecordingAgent` wraps an agent's `respond` / `respond_stream`. `AssistantRuntime.fabric`.
+    Plato records both chat routes for a profile that opts in, keyed by `run_queue_key(tenant,
+    assistant, session)` with source system `plato/<tenant>/<assistant>`, and serves
+    `POST .../sessions/{sid}/close`, `POST .../sessions/{sid}/outcome` (409 before close) and
+    `GET .../sessions/{sid}/record` (409 for an assistant that does not record). The demo pack
+    opts in with the clinical-intake protocol; its acceptance test runs the red-flag persona over
+    HTTP (block with `CI-ESC-*`, ESCALATED on close, one Trace, one Decision, one Outcome).
+    Rev 2's "recorder as a persist stage" was wrong for Plato, whose assistant route calls
+    `agent.respond` directly; the recorder is callable from either.
+  - Review fixes: the Trace is keyed by source and session (`case_id`), as evidence already was,
+    so two sources sharing a session key close separately; a second close reports the turns its
+    Trace was built from, not ones recorded after; a close whose Decision write failed writes it
+    on the next close instead of answering `decision: None` forever; a session of exactly
+    `MAX_RECORDED_TURNS` is not reported truncated; a failed recording is logged rather than
+    failing an answered turn (which a client would retry, duplicating it). Two closes racing can
+    still each write a Trace (`TODO(concurrent-close-writes-twice)`: needs an idempotent canonical
+    write). `ProfileRegistry.validate` checks a profile against its pack guardrails first.
+  - Only a rule-backed block escalates: the recorder and `ChatReply.block_rule_id` read the rule
+    from `Refusal.domain_extensions["rule_id"]` (`recorder.blocking_rule_id`), which
+    `policy_keywords` sets, not `reason_code`, which the manifest scope guardrail fills with a
+    reason. `PlatoClient` gains `close_session`, `session_outcome` and `session_record`.
+  - **Deterministic pack assessment** (Phase 2, 4.2.1 and 4.5-4.6): new
+    `jazzx_sdk.fabric.canonical.caps` (`compose_caps`, `CapComposition`: the minimum cell across
+    every applicable matrix rule on one field, the binding rule named, an `NA` cell ineligible, an
+    unresolvable cell unknown; generalized from jaci's DSCR `compose_caps`) and
+    `jazzx_sdk.pack.assessment` (`assess`, `PolicyAssessment`, `AssessmentSpec` read from the
+    manifest's `conductor.pre_loop` `policy_assessment` entry: `metrics:` as `MetricDefinition`s
+    over the input's fields, `compose_caps:`, `profile:`; attestations per rule). The DSCR seed pack
+    gains `metrics.yaml` (`cltv_pct`) and that entry, and matches all five of jaci's DSCR gold cases
+    (copied to `tests/data/dscr_gold_cases`). Plato: `POST {prefix}/packs/{id}/assess` (against
+    `?version=`, the tenant's pin, or the newest; 409 for an assistant pack, 422 for a pack without
+    an assessment); activating a domain pack pins its version instead of answering "loaded no
+    assistants" (`plato.wiring.default.pinned_version`).
+  - Review fixes: caps compose over the rules in force (`active_rules`, less the rules
+    `check_compliance` reports superseded), and a blocking gate leaves its cap unresolved as it
+    withholds the rule; one NA predicate, `condition_evaluator.is_na_cell`, for the matrix evaluator
+    and cap composition, so an authored `false` cell is ineligible in both (it was a 0.0 cap in
+    composition); a refused metric removes its field from the record instead of letting a posted
+    value of that name stand in; a rule the record lacks inputs for is attested INDETERMINATE
+    (`allowed` still excuses it, as the policy check does); `assess(python_executor=)`, and Plato's
+    assess route passes the wiring's executor, so a python rule runs on a workstation; the route
+    refuses a stored pack that names Python (`policies.registry`, `conductor.pipeline`) with 422
+    rather than import it; the local wiring gets an offline Mock-backed fabric
+    (`PLATO_LOCAL_KH_DATA`, default `.plato-local-kh`), so recorded sessions work there too.
+  - A pack cannot declare a guardrail named `platform_safety_floor` or `manifest_scope`: the
+    binding adds those only where the name is absent, so a pack's would have replaced the platform
+    check (`load_pack_guardrails` refuses, and the publish check reports it). An assessment's
+    INDETERMINATE attestations cover only rules whose gate applies to the record.
+    A rule whose gate cannot be evaluated for want of inputs is reported INDETERMINATE naming them.
+    Caps compose only ceilings (`CEILINGS`: `<=`, `<`; a `>=` matrix rule is a floor), and a `<`
+    cap is passed only strictly below it. New `jazzx_sdk.pack.domain.load_materialized_pack`, the
+    one "load the pack at a materialized root" step, used by `published_domain_packs`, Plato's
+    assess route, domain-pack activation and the publish check.
+  - **Conductor kinds** (Phase 2, 4.2.2-4.2.7 and 4.3): a pack runs a case by naming a kind in
+    `conductor.kind` and configuring it; it never names Python. New `jazzx_sdk.pipelines.kinds`
+    (`run_case`, `conductor_kinds()` with further kinds from the `jazzx_sdk.conductor_kinds`
+    entry point, `conductor_problems`, `CaseResult`, `sdk_mode_factory`) and its first kind,
+    `investigation_loop`: the five modes over `pipelines.investigation_loop`, configured by
+    `InvestigationLoopConfig` (strict: `input_schema`, `subject_field`, `pre_loop`
+    (`policy_assessment` only), per-mode `model`/`temperature`, `hypothesis_schema`,
+    `decision_schema`, `evidence_tools`, `max_iterations`, `on_reasoner_failure`, `narrator_gate`,
+    `deterministic_verdict`). The pre-loop assessment is attested evidence and
+    `ctx.metadata["policy_assessment"]`; with `deterministic_verdict: authoritative` a failed
+    assessment overrides a governor approval as the governor returns, so the narrator gate sees the
+    verdict that stands, and its violated rules join the governor's. Gates are structured
+    (`narrator_gate: {governor_approved, decision_field, decision_in}`), not expressions: the
+    expression grammar is numeric, with no strings or dotted access. Given the fabric's canonical
+    store, a run persists a Trace with a step per mode call and a Decision; a decision schema with
+    no `confidence` persists `UNSTATED_CONFIDENCE` (0.0) and requires human review.
+  - `jazzx_sdk.pack.schemas` (`schema_model`, `load_schema_model`): pydantic models from a pack's
+    JSON Schema, refusing any keyword outside `SUPPORTED_KEYWORDS` rather than validating less than
+    written. `jazzx_sdk.pack.evidence_tools` (`EvidenceTools`, `EvidenceSource`): evidence types
+    answered from the run input, a fixture keyed by subject id (with `default`), or a connector from
+    the `jazzx_sdk.evidence_connectors` entry point; an unanswerable request is `UNAVAILABLE`
+    evidence, not a stopped loop. `ConductorEngine(stop_requested=)` and
+    `run_investigation(stop_requested=)`: asked before each step, a stop halts the run with status
+    `interrupted` (new metric `investigation.interrupted`).
+  - The DSCR seed pack declares an `investigation_loop` conductor: schemas generated from jaci's
+    DSCR models, `mode_tuning/` from jaci's DSCR prompts, `evidence_tools.yaml` with credit report
+    and appraisal fixtures (jaci's mock values), those two added to `evidence_types.yaml`, the
+    narrator gated on an approved `ineligible` decision, the assessment authoritative. Plato's
+    publish check refuses a conductor that could not run (`conductor_unrunnable`: a kind not
+    installed, a schema that does not load, a subject or gate field the schema lacks, a fallback
+    decision the schema rejects, an unknown mode, an evidence source that cannot answer).
+  - **Case runs** (Phase 2, 4.4-4.5): `jazzx_sdk.runs.case.CaseRunner` (`submit`, `drain`,
+    `execute`) runs a conductor over one case on the chat turns' store, claim, heartbeat, reaper,
+    stop flag and journal: a step event per start and end, then `{"done": true, "status",
+    "output"}`, or `{"done": true, "status": "failed", "error"}` for a run that raised. `TurnRun`
+    gains `kind` (`TurnRunKind`: `turn`, `case`) and `output`; `TurnRunStore.runs_for(key,
+    limit=)` (both stores); `ResilientRunner.create_run(kind=)`; `runner.restored_caller`, the
+    identity-and-InvocationContext restore both runners share. No migration: `kind` and `output`
+    ride the run's JSON `data` column, and a case's runs are found by their queue key, so the
+    planned `0011` was not needed; `SUSPENDED` waits for human checkpoints (Phase 3).
+  - Plato (`plato.api.runs`, mounted where a run store and a pack store are wired):
+    `POST {prefix}/packs/{id}/runs` (governed; `?version=`, else the tenant's pin, else the newest;
+    422 for a case outside the input schema or a pack with no `conductor.kind`, 404/409/422 as
+    `assess` answers, 503 while degraded, as chat is; 202 with the run id and stream path),
+    `GET {prefix}/runs/{id}`, `GET {prefix}/runs/{id}/stream?from_seq=`, `POST {prefix}/runs/{id}/stop`,
+    `GET {prefix}/runs?pack_id=&subject_id=` (newest first, `RUN_LIST_LIMIT`). A run pins pack id,
+    version and archive digest, and refuses to run if the stored version's digest has changed. It
+    is queued under `case_queue_key` (tenant, pack, subject), so runs of one case serialize, and
+    another tenant's run is a 404. Its modes call a fresh `AgentExecutionService` per run, and its
+    Trace and Decision go to the runtime fabric's canonical store. `assess` and runs share
+    `plato.api.packs.domain_pack_record` and `materialized_domain_pack`; chat and runs share
+    `plato.api.assistants.not_configured`. `PlatoClient` gains `assess`, `submit_case_run`,
+    `case_run`, `case_runs`, `stream_case_run` and `stop_case_run`.
+  - **A domain pack is an eval entity** (Phase 2 parity): `jazzx_sdk.pack.eval_invoker`
+    (`PackAssessmentInvoker`, `PACK_ENTITY = "pack"`) runs a case as the pack's deterministic
+    assessment of its input, against `config["version"]` or the host's choice;
+    `jazzx_sdk.evaluation.experiments.EntityInvokers` hands each case to the invoker for its
+    entity's type. Plato's experiment runner serves `assistant` and, given its pack store, `pack`
+    entities, the latter against the version `assess` would pick. New built-in scorer
+    `subset_match` (`jazzx_sdk.evaluation.metrics`): the fraction of the leaves a case's expected
+    value names that the output holds at the same path, so a case can name only the fields that
+    matter. jaci's five DSCR gold cases pass as an experiment over `dscr-core` (verdict and binding
+    cap).
+  - Review fixes: a pack schema's `minimum`/`maximum` apply wherever a type sits (an `anyOf`
+    member, `items`, a `$defs` entry), not only on a property's own schema, so the DSCR
+    `residential_unit_count` bound of 1-4 now refuses 9; `default` anywhere but a property is
+    refused. An authoritative assessment that fails only on composed caps cites the NA or
+    unresolved cells, else the binding cap, in the governor's violations. An interrupted run no
+    longer also counts `investigation.halted`. Every caller of `domain_pack_record` passes `has=`
+    with its article, so the assistant-pack 409 reads "which has no an assessment" nowhere.
+- **Python custom scorers run in Plato on a workstation.** New
+  `jazzx_sdk.fabric.canonical.local_executor.LocalPythonExecutor`, the SDK's one `PythonExecutor`:
+  each run is a child `python -I -S` with an empty environment (no inherited secrets), a fresh temp
+  cwd, `RLIMIT_CPU`/`RLIMIT_FSIZE`/`RLIMIT_AS` set before the source runs (`RLIMIT_AS` is not
+  enforced on macOS), a wall-clock timeout that kills the process group, a result cap
+  (`MAX_RESULT_BYTES`) and a concurrency cap. Context and result travel as JSON; a policy rule's
+  `(bool, dict)` result arrives as a tuple. It is defence in depth, not a sandbox, so it raises in a
+  deployed posture. `PlatoWiring.python_executor` (new, default `None`) reaches the eval router;
+  both shipped wirings set it from `plato.wiring.workstation_python_executor()`, which is `None` in
+  a deployed posture, so dev-daily and up still store python scorers without running them until a
+  deployment names an isolated executor. The same executor runs python policy rules for any host
+  that puts it at `PYTHON_EXECUTOR_CONTEXT_KEY`; Plato's `assess` route does so with the wiring's.
+  - A python custom scorer's case is coerced to JSON first (`jsonable`, now shared in
+    `evaluation.scorers` with the experiment runner), so a structured assistant output (a model)
+    scores instead of failing every case.
+  - The child's CPU limit sits `CPU_LIMIT_MARGIN_SECONDS` past the wall-clock timeout, so a busy
+    loop is reported as a timeout rather than killed by whichever limit fires first; a source
+    that ends the child (`raise SystemExit`) raises `LocalExecutorError`.
+- Version cut from `dev` at the v2.5.5 squash (`730c6c39`).
+
 ## [2.5.5] - unreleased
+
+- **Full-range review fixes (origin/main...v2.5.5).**
+  - **A Knowledge Hub outage no longer reads as "no such collection".** New
+    `KnowledgeHubClient.find_collection_by_name` returns None only on a 404 and raises otherwise
+    (`KnowledgeHubError`, or the transport error). `RAGStore.collection_id`, the three canonical
+    stores' `_ensure_collection` / `_ensure_find_collection`, and `DocStore`'s collection ensure
+    use it, so none of them creates a duplicate collection during an outage, and semantic feedback
+    retrieval fails instead of returning `[]`. `get_collection_by_name` is unchanged (the MCP tool
+    still uses it). Added to `KnowledgeHubLike` and the mock.
+  - **An assistant eval case with nothing to say fails instead of scoring an empty prompt.** A dict
+    input with neither `messages` nor a non-blank `query` (e.g. `{"question": ...}`, `{}`) raises in
+    `AssistantInvoker` and `AssistantPromptTarget`, so the case records as failed. The feedback
+    case synthesis prompt now names `inputs.query`, so cases it generates satisfy that contract.
+  - **`GET /feedback/aggregate` says when it was capped.** The response is now
+    `{"counts": {...}, "truncated": bool}` (`FeedbackAggregate`); `aggregate_feedback` takes
+    `max_rows=` (default `EXPORT_MAX_ROWS`). The evaluation page reads `counts`, says "more
+    than N" when the filtered count is truncated, and marks the tenant-wide chips `+` when theirs is. Breaking for the route's shape, which is new in this version.
+  - Feedback routes reuse `eval_api`'s `_write_guard` and `_entity_filter` instead of restating them.
+  - `scripts/plato-local.sh` strips surrounding quotes from `.env` values as dotenv does
+    (`PORT="8001"` exported the quotes). `.env.local`, the script and `scripts/README.md` no longer
+    point at a workstation-only Postgres script, and say `.env` is read from the start directory.
 
 - **`python -m plato` reads `.env` on a workstation.** Every variable the environment leaves unset
   is filled from `.env` at the working directory (or the file `JAPES_ENV_FILE` names) before a role
@@ -15,6 +260,8 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
   - `.env` is the only gitignored env file. `.env.local` is now a committed template for the
     `local` tier, beside `.env.dev-daily` and `.env.template`; a developer assembles `.env` from
     them (e.g. dev-daily's posture against a local Postgres and the Mock Knowledge Hub).
+  - `plato/guide.md` (served at Plato's guide page) gains **Your `.env`** under "Locally": the
+    templates table and a starter dev-daily-on-a-laptop set. README's `.env` section points there.
   - `scripts/plato-local.sh` no longer parses `.env.local`; its defaults (tier, wiring, tenants,
     run mode, sqlite fallback, port) yield to anything the environment or `.env` names.
     `PLATO_PROFILE=local` sets `JAPES_ENVIRONMENT=local` over `.env`, since the profile was asked
