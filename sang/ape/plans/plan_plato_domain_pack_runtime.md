@@ -2,8 +2,25 @@
 
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 
-Status: plan, 2026-09-24. Nothing built. Written against japes `5534f5e` on `v2.5.4` (Plato 0.1.6).
-Target: next minor, to be assigned.
+Status: plan, Rev 2 (2026-09-28). Rev 1 (2026-09-24) was written against `5534f5e` on `v2.5.4`
+(Plato 0.1.6); Rev 2 re-verifies §1 against `acb22f78` on `v2.5.6` (Plato 0.1.7) and folds in what
+v2.5.5 and v2.5.6 built (eval and feedback in the SDK, the chat turn engine, the local python
+executor, formal attestations). §1 still holds except where noted. Phase 0 is being built on
+`v2.5.6`; later phases follow it.
+
+**Rev 2 changes, in one place:**
+- Migration numbers: `0006`-`0010` are taken (policy authoring, eval, feedback). Case runs take the
+  next free one, `0011`, wherever this plan said `0006`.
+- §2's amendment: executing python rules is now decided on a workstation (`LocalPythonExecutor`,
+  installed by both shipped wirings through `PlatoWiring.python_executor`) and still undecided for a
+  deployed tier, where a python rule withholds. Packs are uploaded in production, so a DSCR pack
+  that relies on a python rule withholds there until an isolated executor exists.
+- §4.2.1: `policy_assessment` is a deterministic Verifier act; it reports `Attestation`s, the shape
+  formal checks (PR #78) and python rules already produce (see §4.2.1 note).
+- §5.2.2: the session recorder is an implementation of the chat turn engine's caller-owned
+  `persist` stage (v2.5.5), not a wrapper around the turn.
+- §8: Phase 2's parity check with jaci is an eval experiment over the DSCR gold cases, not a
+  one-off test (see §8 note).
 
 Companion (consumer side): jaci `docs/plans/plan_JACI_PLATO_PILOTS.md`. Two jaci scenarios are the
 pilots — **DSCR** (a governed case run) and **clinical intake** (an assistant) — because together
@@ -80,11 +97,14 @@ path. Therefore:
 Both pilots fit in SDK kinds with no plugin, which is the evidence the rule is not too tight
 (§4.3, §5.2).
 
-**Amended 2026-09-24: generated Python rules are allowed in packs; executing them is undecided.**
+**Amended 2026-09-24, updated Rev 2: generated Python rules are allowed in packs; executing them
+is decided for a workstation only.**
 A `python` condition (see `plan_policy_jtbd_extraction.md` §2b) is pack data that Plato stores,
 checks statically at publish, and does not execute unless the deployment installs a
 `PythonExecutor`. Without one the rule evaluates INDETERMINATE (`policy_not_activated`), which
-withholds an allow rather than skipping it. The rule above still holds for `class:` pointers and
+withholds an allow rather than skipping it. Rev 2: the SDK now ships `LocalPythonExecutor` (a child
+`python -I -S` per run; not a sandbox, so it refuses a deployed posture), and Plato's wirings install
+it on a workstation. A deployed tier has no executor until an isolated one is chosen. The rule above still holds for `class:` pointers and
 conductor code; this amendment covers rule conditions only.
 
 ## 3. Shared plumbing (Phase 0)
@@ -125,7 +145,7 @@ Python if the SDK gains the pieces below.
 
 | # | Addition | Notes |
 |---|---|---|
-| 4.2.1 | **`policy_assessment` step kind.** Inputs → derived fields (pack `metrics:` as `MetricDefinition`s, evaluated by `jazzx_sdk.expressions`) → `DefaultPolicyExpert.check_compliance` with the pack's policy registry + profile → optional **cap composition** → a typed `PolicyAssessment` (allowed, violations, rationale, composed caps, derivations). | Lifts jaci's `compose_caps` into `fabric.canonical` as generic matrix-cap composition keyed by `compare_field` and `strategy: min`. "Several caps bind; which one wins" is not DSCR-specific. |
+| 4.2.1 | **`policy_assessment` step kind** (Rev 2: a deterministic Verifier act; each violated or satisfied rule is also reported as an `Attestation`, the shape formal checks and python rules share, so a UI renders all three alike). Inputs → derived fields (pack `metrics:` as `MetricDefinition`s, evaluated by `jazzx_sdk.expressions`) → `DefaultPolicyExpert.check_compliance` with the pack's policy registry + profile → optional **cap composition** → a typed `PolicyAssessment` (allowed, violations, rationale, composed caps, derivations). | Lifts jaci's `compose_caps` into `fabric.canonical` as generic matrix-cap composition keyed by `compare_field` and `strategy: min`. "Several caps bind; which one wins" is not DSCR-specific. |
 | 4.2.2 | **Schemas from pack JSON Schema.** `schema_from_json(path) -> type[BaseModel]` (via `pydantic.create_model`) so a pack supplies `input_schema`, `hypothesis_schema`, `decision_schema`. Supported subset stated and checked at publish (objects, enums, arrays, nested refs, required, defaults); anything outside it fails the check. | Default hypothesis/decision schemas ship in the SDK for packs that do not supply one. |
 | 4.2.3 | **Pack-declared evidence tools.** `evidence_tools:` maps each evidence type to a source: `input` (a path into the run input), `fixture` (a JSON file in the pack, by subject id with a default), or `connector` (a name resolved in the image's `jazzx_sdk.evidence_connectors` registry). The SDK builds `fulfill_evidence` from it, degrading to `UNAVAILABLE` evidence the way `DSCRToolRegistry.execute` does. | Fixtures keep a demo pack runnable with no vendor. |
 | 4.2.4 | **Gates and literals as expressions.** `narrator_gate`, `convergence_gate`, `deadline_guard` as expression strings over `{governor, decision, ctx}`; `on_reasoner_failure` as a literal decision object validated against `decision_schema`. | Reuses the expression grammar — no `eval`. |
@@ -169,7 +189,7 @@ Prompts come from `mode_tuning/<mode>.md` through `compose_mode_prompt`, as for 
 Reuse the run infrastructure rather than add a parallel one; its store, journal, claim, heartbeat,
 reaper and SSE resume are already generic.
 
-- Migration `0006`: `turn_run` gains `kind` (`turn` | `case`, default `turn`), `output` (JSON), and
+- Migration `0011` (Rev 2; Rev 1 said `0006`, since taken): `turn_run` gains `kind` (`turn` | `case`, default `turn`), `output` (JSON), and
   status `SUSPENDED`. The FIFO key stays `conversation_id`; a case run sets it to
   `case:{pack_id}:{subject_id}`, so two runs of the same case serialize and different cases run
   concurrently.
@@ -223,7 +243,7 @@ each turn with the protocol section it answers.
 | # | Addition | Notes |
 |---|---|---|
 | 5.2.1 | **Guardrail kinds from pack data.** A registry of guardrail kinds (`jazzx_sdk.guardrail_kinds` entry point for more); first kind **`policy_keywords`**: `{policy_id, direction: input|output}` → the detector jaci has in `guardrails.py`. Profile guardrail names resolve against the pack's `guardrails.yaml` first, then the deployment catalog. A block carries a structured `block_rule_id`, not just a formatted string. | The keyword lists already live in the policy YAML; only the matcher moves. |
-| 5.2.2 | **Session recorder.** Opt-in on the profile (`record: {ontology_id, evidence_type, subject: scope.encounter_id}`): per turn an `Evidence` and a `TraceStep` (governor-escalated or narrated), on a block a `DISPOSITION`/`ESCALATION` `CanonicalDecision` bound to `block_rule_id`. | jaci's `IntakeSession` minus the demo bits. |
+| 5.2.2 | **Session recorder** (Rev 2: built as a `persist` stage implementation for the chat turn engine, bound through `build_chat_components(overrides=...)`; the turn engine already runs `persist` after `compose`, so the recorder sees the final response). Opt-in on the profile (`record: {ontology_id, evidence_type, subject: scope.encounter_id}`): per turn an `Evidence` and a `TraceStep` (governor-escalated or narrated), on a block a `DISPOSITION`/`ESCALATION` `CanonicalDecision` bound to `block_rule_id`. | jaci's `IntakeSession` minus the demo bits. |
 | 5.2.3 | **Completeness contracts.** `protocol:` in the pack (sections, required flags) and a session-level coverage set fed by `scope.section` on each turn. `close()` computes complete / missing and writes the terminal decision (`INTAKE_COMPLETE` / `…_INCOMPLETE_FLAGGED` / `ESCALATED` are pack literals, not SDK words). | Section attribution by the client is the pilot; model attribution is a later step. |
 
 ### 5.3 One pack, both halves
@@ -254,7 +274,7 @@ Decision D3 below. Recommended: an assistant pack's root `manifest.yaml` may nam
 | 3 | §4.7 suspension/resume + run outcomes; documents upload (DSCR's optional appraisal) | HITL in the run, not the client |
 | Later | a second conductor kind (`conductor_pipeline`: `ConductorEngine` over a pack `pipelines.yaml` with SDK step kinds — ci-spread-core's shape); a queue worker for runs | C&I and the rest of jaci |
 
-Phase 1 is first because it is smaller and has no migration. Phase 2's migration `0006` is the
+Phase 1 is first because it is smaller and has no migration. Phase 2's migration `0011` is the
 only schema change before Phase 3.
 
 ## 7. Decisions
@@ -279,7 +299,9 @@ only schema change before Phase 3.
   persona blocks on `CI-ESC-*` with `block_rule_id` set; close yields `ESCALATED`; the record route
   shows Evidence per turn, one Trace, one Decision, and after `/outcome` one Outcome.
 - **Phase 2:** `POST /packs/dscr-core/assess` returns the same `allowed`, violations and binding cap
-  as jaci's in-process `run_eligibility_assessment` for every `tests/eval/gold_cases/dscr` case;
+  as jaci's in-process `run_eligibility_assessment` for every `tests/eval/gold_cases/dscr` case
+  (Rev 2: run as an eval experiment in Plato: the gold cases as a dataset and a `pack` entity type
+  with its own invoker beside `AssistantInvoker`, so parity is re-checked on every pack version);
   `POST /packs/dscr-core/runs` completes, streams one event per step, persists a Trace with one step
   per mode call, and a deterministic violation is never overridden by a governor approval; stop
   interrupts between steps.
