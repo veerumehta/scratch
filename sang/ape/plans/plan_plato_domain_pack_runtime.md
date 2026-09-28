@@ -20,7 +20,12 @@ protocol, close/outcome/record routes; acceptance test passes). **D3 is deferred
 (2026-09-28): an assistant pack declares `record:` and its protocol on the profile. Recorder
 decisions (2026-09-28): state is rebuilt from the session's Evidence at close, not held; Plato's
 route calls the recorder (it does not use the chat turn engine, so Rev 2's persist-stage framing
-was wrong for Plato). Next: Phase 2.
+was wrong for Plato). Phase 1 review fixes `6981f24e`, `fa11cddd`. Phase 2 first slice `70648b2a`:
+4.2.1 (`pack.assessment` + `fabric.canonical.caps`; the DSCR seed pack matches all five jaci gold
+cases with no pack Python), 4.5's `assess` route, 4.6 domain activation pins. Remaining Phase 2:
+4.2.2 schemas, 4.2.3 evidence tools, 4.2.4 gates, 4.2.5 authoritative verdict, 4.2.6 engine stop,
+4.2.7 canonical output, 4.3 the `investigation_loop` conductor kind, 4.4 case runs (migration
+`0011`), the run routes, and the eval `pack` invoker for parity.
 Deviation from §8: a Python pointer blocks publish only where `Pack` would resolve it
 (`policies.registry`, `conductor.pipeline`); unread `class:` entries are warnings, which keeps
 jaci's `clinical-intake-core` (a `modes.evaluator.class`) publishable as Phase 0's acceptance needs.
