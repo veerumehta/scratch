@@ -9,13 +9,114 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ## [Unreleased]
 
-### Added: DSCR and clinical intake on Plato (on `dev`, uncommitted; the Plato path needs the local
-japes `v2.5.6` branch, and every Plato-dependent test skips without it)
+### Changed: DSCR gold cases state the whole loan (0.20.11, branch `acra-programs`)
+- japes' pack assessment now refuses an input that omits a field a rule reads, so the five DSCR
+  gold cases carry every `LoanApplication` field (52), with the defaults `LoanApplication` gives;
+  outcomes are unchanged. `assess_on_plato` already posts the whole model.
+- `TODO(absent-channel-escapes-correspondent)` is gone from `platinum_select.yaml` and
+  `standard.yaml`.
+
+### Changed: dscr-core's Standard program re-based on its 8.17.2026 consolidation (0.20.10, branch `acra-programs`)
+- `DSCR_STANDARD` 3.0.0 cites the Standard consolidated guidelines v1.0 (Summary 8.17.2026 +
+  Seller's Guide excerpt 2026-08-28); every rule description carries its STD-x number. The grid,
+  ITIN and property-type tables already matched 8.17 cell for cell.
+- **Outcome changes from 8.17:** SD is the only ineligible state (AK and ND now eligible); Alaska
+  must buy out the prepayment penalty (`DSCR-PPP-AK`); Mississippi single-unit allows only buy-out
+  or the 5-year step (3-, 2- and 1-year structures now fail); above 80% LTV a warrantable condo is
+  eligible only outside Florida; a Florida non-warrantable condo or condotel takes the
+  property-type cap less 5% (`DSCR-FL-CONDO-CLTV`). The `double_cap` gold case (a Florida
+  non-warrantable condo at 82%) now binds on that 75% cap and violates three rules, not two.
+- **35 new rules:** citizenship list, seller concession 3%, delayed financing $1.5MM, loan < $200k
+  cap, STR FICO 640, Non-Permanent Resident ($1.5M, 80%), Foreign National caps, first-time
+  homebuyer (terms, DSCR 1.15, 70%), 1 or no score / deficient tradelines (65%, DSCR 1.1, 0x30x24),
+  housing history tiers, bankruptcy/foreclosure and short sale/DIL/modification seasoning tiers,
+  escrow waiver terms, condo-type DSCR 1.0, rural (caps, FICO 700, DSCR 1.0), vacant rate & term
+  and cash-out refinances (terms, DSCR, loan-size caps, 15 months ownership), listed for sale (65%,
+  24 months reserves, tenant, no IO, impounds, DSCR 1.0), mixed use DSCR 1.2, IO 10/40 at 80%.
+  Profile: 14 tables, 5 thresholds and 13 custom keys; `ineligible_states` is `[SD]` and
+  `high_ltv_eligible_property_types` drops `warrantable_condo`, which its own Florida leg now
+  covers. Five previously unreferenced keys are now read.
+- `standard.yaml`'s header lists what is not encoded (declining market, cash-in-hand, $50
+  increments, gift 10%, minimum PPP terms, subordinate financing, rent loss insurance, qualifying
+  rent, the forbearance alternative, ARM margins). An unstated `housing_history` imposes no
+  Standard cap.
+- **One credit-event vocabulary for both programs:** `bankruptcy_or_foreclosure` /
+  `short_sale_dil_or_modification`, each with its months (default 0, fail-closed), replace
+  Platinum's `previous_credit_event` / `months_since_credit_event`; Platinum's PLAT-6.8 is two
+  rules. New fields `credit_score_count`, `tradelines_meet_requirement`, `seller_concession_pct`,
+  `ownership_months`, `mixed_use`, `interest_only_10_40`.
+- Platinum picks up three rules the Standard work surfaced: `PLAT-TRADELINES` (PLAT-6.3),
+  `PLAT-PRODUCT` (no 10/40 IO, PLAT-9.1), and impounds on the listed-for-sale terms (PLAT-7.8).
+  44 rules.
+- `test_dscr_standard.py`: 49 provisions, each in-process and through japes' `assess`.
+
+### Added: Platinum Select as dscr-core's second program (0.20.9, branch `acra-programs`)
+- `policies/platinum_select.yaml`: `DSCR_PLATINUM_SELECT` (scope product, `overlay_id:
+  platinum_select`, program `platinum_select`), 41 rules from the Platinum Select consolidated
+  guidelines v1.0 (Summary 8.17.2026 + Seller's Guide excerpt 2026-08-28), each citing its PLAT-x.y:
+  the FICO/purpose matrix (no row below 700; 720 takes the 700 row as printed, Q-01), $100k-$2M,
+  SD + U.S. territories ineligible, US citizen / permanent resident only, SFR/townhome/PUD/
+  warrantable condo/two units only, STR/rural/vacant/FTHB/No Ratio ineligible, DSCR 1.0 (1.2
+  Correspondent), 75% caps (loan < $350k or > $1.5M, two units, warrantable condo, IO), 60%
+  Correspondent 700-719, 6 months reserves over 75%, listed-for-sale 65% / 24 months / no IO,
+  cash-out lease, 0x30x12, 48-month credit-event seasoning, escrow waiver ($1.5M, 0x30x24),
+  delayed financing $1.5M, and the state PPP rules (Standard's, with the 8.17 MS wording and AK).
+  Shared provisions are duplicated, not inherited, per program. The file's header lists what is
+  not encoded yet (declining market -5%, cash-in-hand, $50 increments, gift 10%, listed-for-sale
+  3-year PPP, Section 35, rent loss insurance, greater-of rent).
+- Profile: `plat_*` thresholds, custom scalars and four tables beside Standard's.
+- `LoanApplication` fields Platinum reads: `channel` and `housing_history` (default
+  `unspecified`, fail-closed: an unstated channel is held to Correspondent limits),
+  `mortgage_history_0x30x24`, `current_lease_in_place` (default False), `previous_credit_event`
+  (default False) gating `months_since_credit_event` (default 0, so an event with unstated months is
+  denied), and clean-default flags `first_time_homebuyer`, `rural_property`,
+  `vacant_property`, `delayed_financing`, `listed_for_sale_last_6_months`.
+- `program_id` now defaults to None, which takes the manifest's `default_program`, so the default
+  is stated once.
+- `test_dscr_platinum.py`: 33 provisions, each checked in-process and through japes' `assess`, plus
+  program selection. The profile-drift and context-field guards cover every program.
+- Known limit, `TODO(absent-channel-escapes-correspondent)` in `platinum_select.yaml`: japes'
+  `assess` reads an omitted field as missing and skips its rule, so these fail-closed defaults hold
+  on Plato only because `assess_on_plato` posts the whole `LoanApplication`.
+
+### Changed: dscr-core split by Acra program (0.20.8, branch `acra-programs`; needs japes v2.5.6)
+- `policies/eligibility.yaml` (`DSCR_ELIGIBILITY`, 42 rules) is now two policies with the same 42
+  rules, each unchanged: `process.yaml` (`DSCR_PROCESS`, scope institution, the 8 condo/entity/fraud
+  gates from the Commercial DSCR Loan Process Flow) and `standard.yaml` (`DSCR_STANDARD` 2.0.0,
+  scope product, `overlay_id: standard`, the 34 program-summary rules). Rule ids are unchanged;
+  anything keyed on the policy id `DSCR_ELIGIBILITY` now sees `DSCR_PROCESS`/`DSCR_STANDARD`.
+- Manifest: `programs: {standard: [DSCR_STANDARD]}` and `policy_assessment.default_program:
+  standard`, so japes' `assess` applies the process gates plus the case's program only. Platinum
+  Select lands as a sibling program next.
+- `LoanApplication.program_id` (default `standard`), carried into the eligibility context.
+- `eligibility/programs.py`: `programs()`, `default_program()`, `program_policies(program)` (core
+  then program; `ValueError` for an unknown one), `dscr_profile()`. The conductor, the DSCR page and
+  the tests select policies by the loan's `program_id` through it instead of loading a file.
+  `program_policies` drops the fact catalog `Pack.policy_registry` attaches: jaci's context supplies
+  an unrounded float `cltv_pct` (82% on `double_cap` is 81.99997...), which the catalog's decimal
+  fact refuses, so the >80% gates went indeterminate and `DSCR-HIGH-LTV-PROPERTY-TYPE` silently
+  stopped firing. The in-process path has always run without a catalog; japes' `assess` keeps it
+  (its metrics round `cltv_pct` first). Rounding in the context instead would change cap-boundary
+  behavior, so it is not done here.
+- `run_eligibility_assessment` and `compose_caps` take one policy or a list.
+- `schemas/loan_application.json` regenerated; stale "19 rules" counts dropped from docstrings.
+
+### Added: DSCR and clinical intake on Plato (on `dev`, uncommitted; needs japes `@plato` — the
+current pin — and every Plato-dependent test skips on a japes without it)
 - **"Run on: in-process | Plato"** on the DSCR and clinical-intake pages
-  (`scenarios/shared/plato.py:render_backend_choice`; disabled, with the reason, when
-  `JACI_PLATO_URL` is unset/unreachable or japes has no `PlatoClient`). Settings: `JACI_PLATO_URL`
-  (API root, e.g. `http://localhost:8000/api/v1`), `JACI_PLATO_TENANT_ID`, `JACI_PLATO_TOKEN` —
-  the same names and convention as the `japes-2.5.5` branch's ci_spread feedback sink.
+  (`scenarios/shared/plato.py:render_backend_choice`; disabled, with the reason, when no Plato is
+  found, it is unreachable, or japes has no `PlatoClient`). Settings: `JACI_PLATO_URL` (API root,
+  e.g. `http://localhost:8000/api/v1`), `JACI_PLATO_TENANT_ID`, `JACI_PLATO_TOKEN` — shared with
+  ci_spread's feedback sink.
+- **Plato found beside the page when `JACI_PLATO_URL` is unset** (`api_root_for_page`): behind the
+  dev-daily gateway `https://<host>/jaci/...` → `https://<host>/plato/api/v1`; a page on localhost →
+  `http://localhost:8000/api/v1`. The tenant falls back to the gateway's `X-Tenant-Id`, and calls
+  from a page forward the caller's identity headers (`x-security-context`, `x-user-*`), which
+  dev-daily's Plato requires. ci_spread's feedback sink resolves its URL the same way.
+- **`.env.local` and `.env.dev-daily`**: committed, secret-free templates (the japes repo's
+  convention; `.env` stays the developer's own). `.env.local.example` became `.env.local` and gained
+  the local Plato settings; `.env.dev-daily` records that `JACI_PLATO_URL` is left unset there on
+  purpose. `.gitignore` no longer ignores `.env.local`.
 - DSCR on Plato: the deterministic grid via `POST /packs/dscr-core/assess`, the review as a durable
   case run (`POST /packs/dscr-core/runs`, streamed step by step, pack pin + trace/decision ids shown)
   — `scenarios/dscr/plato_review.py` adapts both to the page's existing types.
@@ -25,9 +126,18 @@ japes `v2.5.6` branch, and every Plato-dependent test skips without it)
 - `scripts/publish_packs_to_plato.py`: deterministic archive → `/packs/check` (every finding
   printed; gates on `publishable`) → publish → activate; identical contents only reactivate, changed
   contents under a published version are refused with "bump pack_version". An assistant folder's
-  `pack_manifest.yaml` is left out of the archive (Plato's store reads it before `manifest.yaml`).
+  `pack_manifest.yaml` is left out of the archive (Plato refuses an archive holding both).
 - `scripts/export_pack_schemas.py` + drift test: `dscr_core/schemas/*.json` are generated from the
   Pydantic models.
+
+### Fixed: the pre-push review of the Plato work (`38d3204`, `8da5241`, `7b36bc9`)
+- ci_spread feedback carries the page caller's identity headers and the gateway tenant (dev-daily's
+  Plato refused it otherwise), and a derived Plato is used only when it answers /health, so a
+  workstation without Plato keeps feedback in-process again.
+- The DSCR page shows a failed or degraded Plato case run as one (Plato's error, failed modes)
+  instead of "no recommendation"; an underivable CLTV renders as "—", not 0%.
+- The publish script reports one pack's HTTP error and continues; stale `agent/` /
+  `intake_protocol.yaml` references corrected (clinical pack → 0.1.2); `.env.example` wording.
 
 ### Changed: packs reshaped for Plato (both paths read the same files)
 - `dscr_core`: `conductor:` block (`investigation_loop`, `policy_assessment` pre-loop, authoritative
@@ -46,7 +156,7 @@ japes `v2.5.6` branch, and every Plato-dependent test skips without it)
   `replaces: [RB-CI-LEVERAGE-CEILING]`; needed for japes 2.5.6's per-rule precedence.
 - Tests: `requires_plato` marker (auto-skips like `requires_api_key`); DSCR assess parity (SDK vs
   in-process, and over HTTP), adapter, glue and session unit tests, the 4 clinical personas as a
-  keyless pytest and live on Plato, one live DSCR case run. `uv.lock` relocked to japes `dev` 2.5.6.
+  keyless pytest and live on Plato, one live DSCR case run.
 
 ### Changed: v0.20.7, japes 2.5.6 (branch `japes-2.5.5`, pinned to japes `@plato`)
 - japes is pinned to its `plato` branch, which carries the newest SDK (2.5.6 at `43c13d18`);

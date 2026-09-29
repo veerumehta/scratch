@@ -38,12 +38,16 @@ BACKEND=memory streamlit run streamlit_app/pages/demo.py
 
 | Dataset | Count |
 |---------|-------|
-| Cultural criteria | 39,566 |
+| Cultural criteria | 39,571 (39,520 from Excel + 51 JSON supplements) |
 | Content rating rules | 61,722 |
-| Territories | 127 |
+| Territories (rule book) | 127 — rated, and the territory nodes in the graph |
+| Territories (cultural criteria) | 200 named in criteria; only 121 have a node |
 | Cultural domains | 21 |
-| Detection keywords | 1,385 |
+| Detection keywords | 1,385 (1,313 from config, 72 hardcoded fallbacks) |
 | Context categories | 13 |
+
+Territory coverage differs between the two datasets. See `docs/arch/CKG_CANONICAL_FIGURES.md`
+before quoting any of these figures externally.
 
 ## Key Features
 
@@ -82,7 +86,9 @@ culture-graph/
 │       ├── demo.py            # Stakeholder demo page
 │       └── chat_assistant.py  # Chat interface
 ├── data/ckg/
-│   ├── v7.4/                  # Cultural criteria by category
+│   ├── output/                # Compliance rules/patterns by category (20 dirs, *_v7.4.md)
+│   ├── cultural-knowledge/    # Cultural criteria by domain (21 xlsx)
+│   ├── criteria-supplements/  # JSON criteria added without editing Excel
 │   ├── rules/                 # Ratings master, regulatory data
 │   └── schemas/               # JSON schemas for tool I/O
 └── docs/
@@ -102,7 +108,7 @@ culture-graph/
 - **Primary keyword selection** - Skips generic terms (rules, dietary) to find specific keywords (bbq)
 
 ### v0.9.6
-- **Semantic search with pre-computed embeddings**: Embeddings for all 39,566 criteria pre-computed offline
+- **Semantic search with pre-computed embeddings**: Embeddings for all criteria pre-computed offline (index currently 39,571)
 - **Primary topic boost**: Entries where quoted topic matches query keyword get 15-point bonus
 - Hybrid ranking: keyword scores + semantic similarity bonus + topic bonus
 - Model: `all-MiniLM-L6-v2` (384 dimensions)

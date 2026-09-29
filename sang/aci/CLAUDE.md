@@ -2,100 +2,48 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Recent Session Status (2026-08-11)
+## Recent Session Status (2026-09-28)
 
-jaci `dev` is at `a6b068b` (local, unpushed) plus a large uncommitted working tree (see
-`git status` — everything below is real but not yet committed; commit only when asked). Version
-is unchanged at `0.19.2` this round — do not bump without explicit user sign-off (default to a
-patch bump if/when one is requested). Full suite: 809 passed, 8 skipped, 4 xfailed, 1 xpassed,
-**1 known pre-existing failure**
-(`test_decision_canonical.py::TestDecisionType::test_decision_type_all_values` — asserts
-`len(DecisionType) == 3`, actual is 4; last touched June 6, untouched this session, unrelated to
-anything below — a stale test, not a regression).
+jaci `dev` is at `d587a50` (the `japes-2.5.5` merge: v0.20.7, japes pinned **`@plato`**, ci_spread
+feedback to Plato) plus an uncommitted working tree from this round (see `git status`; commit only
+when asked). No version bump this round — do not bump without explicit sign-off. Full suite on the
+`@plato` pin with a live Plato: 1032 passed, 8 skipped, **1 known failure**
+(`tests/eval/test_anthropic_token_tracking.py` — a live-API test; the reasoner returns invalid JSON,
+identical on japes 2.5.1). Without a reachable Plato the 10 `requires_plato` tests skip.
 
-**This round: document upload → Knowledge-Hub-backed "document packet" pipeline, built up in
-stages across one long session.** In order:
+**This round: DSCR and clinical intake run on Plato** (japes' hosted SDK). Full record:
+`docs/status/done_JACI_PLATO_PILOTS.md` (plan: `docs/plans/plan_JACI_PLATO_PILOTS.md`; platform
+plan in japes `docs/plans/plan_plato_domain_pack_runtime.md`).
+- Both pages have **"Run on: in-process | Plato"** (`scenarios/shared/plato.py`). DSCR: grid via
+  `POST /packs/dscr-core/assess`, review as a durable streamed case run (`dscr/plato_review.py`).
+  Clinical intake: `clinical_intake/plato_session.py:PlatoIntakeSession` over Plato's recorded
+  sessions. In-process paths unchanged and still the keyless demo path.
+- **Finding Plato:** `JACI_PLATO_URL` (API root, e.g. `http://localhost:8000/api/v1`), else beside
+  the page — dev-daily's gateway serves `https://<host>/jaci/` and `https://<host>/plato/` as
+  siblings, so `/jaci/` → `/plato/api/v1`; a localhost page → `localhost:8000`. Page calls forward
+  the caller's identity headers. `.env.local` / `.env.dev-daily` are committed templates (japes'
+  convention); `.env` is yours.
+- **Packs are the single source** for both paths: `dscr_core` gained its `conductor:` block,
+  metrics, evidence tools + fixtures, `mode_tuning/` (replacing `prompts/dscr/`) and JSON schemas
+  (generated: `scripts/export_pack_schemas.py`); `clinical-intake-core` is in Plato's assistant
+  layout (`profile/`, `guardrails.yaml`, `manifest.yaml`). Publish with
+  `scripts/publish_packs_to_plato.py` — Plato versions are immutable, so a changed pack needs a
+  `pack_version` bump.
+- **japes findings, reported not fixed** (details in the done doc): the scope gate declines every
+  turn for an assistant with no in-scope topics; activation can serve a stale assistant manifest
+  until restart; the investigator fails every OpenAI call with `rich_evidence_requests=True`
+  (`query_params: dict[str, Any]` vs strict schemas — hits in-process DSCR too); schema-derived
+  models admit nulls; `cltv_pct` rounds on Plato but not in-process.
+- **japes workflow:** new work lands on japes' local version branch (`v2.5.6`, never pushed), then
+  squashes to `plato` and `dev`. To build against unreleased japes: `uv pip install -e ../japes`
+  and run with `.venv/bin/python` (plain `uv run` resyncs to the pin).
 
-1. **Upload widget** (`src/jaci/scenarios/shared/document_upload.py`, new `shared/` package):
-   `render_document_upload()` — a zip stands in for a folder upload (browsers can't upload
-   directories), unpacked via `jazzx_sdk`'s own `unpack_zip`. Wired into `ci_spread` (evidence-
-   seeding for `CIToolRegistry`, new `_seed_uploaded_financials`), `cre_underwriting`,
-   `portfolio_monitoring`, `insurance_diligence`. Fixed a real bug found along the way:
-   `ci_spread`'s `_run_fabric` never set `FabricConfig.local_cache_dir`, so LOCAL-mode
-   `fabric.docs` silently missed the per-loan `artifact_dir` entirely.
-2. **`.japes` local-markdown-cache convention generalized.** `commercial_lending/docintel.py`'s
-   `.japes/`-or-co-located-`.md` staging fallback (used only by `ci_spread` before) is now also
-   wired into `cre_underwriting`, `portfolio_monitoring`, `insurance_diligence` (swapped their
-   raw `jazzx_sdk` `convert_document` import for the `.japes`-aware wrapper) — behavior-preserving
-   for their current (tiny) sample docs, but means large real docs there would get the same
-   truncate-and-cache treatment `scripts/shrink_source_pdfs.py` gives the YETI/MAA 10-Ks.
-3. **YETI/MAA 10-K PDFs shrunk and committed.** `scripts/shrink_source_pdfs.py`: swap a 50-70MB
-   source PDF for a small labeled stub + its real `.japes/<stem>.md`; `docintel.convert_document`
-   resolves the real content regardless of the stub's actual bytes (existence-only check, no
-   hash). Originals preserved under a sibling `_originals/` (gitignored). Committed the stubs +
-   `.japes/` caches to git via `git add -f` (`docs/LoanSamples` is fully gitignored, but explicit
-   force-adds still work) — MAA's staging was co-located `.md` (no `.japes/` subfolder), migrated
-   to the `.japes/` convention in the process.
-4. **Knowledge-Hub push/pull tier added to `docintel.py`.** `ensure_local_cache`/
-   `ensure_local_caches` (async — deliberately *not* a `fabric=` param on the sync
-   `convert_document`, since bridging an async fabric fetch inside an already-sync function risks
-   "asyncio.run() cannot be called from a running event loop" for callers that are themselves
-   async): if no local cache, try a pushed **derived** doc first (cheap), then fall back to
-   pulling the **original** and converting it locally (the one place real conversion cost can
-   land on a pull). `check_staleness()` — cheap metadata-only hash comparison, flags when a doc
-   was updated remotely since last pull (never auto-resolves). `shared/fabric.py`'s
-   `build_fabric()` (connected-KH-vs-local-Mock switch, factored out of three separate copies)
-   and `cached_build_fabric()` — **a real bug found and fixed**: `MockKnowledgeHubClient` doesn't
-   persist across process invocations at all (no save-back to `data_dir`, confirmed by reading
-   the source — filed as japes issue, see below), and since Streamlit reruns the whole script on
-   every interaction, an uncached `build_fabric()` would forget a just-pushed packet before a user
-   could ever see it in a dropdown. Fixed with `st.session_state` caching, verified against
-   `AppTest`'s real session machinery, not a hand-rolled substitute.
-5. **Named "document packet" system**
-   (`src/jaci/capabilities/commercial_lending/document_packet.py`,
-   `src/jaci/scenarios/shared/packet_picker.py`). Deliberately called **"packet", not "pack"** —
-   `config/packs/` already means governed domain packs in this repo (`pack_id`,
-   `pack_manifest.yaml`, certification status); a document packet is unrelated, kept distinct to
-   avoid colliding with that concept anywhere it's grepped for. `push_folder_as_packet()` pushes
-   *both* tiers (original + derived) per file, dedups via `fabric.docs.ensure()`'s content-hash
-   idempotency (not reimplemented), and auto-flags `local_path` when the source folder is already
-   inside the repo (vendored, zero-fabric-dependency pick — same story as the YETI/MAA stubs).
-   `config/demo_document_packets.json` (repo root, explicitly *not* under `config/packs/`) is the
-   committed offline registry `list_all_packets()` always reads first, merged with live KH
-   results on top. Three CLI scripts: `scripts/push_source_docs_to_fabric.py`,
-   `scripts/refresh_and_push_japes.py` (regenerate + push back derived-only, preserving the prior
-   `original_doc_id`), `scripts/export_document_packet_manifest.py` (pull the live KH registry
-   into the committed manifest — the "run on a cloud instance with real KH access, commit the
-   result" workflow). `packet_picker` wired into `ci_spread`'s upload flow (tries the picker
-   first, falls through to direct upload).
-6. **Two japes (jazzx_sdk) papercuts found, worked around in jaci, filed upstream** (can't be
-   fixed from this repo — japes is a pinned git dependency, not an editable sibling here, though a
-   local checkout exists at `../japes`):
-   [japes#57](https://github.com/JazzX-LLC/japes/issues/57) — (a) `MockKnowledgeHubClient`'s
-   `data_dir` never actually persists writes (load-only), (b) `FabricConfig.validate_for_mode()`
-   requires `knowledge_hub_url` even when `kh_client` is the Mock (which already carries
-   `is_mock=True` specifically for this kind of check).
-
-**Deliberately not done, flagged rather than silently skipped:**
-- `cre_underwriting`/`portfolio_monitoring`/`insurance_diligence`'s core intake call chains are
-  synchronous; the fabric pre-hydrate step (`_hydrate_from_fabric`) is only wired at the
-  Streamlit-boundary (`asyncio.run()`) ahead of the upload path, not deep inside the sync parsing
-  pipeline — making the whole chain async is a bigger, more invasive change than this round
-  attempted.
-- `portfolio_monitoring`/`insurance_diligence`'s *default* (non-uploaded) review cases are built
-  eagerly at Python import time (`cases.py` module load, before any per-request hydration could
-  run) — fabric pre-hydration only covers the upload/packet-pick path, not that eager-import path.
-- No direct Azure Blob backend (bypassing Knowledge Hub) was built — confirmed the real
-  `jazzx_sdk.clients.knowledge_hub_client.KnowledgeHubClient` is HTTP-only (`httpx`,
-  `base_url=".../hub..."`), no Blob SDK usage anywhere in japes; a real KH deployment is already
-  Blob-backed server-side, so `build_fabric()`'s existing connected-KH branch already covers it.
-  Revisit only if a concrete "KH unreachable but Blob is" deployment gap shows up.
-
-**Convention captured in Claude Code memory** (not duplicated here — see
-`~/.claude/projects/-Users-sangit-src-jaci/memory/`): the jaci-vs-japes repo boundary (demo/dev
-convenience → jaci; general platform capability → japes), the full document-packet convention
-(naming, file locations, the cloud-export-then-commit workflow), and "never bump the version
-without asking; default to patch."
+Prior round (2026-08-11, kept for history): document upload → Knowledge-Hub-backed "document
+packet" pipeline (`scenarios/shared/document_upload.py`, `commercial_lending/document_packet.py`,
+`shared/packet_picker.py`, `config/demo_document_packets.json`), the `.japes` local-markdown cache
+generalized across scenarios, YETI/MAA 10-K stubs committed, `shared/fabric.py:cached_build_fabric`
+(session-state caching, because `MockKnowledgeHubClient` does not persist), and japes#57 filed. Full
+record: `docs/status/done_JACI_CL_DOCUMENT_PACKET_SYSTEM.md`.
 
 Prior round (2026-08-08, kept for history): `CLSpreadContext.control_tolerance` threaded through
 so the four arithmetic controls (FR-VAL-1/3/4/5) became reachable in the governed pipeline

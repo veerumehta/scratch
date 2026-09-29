@@ -11,6 +11,7 @@
 #   scripts/local/pr_new_comments.sh 75 2026-09-26T06:30:00Z
 #   scripts/local/pr_new_comments.sh 75 all
 #
+# `FULL=1` prints each comment's whole body and id instead of its first line.
 # `REPO` overrides the repository (default: the one `gh` resolves for this checkout).
 set -euo pipefail
 
@@ -28,7 +29,8 @@ fi
 echo "== $repo#$pr: bot comments ${since:+after $since}"
 jq -r --arg since "$since" '
   [.[] | select(.user.type == "Bot" and .created_at > $since)] | sort_by(.created_at) | .[]
-  | "\(.path):\(.line // .original_line)  \(.created_at)  \(.body | split("\n")[0] | .[0:160])"
-' <<<"$comments"
+  | if $full == "1" then "### \(.path):\(.line // .original_line)  [\(.id)]\n\(.body)\n"
+    else "\(.path):\(.line // .original_line)  \(.created_at)  \(.body | split("\n")[0] | .[0:160])" end
+' --arg full "${FULL:-}" <<<"$comments"
 count="$(jq --arg since "$since" '[.[] | select(.user.type == "Bot" and .created_at > $since)] | length' <<<"$comments")"
 echo "== $count comment(s)"

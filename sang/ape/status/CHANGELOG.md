@@ -2,7 +2,82 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+## [2.5.7] - unreleased
+
+Plato stays 0.1.8.
+
 ## [2.5.6] - unreleased
+
+Plato is 0.1.8 (from 0.1.7, which shipped to `main` with 2.5.5): case runs, formal checks,
+the pack check and assess routes, recorded sessions, durable chat streaming, `job:run-reaper`
+and the pilot fixes are Plato-visible, and `/health` reports this version to identify the image.
+
+- **Pack assessment refuses an input that omits a field a rule in force reads.** `assess` raises
+  `ValueError` (a 422 from Plato's `POST /packs/{id}/assess`) naming every fact the pack's
+  catalog declares, a rule of the selected policies reads, and the input leaves out; metric-derived
+  facts are exempt. A null is refused too where the fact is not nullable: `FactBinding.nullable`
+  (default True, so a bindings file keeps today's reading) is set by `schema_facts` exactly as
+  `schema_model` reads the property, admitting null or optional with no default; the formal compile
+  leaves it out of `JsonFact`. A nullable fact given as null (`interest_rate` off Illinois) is
+  still assessed, and its rules are attested as not evaluated. An omitted field read as missing evidence, which skips its rule, so a record that
+  left out a fail-closed term passed: a Platinum loan without `channel` cleared at the Wholesale
+  DSCR minimum, an omitted `borrower_entity_type` switched off four state buy-out rules. The case
+  conductor's pre-loop and `PackAssessmentInvoker` go through `assess`, so a partial record fails
+  there too, loudly. `tests/data/dscr_gold_cases` state the whole `LoanApplication` (52 fields;
+  outcomes unchanged), and the formal tests assess a whole record. The Platinum and Standard policy
+  headers no longer carry `TODO(absent-channel-escapes-correspondent)`. `docs/ARCHITECTURE.md`
+  states the rule.
+- **The `dscr_core` seed's Standard program is re-based on its 8.17.2026 consolidated
+  guidelines**, mirroring jaci: `DSCR_STANDARD` 3.0.0 cites STD-x on every rule, SD is the only
+  ineligible state, Alaska buys out, Mississippi allows buy-out or the 5-year step, a warrantable
+  condo above 80% LTV must be outside Florida, and 35 new rules cover the borrower, credit,
+  property and transaction overlays the 6.15 encoding lacked (69 rules). Platinum Select gains
+  tradelines, the 10/40 exclusion and listed-for-sale impounds (44 rules), and both programs read
+  one credit-event vocabulary (`bankruptcy_or_foreclosure` and `short_sale_dil_or_modification`,
+  each with its months), which replaces `previous_credit_event` / `months_since_credit_event`.
+  The `double_cap` gold case in `tests/data/dscr_gold_cases` is a Florida non-warrantable condo and
+  now binds on `DSCR-FL-CONDO-CLTV` at 75%.
+- **Platinum's credit-event rule is gated on `previous_credit_event`** (default False), with
+  `months_since_credit_event` defaulting to 0, so a flagged event with unstated months is denied
+  where the caller posts the whole model. Known limit, `TODO(absent-channel-escapes-correspondent)`
+  in `platinum_select.yaml`: `assess` reads an omitted field as missing and skips its rule, so
+  every `LoanApplication` default a Platinum rule needs in order to deny or to apply (an unstated
+  `channel` held to Correspondent, `borrower_entity_type: individual` opening four PPP gates, and
+  more) holds only for a caller that posts
+  the whole `LoanApplication` (jaci's `assess_on_plato` does). Applying the input schema's defaults
+  in `FactCatalog.read_item` was tried and dropped: most of the seed's defaults are pass-valued
+  model conveniences (HOA litigation, refinance listing, rural, vacant), so a record omitting them
+  would attest PASS on evidence nobody supplied.
+- **The `dscr_core` seed gains Acra's Platinum Select program**, mirroring jaci:
+  `policies/platinum_select.yaml` (`DSCR_PLATINUM_SELECT`, `overlay_id: platinum_select`, 41 rules
+  from the Platinum Select consolidated guidelines), its `plat_*` profile keys, `programs:
+  platinum_select`, and the loan fields it reads. `LoanApplication.program_id` defaults to None, so
+  the manifest's `default_program` is the one default. Tests that used `policies[0]` as a template
+  now take `DSCR_PROCESS` by id: the policy directory loads alphabetically, so `policies[0]` became
+  an overlay. `test_each_seed_program_is_assessed_by_its_own_rules_only` pins program selection on
+  the seed. A `json.z3` claim that names no overlays, on a pack whose rules include overlays, is
+  now refused (`ERROR`, "name the ones to check"): it checked the core rules alone and reported
+  nothing of the overlays, which on the seed meant verifying the 8 process gates and none of the
+  program's rules. `docs/FORMAL_JSON_RULES.md` says so.
+- **The `dscr_core` seed is split by Acra program**, mirroring jaci's pack: `eligibility.yaml`
+  (`DSCR_ELIGIBILITY`) became `process.yaml` (`DSCR_PROCESS`, scope institution, the 8 process-flow
+  gates) and `standard.yaml` (`DSCR_STANDARD`, scope product, `overlay_id: standard`, the other 34
+  rules, each unchanged). The manifest declares `programs: {standard: [DSCR_STANDARD]}` and
+  `default_program: standard`, and `LoanApplication` gains `program_id`. A formal compile of the
+  seed's DSCR rules now selects `overlays=["standard"]` in the compile and the claim alike (tests,
+  `docs/FORMAL_JSON_RULES.md`, `examples/formal/canonical_dscr.py`); unsat-core ids read
+  `DSCR_STANDARD:<rule>`. The scope-ladder test keeps its undeclared-scope-is-core guard on a copy
+  of the seed with the scopes stripped.
+- **Policy assessment is program-aware.** For a pack declaring `programs:`, `policy_assessment`
+  checks the core policies plus the overlays of the one program the input names
+  (`program_field`, default `program_id`, else the spec's `default_program`), and reports it as
+  `PolicyAssessment.program`. An input naming no program with no default, or an unknown program,
+  is refused. It used to evaluate every policy in the pack as core, so sibling programs such as
+  Acra's Standard and Platinum Select would all have applied to every loan.
+  A non-string program is refused like an unknown one. `lint_pack` reports
+  `unknown_default_program`, and warns `program_overlay_id_mismatch` when a program's policy
+  carries a different `overlay_id`: formal compilation selects overlays by `overlay_id`, so the two
+  would compile and assess different rules.
 
 - **Plato streams assistant turns durably (domain-pack runtime plan, Phase 0.1-0.2).** Both
   shipped wirings now build a run store, runner and dispatcher (`plato.wiring.durable_runs`), so
@@ -206,6 +281,451 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
     unresolved cells, else the binding cap, in the governor's violations. An interrupted run no
     longer also counts `investigation.halted`. Every caller of `domain_pack_record` passes `has=`
     with its article, so the assistant-pack 409 reads "which has no an assessment" nowhere.
+- **PR #82 review follow-ups** (fixed here rather than on the release branch; none was
+  critical):
+  - An assistant turn a guardrail blocked is still scored (a refusal is often the expected answer),
+    and its scorers now see the block, in experiments and in prompt optimization alike: new
+    `scorers.Prediction` (an output plus keys for its scorers' context) and `split_prediction`;
+    `Invocation` extends `Prediction`; a `PredictFn` / `PromptTarget.predict` may return one; and
+    `AssistantInvoker`, `AssistantPromptTarget` and `interactive_predict_fn` set
+    `scorers.BLOCKED_KEY` to `{"reason", "rule_id"}` for a blocked turn (one helper,
+    `agents.interactive.optimize.blocked_context`). The optimizer and the A/B helpers
+    (`guidance_ab`: `validate_guidance`, `compare_manifests`) unwrap a `Prediction` before scoring.
+    `AssistantPromptTarget.predict` and `interactive_predict_fn`'s predict return a `Prediction`
+    rather than the bare output.
+  - Feedback with no entity is duplicate-checked only against other entity-less feedback, not
+    against every entity's, and no longer loses its candidates to newer entity feedback: new
+    `FeedbackQuery.no_entity` (exclusive with `entity`) selects feedback recorded without one. The
+    flag it sets, `potential_duplicate`, is display-only.
+  - Plato's formal route stops a timed-out worker once (in `finally`), not twice, so a worker that
+    ignores the first stop no longer costs a second stop timeout.
+  - Not changed: an experiment whose read fails after its claim is left for `job:eval-reclaim`
+    (the same database failure fails its `finish`, so reading the claimed copy would not help); an
+    optimization's apply releasing its claim when the record fails to save is deliberate (the
+    draft write is idempotent); `actor_id or ""` is stored as None by the draft store.
+- **The chat lifecycle, for jazzx-assistant** (their requirements for 2.5.6, reshaped onto what
+  japes has):
+  - `stream_chat_turn` waits for its engine task to unwind when the stream is abandoned or its
+    task cancelled, so the workspace is released and a caller waiting on the stream's task (a
+    barge-in starting the replacement turn) finds no stage still running.
+  - `run_chat_lifecycle` / `stream_chat_lifecycle` (new): a turn whose value is any type.
+    They return (or end with a `ChatFinalEvent` carrying) a `ChatRun[T]`: `value` (finalize, else
+    compose, else the answering branch; a failed step's substitute), `route`, `conductor` (the
+    engine's `ConductorRun`), `status` in `TurnRun`'s vocabulary (`completed`, a refusal included;
+    `interrupted`; `failed`), `error` (`ChatError`: `code`, `stage`, `user_message`,
+    `operator_detail`, `retryable`) and `diagnostics`. `stream_chat_lifecycle` takes no `agent`;
+    a stage publishing a `ChatFinalEvent` is refused as a `done` event is. `run_chat_turn` and
+    `stream_chat_turn` are now adapters over the same cores, resolving the `InteractiveResponse`
+    and logging the metrics they did. `answer_stream_step`'s `sink` is optional, defaulting to
+    `turn.publish`.
+  - A `prepare` stage (optional, between `validate` and `gate`; `build_chat_pipeline(with_prepare=)`,
+    added by `pipeline_for` when bound, cancel-guarded, in the catalog): it emits the turn once
+    for every later stage. The reference `prepare_step(app=)` emits a `PreparedTurn` (`messages`
+    bounded by `turn_messages`, plus `app`, the application's value). With a `PreparedTurn`, the
+    reference gate's `classify` and `escalate` see the turn with the prepared history, and the
+    reference answer (blocking and streaming) sends the prepared messages, so the gate and the
+    answer cannot see different histories. An application's own `prepare` may emit anything; its
+    own stages read it from `state.emitted["prepare"]` (`prepared(state)` for a `PreparedTurn`).
+  - Errors keep the user's text and the operator's apart. `chat_step_error` (new, the lifecycle
+    runners' default `on_step_error`) halts and substitutes a `ChatError` (`<step>_failed`,
+    `user_message` = `DEFAULT_ERROR_MESSAGE`, `operator_detail` = the failure's text); the run is
+    `failed` with no value. `on_step_error=None` still propagates raw, and `CancelledError` is
+    never converted. `default_step_error` (the legacy runners') is unchanged, now documented:
+    `answer` is the user's, `incomplete_reason` the operator's. With a handler, a workspace that
+    cannot be acquired fails the run (`workspace_acquire_failed`, nothing runs) and one that
+    cannot be released is recorded in `diagnostics["workspace_release"]` with the value kept;
+    without one, both propagate. Both streams' final event now follows the workspace release.
+  - Case runs: a failed run's journal and `GET {prefix}/runs/{id}` (and the list) carry
+    `runs.case.CASE_FAILED_ERROR` (`case_failed`, a generic message), not the exception's text,
+    which stays on `TurnRun.error` and in the log.
+  - Every way a turn ends is observed, once: the runners report through one report-once path, so
+    a raw propagated failure (`turn_failed`, then raised), a workspace failure with no handler, a
+    task cancel (`interrupted`) and an abandoned stream (new `ChatRun` status `abandoned`) each
+    reach `on_complete` exactly once, and a raising callback changes nothing. The legacy stream
+    still reports no response for an abandoned turn (it logs `chat.abandoned`, as before).
+  - `ChatTurn.cancel_after_answer` (`deliver`, the default, or `drop`): with `drop`, the engine's
+    `stop_requested` checks `turn.cancel` before every stage, so a cancel landing after the answer
+    stops compose, persist and finalize, and the run is `interrupted` with no value (a barge-in).
+    A `persist` that already ran is not undone. With `deliver`, the stage guards decide as before.
+  - `ChatTurn.persistence` (`agent`, the default, or `caller`): with `caller`, the runners refuse
+    (`PersistenceConflictError`, from `check_persistence`) a turn japes could still write, a
+    `session_id` for the agent's conversation store or the reference `persist` bound, so no
+    agent, session or reference stage records it; the application records it outside japes or
+    in its own `persist`, which runs once after compose and before finalize. Four policies in the
+    requirements collapse to these two: to japes, "external" and "none" both mean it writes
+    nothing, and "application hook" is a bound `persist`. `ChatTurn.persist_failure` (`required`,
+    the default: the step fails through `on_step_error`, `persist_failed`; or `best_effort`: the
+    value stands and the error is in `diagnostics["persist"]`). A cancel during persist
+    propagates either way.
+  - Review fixes: the legacy runners keep propagating a workspace failure (classification is the
+    lifecycle runners'), and a classified one is logged as well as recorded, so an abandoned
+    stream cannot lose it. A step a handler recovered without halting leaves the turn to resolve
+    as usual, named in `diagnostics["recovered"]`, instead of failing it. `PreparedTurn` refuses
+    messages that do not end with the user's message.
+- **Formal checks over canonical policy (PR #85, Sourav)** landed on `plato` and was brought into
+  `v2.5.6`. Follow-ups here: an `Expression` needs a `value` or a `value_source` (a materialized
+  one has both); with neither it no longer loads, so a threshold left out is refused rather than
+  compared against `None`.
+  The fact catalog a pack derives from its input schema is read by `pack.schemas`
+  (`schema_facts`, new): a local `$ref`, a union with null and an `enum` resolve to their
+  primitive type, and an unsupported keyword is refused, as for the input model. The loader's own
+  parser skipped any property without a direct `type`, dropping DSCR's `residential_unit_count`
+  and `interest_rate`, so the rules reading them had no fact to compile against. `unit` / `x-unit`
+  join the schema's supported annotations.
+  Plato's formal route never runs a JSON rule pack ungated. A request lists `compile` entries
+  (`plato.api.formal.PackCompile`); Plato compiles each from the tenant's published domain pack
+  (named version, else activated, else newest, as `assess`) and passes only those hashes to the
+  worker as approved, so a caller-submitted compiled pack is refused and a caller cannot approve
+  its own rules. The worker takes a `WorkerInput` (`request` plus a required
+  `approved_rule_pack_hashes`) from its parent and refuses to run without the set. Approval is
+  derived from the pack store rather than stored: a published version has passed the publish
+  check and cannot change. `create_formal_router` gains `pack_store_for` and
+  `tenant_from_request`.
+  Review fixes: an empty `compile` list is a plain request (it reached the worker unvalidated);
+  compiling runs inside the capacity slot and off the event loop; the case-run status constants
+  (`kinds.INTERRUPTED`, `kinds.FAILED`) are shared with `runs.case` rather than restated; a
+  pack schema's null allowance is found through a local `$ref` and in an `enum`.
+- **Plato pilot findings** (from jaci's DSCR and clinical-intake pilots on Plato):
+  - The investigator no longer fails every real call with `rich_evidence_requests=True`: its
+    `RichHypothesisUpdate` output (a free-form `query_params` dict) goes to the agent runtime as
+    `AgentOutputSchema(..., strict_json_schema=False)`, as the verifier's and narrator's do, since
+    OpenAI's strict mode rejects any dict-shaped field. Every DSCR case run on Plato, and jaci's
+    in-process `DSCRConductor`, were affected. A contract test now builds every mode the DSCR
+    conductor uses through `sdk_mode_factory` and runs the output type each passes through the
+    Agents SDK's own schema construction.
+  - A failed mode no longer passes as success. `CaseResult.failed_modes` lists the modes that
+    failed at least once; the run is `failed` when the investigator never succeeded (its decision
+    rests on no investigation), else `degraded`. A `failed` result ends the case run `FAILED`
+    with its output kept (`runs.case.FAILED_STATUSES`), and the Decision of a run with failed
+    modes requires human review.
+  - The scope gate reaches the LLM only when the manifest sets `out_of_scope_check_model`, as
+    its docstrings said. A host supplying `llm_manager` (Plato always does) switched every
+    assistant to the LLM check, which classifies against `in_scope_action_classes` as the
+    allowed topics, so an assistant declaring none declined every turn, the bundled demo pack
+    included. Open (a design question from the pilot): the scope gate runs before a pack's own
+    input guardrails, so a red flag an LLM scope check misjudges is declined generically and
+    never reaches the pack's escalation rule.
+  - Activating an assistant-pack version serves its manifest without a restart: `activate`
+    recomposes the tenant's registries after moving the pin, as `forget_packs` does. It used to
+    drop the caches only, and `agent_for` reads the manifest store before composing, so the next
+    agent bound the previous version's manifest (a publish recomposes too, under the old pin).
+  - Models built from a pack's JSON Schema (`pack.schemas`, base `PackModel`) follow the schema
+    on null. A property that allows null keeps `None`. A defaulted one takes its default and
+    refuses null, so strict structured output must supply a value. One the schema neither
+    requires, defaults nor lets be null is still accepted as absent on input, and is left out of
+    the output when `None` (`PackModel.absent_when_none`), so a reader's own default applies.
+    Every non-required field used to be nullable, so a case run's decision carried
+    `conditions: null` and `condition_id: null`, which jaci's `EligibilityRecommendation`
+    rejected (its `_without_nulls` workaround can go).
+  - The publish check refuses an archive holding both `pack_manifest.yaml` and `manifest.yaml`
+    (`ambiguous_manifest`, blocking), naming the role it would have published as. It used to be
+    classified by whichever name `MANIFEST_NAMES` reads first, so an assistant pack carrying a
+    domain manifest published as a domain pack and was never served, with nothing said.
+  - Not changed (pilot item 6): `cltv_pct`'s `rounding_places: 2` is a policy decision for the
+    DSCR corpus owner; the seed pack's `no_ontology` / `unverifiable_rules` check findings are
+    noted, not fixed here.
+- **Chat runtime, phase A** (jazzx-assistant's second requirements page):
+  - `InteractiveAgent.respond(..., persist=False)` / `respond_stream(..., persist=False)`: the
+    session id still names the turn (`conversation_id`, correlation), but no conversation is
+    loaded, written, or bound to a native session. It covers the single-shot and agentic paths,
+    and an injected `session_factory` session.
+  - `ChatTurn(persistence="caller")` now accepts a `session_id`: the reference answer runs the
+    agent with `persist=False`, `check_history_ownership` no longer refuses supplied history for
+    it, and `check_persistence` refuses only the reference `persist`. A session id is then a
+    correlation and resource-lookup key, as the requirements ask.
+  - `ChatError.category` (`ChatErrorCategory`): the generic kind of failure japes owns, beside
+    the specific `code`. `stage` (a stage failed or nothing answered), `resource` (the workspace),
+    `persistence` (a failing `persist`, required or best effort), and `deadline`, `capacity`,
+    `cancellation`, `abandonment`, `delivery` for the coordinator to come. An application maps its
+    own store, authorization and domain failures to codes of its own.
+  - A typed cancel reason. `CancelReason` (`user`, `superseded`, `deadline`, `drain`, `aborted`
+    for a hard task cancel, and the default `cancelled`). `request_cancel(turn, reason)` sets the
+    reason before the signal. `ChatRun.cancel_reason` on every interrupted run: not started,
+    stopped mid-run, dropped after the answer, or aborted. It replaces the
+    `diagnostics["cancel_reason"]` key. `ChatTurn.cancel_reason` still accepts a caller's own text.
+  - A public surface: `jazzx_sdk.pipelines.chat.__all__`, grouped by use (turn input, runners,
+    results / errors / events, policies and cancellation, pipeline building, reference stages).
+    `tests/test_chat_public_api.py` holds it: every export resolves, nothing public is left
+    out, and the stored literal values (`ChatStatus`, `ChatErrorCategory`, `CancelReason`,
+    `Route`, and the turn's `persistence`, `persist_failure`, `cancel_after_answer`) are
+    snapshotted, so changing one is a deliberate contract change. New user guide
+    `docs/CHAT_LIFECYCLE.md`: the two runner pairs side by side, migrating from `run_chat_turn`,
+    persistence ownership (`persist=False` included), errors, cancellation, the workspace and
+    prepare, with the Python floor and dependencies.
+  - Review fixes: the reference answer passes `persist=False` only for a caller turn that
+    names a session, so an agent without the keyword still runs one that does not;
+    `RecordingAgent` records nothing for a `persist=False` turn (its caller owns the record);
+    a reason given through `request_cancel` before a hard task cancel survives it rather than
+    reading `aborted`.
+- **Chat runtime, phase B** (the coordinator on `jazzx_sdk.runs`):
+  - `TurnRunStore.finish(run_id, event, **fields)` (both stores): a run's terminal fields and its
+    terminal event in one write (one transaction in `DbTurnRunStore`), so a reader that sees the
+    `done` event finds the run terminal, and one that finds it terminal sees `done`. Both
+    `ResilientRunner` (completed, interrupted) and `CaseRunner` (completed or interrupted, failed)
+    now finish through it. They used to journal `done` first and commit the status after, so a
+    reconnecting reader could see a finished stream on a run still marked running.
+  - Replacement policy (`runs.ReplacementPolicy`: `wait`, `reject`, `supersede`) on admission.
+    `TurnRunStore.admit(run, replacement=...)` (both stores) decides against the key's active runs
+    in the same step as the create; the DB store holds those rows locked for it.
+    - `wait` is today's FIFO.
+    - `reject` raises `runs.TurnRejected` (naming the active runs) and creates nothing.
+    - `supersede` cancels the key's queued runs and asks its running one to stop; the new run is
+      claimed only once that one is terminal, and each run's events stay on its own `run_id`.
+    - `ResilientRunner.create_run`, `CaseRunner.submit` and `TurnDispatcher.submit` take
+      `replacement=` (default `wait`).
+    - Cancel-queued-and-stop-running is one helper per store, shared by `admit` and
+      `request_stop_conversation`.
+  - Stop reasons and deadlines.
+    - `TurnRun.stop_reason` is set with the stop flag: `request_stop(run_id, reason=)` and
+      `request_stop_conversation(key, reason=)` (default `user`, on the stores and
+      `ResilientRunner`), `superseded` when admission supersedes, and `deadline` when a run runs
+      out of time. A drain can say `drain`. Values are `pipelines.chat.CancelReason`'s; a caller's
+      own text is accepted.
+    - `TurnRun.deadline_seconds` is stored at admission (`create_run` / `CaseRunner.submit` /
+      `TurnDispatcher.submit`), so whichever worker executes the run enforces it. Past it,
+      `ResilientRunner.watch_deadline` asks the run to stop (monotonic, from the start of
+      execution), and both runners cancel the watcher when the run ends.
+    - Plato's `GET {prefix}/runs/{id}` reports `stop_reason`.
+  - Lanes and capacity, policy-workbench's model.
+    - `TurnRun.lane` (default `runs.DEFAULT_LANE`, `interactive`) and `TurnRun.principal` are set
+      at admission (`create_run` / `CaseRunner.submit` / `TurnDispatcher.submit`).
+    - `runs.LaneLimits(lanes={lane: n}, per_principal=n)`: its `admits(candidate, running)` is the
+      one rule both stores apply.
+    - `claim_next(..., limits=)` leaves a run queued while its lane or principal is full.
+    - New `claim_any(lane, token, limits=)` claims the oldest admissible run in a lane across
+      keys. A principal at its cap is skipped, not waited on, so it does not hold up the others.
+    - `CaseRunner.drain_lane` is the worker-side loop over it, and `CaseRunner.drain` /
+      `TurnDispatcher.drain` take `limits=`.
+    - The DB store counts RUNNING runs under a per-lane transaction lock (new
+      `fabric.db.locking.advisory_xact_lock`: `pg_advisory_xact_lock` on Postgres, a no-op on
+      sqlite, whose writers are serialized), since row locks cannot cover a row another
+      transaction is about to flip to RUNNING. `claim_any` scans at most `CLAIM_SCAN_ROWS` queued
+      runs, since `lane` is in the run's JSON rather than a column.
+    - Tested on sqlite and in process; the Postgres lock path has no test here yet.
+  - The chat coordinator (`runs.ChatCoordinator`, in `jazzx_sdk/runs/chat.py`): a chat
+    lifecycle turn run as a `TurnRun`, on the same admission, lanes, claim, heartbeat, stop flag,
+    deadline and journal.
+    - What runs is `stream_chat_lifecycle` over a `runs.ChatTurnSpec` (turn, components,
+      workspace) that the application's turn factory builds from the run, so any worker that
+      claims it can execute it from the stored input.
+    - Every event a stage publishes is journaled; the terminal event is
+      `{"done", "status", "route", "value", "error", "cancel_reason", "commit"}`, finished in
+      the same write as the run's status. `error` is the `ChatError` without `operator_detail`,
+      which goes on `TurnRun.error`. A stage event carrying `done` is refused, since readers stop
+      at the first one.
+    - `DurabilityPolicy`: `commit_before_delivery` runs the application's commit hook before the
+      terminal event, and a failed commit fails the turn (`commit_failed`, category
+      `persistence`) with no value delivered; `delivery_before_best_effort_persist` runs it after,
+      logging a failure; `none` runs none. The hook is called at most once, with the `ChatRun`,
+      and not for an abandoned turn. `runs.CoordinatedTurn` reports `commit` (`not_attempted`,
+      `confirmed`, `failed`) and the hook's marker. The page's `caller_managed` is not a separate
+      value: with the journal as the runs layer's own record, it behaves as `none`.
+    - The durable stop flag becomes the turn's `request_cancel` with the run's `stop_reason`
+      (polled every `STOP_POLL_SECONDS`), so a user stop, a supersede and a deadline reach
+      `ChatRun.cancel_reason`. A turn stopped while queued runs no stage.
+    - `runs.ChatTurnHandle` (`start`, or `handle(run_id)` for a run submitted elsewhere): an
+      idempotent `cancel(reason)` (the first reason stands), `events(after_seq, disconnect=)`, and
+      `result()`. `DisconnectPolicy` for a reader that leaves early: `detach` leaves the turn
+      running; `cancel` stops it with reason `disconnected`; `abandon` cancels its producer, with
+      reason `abandoned`, releasing the workspace and committing nothing.
+    - `CancelReason` gains `disconnected` and `abandoned`.
+    - A task-cancelled execution finishes the run interrupted with reason `aborted`; a turn
+      factory or lifecycle that raises finishes it failed (`turn_failed`) and re-raises.
+    - `drain(key)` and `drain_lane(lane)` as on `CaseRunner`.
+  - Plato's `POST .../chat/stream` runs the chat lifecycle through the coordinator, so a
+    Plato-hosted assistant's streamed turn goes through validate, gate, answer, persist and
+    finalize rather than a bare `respond_stream`. The run's input carries `message` (was a
+    `messages` list), and the stream's last frame is the coordinator's terminal event (its
+    `InteractiveResponse` under `value`, was `response`). A dropped client detaches. The
+    unused `dispatcher` is gone from `create_assistants_router`, `create_app`, `PlatoWiring` and
+    `durable_runs`.
+  - Shutdown and a worker loop (`jazzx_sdk/runs/worker.py`).
+    - `runs.settle_runs(store, active, timeout=)`: asks each running execution to stop with
+      reason `drain` (new `runs.schema.DRAIN`), waits up to `timeout`, cancels the rest (which
+      finish `aborted`), and returns a `runs.SettleReport` of settled and unsettled run ids.
+    - `ChatCoordinator.close(timeout)` settles the turns it is executing and refuses new
+      `start`s; its drains stop claiming. Queued turns stay queued for another worker.
+    - `runs.RunWorker(store, execute, lanes=, limits=, concurrency=, poll_seconds=,
+      max_lifetime_seconds=)`: a worker process's loop. It claims across keys per lane within
+      `LaneLimits` (`claim_any`), runs up to `concurrency` executions at once, survives a failing
+      one, stops claiming once its lifetime is up and finishes what it holds, and `close(timeout)`
+      settles through `settle_runs`. `execute` is `(run, claim_token)`: `ChatCoordinator.execute`,
+      or a closure over `CaseRunner.execute` for case runs.
+    - `CaseRunner` and `TurnDispatcher` have no `close` of their own: a process that needs
+      bounded shutdown for them runs them under `RunWorker`.
+  - Review fixes over phase B:
+    - Every claim of a key takes the key's transaction lock (`DbTurnRunStore`; on Postgres,
+      `pg_advisory_xact_lock`), so `claim_next` and `claim_any` cannot both find a key idle and
+      start two runs on it. `claim_any` reads the lane's queue unlocked and takes a candidate's
+      key lock without waiting (new `fabric.db.locking.try_advisory_xact_lock`), so it no longer
+      row-locks other keys' queued runs, which made a concurrent `claim_next` skip a key's oldest.
+    - `claim_any` pages through the lane's queue (`CLAIM_SCAN_ROWS` per page, lane filtered in
+      SQL) instead of giving up after one window, so a backlog on busy keys or other lanes no
+      longer starves a lane.
+    - `claim_any` (both stores) considers only a key's oldest queued run, so a key whose oldest
+      is passed over for its principal's cap, or sits in another lane, does not have a newer run
+      started ahead of it.
+    - `ResilientRunner.execute` and `CaseRunner.execute` finish a task-cancelled run interrupted
+      with reason `aborted` (`runs.schema.ABORTED`, moved from `runs.chat`), as
+      `ChatCoordinator.execute` does, instead of leaving it running for the reaper.
+    - `RunWorker.run` survives a failing claim, retrying after the poll interval.
+    - `settle_runs` bounds the unwinding of cancelled tasks by `timeout` too; one still unwinding
+      is reported unsettled and left running.
+    - Plato's turn factory still reads a run whose input carries `messages`; an empty `message`
+      is a turn like any other.
+    - A cancel that lands after a run's terminal write (`ResilientRunner`, or `ChatCoordinator`
+      during a best-effort commit) leaves that write standing rather than rewriting the run
+      `aborted` with a second `done` event.
+    - `DbTurnRunStore`'s key-head check orders by `(created_at, run_id)`, as the lane scan does.
+    - Tested on sqlite and in process, and on Postgres when configured (below).
+  - Store tests can run on Postgres: set `JAPES_TEST_POSTGRES_URL` (shell or `.env`, the one key
+    the suite reads from it). `tests/db_backend.py` gives `STORE_BACKENDS` (`memory`, `db`, plus
+    `postgres` when set) and `open_db(backend)`, a `DbStore` on its own schema, dropped on
+    dispose. The runs tests (`test_case_runner.py`, `test_chat_coordinator.py`) parametrize over
+    it; a Postgres-only test races ten concurrent claims on one key, with each claim's row lock
+    delayed so the racers overlap, and fails against the store before the key lock (four
+    `claim_next` calls all claimed). The other DB-backed tests still run on sqlite only.
+    Documented in `docs/LOCAL_TESTING.md` and `.env.template`.
+  - Every DB-backed test now runs on Postgres too when the key is set: 58 test files take the
+    `db_backend` fixture (`conftest.py`, over `tests.db_backend.DB_BACKENDS`) or `STORE_BACKENDS`,
+    and build stores with `open_db(backend, path)`. Two stores opened on one path share a schema,
+    as two sqlite stores on one file share a database; `conftest` drops a test's schemas after
+    its stores are disposed. The Postgres engine has no pool, since an asyncpg connection
+    belongs to its loop and sync tests build a store under `asyncio.run` and serve it through
+    `TestClient`'s. Left on sqlite, each with its reason at the test: backend-name handling,
+    sqlite paths and in-memory behavior, alembic run against a sqlite file, `DbStore`'s own
+    engine and dispose, and stubs that never connect. With Postgres: 1462 passed, 3 skipped;
+    sqlite alone: 1054 passed, 4 skipped. No production defect surfaced.
+  - Review fixes: a path-named schema is salted with a per-run id, so a run never adopts a schema
+    an earlier (killed) or concurrent run left on the same database, while two stores on one path
+    still share a schema within a test; `conftest` disposes every store and drops the test's
+    schemas even when one dispose raises, then raises that failure; `test_conversation_store_dogfoods_fabric_db` keeps its name.
+  - Push-review fixes over phase B:
+    - `DbTurnRunStore.admit` takes the key's lock first, so two `reject` (or `supersede`)
+      admissions of an idle key, which has no active row to lock, cannot both find it idle.
+    - `claim_any(..., kind=)` (both stores) and `RunWorker(kind=)` restrict a lane claim to one
+      run kind; `CaseRunner.drain_lane` claims only case runs and `ChatCoordinator.drain_lane`
+      only turns, so a host sharing one store across both never hands one kind to the other's
+      executor.
+    - Every drain (`CaseRunner.drain` / `drain_lane`, `ChatCoordinator.drain` / `drain_lane`,
+      `TurnDispatcher.drain`) goes through `runs.worker.drain_claims`: a run whose execution
+      raises is recorded and the drain carries on, raising the first failure once the queue is
+      empty, so the runs behind it are not left queued with readers following them.
+    - `check_persistence`'s docstring says what it guarantees: japes' own stages; an
+      application's own `answer` runs its agent with `persist=False` itself.
+  - Push-review fixes, second pass:
+    - The `dscr_core` seed's `residential_unit_count` is a required integer (1-4), never null, as
+      jaci's `LoanApplication` already makes it (derived 1 for single-unit types, stated for
+      2-4 unit). Nullable, a 2-4 unit file with no count left `PLAT-TWO-UNITS-ONLY` unevaluated
+      and a 3-4 unit property Platinum Select excludes was allowed; the Ohio/Pennsylvania
+      "Residential 1-2" and Mississippi single-unit PPP gates were skipped the same way. `assess`
+      now refuses the null.
+    - The formal worker reads up to `LocalFormalConfig.worker_read_bytes` (`max_message_bytes`
+      plus `worker_envelope_bytes`): the request limit measures canonical bytes, while the worker
+      reads the envelope as the parent serializes it. The parent checks the exact payload against
+      that same limit and answers 413 past it, so a caller's oversized request is no longer a
+      worker 502.
+    - `RunWorker(..., kind=)` is required (None claims every kind), since a store is shared by
+      chat turns and case runs.
+    - `jazzx_sdk.pack.store.manifests_in(directory)` names the `MANIFEST_NAMES` present; the
+      upload check and the seeder both refuse a pack directory holding both names (the seeder
+      published it silently from `pack_manifest.yaml`).
+    - Three test files that import converted helpers (`test_plato_formal_gate.py`,
+      `test_plato_runs_api.py`, `test_plato_client.py`) take `db_backend` too; they raised
+      `TypeError` after the Postgres conversion.
+    - Seed text: schema descriptions name this pack's paths, not jaci's; the profile and
+      `DSCR-CONDO-HOA-RESERVES` name the 8.17 consolidated sources; `DSCR-OVER-2M-NO-RATIO` points
+      at ENCODING_NOTES §3 G2; the ITIN loan-max comment no longer claims every loan-amount bound
+      is profile-linked (`TODO(loan-bound-profile-claim-false)` lists the ones that are not), and
+      `TODO(ppp-rules-duplicated-per-program)` records that Platinum's PPP rules copy Standard's.
+    - `conftest` raises a dispose failure even when dropping the test schemas fails.
+  - Push-review fixes, third pass:
+    - `ChatCoordinator`'s stop watcher survives a failed store read, as the heartbeat does, so a
+      stop, supersede, deadline or drain still reaches a turn after a connection blip.
+    - `ResilientRunner` no longer rereads the run between starting its heartbeat and the `try`
+      that stops it (it uses the run it just claimed), so a failing read cannot leave a
+      heartbeat keeping a dead run RUNNING.
+    - Plato's formal compile of a program pack with no overlays named uses the assessment's
+      `default_program`, as `assess` does, or is refused when there is none, instead of silently
+      checking only the core rules.
+    - `ChatCoordinator.start(..., limits=)` drains within the limits it is given.
+    - `assess` refuses an input stating a value its pack's case input schema does not allow
+      (type, `enum`, bounds), as a case run's validation does; it read the raw input, so a
+      `housing_history` of `0X120X12` skipped Standard's `DSCR-HOUSING-HISTORY-CLTV` (which
+      matches exact spellings) and a 0x120x12 loan came back allowed. The seed's
+      `housing_history` is an `enum` of its six ratings. `TODO(unit-count-not-tied-to-type)`
+      records that nothing ties `residential_unit_count` to `property_type`.
+    - A deadline stop that fails is retried on the heartbeat's cadence rather than lost.
+    - `jazzx_sdk.pack.assessment.default_program(pack)` is the one program-selection rule, used by
+      `assess` and Plato's formal compile. `PackCompile.overlays` omitted means that default
+      program; an explicit `[]` means the core rules only.
+    - Under `delivery_before_best_effort_persist` the terminal event's `commit` is `deferred`
+      (new `CommitState` value): it is written before the commit runs, whose outcome is on
+      `CoordinatedTurn.commit`.
+  - PR #81 fixes, from a full-range review of v2.5.6:
+    - Plato's streamed chat carries the request's `conversation_id` into the turn, as `/chat` passes
+      it to the agent; the reply's ids (and the feedback attached to them) named the session id
+      instead.
+    - `request_stop` (both stores) leaves a run that has ended as it ended: stopping a finished
+      run, from either Plato stop route, a deadline firing during a deferred commit, or a drain,
+      stamped `stop_requested` and a reason on a completed record.
+    - `request_stop` returns whether the run is now asked to stop (the store protocol, both
+      stores, `ResilientRunner`), and the three stop routes (Plato's assistants and runs, the
+      SDK's `run_routes`) answer with it rather than a literal `stop_requested: true`; the SDK
+      route answers 202 when it takes the stop on and 200 for a run already ended.
+    - `CaseRunner.execute`'s cancel path leaves a run that has already ended (reaped, say) as it
+      is, as `ResilientRunner` and `ChatCoordinator` do, instead of rewriting it `aborted` with a
+      second `done` event.
+  - The `dscr_core` seed's rule-read string inputs are enums of the vocabularies their descriptions
+    state: `property_state` (the 50 states, DC and the five territories), `citizenship_type`,
+    `occupancy_subtype`, `dscr_documentation_type`, `borrower_entity_type`,
+    `prepayment_penalty_requested` and `channel`. With `assess` refusing a value outside its
+    schema, a mistyped `sd` or `ITIN` no longer skips the ineligible-state or ITIN rules and
+    allows the loan. A test holds every value a rule compares against inside its field's enum.
+    jaci's `LoanApplication` still types these as `str`, so a jaci input with another spelling is
+    now refused by the seed's `assess`.
+  - Plato's assistants get the current `ClientLayer`'s LLM (`plato.wiring.default.CurrentLLM`,
+    beside `CurrentFabric`), so a provider key set through `/v1/config` reaches assistants already
+    bound: `LLMManager` builds each provider once with the key it read then. Feedback retrieval's
+    RAG store is still the boot layer's (`TODO(feedback-rag-bound-at-boot)`): its per-tenant
+    index caches collection ids per store.
+  - PR #81 bot review:
+    - `combined_catalog` copies a host `GuardrailRegistry` even with no pack guardrails (the
+      binding registered the scope guardrail into the shared host, reaching every assistant
+      built through it), and copies every guardrail at its own tier (a tier-1 floor was
+      re-registered at 3).
+    - The expression evaluator reads a float on a decimal catalog fact (an authored YAML threshold
+      on an unmaterialized `Pack.policy_registry`, a caller's context value, a membership list
+      member) as the exact decimal it spells before `typed_scalar`'s strict check; such rules were
+      withheld, and `in` against float members never matched a `Decimal`.
+    - `compose_caps` reads its compare value as the evaluators read a number (`Decimal`, numeric
+      string, float); a catalog-typed `Decimal` was None and every case failed its cap.
+    - A matrix axis value that is not a finite number is INDETERMINATE, not a raised error.
+    - `materialize_accepted_policy` refuses a draft whose source is no longer supplied with its
+      "source changed" error rather than a `KeyError`; the compiler's empty-selection error no
+      longer prints an always-empty gap list.
+    - Two test files import sibling helpers as `tests.<module>`, like the rest of the suite.
+    - Every `_number` read in the matrix evaluator (axis and compare value) turns a value that
+      is not a finite number into INDETERMINATE rather than a raised error.
+    - `compose_caps` reports a cell that is neither an ineligible marker nor a number as
+      unresolved rather than raising.
+    - The formal compiler matches an overlay's replacements on each compiled rule's recorded
+      `(policy_id, rule_id)`, not by splitting the `policy_id:rule_id` key, which broke for ids
+      holding `:`.
+    - `subset_match` walks any `Mapping`, not only a `dict`.
+    - `CoordinatedTurn.run` is typed optional, as `finish` can return None for a purged row.
+  - `test_the_worker_reads_a_request_at_the_limit_inside_its_envelope` ran `formal_worker.main()`
+    in the pytest process, which on Linux applied the worker's `RLIMIT_CPU` / `RLIMIT_AS` to the
+    whole run and killed CI partway ("CPU time limit exceeded", exit 152). It stubs
+    `_apply_linux_resource_limits`, as the sibling limits test fakes `resource`.
+  - `test_pack_store.py` built its archives with `writestr` on bare names, which stamps the
+    current time, so two builds either side of a two-second boundary differed in bytes and the
+    cross-tenant blob-sharing test failed now and then (more often on Postgres, which is slower).
+    Entries now carry a fixed `ARCHIVE_TIMESTAMP`.
+  - `test_db_locking.py` gains a Postgres-only contention test: a row one transaction holds is
+    skipped by another. It fails if the locking statement falls back to a plain select, which the
+    contract tests cannot see. `skip_locked_first`'s docstring now says its lock covers every row
+    the statement selects, so a caller that means one row limits it (all three callers do).
 - **Python custom scorers run in Plato on a workstation.** New
   `jazzx_sdk.fabric.canonical.local_executor.LocalPythonExecutor`, the SDK's one `PythonExecutor`:
   each run is a child `python -I -S` with an empty environment (no inherited secrets), a fresh temp

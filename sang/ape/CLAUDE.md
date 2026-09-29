@@ -10,10 +10,34 @@ slice (python executor) is squashed to `dev` (`da9a709d`) and `plato` (`6701d711
 without 2.5.6) is written, for the user to run.
 
 **Plato domain pack runtime** (`plans/plan_plato_domain_pack_runtime.md`, Rev 2): Phases 0, 1 and 2
-built on `v2.5.6`, local and unpushed. Phase 2's tail (`86c62521` conductor kinds, `7c5f6fa4`
-case runs, `a5bc2498` pack eval entity, `c1fd38d8` review fixes) reviewed clean from `4766c97a`
-after 2 rounds; everything before was clean at `7e99aeb9`. A full-range review
+built on `v2.5.6`, local and unpushed, folded (with the PR #82 follow-ups and the chat lifecycle) into one commit `ab080492` on top of `acb22f78`; squashed to `plato` as `43c13d18` (pushed). PR #85 (formal checks over canonical policy, Sourav) squash-merged to `plato` as `a1c099e3` and brought into `v2.5.6` as `99a0ef16` (tree copy). The #85 follow-ups (threshold required, fact catalog via `pack.schemas`, Plato-compiled packs only) and jaci's Plato pilot findings 1-5 (`status/done_plato_pilot_findings.md`) are fixed on `v2.5.6`, `9d840189..d7afdddc`, reviewed clean; squashed to local `plato` as `54ad90de`, push script /tmp/japes_push_plato_256b.sh
+(the commit whose tree is dev's `da9a709d`); the 20 original commits are on
+`backup/v2.5.6-pre-squash` (tip `c1fd38d8`). Reviewed clean in two ranges (to `7e99aeb9`, then
+`4766c97a..c1fd38d8`). On top, `3c1cc377` answers PR #82's bot findings (reviewed clean);
+PR #82 (`release/v2.5.5` to main) squash-merges as is, reply text in `/tmp/pr82_triage.md`.
+Then the chat lifecycle for jazzx-assistant (their Notion ask, review in
+`/tmp/japes_256_chat_requirements_review.md`), `d7238eaa..df4bd2a6`, reviewed clean after 4 rounds:
+stream waits for its engine, `ChatRun`/`run_chat_lifecycle`/`stream_chat_lifecycle` with the old
+runners as adapters, `prepare`, `ChatError`/`chat_step_error`, completion on every path plus
+`cancel_after_answer`, `persistence="caller"` + `persist_failure`. Adoption note:
+`/tmp/jazzx_assistant_chat_lifecycle.md`. A full-range review
 (`REVIEW_UPSTREAM=origin/dev`) is still owed before squashing to `dev`/`plato`. Phase 3 (human checkpoints, `SUSPENDED`, `/resume`) next.
+
+**Acra DSCR programs** (2026-09-29, local, unpushed): the `dscr_core` seed is split into
+`DSCR_PROCESS` (core) plus `DSCR_STANDARD` (re-based on the 8.17 Standard consolidation, 69 rules)
+and `DSCR_PLATINUM_SELECT` (44 rules), `95f431e5..8fed55ac` on `v2.5.6`, full-range review clean.
+It mirrors jaci branch `acra-programs` (worktree in this session's scratchpad), tip `9cbf271`.
+Open: whether `assess` should refuse an input omitting a field a rule reads
+(`TODO(absent-channel-escapes-correspondent)` in `platinum_select.yaml`).
+
+**Chat runtime coordinator** (jazzx-assistant's second Notion page, `plans/plan_chat_runtime_coordinator.md`):
+Phase A (`b255d181..1da37c9d`) and Phase B B1-B5 (`aa59ddc6..cf3baa3a`: finish, admit, stop
+reasons/deadlines, lanes, `runs.ChatCoordinator`, `RunWorker`/`settle_runs`; Plato `chat/stream`
+runs on the coordinator) built on `v2.5.6`, local and unpushed; full Phase B review clean after 3
+rounds. Tests also run on Postgres via `JAPES_TEST_POSTGRES_URL` (`daa41fc9`). Squashed to local
+`plato` as `9a7042f2` (tree = v2.5.6 `9fae6002`, parent `origin/plato` `a1c099e3`, replacing the
+never-pushed `54ad90de`, kept as `backup/plato-54ad90de`); push script `/tmp/japes_push_plato_256c.sh`.
+Phase C (sessions/resources, outlets) not started.
 
 Work lands on `v2.5.6` and reaches `dev` and `plato` by periodic squash merges. The v2.5.5
 paragraphs below describe what shipped in it.

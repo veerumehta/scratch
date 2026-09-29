@@ -15,9 +15,10 @@
 # conflicts. It is also the one command here that can silently lose work -- it discards the other
 # side's content by design -- so this refuses to run until it has proved there is nothing to lose:
 #
-#   1. no file exists on main that is absent from dev
-#   2. for every file the two differ on, main's exact blob appears somewhere in dev's own history
-#      for that path -- i.e. main's version is a point in dev's lineage, not separate work
+#   1. lists the files on main that dev does not have (dev deleted them, or main added them)
+#   2. for every file the two differ on, those included, main's exact blob appears somewhere in
+#      dev's own history for that path -- i.e. main's version is a point in dev's lineage, not
+#      separate work. A file dev deleted passes when main's copy is one dev had.
 #
 # If a hotfix ever lands on main directly, check 2 fails on that file and this stops. Then it is a
 # real merge, not a bookkeeping one.
@@ -48,10 +49,10 @@ echo "== check 1: files on origin/$BASE that $BRANCH does not have"
 missing=$(git diff --diff-filter=A --name-only HEAD "origin/$BASE")
 if [ -n "$missing" ]; then
     echo "$missing" | sed 's/^/   /'
-    echo "   ^ these would be DISCARDED. Stop: this is a real merge." >&2
-    exit 1
+    echo "   ^ discarded by the record unless check 2 proves main's copy is one $BRANCH had"
+else
+    echo "   none"
 fi
-echo "   none"
 
 echo "== check 2: is every differing file's main version a point in $BRANCH's own history?"
 differing=$(git diff --name-only HEAD "origin/$BASE")
@@ -106,8 +107,9 @@ from. Left unrecorded, the next $BRANCH -> $BASE merge reaches back to the last 
 conflicts on every file either side touched, with every resolution being 'take $BRANCH'.
 
 This records $BASE as a parent and keeps $BRANCH's tree, which the checks in
-scripts/local/record_squash_on_main.sh proved is the right tree everywhere: no file on $BASE is
-absent here, and every differing file's $BASE version is a point in this branch's own history."
+scripts/local/record_squash_on_main.sh proved is the right tree everywhere: every file where the
+two differ, one this branch deleted included, has its $BASE version as a point in this branch's own
+history."
 
 if [ "$(git rev-parse HEAD^{tree})" = "$(git rev-parse HEAD^1^{tree})" ]; then
     echo "   tree unchanged -- $BRANCH's content is exactly as it was"

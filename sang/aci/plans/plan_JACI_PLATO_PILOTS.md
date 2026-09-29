@@ -2,8 +2,11 @@
 
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 
-Status: plan, 2026-09-24. Nothing built. Written against jaci `0a3e7ab` on `dev` (japes pinned
-`@dev`, 2.5.3) and japes `5534f5e` on `v2.5.4` (Plato 0.1.6).
+Status: **built 2026-09-28 — superseded by `docs/status/done_JACI_PLATO_PILOTS.md`**, which
+records what shipped, what was verified, and where the build departed from this plan (the pack
+shapes and routes follow what japes actually landed on `v2.5.6`, not the illustrative keys below).
+Written 2026-09-24 against jaci `0a3e7ab` on `dev` (japes pinned `@dev`, 2.5.3) and japes
+`5534f5e` on `v2.5.4` (Plato 0.1.6).
 
 Companion (platform side): japes `docs/plans/plan_plato_domain_pack_runtime.md` — referenced below as
 **japes §N**. This file is the consumer half only: what jaci changes so that DSCR and clinical intake
