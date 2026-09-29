@@ -9,7 +9,48 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ## [Unreleased]
 
-### Changed: v0.20.7, japes 2.5.5 (branch `japes-2.5.5`, needs japes >= 2.5.4)
+### Added: DSCR and clinical intake on Plato (on `dev`, uncommitted; the Plato path needs the local
+japes `v2.5.6` branch, and every Plato-dependent test skips without it)
+- **"Run on: in-process | Plato"** on the DSCR and clinical-intake pages
+  (`scenarios/shared/plato.py:render_backend_choice`; disabled, with the reason, when
+  `JACI_PLATO_URL` is unset/unreachable or japes has no `PlatoClient`). Settings: `JACI_PLATO_URL`
+  (API root, e.g. `http://localhost:8000/api/v1`), `JACI_PLATO_TENANT_ID`, `JACI_PLATO_TOKEN` —
+  the same names and convention as the `japes-2.5.5` branch's ci_spread feedback sink.
+- DSCR on Plato: the deterministic grid via `POST /packs/dscr-core/assess`, the review as a durable
+  case run (`POST /packs/dscr-core/runs`, streamed step by step, pack pin + trace/decision ids shown)
+  — `scenarios/dscr/plato_review.py` adapts both to the page's existing types.
+- Clinical intake on Plato: `scenarios/clinical_intake/plato_session.py:PlatoIntakeSession`, the
+  `IntakeSession` interface over Plato's recorded sessions (pack guardrails with `block_rule_id`,
+  `/close`, `/outcome`, `/record`). The handoff text is shared (`session.handoff_summary`).
+- `scripts/publish_packs_to_plato.py`: deterministic archive → `/packs/check` (every finding
+  printed; gates on `publishable`) → publish → activate; identical contents only reactivate, changed
+  contents under a published version are refused with "bump pack_version". An assistant folder's
+  `pack_manifest.yaml` is left out of the archive (Plato's store reads it before `manifest.yaml`).
+- `scripts/export_pack_schemas.py` + drift test: `dscr_core/schemas/*.json` are generated from the
+  Pydantic models.
+
+### Changed: packs reshaped for Plato (both paths read the same files)
+- `dscr_core`: `conductor:` block (`investigation_loop`, `policy_assessment` pre-loop, authoritative
+  verdict), `metrics.yaml` (`cltv_pct`), `evidence_tools.yaml` + `fixtures/`, `mode_tuning/`,
+  `schemas/`, two evidence types — ported from japes' seed copy. `prompts/dscr/` removed: the
+  in-process `DSCRConductor` reads `mode_tuning/` (still as whole prompts), its assessment evidence
+  is now `policy_assessment` (was `eligibility_assessment`), and `DSCRToolRegistry` answers from the
+  pack fixtures.
+- `clinical-intake-core`: `agent/` → `profile/`, `intake_protocol.yaml` → `profile/protocol.yaml`,
+  `record:` on the profile, `guardrails.yaml` (`policy_keywords`), and an assistant `manifest.yaml`
+  (`assistant_id: clinical-intake`, 0.1.1) with its intake topics as `in_scope_action_classes`.
+- Fixed: clinical intake's live path imported the nonexistent `jaci.common.llm`; it uses the
+  `JACI_LLM_*` factory now.
+- `ci-spread-core`: `RB_CI_OVERLAY`'s leverage/FCCR rules declare `replaces:` (identical to
+  `japes-2.5.5`'s change), and the RB deal special-instructions rule declares
+  `replaces: [RB-CI-LEVERAGE-CEILING]`; needed for japes 2.5.6's per-rule precedence.
+- Tests: `requires_plato` marker (auto-skips like `requires_api_key`); DSCR assess parity (SDK vs
+  in-process, and over HTTP), adapter, glue and session unit tests, the 4 clinical personas as a
+  keyless pytest and live on Plato, one live DSCR case run. `uv.lock` relocked to japes `dev` 2.5.6.
+
+### Changed: v0.20.7, japes 2.5.6 (branch `japes-2.5.5`, pinned to japes `@plato`)
+- japes is pinned to its `plato` branch, which carries the newest SDK (2.5.6 at `43c13d18`);
+  `dev` trails it.
 - Overlays declare what they replace: japes retired field-claiming precedence, so an overlay rule
   no longer silently switches off every core rule on its field. `RB_CI_OVERLAY`, `MAA_CRE_OVERLAY`
   and `CFI_CRE_OVERLAY` now carry `replaces:` for the core rules they used to shadow (including
