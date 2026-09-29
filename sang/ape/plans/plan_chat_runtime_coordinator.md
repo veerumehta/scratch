@@ -134,3 +134,89 @@ lands in one and not the other.
 - **One gap in the page itself:** it says cross-replica exclusion is the application's
   (store fencing). japes' DB-backed `TurnRunStore` already does claim fencing across replicas,
   so building on it gives that for free, which is another reason to reuse it.
+
+## Fit to the two consumers this should serve (2026-09-29)
+
+### Evidence: three copies of one coordination layer
+
+| Concern | `jazzx_sdk.runs` | jazzx-assistant `ws/` | policy-workbench `policyforge` |
+| --- | --- | --- | --- |
+| Turn record + store | `TurnRunStore` (in-process, DB) | `ws/store_backend.py` | `pf_agent_jobs`, `pf_messages` |
+| One active turn per key | `claim_next` (FIFO wait) | barge-in = supersede (`ws/router.py`) | partial unique index; a new turn cancels (supersede) or `on_busy="refuse"` (reject); no wait |
+| Stop | durable flag, polled | `task.cancel()` + supersede fence | DB `request_cancel` + Redis kill channel |
+| Liveness | heartbeat + `Reaper` | session idle reaper | 30s heartbeat, orphan sweep, 10 min cancel reap |
+| Event journal + resume | `TurnRunEvent` seq, SSE `from_seq` | Redis stream + `done.seq` | `pf_agent_events` seq; SSE always from the start, resume by polling |
+| Durability order | not a policy | commit before delivery (socket), after (queue) | user message first, assistant once, terminal event last |
+| Capacity | none | session cap | lanes (interactive 20 / reasoning 2 / bulk 1), 3 per (project, user, lane) |
+| Workers | in-process task | in-process | in-API loop + standalone worker, drain and max lifetime |
+
+Three implementations of the same shape is the case for japes owning it. It is also the case
+for owning it **once, durably**. policy-workbench needs a cross-replica queue with workers, which
+a process-local reference coordinator (as the page specifies) does not give it, and
+`TurnRunStore`'s DB backend already does.
+
+### Do we agree?
+
+- **Consistent:** the lifecycle asks (done) are. The coordinator asks are consistent only if
+  they generalize `jazzx_sdk.runs` (`TurnDispatcher`, `ResilientRunner`, `CaseRunner`). A
+  process-local coordinator beside it would be a fourth copy.
+- **Symmetric:** make replacement policy (reject / wait / supersede) and durability policy
+  properties of the runs layer, so chat turns, case runs and a queue worker share them.
+  Process-local is then a store choice (`InProcessTurnRunStore`), not a separate runtime.
+- **Generalizable:** strong for admission, stop, journal, durability ordering and deadlines,
+  all shared by three consumers. Weak for session-scoped resources, single-flight and
+  late-follower semantics: one consumer (jazzx-assistant's per-loan grounding cache) and no
+  second. Defer those until a second one needs them.
+- **Missing from the page:** capacity lanes and fairness caps (policy-workbench's
+  interactive / reasoning / bulk lanes and per-user caps). The page's "capacity domains" is
+  the start of it; lanes should be in the design from the first cut.
+- **Evolutionary:** yes, if phased as above, with Phase B landing inside `jazzx_sdk.runs`.
+
+### Will it help bring up a jazzx-assistant for Acra Lending on Plato?
+
+Only partly, as written. The page targets a Python service that supplies its own components and
+adapters. Plato cannot take Python from a pack, and today Plato's chat routes do not run
+`pipelines.chat` at all: `plato/api/assistants.py` calls `agent.respond`, and the stream route
+runs `agent.respond_stream` through `ResilientRunner`. So none of the lifecycle (prepare, gate,
+ground, compose) reaches a Plato-hosted assistant yet. Two things are missing, and neither is
+on the page:
+
+1. **Plato's chat routes run the lifecycle,** blocking and streaming, through the same runs layer
+   and coordinator policies (barge-in as supersede, commit before delivery). Then the
+   coordinator work serves Plato and jazzx-assistant alike.
+2. **Declarative stage kinds for an assistant pack,** the chat twin of the conductor kinds
+   (`investigation_loop`):
+   - `gate`: the manifest scope classifier, with structured refusal wording (mostly exists).
+   - `ground`: declared sources, knowledge bindings and document grounding into the turn
+     workspace (bindings exist; workspace grounding does not).
+   - `answer`: an `InteractiveAgent` with specialist skills (exists).
+   - `compose`: citations from sources (exists), identifier humanizing and leak checks as
+     output guardrail kinds, an email draft as a declared output schema.
+   - The preliminary fast answer: a two-agent answer kind.
+   With those, an Acra assistant pack is data on Plato, which is what "the next assistant is
+   near zero" means.
+
+### Will it help move policy-workbench's assistant onto the SDK with minimal work?
+
+Yes, for the coordination, if the coordinator is the runs layer; less so as written.
+- **Maps directly:**
+  - Its RouterAgent classification is a `gate`, and dispatch to five sub-agents is an `answer`
+    component.
+  - The per-session git worktree is the turn `workspace` (an async context manager, released on
+    every path).
+  - Staging reconcile plus the single assistant write is `persist` / `compose` under
+    `persistence="application_hook"` and commit-before-delivery.
+  - Its cancel-on-busy and `on_busy="refuse"` are supersede and reject.
+  - It gains SSE resume from `from_seq`, which it lacks today.
+- **It keeps its answer executor:** claude-agent-sdk with an in-process MCP tool server. The
+  lifecycle takes any `answer` component, and its thinking / tool_call / tool_result events go
+  through `turn.publish`. It does not have to move to `InteractiveAgent`, so the OpenAI-vs-Claude
+  agent SDK question is not on the critical path. It is if they later want `InteractiveAgent`
+  itself.
+- **Gaps japes would have to fill for it:**
+  - lanes and per-(project, user, lane) caps;
+  - a standalone worker process with drain and max lifetime (the runs layer has claim and
+    reaper, but no worker loop);
+  - moving their job kinds (MACER compare) onto `CaseRunner`-style run kinds.
+- **What it would delete:** most of `agent_jobs.py` (1,168 lines), the coordination half of
+  `router.py` (3,277), and `worker.py` (633).
