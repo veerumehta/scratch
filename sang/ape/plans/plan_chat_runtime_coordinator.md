@@ -220,3 +220,49 @@ Yes, for the coordination, if the coordinator is the runs layer; less so as writ
   - moving their job kinds (MACER compare) onto `CaseRunner`-style run kinds.
 - **What it would delete:** most of `agent_jobs.py` (1,168 lines), the coordination half of
   `router.py` (3,277), and `worker.py` (633).
+
+## Phase B design: the coordinator on `jazzx_sdk.runs` (2026-09-29)
+
+One run runtime, extended in place. Every increment lands in `jazzx_sdk/runs/`, keeps
+`TurnDispatcher` / `ResilientRunner` / `CaseRunner` working, and serves chat turns and case runs
+alike.
+
+- **B1: admission and terminal ordering.**
+  - `TurnRunStore.admit(run, replacement=...)`, atomic per key:
+    - `wait`: today's FIFO;
+    - `reject`: `TurnRejected` while the key has an active run;
+    - `supersede`: cancel the key's queued runs, stop its running one (the existing
+      `request_stop_conversation`), then queue the new one, which `claim_next` admits only once
+      the old one is terminal. The old run's events stay on its own `run_id`, which is the fence.
+  - Both runners commit a run's terminal state before journaling its `done` event, so a reader
+    that sees `done` finds the run terminal. Today both journal first.
+- **B2: stop reasons and deadlines.**
+  - `TurnRun.stop_reason`, the typed `CancelReason` (`user`, `superseded`, `deadline`, `drain`),
+    set with the stop flag, so a superseded run and a user-stopped run are told apart.
+  - A total deadline per run (`deadline_seconds`, monotonic) stops it with `deadline`. Phase
+    deadlines wait for a consumer that needs them.
+- **B3: lanes and capacity.**
+  - `TurnRun.lane` (e.g. interactive / reasoning / bulk).
+  - Per-lane concurrency limits and a per-(tenant, principal, lane) cap, enforced in
+    `claim_next` against RUNNING rows, so they hold across replicas with the DB store.
+  - A capacity refusal leaves the run queued, and the next drain of any key in that lane picks it
+    up.
+  - This is policy-workbench's lane model.
+- **B4: the chat coordinator.**
+  - A turn runs `stream_chat_lifecycle` as a run, from a turn factory that rebuilds the
+    `ChatTurn` from the run's stored input. Stages and adapters are the application's.
+  - The coordinator journals the lifecycle's events with the run's `seq`.
+  - It applies `DurabilityPolicy` (commit before delivery, delivery before best-effort persist,
+    caller managed, none) through an application commit hook, called at most once.
+  - It maps `DisconnectPolicy` (cancel / detach / abandon) onto the stop flag and the journal.
+  - A handle gives start, idempotent cancel with a reason, and result.
+  - Plato's streaming chat route moves onto it, which is what puts the lifecycle under
+    Plato-hosted assistants.
+- **B5: drain and close.**
+  - A bounded `drain` / `close` on the coordinator settles admitted runs and reports what it
+    could not.
+  - A standalone worker loop (claim across keys, heartbeat, drain, max lifetime) for
+    policy-workbench's worker process.
+
+Deferred, as above: session-scoped resources, single-flight, bounded outlets beyond the journal,
+duplicate-turn TTL.
