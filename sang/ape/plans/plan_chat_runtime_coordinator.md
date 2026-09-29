@@ -266,3 +266,20 @@ alike.
 
 Deferred, as above: session-scoped resources, single-flight, bounded outlets beyond the journal,
 duplicate-turn TTL.
+
+### Built (2026-09-29, on `v2.5.6`)
+
+- B1-B3: `aa59ddc6`, `2e6b3cf0`, `d77b39d3`, `45f569e0`.
+- B4: `569baeeb`. `runs.ChatCoordinator` in `jazzx_sdk/runs/chat.py`; Plato's `chat/stream` runs
+  on it. Deviations from the page:
+  - `DurabilityPolicy` has three values. `caller_managed` behaves as `none` here, since the
+    journal is the runs layer's own record, so it is not a separate value.
+  - "Delivery" is the terminal journal event. `delivery_before_best_effort_persist` awaits the
+    commit inside `execute`; no follow-up work is retained.
+  - An abandoned turn is never committed; the page's "only when configured" is not configurable
+    yet.
+  - A disconnect reason is `disconnected` (cancel) or `abandoned` (abandon), both new
+    `CancelReason` values.
+- B5: `ef1d483e`. `runs.settle_runs`, `ChatCoordinator.close`, `runs.RunWorker`.
+- Open: phase deadlines, per-phase grace, typed indeterminate commit state, Postgres advisory
+  lock test.
