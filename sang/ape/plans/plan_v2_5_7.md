@@ -23,8 +23,9 @@ KH removed its policy/rego APIs; the next client-api pin bump fails the whole KH
     when they are gone.
 2.2 Retire the KH policy surface: the client's policy and bundle methods,
     `tools/knowledge_hub/policy.py`, the MCP policy tools, and the `fabric.opa` placeholder.
-2.3 `fabric.canonical.store.PolicyStore` gets a `fabric.db` table (tenant, policy_id, version),
-    keeping its cache; the KH-entity backing goes.
+2.3 Dropped (decided 2026-09-29): the pack store (`DbPackVersionStore`) is the policy store of
+    record, and policy drafts live in the draft store. `fabric.canonical.store.PolicyStore` stays on
+    KH entities (the entity API, not the removed policy API), alongside the other canonical objects.
 Rego, if wanted later, is a compiled projection of canonical policy (as the Z3 rule packs are).
 
 ## 3. Runs layer

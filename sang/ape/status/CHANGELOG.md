@@ -6,6 +6,18 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 Plato stays 0.1.8.
 
+- **Token accounting.**
+  - The Agents SDK path counts cache-write tokens: `run_kit._usage_to_token_usage` sets
+    `TokenUsage.cache_creation_tokens` from `input_tokens_details.cache_write_tokens` and takes
+    them off the fresh input, so they are costed at the cache-write rate, not the input rate
+    (the chat-completions provider already did).
+  - `CostTracker.latest_input_tokens`, the compaction trigger's token source, is the last call's
+    whole prompt (fresh, cached and cache-write input). The fresh input alone left out cached
+    tokens, most of a context under prompt caching, so the trigger rarely fired.
+- **Background tasks are held until they end:** the drain `run_router`'s `on_start` starts,
+  Plato's case-run drain, and `ChatCoordinator.start`'s drain (held by the coordinator, not only
+  by the handle a caller may drop). The event loop keeps only a weak reference to a task.
+
 ## [2.5.6] - unreleased
 
 Plato is 0.1.8 (from 0.1.7, which shipped to `main` with 2.5.5): case runs, formal checks,
