@@ -2,7 +2,8 @@
 
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 
-Status: P1-P4 built on `v2.5.7` 2026-09-30 (`4a465ff9` P1+P4, `7cc4ad2a` P2+P3), under review;
+Status: done. P1-P4 built on `v2.5.7` 2026-09-30 (`4a465ff9` P1+P4, `7cc4ad2a` P2+P3, review fixes
+to `406c182d`), review (`e037e55c..406c182d`) clean after 3 rounds;
 Q1-Q4 decided as recommended (P4 works: the Agents SDK tool's `timeout_behavior="error_as_result"`
 returns a result and the batch goes on). Plan dated 2026-09-30. The last open item of `plan_chat_runtime_coordinator.md` C7
 ("the preliminary fast answer: a two-agent answer kind"). Prior art read first:
