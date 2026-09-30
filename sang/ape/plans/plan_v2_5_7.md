@@ -54,8 +54,8 @@ Rego, if wanted later, is a compiled projection of canonical policy (as the Z3 r
 4.10 Done: `formulate_json_policy` names the candidate for an unsupported kind or operator.
      Refusing the whole draft for a bad candidate is the formulation's design (its tests pin it:
      invented quote, missing binding, mistyped value), so candidates are not skipped.
-4.9 Platinum Select's optional inputs (`channel`, `rural_property`, `housing_history`, ...): the
-    missing-input policy question (`TODO(absent-channel-escapes-correspondent)`), with Acra.
+4.9 Done: `assess` refuses an input that omits a fact a rule in force reads; a pack may set
+    `policy_assessment.missing_inputs: skip` to assess it anyway (those rules not evaluated).
 
 ## 5. Sibling finds
 
