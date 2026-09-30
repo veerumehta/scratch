@@ -4,6 +4,13 @@
 
 ## Where things stand
 
+**Working branch is `v2.5.8`** (cut 2026-09-30 from `dev` at `2a2ad60b`, PR #86's 2.5.7 squash; no
+shared history with `v2.5.7`; SDK 2.5.8, Plato 0.1.9; plan `plans/plan_v2_5_8.md`). `0d730452`
+(cherry-pick of `28587bb9`: pack programs lint, DSCR seed regrouped) owes a review
+(`REVIEW_UPSTREAM=origin/dev`). The first cut is kept as `backup/v2.5.8-from-v2.5.7`. Release flow:
+working branch -> plato -> PR to dev -> squash -> PR dev -> main, recording each squash back down;
+the next version is cut from `dev` once the squash lands.
+
 **Working branch is `v2.5.6`**, on `dev` at the PR #78 formal squash (`7a7a0950`). Its first
 slice (python executor) is squashed to `dev` (`da9a709d`) and `plato` (`6701d711`). Plato stays
 0.1.7 by decision. Main release: `/tmp/japes_release_v255_to_main.sh` (v2.5.5 + formal to `main`
@@ -23,12 +30,13 @@ runners as adapters, `prepare`, `ChatError`/`chat_step_error`, completion on eve
 `/tmp/jazzx_assistant_chat_lifecycle.md`. A full-range review
 (`REVIEW_UPSTREAM=origin/dev`) is still owed before squashing to `dev`/`plato`. Phase 3 (human checkpoints, `SUSPENDED`, `/resume`) next.
 
-**Acra DSCR programs** (2026-09-29, local, unpushed): the `dscr_core` seed is split into
-`DSCR_PROCESS` (core) plus `DSCR_STANDARD` (re-based on the 8.17 Standard consolidation, 69 rules)
-and `DSCR_PLATINUM_SELECT` (44 rules), `95f431e5..8fed55ac` on `v2.5.6`, full-range review clean.
-It mirrors jaci branch `acra-programs` (worktree in this session's scratchpad), tip `9cbf271`.
-Open: whether `assess` should refuse an input omitting a field a rule reads
-(`TODO(absent-channel-escapes-correspondent)` in `platinum_select.yaml`).
+**Acra DSCR programs** (2026-09-30, local, unpushed): in the v2.5.6 squash `fc48deb4` are the
+seed split (`DSCR_PROCESS` core, `DSCR_STANDARD`, `DSCR_PLATINUM_SELECT`) and `assess`'s refusal of
+omitted or non-nullable-null facts. On `v2.5.7` after its squash, `28587bb9`: lint reads a pack's
+own policies for program checks, `rule_repeated_across_programs`, `MatrixAxis.domain_extensions`
+band edges in the drift lint, the conductor raw-input decision, and the seed with PPP rules once in
+`DSCR_PROCESS` and linked loan bounds; not yet on `dev`/`plato`. jaci branch `acra-programs` tip
+`f3873da` needs it. Open: cap adjustments (declining market, Q-07/Q-08).
 
 **Chat runtime coordinator** (jazzx-assistant's second Notion page, `plans/plan_chat_runtime_coordinator.md`):
 Phase A (`b255d181..1da37c9d`) and Phase B B1-B5 (`aa59ddc6..cf3baa3a`: finish, admit, stop
@@ -61,7 +69,20 @@ profile `lifecycle:` block Plato runs), Plato's blocking `/chat` on the lifecycl
 (Sonnet 5.5 the Anthropic default, GPT-6.1 Sol), `4e2067cb..b3c1d36f`, reviewed clean. Then
 declarative grounding (`status/done_declarative_grounding.md`, G1-G4: `pipelines.grounding` kinds,
 `GroundedContext` to the agent per skill, `lifecycle.ground` on Plato, `knowledge:` compiled into
-ground sources; a skill-less agent gets files inline), `b3c1d36f..6ec19406`, reviewed clean; jazzx-assistant adoption note
+ground sources; a skill-less agent gets files inline), `b3c1d36f..6ec19406`, reviewed clean. Then
+model defaults from the config table (dashed Anthropic ids, GPT-6 `max_completion_tokens`, no
+retired defaults), one installed-kinds loader, and declarative compose
+(`status/done_declarative_compose.md`: present/cite/humanize/leak_check, `DeliveryCheck`s),
+`6ec19406..e037e55c`, reviewed clean. Then the preliminary answer (`status/done_preliminary_answer.md`:
+`on_skill_result`, `Skill.timeout_seconds`, `lifecycle.preliminary`), `e037e55c..406c182d`, reviewed
+clean. Then the Notion page's last gaps (`status/done_chat_turn_store.md`: `runs.ChatTurnStore`
+begin/commit/fail/interrupt/reconcile, `caller_managed`, retained follow-ups, `interrupt_on_abandon`),
+`406c182d..31e68dee`, reviewed clean. Then the trim (`3ca4448f`, `b2a7f53a`: every 2.5.7 docstring and
+comment, README, docs/, examples/, package and pack READMEs cut to terse references; rationale lives in
+the CHANGELOG since the SDK ships), and the final review over `428ee718..HEAD` with its fixes (`c606fc06`:
+no refused request params to Anthropic, `reconcile(outcome=)`), re-reviewed clean. 2.5.7 is ready to
+squash; only 4.9 (Acra) and the deferral TODOs remain. jazzx-assistant pins
+`main` at v2.5.0, so 2.5.7 reaches them only through a dev->main release. CHANGELOG entries carry line counts; jazzx-assistant adoption note
 `/tmp/jazzx_assistant_declared_grounding.md`. Squash script
 `/tmp/japes_record_and_squash_257.sh` (the #81 record is on dev, `f910a0c9`) waits until 2.5.7 is done;
 open: 4.9 (Acra decision), the deferral TODOs. Nothing pushed.
