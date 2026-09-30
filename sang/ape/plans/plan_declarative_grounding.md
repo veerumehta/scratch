@@ -2,7 +2,9 @@
 
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 
-Status: plan, 2026-09-30, on `v2.5.7`. Follows the chat runtime coordinator plan's Phase C (C7
+Status: G1-G4 built on `v2.5.7` 2026-09-30 (`480aa8be`, `9d9d492b`, `ec25d4a7`, `7d5832a7`,
+`347e3be3`), under review. Not built: the `evidence` kind (`pipelines` cannot import `pack`), per-
+source `tools`/`context` switches, source-vs-tool name lint. Plan dated 2026-09-30. Follows the chat runtime coordinator plan's Phase C (C7
 declared the gate and turn policies; ground was left open). Prior art read first:
 `plan_chat_runtime_coordinator.md` (C5 sessions, C7), `note_chat_pipeline_vs_assistant_turn.md`
 ("ground is a provider, not context"), `note_assistant_turn_requirements.md` (R6: per-source
