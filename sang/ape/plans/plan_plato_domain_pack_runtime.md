@@ -35,7 +35,7 @@ narrator gate sees the verdict that stands.
 Review over `origin/dev...v2.5.6` clean at `7e99aeb9` (2026-09-28). Open, noted not fixed: the
 publish check binds against the pack's own guardrails only, so a profile naming a guardrail a host
 supplies at serve time is refused; `TODO(concurrent-close-writes-twice)`;
-`TODO(llm-manager-stale-after-rewire)`; `TODO(offset-pages-unordered)`.
+`TODO(offset-pages-unordered)`. (`llm-manager-stale-after-rewire` was fixed in v2.5.6 by `CurrentLLM`.)
 Deviation from §8: a Python pointer blocks publish only where `Pack` would resolve it
 (`policies.registry`, `conductor.pipeline`); unread `class:` entries are warnings, which keeps
 jaci's `clinical-intake-core` (a `modes.evaluator.class`) publishable as Phase 0's acceptance needs.

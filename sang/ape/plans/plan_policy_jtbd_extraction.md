@@ -9,10 +9,11 @@ local checkout.
 > and hardened by PR #75 on `v2.5.5`. jaci's overlay `replaces` migration, `programs:` and version
 > 0.20.7 are committed on jaci branch `japes-2.5.5` (`22e0b33`), with the ci_spread feedback wiring
 > (`02e3b21`); jaci's suite passes against v2.5.5 via `PYTHONPATH` (its venv still holds 2.5.3).
-> Open: live smoke on the Acra docs, dscr-core split (scope question), step 9 (jaci
-> `extract_policy.py`), Plato extraction lint (no `Pack` passed), in-memory runs vs multiple
-> replicas, `TODO(draft-merge-lost-update)`, a shipped `PythonExecutor`, chat mounting (runtime plan
-> 0.4).
+> Open: live smoke on the Acra docs, step 9 (jaci `extract_policy.py`), in-memory runs vs
+> multiple replicas, `TODO(draft-merge-lost-update)`, chat mounting (runtime plan 0.4).
+> Done since: the dscr-core split (v2.5.6, Standard and Platinum Select programs), a shipped
+> `LocalPythonExecutor` (v2.5.6), Plato's extraction lint against the tenant's draft (v2.5.7),
+> and the `conditions` representation (v2.5.7, the table's "code" row for `expression`).
 
 Prior art read first: `policy-ir-abstraction.md` (P8 shipped: open `Condition` union,
 `natural_language` kind), `plan_policy_extraction_kg.md` (why `Proposal(kind="rule")` exists and

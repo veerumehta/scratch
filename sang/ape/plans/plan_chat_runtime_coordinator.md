@@ -2,7 +2,8 @@
 
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 
-Status: plan, 2026-09-29. Proposed, not yet approved. Source: the Notion page "Requirements on
+Status: plan, 2026-09-29. Phases A and B built and reviewed clean on `v2.5.6` (shipped in 2.5.6);
+Phase C (sessions/resources, outlets) not started. Source: the Notion page "Requirements on
 plato 2.5.6 for chat.py" (JazzX Platform v2.0 / Jazzx-Assistant), edited 2026-09-29.
 
 Prior art, read before this:
@@ -281,5 +282,5 @@ duplicate-turn TTL.
   - A disconnect reason is `disconnected` (cancel) or `abandoned` (abandon), both new
     `CancelReason` values.
 - B5: `ef1d483e`. `runs.settle_runs`, `ChatCoordinator.close`, `runs.RunWorker`.
-- Open: phase deadlines, per-phase grace, typed indeterminate commit state, Postgres advisory
-  lock test.
+- Open: phase deadlines, per-phase grace, typed indeterminate commit state. The Postgres advisory
+  lock test is done (v2.5.7, `tests/test_db_locking.py`).
