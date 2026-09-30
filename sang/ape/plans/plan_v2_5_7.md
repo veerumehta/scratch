@@ -59,10 +59,11 @@ Rego, if wanted later, is a compiled projection of canonical policy (as the Z3 r
 
 ## 5. Sibling finds
 
-5.1 `InputFilter` tool-output elision stubs (macer), over the existing `ReferenceStore`.
-5.2 `FeedbackApiSink` takes a caller-headers provider, as `PlatoClient` does (jaci subclasses it).
-5.3 `pack_archive` deterministic (fixed mtimes).
-5.4 MCP server Host/Origin checks (eval-service) before any off-loopback bind.
+5.1 Done: `InputFilter` tool-output elision stubs (macer), over the existing `ReferenceStore`.
+5.2 Done: `FeedbackApiSink` takes a caller-headers provider, as `PlatoClient` does.
+5.3 Done: `pack_archive` deterministic (fixed mtimes).
+5.4 Done: MCP server Host/Origin checks; an off-loopback bind needs `allowed_hosts`. Also fixed
+    the start, which raised `TypeError` on mcp 1.x.
 
 ## 6. Hybrid policy evaluation (direction, 2026-09-29)
 
