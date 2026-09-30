@@ -69,10 +69,16 @@ Rego, if wanted later, is a compiled projection of canonical policy (as the Z3 r
 
 Deterministic engines (canonical conditions, Z3, Rego if a consumer appears) complemented by
 JTBD/reasoning-LLM. Candidates, larger and later in 2.5.7 or after:
-6.1 A hybrid assessment: deterministic rules first, `natural_language` rules through adjudication,
-    one verdict with each rule's engine named.
-6.2 Extraction proposes a deterministic condition wherever the text allows one.
-6.3 Engine agreement: evaluator vs Z3 on the gold cases for rules both can decide.
+6.1 Done: `assess(reasoning_agent=)` decides live rules (`natural_language`, `procedure`, a
+    composite nesting one) beside the deterministic ones; `engines` names each rule's kind and
+    whether it is live. Plato's assess route takes `?reason=true`. The case run's pre-loop and
+    `PackAssessmentInvoker` stay deterministic.
+6.2 Done: the `conditions` extraction representation proposes an `expression` only when its field
+    is declared and its number is printed in the clause, `natural_language` otherwise.
+6.3 Done: an agreement test over the gold cases (32 rules compared, all agree, 20 compiler gaps).
+    It found the overlay-claim defect, fixed (`JsonRulePack.overlays`).
+    Open: the 20 gaps (string-set expressions like state/citizenship, matrix, ratio, composites)
+    are where Z3 coverage would grow next.
 
 ## Not in 2.5.7
 
