@@ -2,7 +2,8 @@
 
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 
-Status: plan, 2026-09-30, on `v2.5.7`. Follows `status/done_declarative_grounding.md` (ground is
+Status: K0-K3 built on `v2.5.7` 2026-09-30 (`16e230bf` K0, `378cc703` K1-K3), under review;
+Q1-Q4 decided as recommended. Plan dated 2026-09-30. Follows `status/done_declarative_grounding.md` (ground is
 declared; compose is the next open item named in `plan_chat_runtime_coordinator.md` C7). Prior
 art read first: `status/done_chat_turn_engine.md` (the `compose` step id, unbound by default;
 jazz's `_compose` as an override), `plan_chat_runtime_coordinator.md` ("compose kinds: identifier
