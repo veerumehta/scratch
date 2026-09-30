@@ -39,6 +39,13 @@ rounds. Tests also run on Postgres via `JAPES_TEST_POSTGRES_URL` (`daa41fc9`). S
 never-pushed `54ad90de`, kept as `backup/plato-54ad90de`); push script `/tmp/japes_push_plato_256c.sh`.
 Phase C (sessions/resources, outlets) not started.
 
+**v2.5.7** (branch cut from `dev` at `428ee718` on 2026-09-29, SDK 2.5.7, Plato 0.1.8; plan in
+`plans/plan_v2_5_7.md`). v2.5.6 is on `main` via PR #81 (squash-merged 2026-09-29); the user still
+runs steps 4-5 of `/tmp/japes_release_v256_to_main.sh` to record that squash on `dev`. Done on
+v2.5.7: section 1 (token accounting, held background tasks), 2 (KH policy/Rego surface removed;
+no policy table, the pack store is the policy store), 3 (runs: first terminal write wins,
+release on close, reaper TTL vs pool wait, claim headroom). Next: section 4 (audit items).
+
 Work lands on `v2.5.6` and reaches `dev` and `plato` by periodic squash merges. The v2.5.5
 paragraphs below describe what shipped in it.
 

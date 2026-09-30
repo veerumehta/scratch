@@ -2,14 +2,19 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Recent Session Status (2026-09-28)
+## Recent Session Status (2026-09-29)
 
-jaci `dev` is at `d587a50` (the `japes-2.5.5` merge: v0.20.7, japes pinned **`@plato`**, ci_spread
-feedback to Plato) plus an uncommitted working tree from this round (see `git status`; commit only
-when asked). No version bump this round — do not bump without explicit sign-off. Full suite on the
-`@plato` pin with a live Plato: 1032 passed, 8 skipped, **1 known failure**
-(`tests/eval/test_anthropic_token_tracking.py` — a live-API test; the reasoner returns invalid JSON,
-identical on japes 2.5.1). Without a reachable Plato the 10 `requires_plato` tests skip.
+jaci `dev` = `origin/dev` = `4db04c4` (pushed; nothing uncommitted). japes pinned **`@plato`**
+(`43c13d18`), but jaci's `.venv` runs the local japes checkout **editable** — keep it that way (see
+memory `reference_japes_branch_flow`). No version bump this round — do not bump without explicit
+sign-off. Full suite: 1031 passed, 18 skipped, 5 xfailed (incl.
+`tests/eval/test_anthropic_token_tracking.py`, marked xfail: the Anthropic reasoner's structured
+output fails to parse — a reasoner problem, same on japes 2.5.1), 1 xpassed. The 10
+`requires_plato` tests skip without a reachable Plato. Pushes are gated by
+`scripts/local/pre_push_check.sh` (suite + adversarial review) — run it before pushing.
+
+**Next topic:** carving a dependency-light authoring kit out of the SDK (jaci authors use it +
+Plato); analysis in `docs/plans/note_JACI_SDK_USAGE_AND_CARVEOUT.md`, open question at its end.
 
 **This round: DSCR and clinical intake run on Plato** (japes' hosted SDK). Full record:
 `docs/status/done_JACI_PLATO_PILOTS.md` (plan: `docs/plans/plan_JACI_PLATO_PILOTS.md`; platform

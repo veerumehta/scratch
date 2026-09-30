@@ -51,9 +51,9 @@ Rego, if wanted later, is a compiled projection of canonical policy (as the Z3 r
 4.7 A non-path `PackSource`'s guardrails are read (`TODO(packsource-guardrails-dropped)`), and a
     linter crash is not an `unloadable` pack (`TODO(lint-crash-blocks-publish)`).
 4.8 A session closed with no turns is not "complete"; an empty nested gold mapping is not vacuous.
-4.10 `formulate_json_policy` (formal formulation, PR #85): an unformulatable candidate (an
-     unsupported kind or operator from `_predicates`) should be skipped or flagged, not fail the
-     whole draft; today both it and a missing binding refuse the call (PR #81 bot, deferred).
+4.10 Done: `formulate_json_policy` names the candidate for an unsupported kind or operator.
+     Refusing the whole draft for a bad candidate is the formulation's design (its tests pin it:
+     invented quote, missing binding, mistyped value), so candidates are not skipped.
 4.9 Platinum Select's optional inputs (`channel`, `rural_property`, `housing_history`, ...): the
     missing-input policy question (`TODO(absent-channel-escapes-correspondent)`), with Acra.
 

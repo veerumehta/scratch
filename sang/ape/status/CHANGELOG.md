@@ -14,6 +14,83 @@ Plato stays 0.1.8.
   - `CostTracker.latest_input_tokens`, the compaction trigger's token source, is the last call's
     whole prompt (fresh, cached and cache-write input). The fresh input alone left out cached
     tokens, most of a context under prompt caching, so the trigger rarely fired.
+- **The Knowledge Hub policy/Rego surface is removed.** Knowledge Hub dropped its policy and rego
+  APIs, so every path here called endpoints that no longer exist, and the next client-api pin would
+  have failed the whole client import. Gone: `KnowledgeHubClient.create_policy` / `read_policy` /
+  `read_policies` / `update_policy` / `delete_policy` / `update_bundle` / `evaluate_policy` /
+  `get_policy_bundle` and their imports (the `api.rego` group, `PolicyCreate`, `PolicyUpdate`,
+  `PolicyEvaluationInput`); the mock client's equivalents and its `policies.json`;
+  `jazzx_sdk.tools.knowledge_hub.policy` (`read_policy`, `list_policies`, `evaluate_policy`,
+  `get_policy_by_name`); the three MCP policy tools; and the `fabric.opa` placeholder (with its
+  `KnowledgeFabric.opa` attribute and platform-catalog row). Canonical policies
+  (`fabric.canonical`) are the policy surface; the pack store holds them for Plato. A domain pack
+  manifest declaring a `policy_bundle` is refused by `DomainPackFabric.initialize`, before anything
+  is registered. `fabric.canonical.store.PolicyStore` stays on Knowledge Hub entities (the entity
+  API is unaffected). No sibling repo used the removed surface through japes.
+- **A run's first terminal write wins.** `TurnRunStore.finish` (both stores; under the row lock in
+  `DbTurnRunStore`) returns a run that has already ended as it is and writes nothing, so a reaped
+  run whose worker comes back, or a run cancelled after its own finish, keeps its end. The three
+  executors' separate read-then-finish checks are gone (they were two writes, so a reap between
+  them was still overwritten), and their result and failure paths are covered too.
+  `ChatCoordinator` does not commit a turn whose run already ended (reaped while it ran), under
+  either commit ordering: the run's record says it did not complete.
+  `ResilientRunner`'s failure and generator-ended paths now finish with a terminal event
+  (`{"done": true, "failed": true}` / `{"done": true}`) instead of a bare status update, so every
+  terminal path journals its `done`.
+- **Closing never starts a run.** A run claimed while `RunWorker.close` or
+  `ChatCoordinator.close` runs (the claim in flight when `close` took its list) was started with
+  no one settling it; it is handed back to the queue for another worker instead. New
+  `TurnRunStore.release(run_id, claim_token)` (both stores): a claimed, unstarted run back to
+  QUEUED, fenced on the claim and never an ended run. `drain_claims` takes a `release`.
+- **A queued heartbeat is not taken for a dead worker.** A heartbeat waits for a pool connection
+  like any session, up to the pool timeout (60 s by default in `common.core.db`), and the reaper's
+  TTL was 30 s: a busy pool could get a live run reaped.
+  - `Reaper`'s TTL defaults to `DEFAULT_REAP_TTL_SECONDS` (90 s), and it refuses a TTL that does
+    not exceed the store's `heartbeat_wait_seconds()` (the heartbeat pool's timeout). Plato's
+    `job:run-reaper` therefore reaps after 90 s of silence, not 30 s.
+  - `DbTurnRunStore(..., heartbeat_db=)` beats on its own (small) pool, off the shared one.
+  - A reaped run's error names the claim that went stale (`reaped_reason`).
+- **`RunWorker(..., claim_headroom_seconds=)`** stops claiming that long before
+  `max_lifetime_seconds` ends, so a long run is not taken with too little time left before the
+  platform stops the replica; clamped so at least `MIN_CLAIM_WINDOW_SECONDS` (60 s) of claiming
+  remains when the headroom exceeds a short lifetime.
+- **Formal `check_rules` does not flag an ineligible matrix cell** (an always-false rule) as an
+  infeasible scope: it is checked for reachability only, as `verify` already fails an item that
+  lands in it. Every canonical policy with an NA cell failed `check_rules`.
+- **`conductor_problems` reports a `temperature` on a mode that ignores it.** Only the reasoner's
+  constructor takes one (`kinds.TEMPERATURE_MODES`); on the governor it was dropped silently, so a
+  pack asking for a deterministic 0 still sampled. Pack check and publish now say so.
+- **One `policy_assessment` kind and one metrics read.** `kinds.PRE_LOOP_ASSESSMENT` and the
+  fact catalog both take `pack.assessment.ASSESSMENT_KIND`, and the catalog's metric facts come
+  from `pack.assessment.metric_definitions`, the same read the assessment derives them with.
+- **A malformed `policy_assessment` entry is refused at check and publish** (`conductor_problems`),
+  not at the first `assess`: a misspelt key such as `defualt_program:` published and then every
+  assessment raised.
+- **Error echoes are bounded and redacted.** Every server route that answered an exception's
+  `str(exc)` (46 sites: `server/agent_config`, `eval_api`, `feedback_api`, `policy_extract_api`,
+  `vocabulary_review`, and Plato's `database`, `packs` and `runs`) now answers
+  `failures.reason(exc, limit=SERVED_REASON_LIMIT)`, as `assess` already did: one line, secrets
+  redacted, the message capped at 200 characters, and prefixed with the exception type (so a
+  detail reads `ValidationError: ...`). A pydantic error no longer reflects the submitted body in
+  full.
+- **Feedback retrieval follows the current RAG store.** Plato's feedback router reads the process
+  layer's `RAGStore` per request (`rag_for`, from `plato.app._feedback_rag`), and the per-tenant
+  `RagFeedbackIndex` is rebuilt when the store changes (its cached collection ids name collections
+  in the store they came from; `RagFeedbackIndex.rag`). A Knowledge Hub URL set after boot now
+  moves semantic retrieval off the Mock's store. A router given a fixed `rag` behaves as before.
+- **A checker defect does not refuse a valid pack.** Plato's pack check reports a pack that fails
+  to load as `unloadable` (publish-blocking) as before, but a lint or conductor check that raises
+  on a pack that loaded is now `check_incomplete` (`plato.packs.check.CHECK_INCOMPLETE`): reported
+  and logged, not blocking. A non-path `PackSource`'s guardrails stay unread
+  (`TODO(packsource-guardrails-dropped)`; no caller passes one).
+- **A session closed with no turns is not "complete"**, whatever its protocol requires: its
+  Decision is the protocol's incomplete outcome. And `subset_match` treats an empty mapping below
+  the top as a leaf, so a gold case's `{"caps": {}}` requires an empty `caps` rather than scoring
+  1.0 against an output with none.
+- **Formal formulation names the candidate it refuses** for a condition kind or operator outside
+  the JSON comparison subset (`is not formulatable: ...`), as it already did for a missing fact
+  binding; that error escaped with a bare message. The formulation still refuses the whole draft
+  for a bad candidate, by design.
 - **Background tasks are held until they end:** the drain `run_router`'s `on_start` starts,
   Plato's case-run drain, and `ChatCoordinator.start`'s drain (held by the coordinator, not only
   by the handle a caller may drop). The event loop keeps only a weak reference to a task.
