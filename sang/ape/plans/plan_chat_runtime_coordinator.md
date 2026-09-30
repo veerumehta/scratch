@@ -284,3 +284,43 @@ duplicate-turn TTL.
 - B5: `ef1d483e`. `runs.settle_runs`, `ChatCoordinator.close`, `runs.RunWorker`.
 - Open: phase deadlines, per-phase grace, typed indeterminate commit state. The Postgres advisory
   lock test is done (v2.5.7, `tests/test_db_locking.py`).
+
+## Phase C design (2026-09-30), from jazzx-assistant's `ws/` (its `origin/dev`, ea690dd)
+
+Read before designing: `ws/` has one session per socket (and loan), 25 sessions and 2 parallel
+turns per socket, a 900s monotonic idle TTL swept by japes' own `SessionReaper`, a per-session
+grounding single-flight (followers replay history then follow live; a follower's cancel leaves the
+leader; a failed or degraded result is not cached), per-turn contextvars (identity, trace,
+publisher), a `followups` set that drain waits 5s for, a bounded 256-frame send queue (ephemeral
+frames dropped when full, a durable frame evicts the oldest ephemeral, all-durable detaches), a
+superseded-id fence dropping non-durable frames, a live duplicate id refused, completed duplicates
+left to the store's idempotency, a 300s work timeout with a 5s write grace, and a failed or
+timed-out required write that fails the turn and never reads as success.
+
+- C1 **Deadlines** (built): `DeadlinePolicy(total_seconds, stages, persist_grace_seconds)` on
+  `ChatTurn`. Work stages share the total; `persist` has only its grace; `finalize` is outside the
+  total. A stage past budget is a `deadline` `ChatError` (retryable).
+- C2 **Commit grace and indeterminate commits:** `ChatCoordinator(commit_grace_seconds=,
+  reconcile=)`. A commit past its grace is `CommitState` `indeterminate`, recorded on the run; a
+  `commit_before_delivery` turn with one fails as `commit_indeterminate`, never delivered as a
+  success. `reconcile(run_id)` asks the application (`confirmed` / `failed` / `indeterminate` /
+  `superseded`) and records the answer. A `supersede` on a key whose latest run is still
+  indeterminate is refused (`TurnRejected`), as `ws/` refuses a barge-in whose interrupted write
+  failed.
+- C3 **Persistence values:** the page's four (`agent_owned`, `application_hook`, `external`,
+  `none`), with `agent` and `caller` read as `agent_owned` and `external`.
+- C4 **Namespaces and duplicate turns:** a `turn_id` on submit. A live duplicate is refused; a
+  completed one within `duplicate_ttl_seconds` returns the existing run (replay), since the
+  consumers' stores are idempotent on that id. `coordination_key(namespace, key)` names a key in
+  an explicit namespace.
+- C5 **Sessions and resources** (`jazzx_sdk.runs.session`): `ChatSession` (resources, followups,
+  monotonic `last_active`), `SessionRegistry` (capacity, per-session turn cap, draining refuses
+  first, `reap_stale` for `SessionReaper` that skips a session with pending work, bounded `drain`
+  reporting what did not settle), `SingleFlight` (start-or-join, replayed progress, `cacheable`
+  predicate, failures and cancellations never cached, a follower's cancel does not cancel the
+  work), and per-turn async context providers entered inside the turn task.
+- C6 **Typed events and a bounded outlet:** a `TurnEvent` envelope (turn id, key, session id,
+  per-turn seq, kind, `ephemeral` or `required`) and `BoundedOutlet` (capacity, drop-ephemeral /
+  evict-oldest-ephemeral / detach-when-all-required, terminal flush timeout, a supersede fence).
+- C7 **Declarative assistant stages:** an assistant profile's `lifecycle:` block declares gate,
+  ground and compose kinds from data, so Plato builds an assistant's components without Python.
