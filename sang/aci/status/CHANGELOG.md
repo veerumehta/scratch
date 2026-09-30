@@ -9,6 +9,37 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ## [Unreleased]
 
+### Changed: dscr-core's loan-amount band edges linked to the profile (0.20.13, branch `acra-programs`; needs japes `acra-lint`)
+- The loan-amount axes of `DSCR-ELIG-CLTV-GRID`, `DSCR-VACANT-RT-CLTV` and `DSCR-VACANT-CO-CLTV`
+  declare `domain_extensions.profile_custom_key` (`grid_loan_amount_band_edges`,
+  `vacant_rate_term_loan_amount_band_edges`, `vacant_cash_out_loan_amount_band_edges`), and japes'
+  drift lint now checks a declaring axis's band edges against the profile list. On a japes without
+  it, `MatrixAxis` drops the key and the new guard test fails to import.
+  `TODO(loan-bound-profile-claim-false)` is closed. `DSCR_STANDARD` is 3.1.0 and
+  `DSCR_PLATINUM_SELECT` 1.1.0, each having lost its PPP rules to `DSCR_PROCESS` 2.0.0, and
+  ENCODING_NOTES' profile counts and §1b are re-derived.
+
+### Changed: dscr-core's input vocabularies, state PPP rules once, linked loan bounds (0.20.12, branch `acra-programs`)
+- **Vocabularies from the Plato seed.** japes' PR #81 enforced the DSCR input vocabularies in the
+  seed schema and `assess` refuses a value outside them. `LoanApplication` now types the same
+  fields as `Literal`s (`USState` with DC and the territories, `CitizenshipType`,
+  `OccupancySubtype`, `DscrDocumentationType`, `BorrowerEntityType`, `PrepaymentStructure`,
+  `Channel`, `HousingHistory`), read from the seed schema, so `export_pack_schemas.py` reproduces
+  it exactly. `residential_unit_count` is a required `int`: a before-validator sets 1 for a
+  single-unit property type and still refuses a 2-4 unit property that omits it. Exported
+  docstrings name the pack's own files, not jaci's. An out-of-vocabulary citizenship is refused at
+  intake and by `assess` (`test_a_citizenship_outside_the_vocabulary_is_refused_on_both_paths`).
+- **The seed's review comments** (HOA wording, G2 reference, profile header,
+  `TODO(unit-count-not-tied-to-type)`) are carried into jaci's pack.
+- **State PPP rules once.** The 15 buyout rules move from `standard.yaml` and
+  `platinum_select.yaml` into `process.yaml` (`DSCR_PROCESS` 2.0.0, core to both programs, citing
+  both consolidations); the `PLAT-PPP-*` copies are gone, each checked identical first. Standard
+  is 54 rules, Platinum 29, process 23. `TODO(ppp-rules-duplicated-per-program)` is closed.
+- **Linked loan bounds.** `DSCR-OVER-2M-DSCR` / `-NO-RATIO` (`dscr_floor_loan_amount`),
+  `DSCR-SMALL-LOAN-CLTV` (`small_loan_amount`) and `PLAT-LOAN-SIZE-CLTV` (`plat_small_loan_amount`,
+  `plat_large_loan_amount`) declare profile keys, so the drift lint checks them.
+  `TODO(loan-bound-profile-claim-false)` now covers only the matrix band edges, which need japes.
+
 ### Changed: DSCR gold cases state the whole loan (0.20.11, branch `acra-programs`)
 - japes' pack assessment now refuses an input that omits a field a rule reads, so the five DSCR
   gold cases carry every `LoanApplication` field (52), with the defaults `LoanApplication` gives;

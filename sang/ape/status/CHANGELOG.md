@@ -2,9 +2,67 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
-## [2.5.7] - unreleased
+## [2.5.8] - unreleased
 
-Plato stays 0.1.8.
+Plato 0.1.9.
+
+- **Pack lint checks a pack's programs against its own policies, warns on a rule repeated across
+  programs, and lints band edges against the profile** (`28587bb9`; the DSCR seed's rules regrouped
+  into `process.yaml`). Not yet through the review loop.
+
+## [2.5.7] - PR #86 (plato -> dev)
+
+Plato 0.1.9.
+
+- **Dependency floors for 10 open Dependabot alerts on `main`:** `pyjwt >=2.15.1` (8 alerts, one
+  critical; direct, and transitive via `mcp` and `msal`) and `oauthlib >=4.0.0` (2 alerts;
+  transitive via `msrest` -> `requests-oauthlib`), locked at 2.15.1 and 4.0.0.
+
+- **A host checks a declared lifecycle, and binds its grounding per session, through the SDK**
+  (+175 / -55 lines, 10 files).
+  - `pipelines.chat.host_lifecycle(spec, ..., fabric=, persist_hook=)` returns the declared
+    lifecycle and the problems a host cannot run (the builder's own errors, `application_hook`
+    persistence with no persist hook, ground sources with no fabric). Plato's chat routes (409)
+    and pack check (`invalid_lifecycle`) both call it, so the two sets of rules cannot drift.
+  - `runs.GroundingSessions(registry=, idle_seconds=, workspace_root=)`: `bind(declared, turn,
+    fabric=, key=)` binds the turn's sources at once (the runners decide on the ground stage from
+    them) and returns the turn's workspace, which holds the session's turn
+    slot from the runner's entry to its end, so an idle reap never closes a session under a
+    running turn. `bind` is async and reaps first, so a session idle past its TTL starts fresh
+    rather than being revived by the lookup. Plato's grounding goes through it, with the SDK's
+    `DEFAULT_GROUND_IDLE_SECONDS`.
+  - An empty registry passed to `GroundingSessions`, `ComposePlan` or `GroundPlan` is the one
+    used; `registry or default()` read an empty (falsy) registry as none.
+  - Plato is 0.1.9 (0.1.8 shipped with 2.5.6).
+
+- **Pack lint and the DSCR seed's program structure** (on `v2.5.7` after its squash to `dev`/`plato`).
+  - `lint_pack` checks a pack's programs against its own YAML policies when the manifest names no
+    registry pointer, whatever the caller passed (`scripts/pack_lint.py` and the extraction run's
+    lint passed none or a draft's one policy, so the program checks were skipped); the caller's
+    policies stand over the pack's by id, so an extraction draft is checked too. A pack whose
+    policy files do not load falls back to the caller's policies rather than failing the lint;
+    the publish check reports the file. `TODO(program-check-needs-policies)` is closed.
+  - New warning `rule_repeated_across_programs`: a rule with the same gate, condition and action in
+    more than one program's overlays, or in core and an overlay, which belongs once in a core
+    policy (one overlay two
+    programs share is not a repeat; exception rules count). A lint keyed to the
+    programs' published differences was considered and dropped: rules of two programs carry
+    different ids and nothing pairs them, so the lint could not tell which rule a difference is
+    about.
+  - `MatrixAxis.domain_extensions`: an axis declaring `profile_custom_key` has its band edges (every
+    band bound, ascending) checked by `find_profile_literal_drift` against that profile list; a
+    profile entry that is not a list of numbers, or a key on an axis with no bands, is a finding.
+  - The `dscr_core` seed, mirroring jaci: the 15 state PPP buyout rules are once in
+    `process.yaml` (`DSCR_PROCESS` 2.0.0, citing both consolidations) instead of in each program
+    (the new warning found all 15 on the old seed); Standard is 54 rules, Platinum Select 29. The
+    program loan bounds (the $2M DSCR floor, the $200k and $350k/$1.5M CLTV thresholds) and the
+    loan-amount band edges of the grid and vacant-refinance caps are linked to profile keys.
+    `TODO(ppp-rules-duplicated-per-program)` and `TODO(loan-bound-profile-claim-false)` are closed;
+    `DSCR_STANDARD` is 3.1.0 and `DSCR_PLATINUM_SELECT` 1.1.0, having lost those rules, and a
+    seed lint test also asserts zero profile drift.
+  - The case conductor assesses the raw input, like the assess route, by decision: a fact a rule
+    reads must be stated even where the input schema defaults it. `kinds.py` says so and
+    `TODO(conductor-drops-validated-defaults)` is closed.
 
 - **Token accounting.**
   - The Agents SDK path counts cache-write tokens: `run_kit._usage_to_token_usage` sets
@@ -211,6 +269,184 @@ Plato stays 0.1.8.
     2026-09-30.
   - `PROVIDER_DEFAULT_MODEL["anthropic"]` is `claude-sonnet-5.5`. The vision-routing tests read
     the default instead of repeating its literal.
+- **Shipped docstrings, comments and docs trimmed to what a user needs** (+1614 / -8529 lines, 86 files). The
+  SDK ships to third parties, so rationale, failure stories, worked examples, design history
+  and client or domain names now live here and in the plans, not in the package.
+  - Every docstring and comment 2.5.7 added (66 files) is one or two lines; `TODO(slug)`s,
+    pragmas and `Author:` lines are kept. `scripts/local/check_comment_only.py` (the AST with
+    docstrings removed, against HEAD) shows no code changed; no tool function's docstring
+    changed, and no trimmed pydantic docstring is an LLM output schema.
+  - README (1077 to 275 lines), `docs/ARCHITECTURE.md` (1755 to 216), `DOMAIN_PACK_QUICKSTART.md`
+    (1513 to 503), `CHAT_LIFECYCLE.md` (395 to 134), `DEPLOYMENT_ENV.md` (385 to 191, its generated
+    table untouched), `LOCAL_TESTING.md`, `SETTINGS_CONFIGURATION.md`, `FORMAL_JSON_RULES.md`,
+    `FORMAL_EVALUATION.md`, `plato/guide.md` (146 to 74), the five `examples/` READMEs and the
+    `experts`, `evaluation` and `modes` package READMEs, and the `plato/data` sample and demo pack
+    READMEs: terse references, generic examples.
+  - The README's install lines install from git (japes is not on PyPI); `DOMAIN_PACK_QUICKSTART`
+    describes the data-only pack model; the `experts` README lists the three expert types the
+    code has (`policy`, `playbook`, `discovery`).
+  - `examples/document_analyzer/ROADMAP.md` and `plato/data/seed_packs/dscr_core/ENCODING_NOTES.md`
+    moved out of the repository, their references with them.
+  - `examples/basic/main.py` and `examples/document_analyzer/main.py` import `QueueSettings` from
+    `jazzx_sdk.queue`; `jazzx_sdk.queue_processor` has not existed since v2.5.0.
+- **The application's turn records, behind the chat coordinator** (`runs.turn_store`; +1068 /
+  -103 lines, 11 files). `runs.ChatTurnStore` is the protocol: `begin`, `commit`, `fail`,
+  `interrupt`, `reconcile`, each mutation taking the run's claim token as `token` and returning an
+  optional marker. `ChatCoordinator(turn_store=)`; `commit=` / `reconcile=` remain, as
+  `HookTurnStore` (a store whose `begin` writes nothing and whose `fail` / `interrupt` hand the
+  hook the turn's `ChatRun` when there is one), and passing both is refused.
+  - `begin` runs after the turn factory and before the lifecycle; its `BeginResult` (`question`,
+    `history`, `data`, `recorded`, `terminal_required`, `marker`, `rejection`) sets
+    `turn.message`, `turn.history` and the new `ChatTurn.begun`. A rejection ends the turn with
+    its `ChatError` and writes nothing more; a `begin` that raises or runs past its grace fails
+    the turn (`BEGIN_FAILED`, `BEGIN_INDETERMINATE`, `CoordinatedTurn.mutation="begin"`).
+  - One terminal mutation per execution by outcome (`commit`, `fail`, `interrupt`), ordered by
+    `DurabilityPolicy`, skipped under `terminal_required=False`; a failed lifecycle and an
+    aborted execution are recorded (`fail`, `interrupt` with reason `aborted`), not only a
+    completed turn. `CoordinatedTurn.mutation` names the write.
+  - Every mutation, `begin` included, is bounded by `commit_grace_seconds` and held through a
+    cancellation for that long; with no grace, a cancel stops it at once.
+  - `DurabilityPolicy` gains `caller_managed` (no store operation; the `ChatRun` on the result).
+    `follow_up="retain"` hands a `delivery_before_best_effort_persist` write to a task the
+    coordinator holds; the execution returns at the transfer, `close` settles it and
+    `SettleReport.follow_ups_settled` / `follow_ups_unsettled` report it.
+  - `interrupt_on_abandon=True` records an abandoned turn's interruption, otherwise unwritten.
+  - `coordinator.reconcile(run_id, outcome=...)` settles an `indeterminate` write from the
+    caller's own probe, so a `commit=`-only coordinator (no reconcile hook) is never stuck.
+  - An execution keeps one record of what it wrote (`begin` landed, the terminal mutation
+    attempted and its outcome), which every path reads: a cancel during a write never adds a
+    second, a landed `commit` stands against a late cancel (the run finishes completed), a
+    `begin` that lands inside a cancel is closed with `interrupt`, and a run reaped while its
+    turn ran is closed with `interrupt` without its answer. A mutation returning
+    `runs.NOT_RECORDED` wrote nothing and records `not_attempted` (`HookTurnStore` returns it
+    when there is no `ChatRun` for the hook). A write past its grace is cancelled rather than
+    left running. `close` waits for the follow-ups it cancels and marks their runs
+    `indeterminate`. `follow_up` outside `delivery_before_best_effort_persist`, and
+    `interrupt_on_abandon` without a store, are refused. After every write, cancel or reap the
+    execution's record goes on the run with `update` (a `finish` on an ended run changes
+    nothing), so an awaited best-effort commit cut short by `close`, a retained follow-up that
+    lands inside its cancel grace (which `close` now waits out), and a commit a reap overtook
+    all leave the run saying `confirmed` or `indeterminate`, never a stale `deferred`. A `begin`
+    returning `NOT_RECORDED` leaves the turn settled, not `indeterminate`, a `begin` or commit
+    returning it inside a cancel's grace included. `close` ends by recording, for every
+    execution whose writes may still be open, what it knows (a write still in flight reads
+    `indeterminate`), so no timeout can leave a run saying `deferred` behind an unsettled write. Once an execution
+    attempted any write, the run's commit state is its record's to set, whatever came of the
+    write (`not_attempted` for one that wrote nothing, under `retain` as under `await`), and it
+    is written again if a write landed meanwhile.
+  - `test_session_memory`'s stub of `_respond_agentic` takes the per-turn keywords
+    (`grounding=`, `on_skill_result=`); it had failed since the agent began passing `grounding`.
+- **A preliminary answer: a fast skill shown first, then joined to the full answer**
+  (`jazzx_sdk.pipelines.preliminary`; +551 / -12 lines, 9 files). A profile's `lifecycle.preliminary`
+  (`LifecyclePreliminary`: `skill`, optional `marker`, `labels` by marker value, `label`,
+  `separator`) compiles into a `PreliminaryPlan` on the turn (`ChatTurn.preliminary`). Both
+  reference answer steps hand the agent its `listener` as `on_skill_result`. The lane's first
+  reply per turn is read: the marker line (`COVERAGE: full`) is stripped and its value picks the
+  label; a value with no label, a reply without the line, or an empty one is not shown. What is
+  shown runs through the declared compose steps, and a failed `leak_check` (any action) or a
+  block drops it. A streamed turn publishes `{"preliminary": {"text", "coverage", "sources",
+  "checks"}}`; either way it is kept (`ChatTurn.preliminary_answer`) and the compose stage joins
+  it ahead of the full answer before its steps run, so `cite` rebuilds citations over both halves
+  and both routes deliver (and, under caller persistence, record) the same reply. A lane brings a
+  compose stage even with no steps declared. `declared_lifecycle(skills=)` refuses a lane whose
+  skill is not the agent's; Plato and pack check pass the profile's skills (`invalid_lifecycle`).
+  - The join is onto the chat text: `ComposePlan.compose(prefix=)` joins it after the `present`
+    steps, and only onto a reply with no structured output or one whose answer a `present` step
+    set; a structured reply's answer is otherwise its output's JSON and is left whole, however
+    the schema arrived (profile, turn or agent). The lane's own compose run skips `present`
+    (`skip=`), whose fallback would replace it. Label keys are case-folded, as the marker value
+    is read. A reply is claimed before any await, so two calls in one step show one, and the
+    claim is released when that reply is withheld or dropped. A full answer that failed or was
+    cut short is delivered alone.
+- **A skill's reply is heard as it returns, and a skill can be bounded in time.** (+182 / -17 lines, 4 files)
+  - `InteractiveAgent.respond` / `respond_stream(on_skill_result=)`: an async
+    `(skill_name, text)` callback, called from the parent's `on_tool_end` for each skill tool
+    while the rest of the run goes on (`stream_hooks.SkillResultHooks`, built per turn and
+    composed with the agent's own hooks, so concurrent turns on one agent do not share it). A
+    callback that raises is logged, never raised into the run. Agentic path only.
+  - `Skill.timeout_seconds` / `Skill.timeout_result`: a wall-clock bound on one call to a skill,
+    through the Agents SDK tool's own `timeout_seconds` with `timeout_behavior="error_as_result"`,
+    so a skill past it hands the parent `timeout_result` (or the SDK's timeout text) as its reply
+    and the parent's other tool calls in the batch go on. Applies to sub-agent and `spec_ref`
+    skills alike. `max_turns` bounds work, this bounds time.
+- **Declared compose** (`jazzx_sdk.pipelines.compose`; +885 / -26 lines, 16 files). A profile's
+  `lifecycle.compose.steps` lists steps by `kind` (`LifecycleCompose`, each a
+  `LifecycleComposeStep` with `kind`, an optional `name`, and the kind's own keys); the compose
+  stage runs them in order over the answered reply, on its surfaces: `answer` and
+  `output.<field>` of the structured reply the profile's `output_schema` declares.
+  - Built-in kinds (a `ComposeKinds` registry, extended through the `jazzx_sdk.compose_kinds`
+    entry point, never overriding a built-in): `present` (the chat text from an output field, else
+    a `fallback`), `cite` (the reply cites the grounded files a surface names, in order of first
+    mention, instead of every grounded file; opt-in), `humanize` (grounded file names become their
+    display labels), `leak_check` (identifiers from `sources` and/or `patterns`; `action` report,
+    redact or block).
+  - `GroundedSource.files` maps each file a `documents` or `entities` source wrote to its citation,
+    which is what `cite` and `humanize` read.
+  - Each step's findings are `DeliveryCheck`s (`step`, `kind`, `passed`, `surfaces`, `detail`,
+    `count`) on the new `InteractiveResponse.checks`, and on the compose stage's span as
+    `check.<step>.passed` / `check.<step>.count`, through the new `ConductorState.annotations` (a
+    component's attributes for its own step's span, set when it returns).
+  - A blocked, refused, cancelled, failed or incomplete reply is not composed; a blocking step
+    ends the chain. The plan refuses an unknown kind, a step its kind refuses, two steps sharing a
+    name, and a `cite` after a `humanize` over the same surface; steps reading output fields need
+    `declared_lifecycle(output_schema=)`. Plato and pack check pass the profile's
+    `output_schema`; a bad compose declaration is `invalid_lifecycle`.
+  - A step's `sources` must name sources the lifecycle grounds (`ComposePlan(ground_sources=)`,
+    which `declared_lifecycle` passes), so a typo cannot turn a leak check off. A `leak_check`
+    pattern matching empty text is refused, a zero-width match is not a hit, and a file name or
+    stem shorter than `MIN_IDENTIFIER_CHARS` is not an identifier. The plan checks every step's `surfaces` and `sources`, installed kinds' included, so a malformed one is a
+    problem, not a `TypeError`. `_registry.has_methods` is the one shape test the ground and
+    compose registries use.
+  - Plato's `/chat` reply carries `output` (the structured reply) and `checks`; the stream's
+    terminal frame already carried the whole reply.
+  - Compose rewrites the final reply: streamed deltas carry the model's text, and under
+    `agent_owned` persistence the stored history holds the agent's own answer.
+- **Installed kinds load one way, for every registry of declared kinds.** (+153 / -60 lines, 7 files)
+  `_registry.register_installed(registry, group, accepts=)` is how the ground, conductor,
+  guardrail and evidence-connector registries take entries a package installs through their
+  entry-point groups. The group is read once per process (`_registry.installed`, cached); a point
+  that fails to load, or that `accepts` refuses (a callable for conductor, guardrail and evidence;
+  an instance with the `GroundKind` shape for ground), is logged and left out, and the others
+  still register; an installed entry never replaces one already registered. The conductor,
+  guardrail and evidence loaders used to register whatever loaded (a failing import broke every
+  build of the registry), and all four read the entry points on every call.
+- **Requests carry no parameter the model's card refuses.** The Anthropic default
+  (`claude-sonnet-5.5`) refuses `temperature` with a 400, and only `anthropic_native` read the
+  card: the `LLMManager` Anthropic provider (`run` and `run_stream`) and the agent-tier
+  `AnthropicProvider` now pass their request through `strip_unsupported_params`, and the OpenAI
+  provider's `run_stream` strips the reasoning-tier params alongside `reasoning_effort`, as `run`
+  already did (the adaptive-thinking tests now assert `temperature` is not sent to `claude-opus-4.8`,
+  whose card refuses it). `reasoning/agent.py` imports `DEFAULT_AGENT_MODEL` from `llm.config`; the model-literal
+  guard also catches `default="..."` and `claude-` / `gemini-` literals.
+- **No default names a retired model.** (+31 / -10 lines, 3 files)
+  - `RoutingStrategy.TIER_MODELS` routed to five models the table marks deprecated (`gpt-4o-mini`,
+    `gpt-4o`, `claude-3-5-haiku`, `claude-sonnet-4`, `o3-mini`). Now: efficient `gpt-6-luna` /
+    `claude-haiku-4.5`, capable `gpt-6.1-sol` / `claude-sonnet-5.5`, advanced `claude-opus-5.5` /
+    `gpt-6-astra`; its fallback is the capable OpenAI model rather than `gpt-4o`.
+  - `BaseMode`'s `model_name` defaults to `PROVIDER_DEFAULT_MODEL["openai"]`, not `gpt-4o`.
+  - A test checks every provider default, the agent default, `BaseMode`'s, each routing tier and
+    the routing fallback against the table's `deprecated` flag.
+  - `claude-opus-4.8` is marked `deprecated` (Anthropic lists it as legacy); Anthropic's order is
+    Sonnet 5.5 (default and capable tier), Opus 5.5 (advanced), Haiku 4.5 (efficient, the current
+    Haiku).
+- **Every default model comes from `PROVIDER_DEFAULT_MODEL`, and reaches its API in the API's
+  form.** (+218 / -81 lines, 21 files)
+  - Anthropic's API answers a dotted id (`claude-sonnet-5.5`) with a 404, and the default became
+    dotted with Sonnet 5.5. `llm.model_identity.anthropic_wire_name` (the rule `anthropic_native`
+    already applied) now also shapes the id at the `LLMManager` Anthropic provider's `run` and
+    `run_stream` and at the agent-tier `AnthropicProvider`, so all four request sites send
+    `claude-sonnet-5-5`.
+  - OpenAI's GPT-6 models are sent `max_completion_tokens`: the rule reads the model card (an
+    OpenAI reasoning model), so a new family needs its card row, not another name prefix. Every
+    GPT-6 model was being sent `max_tokens`.
+  - `llm.config.DEFAULT_AGENT_MODEL` (`gpt-6-luna`: the OpenAI default without its `flex_` alias,
+    which the Agents SDK client does not parse) is the fallback for `resolve_agent_model_name`
+    (whose routed branch also drops the alias now), `OpenAIProvider.build_agent`,
+    `ReasoningAgent`, `AdjudicationAgentSpec.model`, `run_segment` and the evolve curator, all of which
+    named `gpt-5.2`; the evolve `EvaluatorMode` (an `LLMManager` path) takes the configured default
+    as is. `AgentExecutionService.run`'s per-provider fallbacks (`gpt-4o`, `claude-sonnet-4-5`,
+    `gemini-2.5-flash`) and each `LLMManager` provider's `get_default_model` (`gpt-5.4-mini`,
+    `claude-sonnet-4-5`, `gemini-2.5-flash`) read the table too.
 - **Plato's blocking `/chat` runs the chat lifecycle, as `/chat/stream` does.** It called
   `agent.respond` directly, so the two routes of one assistant ran different paths. It now runs
   `run_chat_lifecycle` over `build_chat_components(agent=...)`; a turn that does not complete
@@ -235,7 +471,7 @@ Plato stays 0.1.8.
   `best_effort` persist past its grace is recorded in diagnostics like any other failure of it,
   the answer standing. A bounded stage keeps the reference marks the pipeline reads.
 - **Declared grounding** (`jazzx_sdk.pipelines.grounding`, results in
-  `agents.interactive.grounded`). A ground source is named, has a `kind`, and produces a
+  `agents.interactive.grounded`; +1725 / -60 lines, 16 files). A ground source is named, has a `kind`, and produces a
   `GroundedSource` (`context` prompt text, the `directory` it wrote, citation `sources`, `count`,
   `degraded`, `detail`); the turn's `GroundedContext` holds them with the labels that degraded, and
   is what the `ground` stage now emits and `ChatTurn.grounded` holds (a mapping by label, equal to
@@ -271,7 +507,7 @@ Plato stays 0.1.8.
   `code="grounding_failed"` (`GROUNDING_FAILED`), `category="resource"`, retryable, with
   `GROUNDING_FAILED_MESSAGE` for the user. Plato runs a profile's declared sources on `/chat` and
   `/chat/stream`: through the runtime's fabric, session-cached per (tenant, assistant, session) in
-  the replica and dropped after `GROUND_SESSION_IDLE_SECONDS` idle, files under `PLATO_GROUND_DIR`
+  the replica and dropped after `runs.session.DEFAULT_GROUND_IDLE_SECONDS` idle, files under `PLATO_GROUND_DIR`
   (the system temporary directory by default). A profile declaring sources on a wiring with no
   fabric, or a lifecycle that does not build, answers 409; pack check reports both, and
   `application_hook`, as the publish-blocking `invalid_lifecycle`.
@@ -413,7 +649,11 @@ Plato is 0.1.8 (from 0.1.7, which shipped to `main` with 2.5.5): case runs, form
 the pack check and assess routes, recorded sessions, durable chat streaming, `job:run-reaper`
 and the pilot fixes are Plato-visible, and `/health` reports this version to identify the image.
 
-- **Pack assessment refuses an input that omits a field a rule in force reads.** `assess` raises
+- **Pack assessment refuses an input that omits a field a rule in force reads, unless the pack
+  says otherwise.** `policy_assessment.missing_inputs: refuse` (the default) or `skip`: under `skip`
+  an omitted or non-nullable null fact's rules are attested as not evaluated and the rest of the
+  assessment runs. No `default` mode: most schema defaults are pass-valued, so filling an omission
+  would pass the rule it should trip. `assess` raises
   `ValueError` (a 422 from Plato's `POST /packs/{id}/assess`) naming every fact the pack's
   catalog declares, a rule of the selected policies reads, and the input leaves out; metric-derived
   facts are exempt. A null is refused too where the fact is not nullable: `FactBinding.nullable`

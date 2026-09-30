@@ -7,7 +7,7 @@ Plato 0.1.9. No shared history with `v2.5.7`.
 
 ## Carried in
 
-- `0d730452`, cherry-picked from v2.5.7's `28587bb9` (pack programs vs their policies,
+- `eacaac6d`, cherry-picked from v2.5.7's `28587bb9` (pack programs vs their policies,
   repeated-rule warning, band edges vs the profile; DSCR seed regrouped into `process.yaml`).
   Owes a review (`REVIEW_UPSTREAM=origin/dev`).
 

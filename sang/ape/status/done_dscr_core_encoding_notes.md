@@ -52,9 +52,9 @@ consumer, exercised it end to end, and surfaced the two defects in §2 (now also
 
 | Artifact | Contents |
 |---|---|
-| `profiles/dscr_profile.yaml` | Standard: 19 tables (the grid, sub-1.0, STR, property-type and ITIN tables of **99 + 3 + 3 + 12 + 33 cells**, and 14 overlay tables from the 8.17 consolidation), 12 ratio thresholds, 25 custom scalars. Platinum Select (`plat_*`): 4 tables (**12 + 3 + 3 + 3 cells**), 2 ratio thresholds, 10 custom scalars. One of the 49 threshold and custom keys, `dscr_min_no_ratio_floor`, is referenced by no rule (see §3 G4). |
-| `policies/process.yaml` + `policies/standard.yaml` | **77 rules**: the 8 condo/entity/fraud gates (§1a, all of `process.yaml`: `DSCR_PROCESS`, core to every program), and `DSCR_STANDARD`'s 69: 54 program rules citing STD-x and 15 state PPP-buyout rules (§1b). By `condition` kind: 39 `expression`, 20 `matrix`, 10 `ratio`, 7 `all_of`, 1 `any_of`; 28 rules use `all_of`/`any_of` somewhere. (Counts re-derived from the files.) |
-| `policies/platinum_select.yaml` | **44 rules** (`DSCR_PLATINUM_SELECT`, program `platinum_select`) from the Platinum Select consolidated guidelines v1.0: 29 program rules citing PLAT-x.y, plus the 15 state PPP-buyout rules copied from `standard.yaml`. Thresholds are the profile's `plat_*` keys. Its header lists the provisions not yet encoded. |
+| `profiles/dscr_profile.yaml` | Standard: 19 tables (the grid, sub-1.0, STR, property-type and ITIN tables of **99 + 3 + 3 + 12 + 33 cells**, and 14 overlay tables from the 8.17 consolidation), 12 ratio thresholds, 30 custom keys (6 of them lists). Platinum Select (`plat_*`): 4 tables (**12 + 3 + 3 + 3 cells**), 2 ratio thresholds, 12 custom keys (3 of them lists). One of the 56 threshold and custom keys, `dscr_min_no_ratio_floor`, is referenced by no rule (see §3 G4). |
+| `policies/process.yaml` + `policies/standard.yaml` | **77 rules**: `process.yaml`'s `DSCR_PROCESS`, core to every program, holds the 8 condo/entity/fraud gates (§1a) and the 15 state PPP-buyout rules (§1b) both programs print alike; `DSCR_STANDARD` holds 54 program rules citing STD-x. By `condition` kind: 39 `expression`, 20 `matrix`, 10 `ratio`, 7 `all_of`, 1 `any_of`; 28 rules use `all_of`/`any_of` somewhere. (Counts re-derived from the files.) |
+| `policies/platinum_select.yaml` | **29 rules** (`DSCR_PLATINUM_SELECT`, program `platinum_select`) from the Platinum Select consolidated guidelines v1.0, each citing PLAT-x.y; the state PPP-buyout rules are `process.yaml`'s. Thresholds are the profile's `plat_*` keys. Its header lists the provisions not yet encoded. |
 | `tests/scenarios/dscr/test_dscr_eligibility.py` | 69 behavioural cases + a grid-completeness test |
 
 `max_cltv_grid` holds **99 cells** = 3 loan-amount bands × 11 FICO bands × 3 purposes, of which **70 are eligible values and 29 are authored `"NA"`**. The published grid shows 78 cells; the extra 21 exist because the FICO axis is normalized across all three bands (the PDF prints a ragged grid — 10, 10, and 6 tiers — plus prose rows "<620" and "<700"). Normalizing is deliberate: `MatrixEvaluator` returns **INDETERMINATE when no band matches**, and INDETERMINATE reads as "we couldn't tell" rather than "ineligible." Every reachable combination must resolve to a *present* cell, with ineligibility expressed as an authored `"NA"` (which `_NA_SENTINELS` turns into VIOLATED). **An absent cell raises `KeyError` at runtime** — hence `test_grid_is_fully_authored`.
@@ -63,11 +63,13 @@ consumer, exercised it end to end, and surfaced the two defects in §2 (now also
 
 ### 1b. State prepayment-penalty (PPP) buyout rules
 
-14 rules (`DSCR-PPP-*`), all citing `dscr_program_summary_6_15_2026_v1_1`'s "Prepayment Penalty
-Requirements" table — 13 states, Illinois split into its two independent triggers. New
+15 rules (`DSCR-PPP-*`) in `process.yaml`, core to both programs, citing both consolidations'
+state restriction tables (STD-11.3, PLAT-10.3): 14 states, Illinois split into its two independent
+triggers. New
 `LoanApplication` fields: `prepayment_penalty_requested` (the selected PPP structure, default
 `"unspecified"` -- the structure is a term of the loan, so an application that does not state it
-has not been checked against these rules and is denied by them, while `"no_prepay"` is the stated
+has not been checked against these rules and is denied by them if it is stated as
+`"unspecified"`, and refused by pack assessment if it is left out, while `"no_prepay"` is the stated
 value that clears them), `residential_unit_count`
 (no default: derived as `1` for a single-unit `property_type`, and *required* for
 `two_to_four_unit`, because the Mississippi, Ohio and Pennsylvania gates read it and a field

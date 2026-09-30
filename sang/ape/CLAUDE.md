@@ -5,8 +5,8 @@
 ## Where things stand
 
 **Working branch is `v2.5.8`** (cut 2026-09-30 from `dev` at `2a2ad60b`, PR #86's 2.5.7 squash; no
-shared history with `v2.5.7`; SDK 2.5.8, Plato 0.1.9; plan `plans/plan_v2_5_8.md`). `0d730452`
-(cherry-pick of `28587bb9`: pack programs lint, DSCR seed regrouped) owes a review
+shared history with `v2.5.7`; SDK 2.5.8, Plato 0.1.9; plan `plans/plan_v2_5_8.md`). `eacaac6d`
+(squash of `28587bb9` and the 2.5.8 bump: pack programs lint, DSCR seed regrouped) owes a review
 (`REVIEW_UPSTREAM=origin/dev`). The first cut is kept as `backup/v2.5.8-from-v2.5.7`. Release flow:
 working branch -> plato -> PR to dev -> squash -> PR dev -> main, recording each squash back down;
 the next version is cut from `dev` once the squash lands.
