@@ -2,7 +2,8 @@
 
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 
-Status: plan, 2026-09-30, on `v2.5.7`; approved to build. Closes what `plan_chat_runtime_coordinator.md`
+Status: done, 2026-09-30, on `v2.5.7`: `ade598e4`, review fixes to `31e68dee`, review
+(`406c182d..31e68dee`) clean after 5 rounds. Closes what `plan_chat_runtime_coordinator.md`
 left against jazzx-assistant's "Requirements on plato 2.5.6 for chat.py" page: §5 (the coordinator
 takes only `commit` and `reconcile` hooks, no begin / fail / interrupt), §6 (`caller_managed`
 folded into `none`; best-effort persistence always awaited), §10 (abandonment never records an
