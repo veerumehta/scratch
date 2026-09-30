@@ -3,7 +3,7 @@
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 
 Status: plan, 2026-09-29. Phases A and B built and reviewed clean on `v2.5.6` (shipped in 2.5.6);
-Phase C (sessions/resources, outlets) not started. Source: the Notion page "Requirements on
+Phase C built on `v2.5.7` (see "Phase C built" below). Source: the Notion page "Requirements on
 plato 2.5.6 for chat.py" (JazzX Platform v2.0 / Jazzx-Assistant), edited 2026-09-29.
 
 Prior art, read before this:
@@ -324,3 +324,20 @@ timed-out required write that fails the turn and never reads as success.
   evict-oldest-ephemeral / detach-when-all-required, terminal flush timeout, a supersede fence).
 - C7 **Declarative assistant stages:** an assistant profile's `lifecycle:` block declares gate,
   ground and compose kinds from data, so Plato builds an assistant's components without Python.
+
+### Phase C built (2026-09-30, on `v2.5.7`)
+
+C1 `f8b99120`, C2 `4ee7eca1`, C3 `f91c24ab`, C4 `2923a840`, C5 `6b26001e`, C6 `0afdab3a`,
+C7 `e9fffcbc`; with the page's small items first (`d8c8ecf5` runs exports pinned, `429dea26`
+Plato's blocking `/chat` on the lifecycle plus `ChatTurn.trace_id`) and the guide `docs/CHAT_LIFECYCLE.md`.
+Deviations and what is still open:
+- C4 replays a live duplicate (joins the original) by default where `ws/` refuses it; `reject`
+  is the `ws/` behaviour. The duplicate window is the key's newest `RECENT_RUNS_CHECKED` runs.
+- C5's session is process-local and not tied to the coordinator: a turn factory reaches it
+  (`ChatTurnSpec.context=[session.turn]`). Reconnection and adoption stay the application's.
+- C6's `required` / `ephemeral` split is by default classifier (delta, error, terminal required),
+  which matches `ws/`'s durable set (`llm_chunk`, `final_result`, `done`, `error`).
+- C7 declares policies and a `scope` gate only. Open: declarative ground (workspace grounding from
+  declared sources) and compose kinds (identifier humanizing, leak checks as output-guardrail
+  kinds, an email draft as a declared output schema), and the two-agent preliminary answer.
+- `TODO(sqlite-read-then-write-unserialized)`: the store's claim paths on sqlite.
