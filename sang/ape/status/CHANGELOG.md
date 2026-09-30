@@ -63,16 +63,17 @@ Plato stays 0.1.8.
 - **One `policy_assessment` kind and one metrics read.** `kinds.PRE_LOOP_ASSESSMENT` and the
   fact catalog both take `pack.assessment.ASSESSMENT_KIND`, and the catalog's metric facts come
   from `pack.assessment.metric_definitions`, the same read the assessment derives them with.
-- **A malformed `policy_assessment` entry is refused at check and publish** (`conductor_problems`),
-  not at the first `assess`: a misspelt key such as `defualt_program:` published and then every
-  assessment raised.
+- **A malformed `policy_assessment` entry is refused at check and publish** (the pack linter's
+  `invalid_assessment`, publish-blocking, for every pack whatever its conductor), not at the first
+  `assess`: a misspelt key such as `defualt_program:` published and then every assessment raised.
+  `pack.assessment.assessment_entry` is the one scan for the entry.
 - **Error echoes are bounded and redacted.** Every server route that answered an exception's
   `str(exc)` (46 sites: `server/agent_config`, `eval_api`, `feedback_api`, `policy_extract_api`,
   `vocabulary_review`, and Plato's `database`, `packs` and `runs`) now answers
   `failures.reason(exc, limit=SERVED_REASON_LIMIT)`, as `assess` already did: one line, secrets
   redacted, the message capped at 200 characters, and prefixed with the exception type (so a
   detail reads `ValidationError: ...`). A pydantic error no longer reflects the submitted body in
-  full.
+  full. Plato's formal route and the eval routes' remaining messages go through `reason` too.
 - **Feedback retrieval follows the current RAG store.** Plato's feedback router reads the process
   layer's `RAGStore` per request (`rag_for`, from `plato.app._feedback_rag`), and the per-tenant
   `RagFeedbackIndex` is rebuilt when the store changes (its cached collection ids name collections
@@ -81,16 +82,327 @@ Plato stays 0.1.8.
 - **A checker defect does not refuse a valid pack.** Plato's pack check reports a pack that fails
   to load as `unloadable` (publish-blocking) as before, but a lint or conductor check that raises
   on a pack that loaded is now `check_incomplete` (`plato.packs.check.CHECK_INCOMPLETE`): reported
-  and logged, not blocking. A non-path `PackSource`'s guardrails stay unread
+  and logged, not blocking. A stage failing on the pack's own data (an unreadable or unparseable
+  file, `ValueError` / `OSError` / YAML error) still blocks, as `unloadable`; `conductor_problems`
+  reports an evidence-tools file that is not YAML. A non-path `PackSource`'s guardrails stay unread
   (`TODO(packsource-guardrails-dropped)`; no caller passes one).
 - **A session closed with no turns is not "complete"**, whatever its protocol requires: its
-  Decision is the protocol's incomplete outcome. And `subset_match` treats an empty mapping below
+  Decision is the protocol's incomplete outcome, and its summary says `complete: false` too. And `subset_match` treats an empty mapping below
   the top as a leaf, so a gold case's `{"caps": {}}` requires an empty `caps` rather than scoring
   1.0 against an output with none.
 - **Formal formulation names the candidate it refuses** for a condition kind or operator outside
   the JSON comparison subset (`is not formulatable: ...`), as it already did for a missing fact
   binding; that error escaped with a bare message. The formulation still refuses the whole draft
   for a bad candidate, by design.
+- **`pack_archive` is deterministic.** Each entry carries a fixed timestamp and mode
+  (`ARCHIVE_ENTRY_TIMESTAMP`, `ARCHIVE_ENTRY_MODE`) instead of the file's, so the same directory
+  content is the same archive and the same `content_digest`, however recently the files were
+  touched (a republish of unchanged content no longer reads as changed).
+- **`FeedbackApiSink` and `EvalServiceClient` take a `request_headers_provider`**, as `PlatoClient`
+  does: headers added to every request (the client's own win a clash), so a caller forwarding a
+  signed-in user's identity no longer subclasses the sink to add them (jaci's ci_spread does).
+- **The MCP server checks `Host` and `Origin`, and starts on either `mcp` major.**
+  `JazzXMCPServer.run_streamable_http(host, port, allowed_hosts=, allowed_origins=)` turns on the
+  transport's DNS-rebinding protection: a loopback bind answers to loopback names only, and any
+  other bind needs `allowed_hosts` (`transport_security_for` raises `ValueError` without them; the
+  mcp default left an off-loopback bind unchecked). `JazzXRuntime` takes
+  `mcp_server_allowed_hosts` / `mcp_server_allowed_origins` (settings `MCP_SERVER_ALLOWED_HOSTS` /
+  `MCP_SERVER_ALLOWED_ORIGINS`, JSON lists) and refuses an unchecked bind at start. The start
+  itself failed on mcp 1.x with a `TypeError` (host and port are server settings there, and
+  arguments of the run only on 2.x); it now sets whichever the installed major reads.
+- **Pack assessment is hybrid.** `assess(pack, inputs, reasoning_agent=)` decides a live rule
+  (a `natural_language` or `procedure` condition, or an `all_of` / `any_of` nesting one) with the
+  `ReasoningAgent` passed, alongside the deterministic rules; without one a live rule is withheld
+  and attested INDETERMINATE, as before. `PolicyAssessment.engines` maps each active rule of the assessed policies to a
+  `RuleEngine(kind, live)` (`kind` is the condition kind, `UNCONDITIONAL_ENGINE` for a rule
+  without one; `live` also covers an applicability gate and nested children, which the
+  composites' own class-level `execution` does not), and `reasoned` says whether live rules had
+  a model. Plato's `POST {prefix}/packs/{id}/assess` stays model-free by default;
+  `?reason=true` builds a `ReasoningAgent` on the configured model (the runtime's
+  `AgentExecutionService` when it has one). It assesses model-free first, so an input the
+  assessment refuses answers 422 either way, then reasons; any error in the reasoned run (a
+  missing provider key included, which is a `ValueError`) answers 502.
+  The case run's pre-loop assessment and `PackAssessmentInvoker` stay deterministic: the first
+  must agree with the default route, and the second re-checks what that route answers.
+  `agents.adjudication.partition_rules` still classifies a composite by its own kind (its
+  adjudication path batches only kinds that render into one prompt).
+- **Policy extraction proposes a deterministic condition where the text states one.** A fourth
+  representation, `conditions` (`pipelines.policy_conditions.ConditionExtractor`, on Plato's
+  authoring page as "Thresholds, else natural language", and in the authoring chat's
+  `start_extraction`), asks the model, per obligation clause, whether the clause is exactly one
+  numeric threshold on one of the pack's fields (`JtbdTemplate.reads`, the bound the `python`
+  representation uses). A proposed `expression` is kept only when the field is declared, the
+  operator is one of `NUMERIC_OPERATORS`, and the number is printed in the clause
+  (`printed_numbers`: thousands commas and decimals, `1.25x` and `80%` included); the value is
+  taken as printed, not from the model. Otherwise the rule is `natural_language`, reading only
+  declared fields, and the proposal's reasoning says which check refused the expression. A
+  clause that obliges nothing calls no model. Every rule still goes through the proposal queue.
+- **The rule evaluator and Z3 are checked against each other.** A new test compiles, for every
+  rule a DSCR gold case's assessment decides, that rule alone and verifies the same record (with
+  the derived metrics) under Z3: the two agree on all 32 the compiler supports (the other 20 are
+  compiler gaps, reported as CANNOT_DETERMINE; a Z3 ERROR fails the test). It found one formal
+  defect: a pack compiled for an overlay whose selected rules are all core rules (or whose overlay
+  rules are all gaps) refused a claim naming that overlay with ERROR (`unknown overlay IDs`), since
+  the engine took the known overlays from the compiled rules. `JsonRulePack.overlays` now records
+  the overlays a pack was compiled for (identifiers, at most `max_overlays`, as a claim's are), and
+  a claim may name any of them. Compiled artifacts carry
+  the new field, so a pack compiled now hashes differently from the same pack compiled before;
+  stored ones still load.
+- **The formal compiler covers the whole DSCR seed.** Before, 51 of Standard's rules and 11 of
+  Platinum Select's were gaps; now neither program has one. The engine agreement test now requires
+  Z3 to decide every rule a gold case decides (52 of 52; any CANNOT_DETERMINE or ERROR fails it).
+  - `in` / `not_in` compile to a set-membership predicate (`JsonPredicate.literals`, each member
+    typed as the fact is, at most `max_set_literals`).
+  - `any_of`, in a gate or a condition, compiles to alternatives (`JsonRule.when_any` /
+    `require_any`, at most `max_alternatives`; a nested `any_of` flattens).
+  - A `RatioCondition` compiles to `numerator / denominator op threshold` (`JsonPredicate.per`,
+    threshold from the profile, typed as a decimal whatever the facts' types, real division). A
+    zero denominator is excluded as a compiled assumption, so feasibility and scope checks cannot
+    be satisfied through `x / 0`, and `verify` answers CANNOT_DETERMINE for a case with one (for
+    any selected ratio, whether or not its rule applies to the case).
+  - `tools.evaluate_ratio` (and so `RatioEvaluator`, `evaluate_ratios` and the stress-test
+    `compute_fn` over it) decides pass/fail exactly (`ratio_holds`: decimals, cross-multiplied, a negative
+    denominator flipping the comparison) instead of by float division, which put a ratio sitting
+    on its threshold (1250.10 / 1000.08 against 1.25) on the wrong side. The reported value and
+    margin are still the float ones, and the warning band applies to the exact verdict.
+    A margin whose float sign contradicts the exact verdict (an epsilon on the threshold)
+    reads as 0.0, and a non-finite input raises `ValueError`.
+    `RatioEvaluator` turns that error, and a zero denominator's, into an INDETERMINATE
+    (`CALCULATION_UNAVAILABLE`) outcome for the one rule, as `ExpressionEvaluator` does for a
+    non-finite value; before, a zero denominator raised out of the whole assessment. The sibling
+    `evaluate_value` gives a non-finite value (NaN, infinity, an int past float range) `n/a`, as it
+    gives `None`, instead of scoring it (infinity used to pass).
+  - `JsonPredicate.literals` must be a list.
+  - `max_rules` rises from 128 to 512 (Standard's matrices expand to about 280 rules).
+  - A matrix cell whose axis equality contradicts the rule's gate is dropped (it can never apply;
+    compared as the fact's type, so `1.0` and `1` are one value), and a condition negating its own
+    gate (`DSCR-OVER-2M-NO-RATIO`) compiles as `always_false`, the ineligible-cell shape. With
+    both, `check_rules` passes on each seed program instead of reporting those as unreachable or
+    infeasible scopes.
+  - Formulation's supported subset follows the compiler, so an `in` / `not_in` candidate is now
+    formulatable; a ratio candidate is still refused (formulation has no profile).
+  - `docs/FORMAL_JSON_RULES.md` lists the subset.
+- **Plato's extraction runs are linted against the tenant's draft.** The authoring router hands
+  `PolicyExtractionService` a `pack_for` that opens the draft of the pack being extracted into as
+  a `Pack` (unpacked into a scratch directory held for the run), so the lint step checks the
+  proposed rules against the draft's vocabulary; before, Plato passed no pack and every run
+  skipped its lint. `pack_for` may now return an async context manager yielding the pack, held
+  open for the whole run. `ExtractionRun.linted` says whether a pack was there to lint against
+  (no draft, or one that does not load, is `false`), so an empty `lint_findings` is not read as
+  clean; the authoring page and the chat's `extraction_status` show it.
+  The lint step treats the pack's own data errors (a half-written file a `Pack` reads lazily)
+  as not linted rather than failing the run, whose proposals are already stored.
+- **The Postgres advisory locks are tested.** A Postgres-only test holds a key in one transaction
+  and checks that `try_advisory_xact_lock` passes over it, `advisory_xact_lock` waits for it, and
+  both succeed once the holder ends (it fails with the locks made no-ops).
+- **Claude Sonnet 5.5 and GPT-6.1 Sol are priced and carded, and Sonnet 5.5 is the Anthropic
+  default.**
+  - `claude-sonnet-5.5` (API id `claude-sonnet-5-5`): $2 / $10, cache read $0.20 (the standard
+    0.1x), 5-minute cache write $2.50; 1M context, 128K output, adaptive thinking (not always on,
+    default effort `high`), knowledge cutoff Jun 2026. Same price as Sonnet 5.
+  - `gpt-6.1-sol`: $2 / $10, cached input $0.10 (5% of input, where GPT-6 Sol's is 10%), cache
+    write $2.50; above 272k input tokens $4 / $15, cached $0.20, cache write $5; flex at half.
+    1.05M context (922k max input), 128K output, reasoning efforts `low` to `max` (no `none` or
+    `minimal`), knowledge cutoff 2026-04-30. It is the only GPT-6.1 model: Astra and Luna stay on
+    GPT-6.
+  - Both rows' `unsupported_request_params` are carried over from their predecessors (Sonnet 5,
+    verified against the live API; GPT-6 Sol), not re-verified; provenance says so. Claude Opus
+    5.5's row already matched the pricing page. Both providers' `verified` dates move to
+    2026-09-30.
+  - `PROVIDER_DEFAULT_MODEL["anthropic"]` is `claude-sonnet-5.5`. The vision-routing tests read
+    the default instead of repeating its literal.
+- **Plato's blocking `/chat` runs the chat lifecycle, as `/chat/stream` does.** It called
+  `agent.respond` directly, so the two routes of one assistant ran different paths. It now runs
+  `run_chat_lifecycle` over `build_chat_components(agent=...)`; a turn that does not complete
+  answers 502 with its `ChatError.user_message` (never the exception's text, which used to reach
+  the caller as a 500). `ChatTurn.trace_id` carries the host's trace id to the agent from both
+  reference answer steps (Plato's streamed turns lost it before); it is passed only when set,
+  so an application agent without the keyword keeps working.
+- **`concurrency.call_within(seconds, call)`** awaits a call within a budget and raises
+  `BudgetExpired` when the budget ran out, whatever the call did with its cancellation; a
+  `TimeoutError` of the call's own passes through. The chat stage budgets and the coordinator's
+  commit grace both use it.
+- **A chat turn can carry time budgets.** `ChatTurn.deadlines` takes a `DeadlinePolicy`
+  (`total_seconds`, `stages` by name, `persist_grace_seconds`), on the monotonic clock from the
+  lifecycle's start, for blocking and streaming alike. The work stages (everything before
+  `persist`) share the total and each gets whichever of its own budget and the rest of the total
+  ends first; `persist` is a protected write bounded only by its grace, and `finalize`, after it,
+  only by its own `stages` entry, so a recorded answer is not failed on the clock. A stage past
+  its budget raises `StageDeadlineExceeded`, which `chat_step_error` turns into a `ChatError`
+  (`code="deadline_exceeded"`, `category="deadline"`, the stage, `retryable=True`), whatever
+  the stage did with the cancellation (raised it, raised something else, or swallowed it and
+  returned). A stage's own `TimeoutError` inside its budget stays an ordinary stage failure, and a
+  `best_effort` persist past its grace is recorded in diagnostics like any other failure of it,
+  the answer standing. A bounded stage keeps the reference marks the pipeline reads.
+- **Declared grounding** (`jazzx_sdk.pipelines.grounding`, results in
+  `agents.interactive.grounded`). A ground source is named, has a `kind`, and produces a
+  `GroundedSource` (`context` prompt text, the `directory` it wrote, citation `sources`, `count`,
+  `degraded`, `detail`); the turn's `GroundedContext` holds them with the labels that degraded, and
+  is what the `ground` stage now emits and `ChatTurn.grounded` holds (a mapping by label, equal to
+  a dict of the same items, so existing readers keep working). `GroundPlan(sources)` compiles
+  `DeclaredSource`s (unknown kinds and each kind's own `problems` refused when it is built) into
+  `ChatTurn.sources`, so `ground_step` runs them concurrently with its degrade, `required` and
+  progress semantics. Kinds are a frozen `GroundKinds` registry (built-ins, then the
+  `jazzx_sdk.ground_kinds` entry point, which cannot replace a built-in): `documents`
+  (`fabric.docs.materialize` of filtered entities into the source's directory, a manifest as
+  context), `entities` (one JSON file per entity), `canonical` (`fabric.canonical.find` as JSON
+  context) and `rag` (`fabric.rag.search` over the turn's message, turn-scoped). `$scope`
+  references resolve at any depth; each fetch checks the `ground:<name>` hop, and a refused one
+  degrades. Files go under the turn's workspace (`ground_workspace(root)`, removed with the turn),
+  or, for a session-cached source, under `ChatSession.directory(root)` (new; removed when the
+  session closes); a session-cached source runs through `ChatSession.resource`, fetched once and
+  joined, a degraded result not kept.
+  The answering agent receives it: `InteractiveAgent.respond` / `respond_stream(grounding=)` add
+  each source's `context` to the prompt beside the knowledge bindings', give a source that wrote
+  files list / read / search tools keyed by source name (`build_directory_tools`), and add every
+  source's citations to the reply. A skill whose `reads` names a ground source gets that source's
+  tools and context in its sub-agent; a source no skill names goes to the agent itself, and one
+  agent never reaches another's source. The reference answer steps pass `turn.grounded` when the
+  turn gathered declared sources (so an agent without the keyword keeps working otherwise).
+  A profile declares them: `lifecycle.ground.sources` (`LifecycleGround`, strict; each source a
+  `LifecycleGroundSource` with `kind`, `required`, `cache`, and the kind's own settings as further
+  keys, checked by the kind). `declared_lifecycle` compiles them into `DeclaredLifecycle.ground` (a
+  `GroundPlan`; a source that does not check raises `ValueError`); `DeclaredLifecycle.bind(turn,
+  fabric=, scope=, session=, workspace_root=)` puts them on the turn and returns its workspace, and
+  `DeclaredLifecycle.components(agent, **overrides)` builds the lifecycle with the declared gate, a
+  ground stage requiring the declared required sources, and `publish_ground_progress` (new on
+  `ground_step` / `build_chat_components`: each source's progress as a `{"ground": {"active",
+  "source", "failed"}}` stream event). A required source that cannot be gathered is a `ChatError`
+  `code="grounding_failed"` (`GROUNDING_FAILED`), `category="resource"`, retryable, with
+  `GROUNDING_FAILED_MESSAGE` for the user. Plato runs a profile's declared sources on `/chat` and
+  `/chat/stream`: through the runtime's fabric, session-cached per (tenant, assistant, session) in
+  the replica and dropped after `GROUND_SESSION_IDLE_SECONDS` idle, files under `PLATO_GROUND_DIR`
+  (the system temporary directory by default). A profile declaring sources on a wiring with no
+  fabric, or a lifecycle that does not build, answers 409; pack check reports both, and
+  `application_hook`, as the publish-blocking `invalid_lifecycle`.
+  An agent run through a declared lifecycle grounds its `knowledge:` bindings the same way:
+  `declared_lifecycle(spec, knowledge=)` compiles each binding into a ground source
+  (`sources_from_knowledge`: a canonical binding is the `canonical` kind, a docs binding the new
+  `docs` kind, a `fabric.docs` listing as `[doc]` lines with citations), named by
+  `knowledge_source_name` (the binding's `name`, else `knowledge_<index>`), so they get progress,
+  degrade and `required` too. `InteractiveAgent` skips a binding whose source the turn already
+  gathered, so nothing is injected twice; called directly, it grounds its bindings as before. A
+  binding and a declared source sharing a name is a `ValueError` (and `invalid_lifecycle` in pack
+  check). Plato passes the profile's bindings. A session-cached source is kept per resolved
+  setting (its `$` references filled in), so a session whose next turn names another loan is
+  grounded in that loan.
+  - An agent without skills (one call on its configured provider, no tools) gets the files its
+    sources wrote in its prompt, up to `grounded.INLINE_FILES_MAX_CHARS` across the turn, with a
+    count of the files left out (`GroundedContext.file_text`), rather than only their list.
+    Dot-prefixed files (the materialize manifest) are skipped, as the directory tools hide them,
+    and a file that is not UTF-8 text is counted as left out.
+  - A source that only a skill routed out of this turn reads goes to the agent, context and tools.
+  - Admission to a source (`ground:<name>`) is checked on every turn in its own invocation
+    context, a session-cached or joined result included. A compiled knowledge binding is admitted
+    by its own `canonical:` / `docs:` selector instead, as without a lifecycle
+    (`DeclaredSource.hops`, `knowledge.knowledge_hop`, shared with `resolve_knowledge`).
+  - `entities` gives two entities that map to the same file name their own files (`_2`, `_3`,
+    in id order).
+  - An installed ground kind that fails to load, or is not an instance carrying `cache`,
+    `writes_files`, `problems()` and `fetch()`, is logged and left unregistered, so a profile
+    naming it is refused as an unknown kind.
+- **An assistant profile declares how the chat lifecycle runs it.** `InteractiveAgentSpec.lifecycle`
+  (`ChatLifecycleSpec`, strict: a misspelt key fails when the profile loads) holds the turn
+  policies (`persistence`, `persist_failure`, `cancel_after_answer`, `deadlines` as
+  `LifecycleDeadlines`) and a gate kind, `scope` (`LifecycleGate`: `in_scope`, `out_of_scope`,
+  `decline`). `pipelines.chat.declared_lifecycle(spec, llm=)` turns it into `DeclaredLifecycle`:
+  the `ChatTurn` keyword arguments and a `classify` / `decline` for `build_chat_components`; the
+  gate refuses, before grounding or answering, a message matching `out_of_scope` (a keyword check,
+  first and deterministic) and, given `llm` and `in_scope` topics, one the stock scope guardrail's
+  LLM check finds outside them. The keyword-first order is `build_scope_guardrail`'s own: with `llm=` it now
+  refuses a listed `out_of_scope` topic before asking the model, which also changes a manifest
+  that sets `out_of_scope_check_model` beside out-of-scope classes (`spec_binding.bind_spec`),
+  whose listed topics the LLM check used to overrule.
+  A gate neither check can run (only `in_scope` with no `llm`, or no topics) raises `ValueError`.
+  Plato's `/chat` and `/chat/stream` run each assistant's declared lifecycle, the gate checked
+  with the runtime's LLM; a turn that is not `agent_owned` binds no persist, and a profile
+  declaring `application_hook` or a gate that cannot run answers 409 on both routes, before a
+  turn starts. Not declarative yet: ground (workspace grounding from
+  declared sources does not exist) and compose kinds (output-guardrail kinds for identifier
+  humanizing and leak checks).
+- **Typed turn events and a bounded outlet** (`jazzx_sdk.runs.outlet`), after jazzx-assistant's
+  256-frame send queue. A `TurnEvent` is a journal event with its turn, key, session, the
+  journal's per-turn `seq`, a `kind` and a `Delivery` class; `classify_event` (replaceable) makes
+  the terminal event, an error and a text delta `required` and anything else `ephemeral`
+  progress. `BoundedOutlet(capacity=, overflow=)`: full, it drops a new ephemeral event, a
+  required one evicts the oldest ephemeral, and with only required events queued it detaches the
+  reader (`OutletDetached`, `overflow="detach"`) or waits for room (`"block"`); `fence(turn_id)`
+  drops a superseded turn's non-required events while its required ones, the terminal among them,
+  still pass; `close(flush_timeout)` waits for the reader and detaches one too slow.
+  `ChatTurnHandle.pump(outlet)` feeds a run's journal into an outlet to its terminal event; an
+  outlet that detaches ends the pump and the run is left as its `DisconnectPolicy` says. Queued
+  is not durable: the journal is the record a detached reader resumes from.
+- **Process-local chat sessions and shared resources** (`jazzx_sdk.runs.session`), modelled on
+  jazzx-assistant's `ws/` session, registry and grounding cache.
+  - `SingleFlight(work, cacheable=)`: `get` starts the work or joins it; a joiner first receives
+    the progress so far, then the live events, through its own callback. A cancelled joiner stops
+    waiting and the work goes on (it is awaited shielded). A failure reaches every waiter and is
+    never cached; a result `cacheable` rejects (a degraded one) is returned and not kept. `stop`
+    cancels work in flight, and its waiters get `ResourceStopped`.
+  - `ChatSession`: `turn()` holds one of the session's turn slots (`SessionTurnsAtCapacity`,
+    `SessionClosed`) and touches its monotonic idle clock; `resource(name, work)` is a session's
+    `SingleFlight`; `spawn_followup` holds work that outlives a turn (logged on failure, waited
+    for on close); `close(timeout)` stops resources, waits, cancels what is left and reports it
+    (`SettleOutcome`).
+  - `SessionRegistry(max_sessions=, max_turns_per_session=)`: `open` refuses while draining,
+    then at capacity; `reap_stale(older_than_seconds)` closes idle sessions with no pending work,
+    in the shape `agents.interactive.session.SessionReaper` already sweeps; `drain(timeout)`
+    closes every session within one budget and reports what it cancelled.
+  - `ChatTurnSpec.context`: per-turn context providers (`ContextProvider`, e.g. `session.turn`,
+    trusted identity, a trace), entered inside the coordinator's turn task before the lifecycle
+    and exited once, after the commit has settled.
+- **Duplicate turns and namespaced keys on the runs layer.** `TurnRun.turn_id` (a client message
+  id) is unique on its key: `create_run` / `ChatCoordinator.submit(turn_id=, duplicate=,
+  duplicate_ttl_seconds=)` answer a second submit of it with the first run, live or finished
+  within the retention (`replay`, the default: a retried request follows the original), or refuse
+  it with `DuplicateTurn` (`reject`). The check runs in `TurnRunStore.admit` under the key's lock,
+  over the key's newest `RECENT_RUNS_CHECKED` runs, so concurrent submits of one id admit one run.
+  On sqlite, which has no advisory lock and does not serialize a read-then-write across
+  connections, `DbTurnRunStore.admit` now serializes one process's admissions, which also closes
+  the same gap for `reject` there (`TODO(sqlite-read-then-write-unserialized)` marks the claim
+  paths as untested on sqlite). `coordination_key(*parts)` names a key in a namespace as a JSON
+  array, byte-identical to the keys Plato built by hand, which now use it.
+- **A chat turn's persistence is one of the four the requirements name.** `PersistencePolicy`
+  is `agent_owned` (the default: the agent's store, and the reference `persist` for the side
+  branches), `application_hook` (the lifecycle records through the application's own `persist`,
+  which must be bound), `external` (the caller writes, outside japes or in its own `persist`)
+  and `none` (ephemeral: any bound `persist` is refused). The last three run the agent with
+  `persist=False` and refuse the reference `persist`, all before any stage
+  (`check_persistence`). `agent` and `caller` are still accepted, read as `agent_owned` and
+  `external`; an unknown value is refused when the `ChatTurn` is built.
+  `docs/CHAT_LIFECYCLE.md` describes the four.
+- **A coordinator's commit can be indeterminate, and is reconciled before a supersede.**
+  `ChatCoordinator(commit_grace_seconds=, reconcile=)`. A commit hook past its grace is
+  `CommitState` `indeterminate` (never taken for `confirmed`; a `TimeoutError` the hook raises
+  itself is an ordinary `failed` commit, with or without a grace; any failure once the grace
+  has run out is indeterminate, whether the hook raised something else or swallowed the
+  cancellation and returned): under `commit_before_delivery`
+  the turn fails as `commit_indeterminate` with no value; under
+  `delivery_before_best_effort_persist` the delivered turn stands. `TurnRun.commit_state` records
+  every coordinated turn's commit. `ChatCoordinator.reconcile(run_id)` asks the application's
+  hook what became of an indeterminate one (`ReconcileOutcome`: `confirmed`, `failed`,
+  `indeterminate`, `superseded`, the last recorded as `failed`) and records it. A `supersede` on
+  a key one of whose last `RECENT_RUNS_CHECKED` runs is still indeterminate is refused with
+  `CommitUnresolved` (a `TurnRejected`), as jazzx-assistant refuses a barge-in whose interrupted
+  write failed.
+- **The runs layer's coordination types are exported and pinned.** `jazzx_sdk.runs` exports
+  `DurabilityPolicy`, `DisconnectPolicy`, `CommitState`, `CommitHook` and `TurnFactory` beside
+  `ChatCoordinator`, and `tests/test_runs_public_api.py` pins the exported names and every
+  stored value (the policies, `CommitState`, `TurnRunStatus`), as the lifecycle's own test does.
+- **`InputFilter` tells the agent what it took away.** Over budget, it first replaces the oldest
+  `function_call_output` bodies with a stub naming the call (matched by `call_id`) and the size it
+  returned, keeping every item, so each call keeps its output. Inside a `compression_scope` the
+  full text goes into the scope's `ReferenceStore` and the stub names its `read_reference` id;
+  outside one it says to call the tool again. `ReferenceStore.put` ids are now derived from the
+  text (`reference_id`, a sha256 prefix) rather than random: the SDK runs the filter on the
+  unfiltered history before every model call, so a random id stored a fresh copy of each elided
+  output per call and changed the stub's bytes, missing the provider's prompt cache from there on.
+  Storing the same text again returns the same id. The newest `keep_newest_outputs` (default
+  `DEFAULT_KEEP_NEWEST_OUTPUTS`, 6) are never elided, a stub is never re-elided, and the caller's
+  items are copied, not mutated. Whole reasoning groups are dropped only when that is not enough.
+  An agent that finds a result silently gone re-reads it (macer measured 43% of document reads as
+  repeats). `ReasoningGroupEvictStrategy` (the conversation store's compaction) is unchanged: what
+  it drops is dropped from the stored session for good, where a stub would outlive its reference.
 - **Background tasks are held until they end:** the drain `run_router`'s `on_start` starts,
   Plato's case-run drain, and `ChatCoordinator.start`'s drain (held by the coordinator, not only
   by the handle a caller may drop). The event loop keeps only a weak reference to a task.

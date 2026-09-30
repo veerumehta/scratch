@@ -1,0 +1,32 @@
+<section id="two-halves" data-transition="fade" style="background:#F6F4EF;color:#16202E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#B35A14">Two halves</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1;color:#16202E">A library to import, and a service to run on</h2>
+</div>
+<div style="display:flex;gap:32px;flex:1">
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px;gap:24px;border-top:8px solid #2F6FB5">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:30px;font-weight:600;color:#2F6FB5">jazzx_sdk</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:40px;font-weight:600;line-height:1.2;color:#16202E">The SDK, as a library</h3>
+<p style="font-size:30px;line-height:1.4;color:#4A5363">For a team that owns its own service and wants the platform's building blocks inside it.</p>
+<ul style="font-size:30px;line-height:1.4;color:#4A5363;color:#16202E">
+<li>Knowledge fabric and platform agents</li>
+<li>Declarative pipelines run by the Conductor</li>
+<li>Policy, evaluation and feedback</li>
+</ul>
+</div>
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px;gap:24px;border-top:8px solid #E07A2E">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:30px;font-weight:600;color:#B35A14">plato</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:40px;font-weight:600;line-height:1.2;color:#16202E">The SDK, hosted</h3>
+<p style="font-size:30px;line-height:1.4;color:#4A5363">For a consumer that needs a place to run rather than a library to import.</p>
+<ul style="font-size:30px;line-height:1.4;color:#4A5363;color:#16202E">
+<li>Multi-tenant HTTP, addressed by assistant</li>
+<li>A versioned pack store and Postgres control plane</li>
+<li>An operator dashboard and a boot contract</li>
+</ul>
+</div>
+</div>
+<p style="font-size:30px;color:#16202E">Same code underneath: <b>Plato imports the SDK, and the SDK never imports Plato.</b></p>
+<p style="position:absolute;left:128px;bottom:64px;width:800px;font-size:24px;color:#5F6673">Japes SDK and Plato</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;text-align:right;font-size:24px;color:#5F6673">03</p>
+<aside>The SDK is what you use when you already have a service shell: jaci is the primary example. Plato is for consumers who would otherwise have to stand up their own service just to host an assistant or a domain workflow. Both run the same SDK code, so behaviour does not fork between them.</aside>
+</section>

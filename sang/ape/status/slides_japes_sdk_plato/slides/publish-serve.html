@@ -1,0 +1,38 @@
+<section id="publish-serve" data-transition="fade" style="background:#F6F4EF;color:#16202E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#B35A14">03 · Publish, 04 · Serve</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1;color:#16202E">From a directory to a served, pinned version</h2>
+</div>
+<div style="display:flex;gap:16px;align-items:stretch">
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;font-weight:600;color:#2F6FB5">packs/check</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Check</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">Every blocking finding, before anything is published.</p>
+</div>
+<x-shape kind="arrow-right" style="width:48px;height:32px;background:#E07A2E;align-self:center"></x-shape>
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;font-weight:600;color:#2F6FB5">packs</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Publish</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">A new version, addressed by its digest.</p>
+</div>
+<x-shape kind="arrow-right" style="width:48px;height:32px;background:#E07A2E;align-self:center"></x-shape>
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;font-weight:600;color:#2F6FB5">activate</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Activate</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">A per-tenant pin to one version.</p>
+</div>
+<x-shape kind="arrow-right" style="width:48px;height:32px;background:#E07A2E;align-self:center"></x-shape>
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;font-weight:600;color:#2F6FB5">chat · runs</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Serve</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">Chat, runs and assessments from that version.</p>
+</div>
+</div>
+<div style="display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;border-top:3px solid #16202E;padding:24px 0 0 0"><h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">A run keeps its version</h3><p style="font-size:24px;line-height:1.4;color:#4A5363">A domain run stays pinned to the pack version it started on.</p></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;border-top:3px solid #16202E;padding:24px 0 0 0"><h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">What is served is what was published</h3><p style="font-size:24px;line-height:1.4;color:#4A5363">A client can fetch the exact archive, checked against its digest.</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:800px;font-size:24px;color:#5F6673">Japes SDK and Plato</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;text-align:right;font-size:24px;color:#5F6673">12</p>
+<aside>Publishing runs the same check a team can call ahead of time, and refuses a pack with blocking findings, such as a missing skill or a guardrail nothing registers. Activation is a per-tenant pin, so tenants move to a new version independently. A run started on one version finishes on it.</aside>
+</section>

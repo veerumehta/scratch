@@ -1,0 +1,14 @@
+<section id="boundary" data-transition="fade" style="background:#E07A2E;color:#16202E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:space-between;gap:48px">
+<div style="display:flex;flex-direction:column;gap:24px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#16202E">Design principle</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:112px;font-weight:600;line-height:1.05;color:#16202E;width:1500px">The boundary is enforced, not asserted</h2>
+</div>
+<div style="display:flex;gap:48px">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;border-top:3px solid #16202E;padding:24px 0 0 0"><h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">One direction</h3><p style="font-size:24px;line-height:1.4;color:#16202E">Plato imports the SDK; the SDK never imports Plato. CI checks it.</p></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;border-top:3px solid #16202E;padding:24px 0 0 0"><h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Two clocks</h3><p style="font-size:24px;line-height:1.4;color:#16202E">An SDK version names an API; a Plato version names a deployed image.</p></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;border-top:3px solid #16202E;padding:24px 0 0 0"><h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Separable</h3><p style="font-family:'IBM Plex Sans', Arial, sans-serif;font-size:24px;line-height:1.4;color:#16202E">Plato can move to its own repository as a mechanical split.</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:800px;font-size:24px;color:#16202E">Japes SDK and Plato</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;text-align:right;font-size:24px;color:#16202E">07</p>
+<aside>Why this matters: teams that import the SDK directly, like jaci, are never forced to take a Plato change, and a Plato deploy is not forced by every SDK release. The import direction is checked by an import linter in CI, so it cannot erode quietly.</aside>
+</section>

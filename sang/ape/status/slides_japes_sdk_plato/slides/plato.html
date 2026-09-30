@@ -1,0 +1,27 @@
+<section id="plato" data-transition="fade" data-section="Plato: the SDK hosted as a multi-tenant service" style="background:#F6F4EF;color:#16202E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px;gap:48px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#B35A14">Plato</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1;color:#16202E">Plato hosts the SDK as a multi-tenant service</h2>
+</div>
+<div style="display:flex;gap:56px;flex:1">
+<div style="flex:3;display:flex;flex-direction:column">
+<table style="font-size:24px;color:#4A5363">
+<tr><th style="width:42%;text-align:left">Route</th><th style="width:58%;text-align:left">What it serves</th></tr>
+<tr><td style="font-family:'JetBrains Mono', 'Courier New', monospace;color:#16202E;width:42%">/assistants/{id}/chat</td><td>Chat turns, blocking or streamed</td></tr>
+<tr><td style="font-family:'JetBrains Mono', 'Courier New', monospace;color:#16202E;width:42%">/packs</td><td>Versioned, digest-addressed packs</td></tr>
+<tr><td style="font-family:'JetBrains Mono', 'Courier New', monospace;color:#16202E;width:42%">/packs/{id}/runs</td><td>Durable domain runs, streamed and stoppable</td></tr>
+<tr><td style="font-family:'JetBrains Mono', 'Courier New', monospace;color:#16202E;width:42%">/packs/{id}/assess</td><td>Deterministic policy assessment</td></tr>
+<tr><td style="font-family:'JetBrains Mono', 'Courier New', monospace;color:#16202E;width:42%">/feedback · /eval</td><td>Feedback, datasets and experiments</td></tr>
+<tr><td style="font-family:'JetBrains Mono', 'Courier New', monospace;color:#16202E;width:42%">/</td><td>The operator dashboard</td></tr>
+</table>
+</div>
+<div style="flex:2;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:8px"><h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Tenant-scoped</h3><p style="font-size:24px;line-height:1.4;color:#4A5363">A request that names no tenant is refused, not served as some tenant.</p></div>
+<div style="display:flex;flex-direction:column;gap:8px"><h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Degraded, not down</h3><p style="font-size:24px;line-height:1.4;color:#4A5363">A misconfigured replica still starts and reports what it could not resolve.</p></div>
+<div style="display:flex;flex-direction:column;gap:8px"><h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">One image, several roles</h3><p style="font-size:24px;line-height:1.4;color:#4A5363">Server, plus jobs for migration and for reaping stale sessions and runs.</p></div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:800px;font-size:24px;color:#5F6673">Japes SDK and Plato</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;text-align:right;font-size:24px;color:#5F6673">06</p>
+<aside>Every route sits under /api/v1, like the sibling services. Plato keeps its own Postgres control plane for assistant configuration, the pack store, runs, feedback and evaluation. The boot contract is one table that decides what each misconfiguration does: a serving replica comes up and reports, a job exits on a documented code.</aside>
+</section>

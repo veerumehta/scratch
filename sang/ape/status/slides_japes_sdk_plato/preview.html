@@ -1,0 +1,411 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Japes SDK and Plato</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&display=swap"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap"><style>body{margin:0;background:#555;display:flex;flex-direction:column;align-items:center;gap:24px;padding:24px}
+section{position:relative;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden;flex:none}
+section *{margin:0;box-sizing:border-box}
+aside{display:none}
+x-shape{display:block;clip-path:polygon(0 30%,60% 30%,60% 0,100% 50%,60% 100%,60% 70%,0 70%)}
+x-icon{display:block;border-radius:50%;background:currentColor;opacity:.25}
+table{border-collapse:collapse}th,td{padding:.35em .6em;border-bottom:1px solid #d8d2c6;text-align:left;vertical-align:top}</style></head><body>
+<section id="cover" data-transition="fade" style="background:#16202E;color:#F6F4EF;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:end;gap:40px">
+<div style="position:absolute;left:128px;top:128px;width:120px;height:12px;background:#E07A2E"></div>
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#E07A2E">JazzX platform</p>
+<h1 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:112px;font-weight:600;line-height:1.05;color:#F6F4EF">Japes SDK and Plato</h1>
+<p style="font-size:40px;line-height:1.35;color:#BFC8D6;width:1300px">The platform under JazzX applications, and the path from a domain's policies to a running, governed app.</p>
+<p style="font-size:24px;color:#9AA5B8">Virendra Mehta · September 2026</p>
+<aside>This deck covers three things: what the SDK is, what Plato is, and how a team goes from a domain (its policies and workflows) to an app running on both. Audience is technical leadership, so the emphasis is on architecture and the path, not code.</aside>
+</section>
+
+<section id="problem" data-transition="fade" style="background:#F6F4EF;color:#16202E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#B35A14">Why</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1;color:#16202E">Every JazzX service was rebuilding the same plumbing</h2>
+</div>
+<div style="display:flex;gap:32px;flex:1">
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#5F6673">BEFORE</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:40px;font-weight:600;line-height:1.2;color:#16202E">Each service wires its own</h3>
+<p style="font-size:30px;line-height:1.4;color:#4A5363">LLM routing, tracing, knowledge access, policy checks and evaluation, re-derived per service.</p>
+</div>
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#B35A14">THE SDK</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:40px;font-weight:600;line-height:1.2;color:#16202E">One library carries them</h3>
+<p style="font-size:30px;line-height:1.4;color:#4A5363">What juno, kernel, assistant and Knowledge Hub each proved out becomes the shared, governed, traced default.</p>
+</div>
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px;background:#16202E;border:1px solid #16202E">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#E07A2E">PLATO</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:40px;font-weight:600;line-height:1.2;color:#16202E;color:#F6F4EF">A new app is a pack</h3>
+<p style="font-size:30px;line-height:1.4;color:#4A5363;color:#BFC8D6">Publish the domain as data to a hosted service, rather than build and deploy another service.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:800px;font-size:24px;color:#5F6673">Japes SDK and Plato</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;text-align:right;font-size:24px;color:#5F6673">02</p>
+<aside>The services built before japes are v1-shaped: each one solved LLM calls, tracing, knowledge access and governance its own way. Japes takes the patterns those services proved and makes them the one consistent default. Plato goes a step further: for many apps there is no new service at all, only a pack published to Plato.</aside>
+</section>
+
+<section id="two-halves" data-transition="fade" style="background:#F6F4EF;color:#16202E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#B35A14">Two halves</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1;color:#16202E">A library to import, and a service to run on</h2>
+</div>
+<div style="display:flex;gap:32px;flex:1">
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px;gap:24px;border-top:8px solid #2F6FB5">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:30px;font-weight:600;color:#2F6FB5">jazzx_sdk</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:40px;font-weight:600;line-height:1.2;color:#16202E">The SDK, as a library</h3>
+<p style="font-size:30px;line-height:1.4;color:#4A5363">For a team that owns its own service and wants the platform's building blocks inside it.</p>
+<ul style="font-size:30px;line-height:1.4;color:#4A5363;color:#16202E">
+<li>Knowledge fabric and platform agents</li>
+<li>Declarative pipelines run by the Conductor</li>
+<li>Policy, evaluation and feedback</li>
+</ul>
+</div>
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px;gap:24px;border-top:8px solid #E07A2E">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:30px;font-weight:600;color:#B35A14">plato</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:40px;font-weight:600;line-height:1.2;color:#16202E">The SDK, hosted</h3>
+<p style="font-size:30px;line-height:1.4;color:#4A5363">For a consumer that needs a place to run rather than a library to import.</p>
+<ul style="font-size:30px;line-height:1.4;color:#4A5363;color:#16202E">
+<li>Multi-tenant HTTP, addressed by assistant</li>
+<li>A versioned pack store and Postgres control plane</li>
+<li>An operator dashboard and a boot contract</li>
+</ul>
+</div>
+</div>
+<p style="font-size:30px;color:#16202E">Same code underneath: <b>Plato imports the SDK, and the SDK never imports Plato.</b></p>
+<p style="position:absolute;left:128px;bottom:64px;width:800px;font-size:24px;color:#5F6673">Japes SDK and Plato</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;text-align:right;font-size:24px;color:#5F6673">03</p>
+<aside>The SDK is what you use when you already have a service shell: jaci is the primary example. Plato is for consumers who would otherwise have to stand up their own service just to host an assistant or a domain workflow. Both run the same SDK code, so behaviour does not fork between them.</aside>
+</section>
+
+<section id="sdk-layers" data-transition="fade" data-section="The SDK: what it is and what it gives a team" style="background:#F6F4EF;color:#16202E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px;gap:48px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#B35A14">The SDK</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1;color:#16202E">Five layers, each built on the one below</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:center;gap:40px;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:12px;padding:24px 40px;background:#16202E;border:1px solid #16202E">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:30px;font-weight:600;width:420px;color:#16202E;color:#E07A2E">Pipelines</p>
+<p style="font-size:30px;line-height:1.4;color:#4A5363;color:#F6F4EF;flex:1">Chat, document ingest, investigation loop, policy extract, financial spread</p>
+</div>
+<div style="display:flex;align-items:center;gap:40px;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:12px;padding:24px 40px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:30px;font-weight:600;width:420px;color:#16202E">Platform agents</p>
+<p style="font-size:30px;line-height:1.4;color:#4A5363;flex:1">Interactive, Document, Adjudication and Knowledge-graph agents, defined as data</p>
+</div>
+<div style="display:flex;align-items:center;gap:40px;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:12px;padding:24px 40px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:30px;font-weight:600;width:420px;color:#16202E">Agent execution</p>
+<p style="font-size:30px;line-height:1.4;color:#4A5363;flex:1">Multi-provider LLM routing and fallback, tracing, cost and budget</p>
+</div>
+<div style="display:flex;align-items:center;gap:40px;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:12px;padding:24px 40px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:30px;font-weight:600;width:420px;color:#16202E">Knowledge fabric</p>
+<p style="font-size:30px;line-height:1.4;color:#4A5363;flex:1">Canonical objects, knowledge graph, RAG, documents, governed guidance</p>
+</div>
+<div style="display:flex;align-items:center;gap:40px;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:12px;padding:24px 40px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:30px;font-weight:600;width:420px;color:#16202E">Runtime</p>
+<p style="font-size:30px;line-height:1.4;color:#4A5363;flex:1">Queue processing, handlers, Kernel and Knowledge Hub clients, settings</p>
+</div>
+</div>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">Underneath it all: the OpenAI Agents SDK, made governed, traced and config-driven.</p>
+<p style="position:absolute;left:128px;bottom:64px;width:800px;font-size:24px;color:#5F6673">Japes SDK and Plato</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;text-align:right;font-size:24px;color:#5F6673">04</p>
+<aside>Read it top down. A pipeline is a declared sequence of steps the Conductor executes, with loops, streaming and durable resume. Pipelines wire platform agents, which are task-specific agents configured as data. Those run through the agent execution layer, which handles provider routing, tracing and cost. Everything reads and writes through the knowledge fabric. The runtime at the bottom is the queue and service plumbing.</aside>
+</section>
+
+<section id="sdk-capabilities" data-transition="fade" style="background:#F6F4EF;color:#16202E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px;gap:48px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#B35A14">The SDK</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1;color:#16202E">What a team gets without writing it</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px">
+<div style="background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<x-icon name="Search" style="width:48px;height:48px;color:#B35A14"></x-icon>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Grounded answers</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">An interactive agent answers from canonical objects and documents, and cites its sources.</p>
+</div>
+<div style="background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<x-icon name="Book" style="width:48px;height:48px;color:#B35A14"></x-icon>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Documents to data</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">Convert, classify, extract. Every value carries its source and confidence; weak values are refused, not written.</p>
+</div>
+<div style="background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<x-icon name="Settings" style="width:48px;height:48px;color:#B35A14"></x-icon>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Orchestration</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">The Conductor runs declared pipelines with loops, durable resume and streamed progress.</p>
+</div>
+<div style="background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<x-icon name="Lock" style="width:48px;height:48px;color:#B35A14"></x-icon>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Policy as data</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">Canonical policies, a deterministic assessment, and formal checks compiled from the same policy.</p>
+</div>
+<div style="background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<x-icon name="Chart" style="width:48px;height:48px;color:#B35A14"></x-icon>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Evaluation</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">Gold cases, experiments against a baseline, and prompt optimization.</p>
+</div>
+<div style="background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<x-icon name="ThumbsUp" style="width:48px;height:48px;color:#B35A14"></x-icon>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Feedback</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">Feedback is processed, reviewed and turned into evaluation cases.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:800px;font-size:24px;color:#5F6673">Japes SDK and Plato</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;text-align:right;font-size:24px;color:#5F6673">05</p>
+<aside>These are the capabilities a pack or service gets by using the SDK rather than building them. Two points worth stressing for leadership: extraction refuses low-confidence values instead of writing degraded data, and policy lives as data that is checked deterministically and formally, so governance is not a prompt instruction.</aside>
+</section>
+
+<section id="plato" data-transition="fade" data-section="Plato: the SDK hosted as a multi-tenant service" style="background:#F6F4EF;color:#16202E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px;gap:48px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#B35A14">Plato</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1;color:#16202E">Plato hosts the SDK as a multi-tenant service</h2>
+</div>
+<div style="display:flex;gap:56px;flex:1">
+<div style="flex:3;display:flex;flex-direction:column">
+<table style="font-size:24px;color:#4A5363">
+<tr><th style="width:42%;text-align:left">Route</th><th style="width:58%;text-align:left">What it serves</th></tr>
+<tr><td style="font-family:'JetBrains Mono', 'Courier New', monospace;color:#16202E;width:42%">/assistants/{id}/chat</td><td>Chat turns, blocking or streamed</td></tr>
+<tr><td style="font-family:'JetBrains Mono', 'Courier New', monospace;color:#16202E;width:42%">/packs</td><td>Versioned, digest-addressed packs</td></tr>
+<tr><td style="font-family:'JetBrains Mono', 'Courier New', monospace;color:#16202E;width:42%">/packs/{id}/runs</td><td>Durable domain runs, streamed and stoppable</td></tr>
+<tr><td style="font-family:'JetBrains Mono', 'Courier New', monospace;color:#16202E;width:42%">/packs/{id}/assess</td><td>Deterministic policy assessment</td></tr>
+<tr><td style="font-family:'JetBrains Mono', 'Courier New', monospace;color:#16202E;width:42%">/feedback · /eval</td><td>Feedback, datasets and experiments</td></tr>
+<tr><td style="font-family:'JetBrains Mono', 'Courier New', monospace;color:#16202E;width:42%">/</td><td>The operator dashboard</td></tr>
+</table>
+</div>
+<div style="flex:2;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:8px"><h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Tenant-scoped</h3><p style="font-size:24px;line-height:1.4;color:#4A5363">A request that names no tenant is refused, not served as some tenant.</p></div>
+<div style="display:flex;flex-direction:column;gap:8px"><h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Degraded, not down</h3><p style="font-size:24px;line-height:1.4;color:#4A5363">A misconfigured replica still starts and reports what it could not resolve.</p></div>
+<div style="display:flex;flex-direction:column;gap:8px"><h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">One image, several roles</h3><p style="font-size:24px;line-height:1.4;color:#4A5363">Server, plus jobs for migration and for reaping stale sessions and runs.</p></div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:800px;font-size:24px;color:#5F6673">Japes SDK and Plato</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;text-align:right;font-size:24px;color:#5F6673">06</p>
+<aside>Every route sits under /api/v1, like the sibling services. Plato keeps its own Postgres control plane for assistant configuration, the pack store, runs, feedback and evaluation. The boot contract is one table that decides what each misconfiguration does: a serving replica comes up and reports, a job exits on a documented code.</aside>
+</section>
+
+<section id="boundary" data-transition="fade" style="background:#E07A2E;color:#16202E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:space-between;gap:48px">
+<div style="display:flex;flex-direction:column;gap:24px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#16202E">Design principle</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:112px;font-weight:600;line-height:1.05;color:#16202E;width:1500px">The boundary is enforced, not asserted</h2>
+</div>
+<div style="display:flex;gap:48px">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;border-top:3px solid #16202E;padding:24px 0 0 0"><h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">One direction</h3><p style="font-size:24px;line-height:1.4;color:#16202E">Plato imports the SDK; the SDK never imports Plato. CI checks it.</p></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;border-top:3px solid #16202E;padding:24px 0 0 0"><h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Two clocks</h3><p style="font-size:24px;line-height:1.4;color:#16202E">An SDK version names an API; a Plato version names a deployed image.</p></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;border-top:3px solid #16202E;padding:24px 0 0 0"><h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Separable</h3><p style="font-family:'IBM Plex Sans', Arial, sans-serif;font-size:24px;line-height:1.4;color:#16202E">Plato can move to its own repository as a mechanical split.</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:800px;font-size:24px;color:#16202E">Japes SDK and Plato</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;text-align:right;font-size:24px;color:#16202E">07</p>
+<aside>Why this matters: teams that import the SDK directly, like jaci, are never forced to take a Plato change, and a Plato deploy is not forced by every SDK release. The import direction is checked by an import linter in CI, so it cannot erode quietly.</aside>
+</section>
+
+<section id="pack" data-transition="fade" data-section="The path from a domain to a running app" style="background:#F6F4EF;color:#16202E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px;gap:48px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#B35A14">Path to an app</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1;color:#16202E">An app is a pack: data, not a new service</h2>
+</div>
+<table style="font-size:30px;color:#4A5363">
+<tr><th style="width:22%;text-align:left"></th><th style="width:39%;text-align:left;color:#2F6FB5">Assistant pack</th><th style="width:39%;text-align:left;color:#B35A14">Domain pack</th></tr>
+<tr><td style="color:#16202E;font-weight:600">What it is</td><td>A persona with skills that answers questions</td><td>A case workflow over policies and metrics</td></tr>
+<tr><td style="color:#16202E;font-weight:600">It carries</td><td>A profile, a persona and its skills</td><td>Policies, vocabulary, metrics, the workflow</td></tr>
+<tr><td style="color:#16202E;font-weight:600">Plato serves</td><td>Chat, blocking or streamed</td><td>Runs and policy assessments</td></tr>
+<tr><td style="color:#16202E;font-weight:600">Examples</td><td>The sample assistant packs</td><td>jaci's C&amp;I spread; Acra DSCR programs</td></tr>
+</table>
+<p style="font-size:30px;color:#16202E">Both are a directory published as a zip, checked before Plato accepts it.</p>
+<p style="position:absolute;left:128px;bottom:64px;width:800px;font-size:24px;color:#5F6673">Japes SDK and Plato</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;text-align:right;font-size:24px;color:#5F6673">08</p>
+<aside>This is the key idea for the build path. A team does not write a service; it authors a pack. An assistant pack is a profile: persona, skills, what knowledge it is grounded in. A domain pack is a workflow: the policies, the vocabulary, the metrics, and which conductor runs the case. A domain pack can also carry an assistant over the cases it produces.</aside>
+</section>
+
+<section id="path" data-transition="fade" style="background:#ECE8DF;color:#16202E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#A65312">Path to an app</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1;color:#16202E">Five stages from a domain to a running app</h2>
+</div>
+<div style="display:flex;gap:24px;flex:1">
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-top:8px solid #E07A2E;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;font-weight:600;color:#B35A14">01</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:40px;font-weight:600;line-height:1.2;color:#16202E">Craft</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">Policies, playbooks, ontology and the workflow, authored as pack data.</p>
+</div>
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-top:8px solid #E07A2E;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;font-weight:600;color:#B35A14">02</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:40px;font-weight:600;line-height:1.2;color:#16202E">Prove</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">Gold cases and metrics before any tuning; formal checks on the policy.</p>
+</div>
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-top:8px solid #E07A2E;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;font-weight:600;color:#B35A14">03</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:40px;font-weight:600;line-height:1.2;color:#16202E">Publish</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">Check, publish a versioned pack, and activate it for a tenant.</p>
+</div>
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-top:8px solid #E07A2E;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;font-weight:600;color:#B35A14">04</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:40px;font-weight:600;line-height:1.2;color:#16202E">Serve</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">Plato serves chat, runs and assessments from the active version.</p>
+</div>
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-top:8px solid #E07A2E;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;font-weight:600;color:#B35A14">05</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:40px;font-weight:600;line-height:1.2;color:#16202E">Improve</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">Feedback becomes eval cases; experiments measure every change.</p>
+</div>
+</div>
+<p style="font-size:30px;color:#16202E">A pack earns live work by passing its gold cases first.</p>
+<p style="position:absolute;left:128px;bottom:64px;width:800px;font-size:24px;color:#5F6673">Japes SDK and Plato</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;text-align:right;font-size:24px;color:#5F6673">09</p>
+<aside>The next four slides take these stages in turn. The ordering is deliberate: a pack is crafted and proved on gold cases before it sees a real transaction. The methodology comes from the domain pack quickstart and is how jaci's reference packs were built.</aside>
+</section>
+
+<section id="craft" data-transition="fade" style="background:#F6F4EF;color:#16202E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#B35A14">01 · Craft</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1;color:#16202E">Design the pack before running a transaction</h2>
+</div>
+<div style="display:flex;gap:56px;flex:1">
+<ol style="flex:3;font-size:30px;line-height:1.5;color:#16202E;display:flex;flex-direction:column;gap:16px">
+<li>Find the policies and author them as canonical Policy objects</li>
+<li>Find the playbooks: how experts actually work a case</li>
+<li>Design the ontology: the domain's entities and relations</li>
+<li>Design the workflow: the dominant loop and its side checks</li>
+<li>Specialize the modes by tuning, not by writing new code</li>
+</ol>
+<div style="flex:2;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px;background:#16202E;border:1px solid #16202E">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#E07A2E">THE SDK SUPPLIES</p>
+<p style="font-size:24px;line-height:1.4;color:#F6F4EF">A policy expert configured with the pack's policies, no subclass needed</p>
+<p style="font-size:24px;line-height:1.4;color:#F6F4EF">Thirteen cognition modes, tuned per pack with markdown</p>
+<p style="font-size:24px;line-height:1.4;color:#F6F4EF">A Conductor that runs the declared workflow, so no pack hand-writes orchestration</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:800px;font-size:24px;color:#5F6673">Japes SDK and Plato</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;text-align:right;font-size:24px;color:#5F6673">10</p>
+<aside>Crafting is design-first. The team's work is domain knowledge: what the rules are, how an expert works a case, what the entities are. The SDK supplies the machinery: the policy expert is configured rather than subclassed, the modes (investigator, verifier, reasoner, governor, narrator and others) are tuned with markdown, and the Conductor runs the workflow.</aside>
+</section>
+
+<section id="prove" data-transition="fade" style="background:#F6F4EF;color:#16202E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#B35A14">02 · Prove</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1;color:#16202E">The pack earns live work on gold cases</h2>
+</div>
+<div style="display:flex;gap:32px;flex:1">
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<x-icon name="Star" style="width:48px;height:48px;color:#B35A14"></x-icon>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Gold cases</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">Typed inputs with expected results, written before tuning. The harness runs each end to end against a pass threshold the pack declares.</p>
+</div>
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<x-icon name="CheckCircle" style="width:48px;height:48px;color:#B35A14"></x-icon>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Deterministic assessment</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">Every rule checked against a record, the binding rule named, one attestation per rule. No model involved.</p>
+</div>
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<x-icon name="Verified" style="width:48px;height:48px;color:#B35A14"></x-icon>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Formal checks</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">Z3 checks compiled from the same canonical policy, one attestation per claim. Local today; deployed once an isolated job service is in place.</p>
+</div>
+</div>
+<p style="font-size:30px;color:#16202E">Proof comes from the policy itself, not from asking a model whether it complied.</p>
+<p style="position:absolute;left:128px;bottom:64px;width:800px;font-size:24px;color:#5F6673">Japes SDK and Plato</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;text-align:right;font-size:24px;color:#5F6673">11</p>
+<aside>Three kinds of evidence. Gold cases measure the pack end to end. The deterministic assessment evaluates every policy rule against a record with no model in the loop. Formal checks compile the same canonical policy into Z3 claims. Be precise about formal checks: they run locally today, and deployed Plato refuses them until an isolated job service is configured.</aside>
+</section>
+
+<section id="publish-serve" data-transition="fade" style="background:#F6F4EF;color:#16202E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#B35A14">03 · Publish, 04 · Serve</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1;color:#16202E">From a directory to a served, pinned version</h2>
+</div>
+<div style="display:flex;gap:16px;align-items:stretch">
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;font-weight:600;color:#2F6FB5">packs/check</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Check</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">Every blocking finding, before anything is published.</p>
+</div>
+<x-shape kind="arrow-right" style="width:48px;height:32px;background:#E07A2E;align-self:center"></x-shape>
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;font-weight:600;color:#2F6FB5">packs</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Publish</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">A new version, addressed by its digest.</p>
+</div>
+<x-shape kind="arrow-right" style="width:48px;height:32px;background:#E07A2E;align-self:center"></x-shape>
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;font-weight:600;color:#2F6FB5">activate</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Activate</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">A per-tenant pin to one version.</p>
+</div>
+<x-shape kind="arrow-right" style="width:48px;height:32px;background:#E07A2E;align-self:center"></x-shape>
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;font-weight:600;color:#2F6FB5">chat · runs</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">Serve</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">Chat, runs and assessments from that version.</p>
+</div>
+</div>
+<div style="display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;border-top:3px solid #16202E;padding:24px 0 0 0"><h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">A run keeps its version</h3><p style="font-size:24px;line-height:1.4;color:#4A5363">A domain run stays pinned to the pack version it started on.</p></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;border-top:3px solid #16202E;padding:24px 0 0 0"><h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.2;color:#16202E">What is served is what was published</h3><p style="font-size:24px;line-height:1.4;color:#4A5363">A client can fetch the exact archive, checked against its digest.</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:800px;font-size:24px;color:#5F6673">Japes SDK and Plato</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;text-align:right;font-size:24px;color:#5F6673">12</p>
+<aside>Publishing runs the same check a team can call ahead of time, and refuses a pack with blocking findings, such as a missing skill or a guardrail nothing registers. Activation is a per-tenant pin, so tenants move to a new version independently. A run started on one version finishes on it.</aside>
+</section>
+
+<section id="improve" data-transition="fade" style="background:#ECE8DF;color:#16202E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#A65312">05 · Improve</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1;color:#16202E">Feedback becomes a measured change</h2>
+</div>
+<div style="display:flex;gap:16px;align-items:stretch">
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;font-weight:600;color:#B35A14">1</p>
+<p style="font-size:24px;line-height:1.4;color:#16202E">A user or reviewer submits feedback on an answer</p>
+</div>
+<x-shape kind="arrow-right" style="width:48px;height:32px;background:#E07A2E;align-self:center"></x-shape>
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;font-weight:600;color:#B35A14">2</p>
+<p style="font-size:24px;line-height:1.4;color:#16202E">It is processed, reviewed, and added to a dataset</p>
+</div>
+<x-shape kind="arrow-right" style="width:48px;height:32px;background:#E07A2E;align-self:center"></x-shape>
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;font-weight:600;color:#B35A14">3</p>
+<p style="font-size:24px;line-height:1.4;color:#16202E">An experiment measures a change against a baseline</p>
+</div>
+<x-shape kind="arrow-right" style="width:48px;height:32px;background:#E07A2E;align-self:center"></x-shape>
+<div style="flex:1;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;font-weight:600;color:#B35A14">4</p>
+<p style="font-size:24px;line-height:1.4;color:#16202E">The winning prompt is applied to the pack draft</p>
+</div>
+</div>
+<div style="background:#FFFDF9;border:1px solid #E2DDD3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px;background:#16202E;border:1px solid #16202E;flex-direction:row;align-items:center;gap:32px">
+<x-icon name="Lock" style="width:56px;height:56px;color:#E07A2E"></x-icon>
+<p style="font-size:30px;line-height:1.4;color:#F6F4EF;flex:1">Nothing publishes itself. An optimization lands in the draft; a person publishes the next version.</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:800px;font-size:24px;color:#5F6673">Japes SDK and Plato</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;text-align:right;font-size:24px;color:#5F6673">13</p>
+<aside>This is the compounding loop. Feedback on a hosted assistant is submitted, processed, reviewed, and can be added to an evaluation dataset as a case. Experiments compare a change against a baseline. Prompt optimization picks a winner and applies it to the tenant's pack draft on request. It never publishes: the next version goes out through the same check and publish path as the first.</aside>
+</section>
+
+<section id="status" data-transition="fade" data-section="Where it stands and what it changes" style="background:#F6F4EF;color:#16202E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px;gap:48px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#B35A14">Where it stands</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1;color:#16202E">Released, in progress, and next</h2>
+</div>
+<table style="font-size:30px;color:#4A5363">
+<tr><th style="width:22%;text-align:left"></th><th style="width:78%;text-align:left"></th></tr>
+<tr><td style="color:#16202E;font-weight:600">Released</td><td>SDK 2.5.6 and Plato 0.1.8 on main: domain runs, assessments, formal checks, chat on the runs layer</td></tr>
+<tr><td style="color:#16202E;font-weight:600">In progress</td><td>2.5.7: token accounting, run hardening, the policy store folded into the pack store</td></tr>
+<tr><td style="color:#16202E;font-weight:600">Next</td><td>Human checkpoints in domain runs (suspend and resume); sessions for the chat coordinator</td></tr>
+<tr><td style="color:#16202E;font-weight:600">Consumers</td><td>jaci's domain packs (C&amp;I spread, AML, CRE, Acra DSCR); jazzx-assistant adopting the chat lifecycle</td></tr>
+</table>
+<p style="position:absolute;left:128px;bottom:64px;width:800px;font-size:24px;color:#5F6673">Japes SDK and Plato</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;text-align:right;font-size:24px;color:#5F6673">14</p>
+<aside>jaci is the primary consumer validating each version. jazzx-assistant asked for the chat lifecycle and the chat runtime coordinator, and is adopting them. The Acra DSCR programs are in progress and not yet pushed. Human checkpoints are the next major piece of the domain-pack runtime: a run can stop for a person's decision and resume.</aside>
+</section>
+
+<section id="takeaways" data-transition="fade" style="background:#16202E;color:#F6F4EF;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#E07A2E">What this changes</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1;color:#F6F4EF">Three things to take away</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:40px;flex:1">
+<div style="display:flex;gap:40px;align-items:start"><p style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;color:#E07A2E;width:80px">1</p><p style="font-size:40px;line-height:1.3;color:#F6F4EF;flex:1">A new app is a pack and a wiring, not a new service.</p></div>
+<div style="display:flex;gap:40px;align-items:start"><p style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;color:#E07A2E;width:80px">2</p><p style="font-size:40px;line-height:1.3;color:#F6F4EF;flex:1">Governance is built in: policy as data, checked deterministically and formally, every step traced.</p></div>
+<div style="display:flex;gap:40px;align-items:start"><p style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;color:#E07A2E;width:80px">3</p><p style="font-size:40px;line-height:1.3;color:#F6F4EF;flex:1">Improvement is measured, and nothing publishes itself.</p></div>
+</div>
+<p style="font-size:30px;color:#BFC8D6">[The ask: e.g. which team pilots the next pack on Plato]</p>
+<p style="position:absolute;left:128px;bottom:64px;width:800px;font-size:24px;color:#9AA5B8">Japes SDK and Plato</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;text-align:right;font-size:24px;color:#9AA5B8">15</p>
+<aside>Close on the three points and the ask. Replace the bracketed line with the decision or support you want from this audience.</aside>
+</section>
+
+</body></html>

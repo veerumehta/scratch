@@ -44,7 +44,27 @@ Phase C (sessions/resources, outlets) not started.
 runs steps 4-5 of `/tmp/japes_release_v256_to_main.sh` to record that squash on `dev`. Done on
 v2.5.7: section 1 (token accounting, held background tasks), 2 (KH policy/Rego surface removed;
 no policy table, the pack store is the policy store), 3 (runs: first terminal write wins,
-release on close, reaper TTL vs pool wait, claim headroom). Next: section 4 (audit items).
+release on close, reaper TTL vs pool wait, claim headroom), 4 (audit items; 4.9, Platinum
+Select's optional inputs, waits on a decision with Acra), 5 (sibling finds: deterministic
+pack archive, caller headers on the feedback sink and eval-service client, MCP Host/Origin
+checks plus the mcp 1.x start fix, `InputFilter` elision stubs with content-derived reference
+ids), reviewed clean over `46c8e29a..d321abb9`; 6 (hybrid assessment `assess(reasoning_agent=)` +
+`?reason=true`, the `conditions` extraction representation, evaluator-vs-Z3 agreement test and the
+`JsonRulePack.overlays` fix), `a2aafc69..b518dd12`, reviewed clean. Then Z3 covers the whole DSCR
+seed (in/not_in, any_of, ratio, 512-rule cap, contradiction pruning; exact ratios in `evaluate_ratio`),
+`5d30990e..097c3015`; then the Postgres advisory-lock test, Plato extraction lint against the
+tenant's draft (`ExtractionRun.linted`), uncomputable ratios withheld per rule, `097c3015..4e2067cb`;
+all reviewed clean. Then the rest of the chat runtime page (the coordinator plan's Phase C, C1-C7:
+deadlines, indeterminate commits and reconcile, four persistence policies, duplicate turns and
+namespaced keys, sessions/single-flight/context providers, typed events and bounded outlets, a
+profile `lifecycle:` block Plato runs), Plato's blocking `/chat` on the lifecycle, and model cards
+(Sonnet 5.5 the Anthropic default, GPT-6.1 Sol), `4e2067cb..b3c1d36f`, reviewed clean. Then
+declarative grounding (`status/done_declarative_grounding.md`, G1-G4: `pipelines.grounding` kinds,
+`GroundedContext` to the agent per skill, `lifecycle.ground` on Plato, `knowledge:` compiled into
+ground sources; a skill-less agent gets files inline), `b3c1d36f..6ec19406`, reviewed clean; jazzx-assistant adoption note
+`/tmp/jazzx_assistant_declared_grounding.md`. Squash script
+`/tmp/japes_record_and_squash_257.sh` (the #81 record is on dev, `f910a0c9`) waits until 2.5.7 is done;
+open: 4.9 (Acra decision), the deferral TODOs. Nothing pushed.
 
 Work lands on `v2.5.6` and reaches `dev` and `plato` by periodic squash merges. The v2.5.5
 paragraphs below describe what shipped in it.

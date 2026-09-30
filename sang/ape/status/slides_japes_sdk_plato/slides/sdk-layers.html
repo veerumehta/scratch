@@ -1,0 +1,32 @@
+<section id="sdk-layers" data-transition="fade" data-section="The SDK: what it is and what it gives a team" style="background:#F6F4EF;color:#16202E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px;gap:48px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#B35A14">The SDK</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1;color:#16202E">Five layers, each built on the one below</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:center;gap:40px;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:12px;padding:24px 40px;background:#16202E;border:1px solid #16202E">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:30px;font-weight:600;width:420px;color:#16202E;color:#E07A2E">Pipelines</p>
+<p style="font-size:30px;line-height:1.4;color:#4A5363;color:#F6F4EF;flex:1">Chat, document ingest, investigation loop, policy extract, financial spread</p>
+</div>
+<div style="display:flex;align-items:center;gap:40px;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:12px;padding:24px 40px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:30px;font-weight:600;width:420px;color:#16202E">Platform agents</p>
+<p style="font-size:30px;line-height:1.4;color:#4A5363;flex:1">Interactive, Document, Adjudication and Knowledge-graph agents, defined as data</p>
+</div>
+<div style="display:flex;align-items:center;gap:40px;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:12px;padding:24px 40px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:30px;font-weight:600;width:420px;color:#16202E">Agent execution</p>
+<p style="font-size:30px;line-height:1.4;color:#4A5363;flex:1">Multi-provider LLM routing and fallback, tracing, cost and budget</p>
+</div>
+<div style="display:flex;align-items:center;gap:40px;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:12px;padding:24px 40px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:30px;font-weight:600;width:420px;color:#16202E">Knowledge fabric</p>
+<p style="font-size:30px;line-height:1.4;color:#4A5363;flex:1">Canonical objects, knowledge graph, RAG, documents, governed guidance</p>
+</div>
+<div style="display:flex;align-items:center;gap:40px;background:#FFFDF9;border:1px solid #E2DDD3;border-radius:12px;padding:24px 40px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:30px;font-weight:600;width:420px;color:#16202E">Runtime</p>
+<p style="font-size:30px;line-height:1.4;color:#4A5363;flex:1">Queue processing, handlers, Kernel and Knowledge Hub clients, settings</p>
+</div>
+</div>
+<p style="font-size:24px;line-height:1.4;color:#4A5363">Underneath it all: the OpenAI Agents SDK, made governed, traced and config-driven.</p>
+<p style="position:absolute;left:128px;bottom:64px;width:800px;font-size:24px;color:#5F6673">Japes SDK and Plato</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;text-align:right;font-size:24px;color:#5F6673">04</p>
+<aside>Read it top down. A pipeline is a declared sequence of steps the Conductor executes, with loops, streaming and durable resume. Pipelines wire platform agents, which are task-specific agents configured as data. Those run through the agent execution layer, which handles provider routing, tracing and cost. Everything reads and writes through the knowledge fabric. The runtime at the bottom is the queue and service plumbing.</aside>
+</section>
