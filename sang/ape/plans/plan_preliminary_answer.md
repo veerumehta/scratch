@@ -2,7 +2,9 @@
 
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 
-Status: plan, 2026-09-30, on `v2.5.7`. The last open item of `plan_chat_runtime_coordinator.md` C7
+Status: P1-P4 built on `v2.5.7` 2026-09-30 (`4a465ff9` P1+P4, `7cc4ad2a` P2+P3), under review;
+Q1-Q4 decided as recommended (P4 works: the Agents SDK tool's `timeout_behavior="error_as_result"`
+returns a result and the batch goes on). Plan dated 2026-09-30. The last open item of `plan_chat_runtime_coordinator.md` C7
 ("the preliminary fast answer: a two-agent answer kind"). Prior art read first:
 `status/done_chat_lifecycle.md` ("their newest branch fits it: a pre-answer publish plus a compose
 that joins the two halves"), `status/done_declarative_compose.md`, jazzx-assistant
