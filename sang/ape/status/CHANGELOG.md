@@ -39,6 +39,10 @@ distribution (begun as 2.5.8).
     read is left as is: already capped, its own message.
   - `agents.interactive.kernel_agents` (from `plato.kernel_sync`, removed), prose trimmed
     (+16 / -87, 3 files).
+  - Review fixes (+59 / -10, 7 files): `compile_packs` takes a validated request too;
+    `reply_fields` dumps `output` by alias, as `jsonable_encoder` did; resume checks the run is
+    suspended before the approver (409 before 422, as before); `NoCanonicalStore` is the unwired
+    refusal (503, bounded reason), so a store write failure is a 500 again.
 
 - **The SDK talks to Plato through `jazzx-plato-client`** (+34 / -12 lines, 5 files).
   `FeedbackApiSink` posted to Plato's `/feedback` with its own httpx code; it now builds the body

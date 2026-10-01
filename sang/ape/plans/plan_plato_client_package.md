@@ -4,7 +4,11 @@ Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 
 Status: plan, 2026-09-30. Written against japes `eacaac6d` on `v2.5.8` (SDK 2.5.8, Plato 0.1.9),
 with that branch's uncommitted working tree (it adds `resume_case_run` and `case_run_outcome` to
-`PlatoClient`). Ships as SDK 2.6.0 / Plato 0.2.0 / `jazzx-plato-client` 0.2.0 (§4 D3). Analysis that led here: jaci `docs/plans/note_JACI_SDK_USAGE_AND_CARVEOUT.md` §7.
+`PlatoClient`). Ships as SDK 2.6.0 / Plato 0.2.0 / `jazzx-plato-client` 0.2.0 (§4 D3).
+
+**Progress on `v2.6.0` (local, unpushed):** Phase 1 `a4ff0566`, Phase 2 `baacd9ac`, version bump
+`304a5403`. **Phases 1–2 are built.** Note: git records `client.py` as a new file, not a rename,
+because the SDK path keeps a re-export shim. Phase 3 (jaci) waits for a pushed branch to pin. Analysis that led here: jaci `docs/plans/note_JACI_SDK_USAGE_AND_CARVEOUT.md` §7.
 
 ## 1. Why
 
@@ -85,8 +89,9 @@ thing that is right.
   strict deployment (`plato/app.py` notes a probe against it being 401'd). Not taken, kept in
   reserve: a separate integer API version in `/info` and the client, bumped only on a breaking
   route change, if lockstep proves too coarse.
-- **D2 — pack packaging in the client (Phase 2).** Recommended: yes. Without it every author
-  reimplements deterministic zipping and the 409-means-compare-contents publish flow.
+- **D2 — pack packaging in the client (Phase 2). Decided 2026-09-30: yes.** Without it every author
+  reimplements deterministic zipping and the 409-means-compare-contents publish flow. Part of the
+  0.2.0 release.
 - **D3 — version bumps. Decided 2026-09-30 by the user:** this work ships as **SDK 2.6.0, Plato
   0.2.0, `jazzx-plato-client` 0.2.0** (its first release, at Plato's version per D1). The user is
   making the SDK and Plato bumps alongside the package changes.
@@ -135,7 +140,10 @@ the boundary is clear:
 - `ci_spread/feedback.py` drops `CallerFeedbackSink` for `PlatoClient.submit_feedback` with the
   caller's identity headers as `request_headers_provider`, and takes the two constants from the
   client;
-- `scripts/publish_packs_to_plato.py` then needs no `jazzx_sdk` at all.
+- `scripts/publish_packs_to_plato.py` takes `PlatoError` from the client. It still loads the SDK,
+  as every `jaci` import does: `jaci/__init__.py` applies the SDK's model overlay at package
+  import (found 2026-09-30, Phase 3). A publish path without the SDK has to live outside the
+  `jaci` package, or that overlay has to move off package import.
 
 The rest of jaci still needs the SDK for its in-process paths (jaci note §5).
 
