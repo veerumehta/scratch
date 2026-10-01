@@ -7,6 +7,23 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **Breaking (import paths): `evaluation.feedback` is a package** (REFACTOR-2.4 Phase 10, revised)
+  (+84 / -69 lines, 36 files). The twelve flat `evaluation/feedback*.py` modules (four when the plan
+  was written) move into `evaluation/feedback/`: `feedback.py` is `feedback.core`, and
+  `feedback_{config,db,index,learning,processing,quality,records,render,retrieval,sink,text}` are
+  `feedback.<name>`. `jazzx_sdk.evaluation.feedback` re-exports core's six public names
+  (`Feedback`, `FeedbackSource`, `FeedbackStore`, `InProcessFeedbackStore`, `Reaction`,
+  `render_feedback`), so jaci's imports (all of that path) work unchanged; its feedback, HITL and
+  maker-checker unit tests pass against this tree. The `jazzx_sdk.evaluation` facade is unchanged.
+  The plan's `reporter.py -> reporters/base.py` is not done: the mlflow reporter now lives in
+  `evaluation/backends/mlflow/`, which left `reporters/` an empty package nothing imports, so it
+  is deleted and the `EvaluationReporter` ABC stays at `evaluation/reporter.py`.
+
+- **Extraction runs keyed by tenant** (+5 / -4 lines, 2 files). `japes_policy_extraction_run`'s
+  primary key is `(run_id, tenant_id)`, as Plato's tenancy contract requires of its tables
+  (`test_platos_own_tables_comply` caught the plain column); migration 0015 amended in place,
+  since it has not shipped.
+
 - **Breaking (import paths): `conductor.strategies`** (REFACTOR-2.4 Phase 9) (+20 / -16 lines, 13 files).
   `fanout`, `replication` and `ensemble` (the chain the engine never imports) move to
   `jazzx_sdk.conductor.strategies.{fanout,replication,ensemble}`. `pipeline.py`, `checkpoint.py`

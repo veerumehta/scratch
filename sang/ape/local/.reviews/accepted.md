@@ -26,3 +26,7 @@ jazzx_sdk/tools/ratio_evaluator.py :: old-paths-dropped-unshimmed
 # 2.6.0 moved `conductor.{fanout,replication,ensemble}` under `conductor.strategies`; the facade
 # names are unchanged, no sibling repo imports the submodules, and the CHANGELOG marks it breaking.
 jazzx_sdk/conductor/strategies/__init__.py :: old-paths-dropped-unshimmed
+# 2.6.0 moved `evaluation.feedback_*` into the `evaluation.feedback` package (`feedback.config`,
+# `.db`, ...); `jazzx_sdk.evaluation.feedback` re-exports the core names jaci imports, and the
+# empty `evaluation.reporters` package is gone. Breaking paths, marked in the CHANGELOG.
+jazzx_sdk/evaluation/feedback/__init__.py :: old-paths-dropped-unshimmed
