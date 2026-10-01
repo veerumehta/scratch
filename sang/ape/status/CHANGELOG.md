@@ -7,6 +7,20 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **Breaking (packaging): `anthropic` leaves core** (+47 / -7 lines, 4 files). It is the new
+  `anthropic` extra, and `plato` includes it. `AgentExecutionService` no longer imports the
+  Anthropic provider at module load: `.anthropic` imports it on first use, and without the SDK
+  raises an `ImportError` naming `japes[anthropic]`; `jazzx_sdk.llm.AnthropicProvider` already
+  resolved lazily to a placeholder that says the same on construction. A test blocks the import
+  and checks both. Consumers: jaci pins `anthropic` itself; jazzx-assistant and juno do not use it
+  through japes. CI's test job installs `plato`, so the suite still has it.
+- **`import jazzx_sdk` loads 269 modules, not 1,927**: no runtime, queue, `common`, fastapi or Azure.
+  Every name outside the message models, the handler interface and identity resolves on first
+  access through the existing `_LAZY_ATTRS`; `test_import_boundary` now asserts none of
+  fastapi/starlette/azure/common loads. Full suite green (7,470).
+- **Docstrings and comments trimmed** (`-127 / +31`), mostly the scorer code moved into
+  `jazzx-eval-scorers`, which had carried long history-laden docstrings and em-dashes.
+
 - **`jazzx-eval-scorers`, the scorers without the SDK** (+1259 / -615 lines, 14 files). eval-service
   cannot install japes (Python 3.11 vs >=3.12, `cryptography ^49` vs `>=50`, two top-level
   `common` packages, path dependencies, ~1,900 modules on import); this is what it can take.
