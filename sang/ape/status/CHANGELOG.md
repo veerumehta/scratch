@@ -7,6 +7,27 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **The python executor is hardened and runs on deployed tiers** (+87 / -40 lines, 7 files).
+  `LocalPythonExecutor`'s child, in addition to `-I -S`, an empty environment, the CPU/memory/
+  file-size limits and the wall-clock kill: a read-only working directory (`READ_ONLY_DIR_MODE`);
+  `RLIMIT_NOFILE` (`MAX_OPEN_FILES` 32), `RLIMIT_CORE` 0 and `RLIMIT_NPROC` 0 (best-effort, as
+  `RLIMIT_AS` was); a new user + network namespace (`os.unshare`, Linux, Python 3.12+, where the
+  kernel allows it unprivileged; skipped silently otherwise); then, after importing
+  `python_check.ALLOWED_IMPORTS`, an audit hook that refuses any import not already loaded, every
+  `open`, and every `socket.`, `subprocess.`, `os.`, `shutil.`, `ctypes.`, `resource.`, `signal.`,
+  `_posixsubprocess.`, `pty.`, `fcntl.`, `mmap.` event plus `sys.addaudithook`. Measured first:
+  rule code using all six allowed modules raises only `compile` and `exec`, so the guard costs a
+  legitimate rule nothing. The allowed modules are imported before the namespace switch, since an
+  unmapped user may not read a privately installed stdlib. The deployed-posture refusal is gone;
+  Plato's `workstation_python_executor` is `local_python_executor` and installs on every tier, so
+  python rules and python custom scorers run when deployed instead of being withheld. Still not a
+  kernel sandbox (the docstring says so): a deployment running code from authors it does not
+  trust installs its own isolated `PythonExecutor`. Tests: eight refusals (socket, subprocess,
+  read and write opens, `os.system`, `os.listdir`, `os.fork`, `ctypes`), the allowed modules
+  under the guard, and a run in a deployed posture. Verified on macOS only, where `unshare` and
+  `RLIMIT_NPROC` do not apply; `/tmp/japes_executor_linux_check.sh` runs the tests in a Linux
+  container.
+
 - **Breaking (import path): `tools.ratio_evaluator` removed** (+5 / -12 lines, 3 files). The shim kept
   for jaci is gone; `jazzx_sdk.util.math.ratios` is the module and `jazzx_sdk.tools` still
   re-exports its names. Its test moves to `tests/test_util_math_ratios.py`. jaci's
