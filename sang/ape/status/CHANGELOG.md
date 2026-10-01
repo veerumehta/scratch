@@ -7,6 +7,23 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **Durable policy extraction runs** (+470 / -66 lines, 9 files). `PolicyExtractionService(store=)`
+  records runs in an `ExtractionRunStore` (`server.policy_extract_runs`: the `ExtractionRun` model,
+  the protocol, `InProcessExtractionRunStore`, which keeps the old `MAX_RUNS` cap; and
+  `server.policy_extract_runs_db.DbExtractionRunStore`, table `japes_policy_extraction_run`, Plato
+  migration 0015). The run still executes as a task in the replica that accepted the upload (the
+  documents are not persisted: up to 25 MB each, and a resubmit is cheap), so a poll on another
+  replica now reads it and a restart keeps its history. A running run marks itself every
+  `EXTRACTION_HEARTBEAT_SECONDS` (30); one unmarked for `EXTRACTION_STALE_SECONDS` (300) is failed
+  ("no progress since ...; its process stopped. Submit it again.") the next time any replica
+  reads runs or checks for room, with no job role: the write is conditional on the heartbeat it
+  read, and `finish` never overwrites a run that already ended, so a late outcome cannot revive a
+  reclaimed run. A run cancelled at shutdown records `failed` with `STOPPED_ERROR`. `MAX_RUNS`
+  counts running runs across replicas for the Db store. Breaking (SDK): the service's `get`,
+  `runs_for` and `has_room` are async; `authoring_chat.extraction_status` awaits it. Plato's
+  authoring router passes the Db store. The client has no authoring methods, and the route
+  shapes are unchanged.
+
 - **Pack lint: a threshold the rule's description does not state** (+125 / -0 lines, 2 files).
   `lint_pack` warns `threshold_not_in_description` when a rule's description states numbers and
   none of them is the numeric threshold its condition encodes: an `expression` value, or a `ratio`
