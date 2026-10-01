@@ -1,5 +1,35 @@
 # plan_JAPES_2_6_0_CONFIG_VERSIONING_AND_AUDIT — a version is a snapshot, not a label
 
+> **Rev 2 (2026-09-30, japes `v2.5.8` at `282e6782`).** Phases 1-2 shipped (the D1-D3 addendum). D1
+> decided: the JAPES DB is the first control-plane store, behind a protocol. D2 is moot:
+> `jazzx_sdk.digest.content_digest` exists (full SHA-256, canonical JSON) and `content_version`
+> delegates to it at length 12. D3: stores take `tenant_id` at construction and key on it
+> (`DbPackVersionStore`, `DbAssistantManifestStore`, `DbConfigAuditStore`); new stores match that.
+>
+> **What changed since Rev 1, and what it does to Phases 3-7.**
+> - Plato's pack store is the versioned config store this plan asked for: a published
+>   `(pack_id, version)` is immutable and content-addressed, retire replaces delete, and
+>   activation (`PLATO_ACTIVE_PACK`) is the per-tenant alias. Skills and profiles reach a Plato
+>   assistant only from a pack version. **Phase 3 (separate Skill/Profile version stores) is
+>   superseded** by it for Plato; a second store would be a second source of truth.
+> - `agents/interactive/release.py` already computes Phase 4's release (`Pin`, `VersionSet`,
+>   `AgentRelease`, `closure_digest`, `freeze_release`), storing nothing. `AssistantKey.release_id`
+>   is in the agent cache key and always empty.
+> - `VersionBundle` is frozen under the Spec-v1.5 contract (cross-team); pins travel as run tags /
+>   trace metadata instead.
+> - `PUT /agents` has no caller in jaci, jazzx-assistant or juno, and Plato does not mount it.
+>   **Phase 7 is dropped**: nothing to migrate, and the SDK server-mode route stays as is.
+> - Plato registers `DbConfigAuditStore` and never writes to it.
+>
+> **Rev 2 scope (built on v2.5.8):**
+> - (A) Audit on Plato's config writes: pack publish, activate, retire, assistant registration;
+>   a read route for a target's history.
+> - (B) Releases: Plato freezes each assistant from its composed registries and the pack versions
+>   they came from; `ManifestRecord.release_id` carries it, so the agent cache rebinds when a skill
+>   or profile changes under an unchanged manifest; the release id is stamped on the turn's trace.
+> - (C) Activation as a conditional alias move: `If-Match` on the active version, 409 on a stale
+>   one, audited with the before/after versions.
+
 Repos: `japes` (control-plane contracts + stores + runtime pinning). Consumers to check before each phase lands: `jaci`, `jazzx-assistant`, `juno` (Builder Studio side).
 
 **Revision 1** — written against `japes` **HEAD `a93ed14`** on `dev`, one commit past the `d26bc0e` (`v2.4.4`) anchor the source design note cites; `_version.py:9` still reads `2.4.4`. Every file:line citation below was re-read in the working tree, not carried over from the note. Source design: *Skill, profile, and agent versioning and audit* (Notion, JazzX Platform v2.0). This plan is the executable form of that note's **Immediate recommendation**, plus seven findings from the verification pass that change the design in specific places.
