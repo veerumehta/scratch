@@ -4,12 +4,14 @@
 
 ## Where things stand
 
-**Working branch is `v2.5.8`** (cut 2026-09-30 from `dev` at `2a2ad60b`, PR #86's 2.5.7 squash; no
-shared history with `v2.5.7`; SDK 2.5.8, Plato 0.1.9; plan `plans/plan_v2_5_8.md`). `eacaac6d`
-(squash of `28587bb9` and the 2.5.8 bump: pack programs lint, DSCR seed regrouped) owes a review
-(`REVIEW_UPSTREAM=origin/dev`). The first cut is kept as `backup/v2.5.8-from-v2.5.7`. Release flow:
-working branch -> plato -> PR to dev -> squash -> PR dev -> main, recording each squash back down;
-the next version is cut from `dev` once the squash lands.
+**Working branch is `v2.5.8`** (cut 2026-09-30 from `dev` at `2a2ad60b`, PR #86's 2.5.7 squash; SDK
+2.5.8, Plato 0.1.9; plan `plans/plan_v2_5_8.md` has the item table). Built on it, local and
+unpushed: human checkpoints (case runs suspend/resume, run outcomes), config audit trail +
+conditional activation + assistant releases, queue cancellation, split identity veto, one token-bucket
+declaration, anthropic 1.x compatibility, sqlite claim compare-and-set, tiered materialize, and
+`jazzx-plato-client` (own distribution, Phases 1-2). Adversarial review over `origin/dev..HEAD`
+running at the end of 2026-09-30. Open: eval step 7 (user's call), documents upload, the record of
+`dev` on `plato` (`/tmp/japes_record_dev_after_86.sh`).
 
 **Working branch is `v2.5.6`**, on `dev` at the PR #78 formal squash (`7a7a0950`). Its first
 slice (python executor) is squashed to `dev` (`da9a709d`) and `plato` (`6701d711`). Plato stays
@@ -32,10 +34,10 @@ runners as adapters, `prepare`, `ChatError`/`chat_step_error`, completion on eve
 
 **Acra DSCR programs** (2026-09-30, local, unpushed): in the v2.5.6 squash `fc48deb4` are the
 seed split (`DSCR_PROCESS` core, `DSCR_STANDARD`, `DSCR_PLATINUM_SELECT`) and `assess`'s refusal of
-omitted or non-nullable-null facts. On `v2.5.7` after its squash, `28587bb9`: lint reads a pack's
+omitted or non-nullable-null facts. On `v2.5.8` as `eacaac6d`: lint reads a pack's
 own policies for program checks, `rule_repeated_across_programs`, `MatrixAxis.domain_extensions`
 band edges in the drift lint, the conductor raw-input decision, and the seed with PPP rules once in
-`DSCR_PROCESS` and linked loan bounds; not yet on `dev`/`plato`. jaci branch `acra-programs` tip
+`DSCR_PROCESS` and linked loan bounds. jaci branch `acra-programs` tip
 `f3873da` needs it. Open: cap adjustments (declining market, Q-07/Q-08).
 
 **Chat runtime coordinator** (jazzx-assistant's second Notion page, `plans/plan_chat_runtime_coordinator.md`):
