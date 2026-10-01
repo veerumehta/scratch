@@ -8,7 +8,7 @@ Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate
 distribution (begun as 2.5.8).
 
 - **jaci batch 1: Plato routes and client contracts for SDK-free DSCR and clinical intake, and
-  three loop fixes** (+1541 / -48 lines, 35 files, fourteen commits). From jaci's config-first inventory.
+  three loop fixes** (+1541 / -48 lines, 35 files, thirteen commits). From jaci's config-first inventory.
   - Fixes in `pipelines/kinds.py`: `sdk_mode_factory` gives the governor the pack's
     `policy_registry` (its citation and sunset checks ran nowhere on Plato); the investigator's
     request shape is `conductor.rich_evidence_requests` (default true, as before); new
