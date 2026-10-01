@@ -2,40 +2,240 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
-## [2.5.8] - unreleased
+## [2.6.0] - unreleased
 
-Plato 0.1.9.
+Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
+distribution (begun as 2.5.8).
 
-- **Pack lint checks a pack's programs against its own policies, warns on a rule repeated across
-  programs, and lints band edges against the profile** (`28587bb9`; the DSCR seed's rules regrouped
-  into `process.yaml`). Not yet through the review loop.
+- **Review round 1 fixes** (+179 / -33 lines, 14 files), from the adversarial review over
+  `origin/dev..HEAD`.
+  - `conductor_suspension` keys on `tenant_id` (`DbSuspensionStore(db, tenant_id=)`, every query
+    scoped; migration `0011` gains the column in the primary key). Plato's runs router takes
+    `suspension_store_for(tenant)` instead of one store. `tests/test_plato_tenancy.py`'s guard ran
+    against an empty registry since Phase 0b; it now checks `register_all`'s tables, and lists six
+    shipped 2.5.5 tables that carry `tenant_id` as an indexed column rather than in a key
+    (`TODO(shipped-tables-untenanted)`) so a new one fails.
+  - A replacement decision is validated against the pack's decision schema in the resume route
+    (`kinds.check_resolution`), before the run is claimed: 422 and the run stays suspended,
+    where it used to be claimed and then fail for good in the background.
+  - `CaseRunner.execute` ends a run INTERRUPTED when a stop was asked while it ran to its
+    checkpoint (it finished SUSPENDED with the flag set, and nothing could then resume or end it).
+  - Materialize: a request joining a download whose owner was cancelled fetches afresh instead of
+    raising `CancelledError`; `TieredMaterialization.one` serves from disk only a file this call
+    wrote (one left by an earlier run went out as current while the background tier replaced it).
+  - `GET /packs/{id}/history` keeps only pack and activation events; the client README installs
+    from `main`, as the top-level README does.
+  - Round 2 passed. Folded in after: `resume_investigation_case` calls `check_resolution`
+    rather than restating its two checks (+3 / -3 lines). Notes left as they are: the cancel
+    route is not tenant-scoped (unmounted; a service mounts it with its own `auth`); the
+    approver guard runs per run, not at router build (Plato passes `require_approver=True`); a
+    run stopped while suspended leaves its suspension row `suspended` (unreachable through the
+    run); an assistant whose closure does not resolve serves with `release_id=""`; and
+    `DSCR_STANDARD`'s 3.1.0 after losing its PPP rules (the seed regroup carried in from 2.5.7).
 
-## [2.5.7] - PR #86 (plato -> dev)
+- **Tiered materialize** (+280 / -60 lines, 3 files), the tiered-materialize plan's three steps
+  for jazzx-assistant's grounding latency. Its own precondition is still open: nobody has broken
+  grounding into listing, probe, fetch and post-processing, so whether the fan-out is the cost is
+  unmeasured.
+  - In-flight dedup: `DocStore._inflight` maps `(collection_id, doc_id)` to the download in
+    progress; a second request joins it (`asyncio.shield`), a failed one is dropped so a later
+    request fetches afresh, and an owner's exception is marked retrieved.
+  - Atomic writes: `_write_atomically` writes beside the target and `os.replace`s it, so the
+    "already on disk" check never sees a partial file. Text is decoded as `encoding` and written
+    as UTF-8 (`Path.write_text` used the locale's encoding).
+  - `materialize_tiered(entities, output_dir, required=, doc_id_field=, name_fn=, ...)`: awaits
+    the entities `required(entity)` admits, then starts the rest as a task
+    (`TieredMaterialization.pending`; a failure is logged). Filenames come from
+    `_named_documents` over the whole set (the suffix logic `materialize` used inline, now a
+    module function both call), so the tiers name exactly as one call would; `display_name_fn`
+    defaults to the raw `name_fn`, as before. The background tier starts after the required one
+    has saved its manifest, so the two never race on a scope. `TieredMaterialization.one(entity)`
+    returns a document from disk once written, else fetches it now, joining a background download
+    in flight. Exported from `jazzx_sdk.fabric.docs`.
+  - `materialize` without tiers behaves as before. Tests: the required tier returns while the
+    rest downloads, colliding names across tiers, a mid-download request joining (one fetch), a
+    second request served from disk, no `.part` file left.
+  - The pack-store plan's remaining steps (`pack_dependency`, `pack_status`, the layered
+    resolver) are each gated on a condition that has not arisen (a pack depending on another,
+    operated certification, a second layer); nothing built.
 
-Plato 0.1.9.
+- **Fix: concurrent run claims on sqlite all won** (+44 / -9 lines, 3 files). Closes
+  `TODO(sqlite-read-then-write-unserialized)`, which called this unverified: a probe with ten
+  claimers on one key returned the same run to all ten, each with its own token (one RUNNING
+  row, ten executors). sqlite takes no row lock and the key's advisory lock is Postgres-only, so
+  every racer read the key idle. `DbTurnRunStore._claim` is now a compare-and-set: an `UPDATE`
+  conditioned on the status that was read, `rowcount == 1` or the claimer gets None. Covers
+  `claim_next`, `claim_any` and `claim_suspended` on every backend. New test races ten claims
+  (both shapes) on sqlite and expects one winner.
+  - The other five deferred TODOs stay, their reasons unchanged: `reasoned-assess-runs-twice`
+    (a cost only, under `?reason=true`; folding the passes would map a model failure to 422),
+    `case-run-assess-unreasoned` (a deliberate default), `switched-store-not-backfilled` (needs
+    a bounded backfill; rare), `zero-width-only-pattern-accepted` (undecidable in general), and
+    `supersede-check-outside-admit-lock` (one await wide, needs a store mutation).
 
-- **Dependency floors for 10 open Dependabot alerts on `main`:** `pyjwt >=2.15.1` (8 alerts, one
-  critical; direct, and transitive via `mcp` and `msal`) and `oauthlib >=4.0.0` (2 alerts;
-  transitive via `msrest` -> `requests-oauthlib`), locked at 2.15.1 and 4.0.0.
+- **anthropic 1.x compatibility** (+100 / -6 lines, 5 files). anthropic 1.0 (1.11 is current)
+  dropped `temperature`, `top_p` and `top_k` from `messages.create`/`stream`; the API still takes
+  them. `llm.anthropic_wire.wire_params(params)` moves them into `extra_body` when the installed
+  SDK's major version is 1 or later (`importlib.metadata`, cached), and passes them as arguments
+  before. All five call sites go through it: `AnthropicProvider` (create, stream),
+  `agents.anthropic_provider` (create with retries), `AnthropicNativeModel` (create, stream).
+  Checked against a real anthropic 1.11 client on a mock transport: the temperature arrives in
+  the request body. Also found: 1.x runs on `httpx2` and refuses an `httpx` client object; japes
+  builds `AsyncAnthropic(api_key=)` only, so that does not reach it. The lock stays on 0.111 (the
+  floor is `>=0.69.0`): moving it to 1.x is a separate decision, and wants the gated live smoke
+  per provider, since every anthropic test mocks the client.
 
-- **A host checks a declared lifecycle, and binds its grounding per session, through the SDK**
-  (+175 / -55 lines, 10 files).
-  - `pipelines.chat.host_lifecycle(spec, ..., fabric=, persist_hook=)` returns the declared
-    lifecycle and the problems a host cannot run (the builder's own errors, `application_hook`
-    persistence with no persist hook, ground sources with no fabric). Plato's chat routes (409)
-    and pack check (`invalid_lifecycle`) both call it, so the two sets of rules cannot drift.
-  - `runs.GroundingSessions(registry=, idle_seconds=, workspace_root=)`: `bind(declared, turn,
-    fabric=, key=)` binds the turn's sources at once (the runners decide on the ground stage from
-    them) and returns the turn's workspace, which holds the session's turn
-    slot from the runner's entry to its end, so an idle reap never closes a session under a
-    running turn. `bind` is async and reaps first, so a session idle past its TTL starts fresh
-    rather than being revived by the lookup. Plato's grounding goes through it, with the SDK's
-    `DEFAULT_GROUND_IDLE_SECONDS`.
-  - An empty registry passed to `GroundingSessions`, `ComposePlan` or `GroundPlan` is the one
-    used; `registry or default()` read an empty (falsy) registry as none.
-  - Plato is 0.1.9 (0.1.8 shipped with 2.5.6).
+- **`jazzx_plato_client.packs`** (+187 / -1 lines, 4 files), the client plan's Phase 2: jaci's
+  pack packaging, for any author. `pack_archive(folder)` (sorted members, `ZIP_EPOCH`
+  timestamps, `MEMBER_MODE`; dotfiles and `__pycache__` left out; an assistant folder's
+  `pack_manifest.yaml` left out, since Plato refuses an archive with both manifests),
+  `archive_files`, `pack_manifest`, `is_assistant_folder`, and `publish_pack(plato, folder,
+  activate=)`: check, refuse on a blocking finding (`ValueError` listing every error), publish,
+  and on a 409 compare contents: identical is `unchanged`, different raises
+  `PackVersionConflictError`. Tests against a real Plato cover deterministic bytes, the
+  assistant-folder rule, idempotent republish, the conflict and a blocking check; the lightness
+  probe imports `packs` too. jaci adopts it in its own change (its `scenarios/shared/plato.py`
+  copies can go).
 
-- **Pack lint and the DSCR seed's program structure** (on `v2.5.7` after its squash to `dev`/`plato`).
+- **`jazzx-plato-client`, a Plato client without the SDK** (+450 / -262 lines, 10 files).
+  Importing `jazzx_sdk.clients.plato_client` loaded about 1,500 modules (FastAPI, Azure,
+  `common`) for a client that needs httpx. Decisions taken as the plan recommended: versioned in
+  lockstep with Plato (0.1.9), pack packaging belongs in it (its Phase 2), no SDK bump.
+  - `jazzx_plato_client/` beside `jazzx_eval_contracts/`, its own `pyproject.toml` (httpx,
+    pyyaml), `README.md`. `client.py` is the former `jazzx_sdk/clients/plato_client.py`; the
+    request-header forwarding is inlined (an `httpx` request hook, a raising provider logged and
+    skipped) instead of `_header_hooks`. Git records it as a new file: the SDK path keeps a
+    re-export of the public names, so `from jazzx_sdk.clients.plato_client import PlatoClient`
+    still works and is the same class.
+  - New: `server_info()` (`GET /info`), `submit_feedback(feedback, idempotency_key=)` (`POST
+    /feedback` with `FeedbackSubmit`'s fields; a retry with the same `feedback_id` returns the
+    stored record), and `ASSISTANT_ENTITY` / `TURN_METADATA_KEY`, restated like `DEFAULT_PREFIX`.
+  - The SDK takes it as a `develop = true` path dependency (`poetry.lock` gains only that entry);
+    the Dockerfile copies the project root into the builder and the package into the runtime
+    stage, as for `jazzx_eval_contracts`, and the image smoke imports `jazzx_plato_client.client`.
+  - Tests: the client tests import from `jazzx_plato_client`; the constants and the version are
+    held to the server's and to `plato/_version.py` (package and `pyproject.toml`); a subprocess
+    imports the package and asserts no `jazzx_sdk`, `plato`, `common` or `fastapi` module loaded;
+    the SDK path is the same class; feedback and `/info` round-trip against `create_plato_app`.
+  - README install line. Phase 2 (pack packaging from jaci) and jaci's adoption follow.
+
+- **One declaration of the token buckets** (+40 / -23 lines, 5 files).
+  `llm.cost_tracker.TOKEN_BUCKETS` (`CostRecord`'s five `*_tokens` fields) and `USAGE_KEYS`
+  (those plus `total_tokens`). Derived from them: `pipelines.chat._turn_metrics`' zero-filled
+  union, `agents_tracing.extract_token_usage`'s empty report, `CostTracker.get_token_breakdown`,
+  and the OpenAI provider's empty usage. A test holds `TOKEN_BUCKETS` to `CostRecord`'s fields and
+  every emitter to `USAGE_KEYS`, so a sixth bucket (image tokens) has one home. The rest of the
+  vision plan was already built (`ImagePart`, `supports_vision`'s reader, `render_pdf_pages`,
+  windowed image classification, Gemini parts); accuracy against labelled scans stays unmeasured.
+
+- **Split: the identity veto** (+50 / -1 lines, 2 files). `split_document(identity_of=)`: an
+  awaitable `(page, text) -> str | None` reading a page's printed identity (a name, an account
+  number). Pages of one label whose identities differ are cut into separate segments, compared
+  case- and spacing-insensitively; a page without one carries the last seen. Called only for
+  pages in runs longer than one, under the split's `concurrency`. The vision plan's second P4
+  idea: an identity mismatch is a hard veto, not a score a continuous-looking page can outvote.
+  No default reader ships: the caller chooses the model and prompt ("transcribe, never infer").
+
+- **Config versioning: audit trail, releases, conditional activation** (+344 / -17 lines, 15
+  files). The config-versioning plan's Rev 2: Plato's pack store already is the immutable,
+  content-addressed version store and activation its alias, so this wires what was missing rather
+  than adding Skill/Profile version stores (Phase 3 superseded; Phase 7 dropped: no caller of
+  `PUT /agents` in jaci, jazzx-assistant or juno, and Plato does not mount it).
+  - Audit: Plato's pack routes append `ConfigAuditEvent`s to the tenant's `DbConfigAuditStore`
+    (registered since 2.5.x, never written): `publish` (`target_kind="pack"`, the version,
+    `after_digest` = the archive's content digest, `reason` = how it arrived: upload, sample,
+    draft), `promote` on activation (`target_kind="pack_activation"`, `reason="from <previous>"`,
+    before/after digests of the two versions), `retire` on delete. Actor `acting_user_id()`,
+    trace from `X-Trace-Id`, source `plato.packs`; best effort (`record_best_effort`).
+    `GET {prefix}/packs/{pack_id}/history` reads the trail, oldest first.
+  - Activation: `If-Match: <active version>` ("" for none) makes it conditional; a stale value is
+    a 409 naming the active version. Not atomic with the pointer write; absent means as before.
+  - Releases: `release.release_from_registries(assistant_id, profile, profiles=, skills=, pins=)`
+    freezes an assistant from live registries: each profile and skill its closure reaches
+    (through `spec_ref`) pinned at the digest of its content (`CONTENT_PIN_LENGTH` chars as the
+    version), guardrails and MCP servers by name, extra pins as given, validated by
+    `freeze_release`. `ManifestRecord.release_id` (both manifest stores; `put(release_id=)`;
+    Plato migration `0012_manifest_release`). Plato's `_register_assistants` freezes each
+    composed assistant and writes a new head when the manifest *or* the release differs (a
+    `ReleaseError` is logged and registers with none). `AssistantRuntime.binding(tenant,
+    assistant) -> (agent, release_id)`; `agent_for` returns its agent. `/chat`'s `ChatReply`
+    carries `release_id`. `AssistantKey`'s docstring no longer says the field is always empty.
+  - Not in this: the streamed turn's release (`TODO(stream-release-id)`: it binds after the first
+    frame); stamping the release on traces (`VersionBundle` is frozen under Spec v1.5, a
+    cross-team change); audit of assistant registration; an atomic compare-and-set for the
+    activation pointer.
+
+- **Queue execution cancellation** (+275 / -5 lines, 8 files). A caller or operator can end a
+  queue job before its lease runs out, through the execution record the worker already holds.
+  - `QueueExecution.cancel_requested` / `cancel_reason`; `QueueExecutionStore.request_cancel(key,
+    reason=)` on both stores. It creates the record when no worker has claimed the message yet
+    (so the claim sees the flag), sets the flag on a PROCESSING one, and is a no-op (False) once a
+    response exists (`SETTLED_STATUSES`: ready, delivering, completed). `DbQueueExecutionStore`
+    gains two nullable columns, `cancel_requested` and `cancel_reason`: **the consuming service's
+    migration for `japes_queue_execution` must add them.**
+  - Runtime: an execution claimed with the flag already set settles `cancelled_response` without
+    running the handler; a running one is read on each lease renewal, its handler task cancelled,
+    and the same response settled through `store_result` / `mark_response_sent`, so a redelivery
+    replays it. Latency is one renewal interval: `QueueSettings.lease_renewal_seconds` (capped by
+    a third of the visibility timeout and of the lease) is the knob, no separate poller. A
+    renewal that returns while the handler has already finished takes the handler's response.
+    SIGTERM is unchanged: no flag, so the lease expires and another replica takes it.
+    `jazzx_sdk.runtime.CANCELLED_STATUS = "cancelled"`; `ResponseMessage.status` lists it.
+  - `jazzx_sdk.server.create_queue_cancel_router(store, prefix="/queue", auth=)`:
+    `POST {prefix}/executions/{message_id}/cancel` with an optional `{reason}`, a governed route
+    (X-Trace-Id) that refuses without `auth` in a deployed posture; the service mounts it through
+    `serve(extra_routes=...)`. Not mounted automatically.
+  - Not in this: `process_queue_until_empty` (unchanged, as the plan scoped it).
+
+- **Human checkpoints in case runs** (+938 / -136 lines, 22 files). A case run can stop for a
+  person and continue on their answer, in one run and one journal.
+  - `conductor.human_checkpoint: <name>` on an `investigation_loop` pack, naming one of the
+    manifest's `human_checkpoints` (the publish check reports one it does not declare). Given a
+    `suspension_store=`, a run with a decision raises `SuspendRun` at a `human_checkpoint` step
+    between the governor and the narrator; its payload carries the decision, the governor's
+    verdict and the mode calls so far. `CaseResult.status == "suspended"`, `CaseResult.suspension`
+    holds the id, and nothing is persisted yet. Without a store the step is not in the pipeline,
+    which is how jaci's in-process runs and the eval invoker behave unchanged.
+  - `resume_case(pack, inputs, suspension_id=, resolution=CheckpointResolution, approver=ActorRef,
+    authority_basis=)`: the engine's `resume_durable` (single claim; the store's
+    `require_approver`), with a new `restore=` hook that rebuilds the typed `Context`, the
+    reasoner's decision and the `GovernorDecision` from a store that keeps them as JSON
+    (`DbSuspensionStore`). `CheckpointResolution`: `approved`; `decision` replaces the reasoner's
+    and needs `rationale`, a valid `OverrideReasonCode` and (at resume) an `authority_basis`; a
+    rejection skips the narrator. The persisted Trace has the reviewer's step (mode governor, the
+    approver's `ActorRef`) between the calls before and after; a replacement is an `OverrideEvent`
+    on the reasoner's step with `superseding_decision_id`, `state_before`/`state_after`. The
+    Decision's `human_review_required` is false once approved (unless a mode failed), true on a
+    rejection. `CaseResult.checkpoint` records name, approval, replacement, approver, authority.
+    `run_investigation_case` is now built over a `_Case` (types, engine, finish) shared with the
+    resume; `investigation_loop.investigation_engine` is the engine `run_investigation` builds.
+  - Runs: `TurnRunStatus.SUSPENDED`, neither active nor terminal: it holds no claim, does not
+    block its key's FIFO, is not reaped or purged. `CaseRunner.execute` ends a suspended segment
+    with `{"suspended": true, "status", "output"}` (not `done`); `ResilientRunner.resume` stops
+    following at a suspended run. `TurnRunStore.claim_suspended` (both stores; the Db one under
+    the key's advisory lock and the row's) moves SUSPENDED to RUNNING unless a stop was asked or
+    the key has a run RUNNING; `CaseRunner.claim_suspended` returns the run and its token.
+    `CaseRunner.request_stop` ends a suspended run INTERRUPTED (the flag first, so a resume
+    cannot take it after). The runs contract's status set gains `suspended`.
+  - Plato: `POST {prefix}/runs/{run_id}/resume` (`ResumeRequest`): 409 unless SUSPENDED or when
+    the case has a run going, 422 for no approver or a replacement without `authority_basis`,
+    202 and the stream. The approver is the governed caller (`actor_ref`); the body's `approver`
+    only where the request carries none and the deployment does not require identity.
+    `POST {prefix}/runs/{run_id}/outcome` (`RunOutcomeRequest`): an `Outcome` on the run's
+    Decision, 409 without one. The stop route ends a suspended run. `GET /runs/{id}` shows
+    `suspension` while suspended. The router refuses a suspension store that does not require
+    an approver; the app wires `DbSuspensionStore(db, require_approver=True)`, registered in
+    `register_all`, migration `0011_conductor_suspension`. The DSCR seed declares
+    `human_checkpoint: ELIGIBILITY_DECISION_APPROVAL`, so its runs on Plato now pause.
+  - `PlatoClient.resume_case_run`, `case_run_outcome`. `ManifestLoader.get_human_checkpoints`.
+  - Not in this: documents upload for DSCR's optional appraisal (the plan's other Phase 3 item);
+    a TTL for runs left suspended.
+  - Follow-up (+28 / -8 lines, 2 files): the resume route's approver, and an outcome's
+    `created_by`, are `acting_user_id()` (the authenticated `x-security-context`/`x-user-id`),
+    not the governed `X-Actor-Ref` header, which a client sets freely. The body's `approver` is
+    refused in a deployed posture as well as under `identity_required`.
+
+- **Pack lint and the DSCR seed's program structure** (`eacaac6d`; reviewed clean).
   - `lint_pack` checks a pack's programs against its own YAML policies when the manifest names no
     registry pointer, whatever the caller passed (`scripts/pack_lint.py` and the extraction run's
     lint passed none or a draft's one policy, so the program checks were skipped); the caller's
@@ -63,6 +263,31 @@ Plato 0.1.9.
   - The case conductor assesses the raw input, like the assess route, by decision: a fact a rule
     reads must be stated even where the input schema defaults it. `kinds.py` says so and
     `TODO(conductor-drops-validated-defaults)` is closed.
+
+## [2.5.7] - PR #86 (plato -> dev)
+
+Plato 0.1.9.
+
+- **Dependency floors for 10 open Dependabot alerts on `main`:** `pyjwt >=2.15.1` (8 alerts, one
+  critical; direct, and transitive via `mcp` and `msal`) and `oauthlib >=4.0.0` (2 alerts;
+  transitive via `msrest` -> `requests-oauthlib`), locked at 2.15.1 and 4.0.0.
+
+- **A host checks a declared lifecycle, and binds its grounding per session, through the SDK**
+  (+175 / -55 lines, 10 files).
+  - `pipelines.chat.host_lifecycle(spec, ..., fabric=, persist_hook=)` returns the declared
+    lifecycle and the problems a host cannot run (the builder's own errors, `application_hook`
+    persistence with no persist hook, ground sources with no fabric). Plato's chat routes (409)
+    and pack check (`invalid_lifecycle`) both call it, so the two sets of rules cannot drift.
+  - `runs.GroundingSessions(registry=, idle_seconds=, workspace_root=)`: `bind(declared, turn,
+    fabric=, key=)` binds the turn's sources at once (the runners decide on the ground stage from
+    them) and returns the turn's workspace, which holds the session's turn
+    slot from the runner's entry to its end, so an idle reap never closes a session under a
+    running turn. `bind` is async and reaps first, so a session idle past its TTL starts fresh
+    rather than being revived by the lookup. Plato's grounding goes through it, with the SDK's
+    `DEFAULT_GROUND_IDLE_SECONDS`.
+  - An empty registry passed to `GroundingSessions`, `ComposePlan` or `GroundPlan` is the one
+    used; `registry or default()` read an empty (falsy) registry as none.
+  - Plato is 0.1.9 (0.1.8 shipped with 2.5.6).
 
 - **Token accounting.**
   - The Agents SDK path counts cache-write tokens: `run_kit._usage_to_token_usage` sets
