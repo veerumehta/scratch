@@ -87,6 +87,25 @@ distribution (begun as 2.5.8).
       schema, the case that carries a path.
     - Left: `TODO(activation-merge-lost-update)`: two overlapping activations of different packs
       keep only the later write (no compare-and-set on the settings store).
+  - **Breaking: governed-route idempotency replays the first answer** (+526 / -44 lines, 15
+    files, four commits). `GovernedRouter` required an `Idempotency-Key` but nothing recorded a
+    response, so a retry ran again; with a store it answered a stored receipt as 409, and keys
+    were global. Now `jazzx_sdk.server.idempotency` (`RequestIdempotencyStore`: `begin` /
+    `complete` / `abandon`, `InProcessRequestIdempotencyStore`, `request_hash`) and
+    `server.idempotency_db.DbRequestIdempotencyStore` (table `japes_request_idempotency`, keyed
+    tenant + `METHOD route-template` + key; Plato migration `0014_request_idempotency`). A
+    mutating governed route claims the key against a hash of method, path with query, body and
+    caller (`acting_user_id`); a repeat gets the first JSON response with `Idempotent-Replayed:
+    true`, 409 while it runs, 422 for the key on another request or caller. A streamed, non-JSON
+    or failed answer is released, so its retry runs. Retention `IDEMPOTENCY_RETENTION_SECONDS`
+    (a day; `complete` purges the tenant's older rows), a dead claim frees after
+    `IDEMPOTENCY_PENDING_SECONDS` (30 min). `GovernedRouter(idempotency_store_for=request ->
+    store)` for a per-tenant store; an old `get`/`put` store is refused at construction. Sync
+    endpoints run in the threadpool. Plato wires it by default (`PlatoWiring.idempotency_store_for`,
+    tenant -> store) on the assistants and case-run routers. Not covered: the plain-`APIRouter`
+    routes (pack publish/activate, eval, feedback), which are naturally repeat-safe or refuse a
+    duplicate; a response model is not applied to a replay; a blocking turn past the pending
+    window can run twice.
   - Not done here (jaci's later batches): composition, manifest asset keys, documents, finance,
     loop knobs, `/assess` options.
 
