@@ -7,6 +7,15 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **`PolicyProfile` validates in a fresh process** (+20 / -9 lines, 4 files). Since the SDK's
+  top-level names load lazily, nothing imported `finance.periods` before a profile was used, and
+  `PolicyProfile.source_precedence`'s forward reference stayed unresolved: `PolicyProfile.from_yaml`
+  (so `Pack.policy_profiles`) raised `class-not-fully-defined` unless something else had imported
+  `finance`. `PolicyProfile.model_rebuild` now brings `SourcePrecedencePolicy` into scope itself
+  (one ignored `fabric.canonical.profiles -> finance.periods` edge), replacing periods.py's
+  module-level rebuild. A sweep of all 537 modules, each imported first, found no other model left
+  incomplete; `test_a_policy_profile_validates_in_a_fresh_interpreter` fails on the old code.
+
 - **Suspended case runs expire** (+115 / -29 lines, 8 files). `TurnRunStore.expire_suspended(older_than_seconds)`
   (in-process and Db) ends every run SUSPENDED since before the cutoff INTERRUPTED with stop reason
   `runs.schema.EXPIRED` and a terminal `{"done": true, "status": "interrupted"}` event; the Db store
