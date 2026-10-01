@@ -7,6 +7,15 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **Suspended case runs expire** (+115 / -29 lines, 8 files). `TurnRunStore.expire_suspended(older_than_seconds)`
+  (in-process and Db) ends every run SUSPENDED since before the cutoff INTERRUPTED with stop reason
+  `runs.schema.EXPIRED` and a terminal `{"done": true, "status": "interrupted"}` event; the Db store
+  does it under the rows' locks, so it cannot race a `claim_suspended`. `Reaper(suspended_ttl_seconds=)`
+  runs it on each sweep (default None: a suspended run waits indefinitely, as before). Plato's
+  `job:run-reaper` reads `PLATO_SUSPENDED_RUN_TTL_SECONDS` (unset or 0: off); an expired run's
+  `/resume` answers 409 like any run not waiting. The age is `updated_at`, which the suspend sets.
+  The `reap_stale` docstrings are cut to two lines each.
+
 - **Breaking (import paths): leaf utilities under `jazzx_sdk.util`** (+36 / -36 lines, 35 files).
   `jazzx_sdk.utc` is `jazzx_sdk.util.utc`, `jazzx_sdk.digest` is `jazzx_sdk.util.digest`, beside
   `jazzx_sdk.util.math.ratios`: modules with no SDK dependencies, in the lowest import layer, off
