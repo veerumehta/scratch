@@ -7,6 +7,39 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **Plato's reusable logic moved into the SDK; Plato routes are HTTP translation over it**
+  (+1633 / -1385 lines, 65 files, nine commits). No behavior change to Plato's routes; stored
+  rows read as before (Plato passes its own table and key names in).
+  - Loader and check: `jazzx_sdk.pack.assistant` and `jazzx_sdk.pack.check` (from `plato.packs`,
+    removed); `pack.store.published_roots` shared by `published_registries` and
+    `published_domain_packs` (+102 / -174, 22 files).
+  - `pack.domain`: `domain_pack_record`, `materialized_pack`, `NotADomainPack`,
+    `PackNamesPython`; `server.gates.write_gate` / `read_gate`; `audit.record_config_change`;
+    `identity.acting_approver`; `Outcome.reviewer_answer`; `check_if_match` takes a string;
+    `DbSettingsStore(table=)` / `setting_model(table)` with a per-table metadata, so Plato keeps
+    `plato_setting` with no data migration (+225 / -136, 20 files).
+  - `pack.activation`: `TenantPackRegistries` (pins, per-tenant registries, `activate`, `forget`,
+    `on_invalidate`) and `Registries`, `parse_pack_reference`, `pack_references`,
+    `with_pack_reference`, `has_assistants`, `register_assistants` (+284 / -249, 4 files).
+  - `pack.case_runs.CaseRunService` (`submit`, `resume`, `record_outcome`, `view`, `owns`,
+    `pinned_pack`) with `CaseRunKeys` naming the run-input keys, `RunNotWaiting`,
+    `RunHasNoDecision`, `case_queue_key` (+275 / -170, 2 files).
+  - `formal.local`: the bounded Z3 worker (`python -m jazzx_sdk.formal.local`), `run_local_worker`,
+    `formal_slot`, `compile_packs`, `split_compile`, `PackCompile`, `LocalFormalError(kind)`;
+    Plato keeps its posture gate, enable flag, origin/size checks and the kind-to-status map
+    (+320 / -294, 6 files).
+  - Chat host helpers: `pipelines.chat.agent_lifecycle` / `LifecycleUnrunnable`;
+    `recorder.agent_recorder` / `recorded`; `session.session_expired`; `response.reply_fields`;
+    Plato's `/chat` and streamed turn share one `_prepared` (+166 / -74, 6 files).
+  - Drafts: `draft_db.text_files`, `draft_pack`, `apply_persona_prompt`, `PROFILE_PATH`;
+    `seed.sample_packs(root)`; `inventory.read_pack_contents` (raises `PackNotFound` /
+    `FileNotFoundError`; Plato maps 404) (+201 / -173, 7 files).
+  - `server.feedback_api.db_feedback_processor` (Plato's job and route built it twice);
+    `server.uploads.read_capped` (+49 / -33, 5 files). `policy_extract_api`'s single bounded
+    read is left as is: already capped, its own message.
+  - `agents.interactive.kernel_agents` (from `plato.kernel_sync`, removed), prose trimmed
+    (+16 / -87, 3 files).
+
 - **The SDK talks to Plato through `jazzx-plato-client`** (+34 / -12 lines, 5 files).
   `FeedbackApiSink` posted to Plato's `/feedback` with its own httpx code; it now builds the body
   and calls `PlatoClient.submit_feedback` (`prefix=""` on its API-root URL), passing its identity
