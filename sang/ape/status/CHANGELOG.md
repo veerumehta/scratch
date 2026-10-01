@@ -8,7 +8,7 @@ Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate
 distribution (begun as 2.5.8).
 
 - **jaci batch 1: Plato routes and client contracts for SDK-free DSCR and clinical intake, and
-  three loop fixes** (+1462 / -46 lines, 34 files, ten commits). From jaci's config-first inventory.
+  three loop fixes** (+1572 / -70 lines, 39 files, fourteen commits). From jaci's config-first inventory.
   - Fixes in `pipelines/kinds.py`: `sdk_mode_factory` gives the governor the pack's
     `policy_registry` (its citation and sunset checks ran nowhere on Plato); the investigator's
     request shape is `conductor.rich_evidence_requests` (default true, as before); new
@@ -48,6 +48,12 @@ distribution (begun as 2.5.8).
     SessionRecord, SessionProgress; extra fields allowed; a test holds their fields to the
     server's models) and methods for every new route plus pack contents/history and the eval
     datasets/experiments/scorers. Methods still answer dicts.
+  - Review fixes: `pack.case_runs.pre_loop_agent` builds the pre-loop agent for both a run and
+    a `case_run` eval (`CaseRunInvoker(agents=)`); scripted replies only on a new session (409),
+    dropped on DELETE; `banded` matches an expected label before reading it as a number; the
+    catalog's scorers come from `standard_scorers(llm)`; a session eval's turn scope wins over the
+    experiment's. Left: a scripted session the idle sweep expires keeps its in-memory script, and
+    two concurrent scripted creates race (relaxed demo only).
   - Not done here (jaci's later batches): composition, manifest asset keys, documents, finance,
     loop knobs, `/assess` options.
 
