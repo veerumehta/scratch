@@ -7,6 +7,23 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **An agentic turn's cost prices each model call by the model that served it** (+222 / -20
+  lines, 11 files, five commits). A skill with its own `model` was costed at the parent's rate:
+  turn usage carried only summed tokens (the SDK's shared `Usage` records no model), and
+  `AgentTraceHooks` priced its totals at its one `model_name`. Found from macer's equivalent fix.
+  - SDK: `OpenAIProvider.build_agent` records the model name on the agent (`MODEL_NAME_ATTR`,
+    read by `agents.models.served_model`); `stream_hooks.ModelCallLedger`, an `AgentHooks`
+    composed into the parent and every skill sub-agent for the turn, keeps token buckets per
+    serving model; `llm.cost.cost_by_model`. A blocking agentic `respond` reports the ledger's
+    token totals (retries included, so tokens and cost cover the same calls), `cost_usd`,
+    `cost_by_model` and `cost_is_upper_bound`, also on a max-turns reply. `AgentTraceHooks` prices
+    per serving model. The single-shot path now carries `cost_is_upper_bound` too.
+  - Plato: no change; `/chat` passes `usage` through `reply_fields`.
+  - Client: `contracts.TurnUsage` types `ChatReply.usage` (the SDK's usage keys plus the cost
+    keys; a test holds them equal).
+  - Left: streamed agentic turns carry no usage (as before); an agent a caller passes in through
+    `tools=` is outside the ledger.
+
 - **A step failure `on_step_error` recovers is logged with its traceback** (+19 / -0 lines, 2
   files). `ConductorEngine` recorded it only on the span and the step note, so a chat-lifecycle
   host lost the traceback its own code used to log (found reviewing jazzx-assistant's
