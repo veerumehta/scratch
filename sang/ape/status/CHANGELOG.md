@@ -70,7 +70,7 @@ distribution (begun as 2.5.8).
     and zip a folder to the same bytes; `describe` reports a schema error per entry and the pack
     path as `<pack>`; `progress` with no turns is incomplete (the rule in `_summary`);
     `store.is_pack_content` is the one content rule (archive, `DirectoryPackSource.read`, the
-    contents listing). Client-zipped digests change once (timestamp and mode now the SDK's). Left: pre-loop reasoning's failure
+    contents listing). Client-zipped digests change once (timestamp and mode now the SDK's); a republish is still `unchanged`, since `publish_pack` compares members, and the client's member set changes only for a `.pyc`/`.pyo` outside `__pycache__`. Left: pre-loop reasoning's failure
     mode, usage and model; eval case runs unpinned; idempotency where no store is wired; scripted
     sessions per replica.
   - Not done here (jaci's later batches): composition, manifest asset keys, documents, finance,
