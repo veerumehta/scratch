@@ -7,7 +7,7 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
-- **An agentic turn's cost prices each model call by the model that served it** (+222 / -20
+- **An agentic turn's cost prices each model call by the model that served it** (+211 / -20
   lines, 11 files, five commits). A skill with its own `model` was costed at the parent's rate:
   turn usage carried only summed tokens (the SDK's shared `Usage` records no model), and
   `AgentTraceHooks` priced its totals at its one `model_name`. Found from macer's equivalent fix.
