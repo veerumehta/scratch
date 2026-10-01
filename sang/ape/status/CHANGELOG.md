@@ -87,7 +87,7 @@ distribution (begun as 2.5.8).
       schema, the case that carries a path.
     - Left: `TODO(activation-merge-lost-update)`: two overlapping activations of different packs
       keep only the later write (no compare-and-set on the settings store).
-  - **Breaking: governed-route idempotency replays the first answer** (+526 / -44 lines, 15
+  - **Breaking: governed-route idempotency replays the first answer** (+585 / -36 lines, 14
     files, four commits). `GovernedRouter` required an `Idempotency-Key` but nothing recorded a
     response, so a retry ran again; with a store it answered a stored receipt as 409, and keys
     were global. Now `jazzx_sdk.server.idempotency` (`RequestIdempotencyStore`: `begin` /
