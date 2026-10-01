@@ -7,7 +7,7 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
-- **`fabric` no longer imports `conductor`** (REFACTOR-2.4 Phase 8, revised) (+36 / -23 lines, 6 files).
+- **`fabric` no longer imports `conductor`** (REFACTOR-2.4 Phase 8, revised) (+28 / -26 lines, 6 files).
   `import jazzx_sdk.fabric.canonical` loaded ten `conductor` modules, the engine among them,
   through one edge: `condition_evaluator` read `ExecutionKind` from `conductor.pipeline`, whose
   package init imports the engine. `ExecutionKind` now lives in `fabric.canonical.trace`, beside
