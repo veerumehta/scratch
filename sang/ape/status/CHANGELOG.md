@@ -7,6 +7,20 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **Pack lint: a threshold the rule's description does not state** (+136 / -0 lines, 2 files).
+  `lint_pack` warns `threshold_not_in_description` when a rule's description states numbers and
+  none of them is the numeric threshold its condition encodes: an `expression` value, or a `ratio`
+  threshold resolved from the pack's profiles (decimal strings parsed), at any `all_of`/`any_of`
+  depth. Stated numbers read `$1,500,000`, `$1.5MM`, `1.20x` and `75%` (also as 0.75), not section
+  references like `STD-3.16`; a description stating no number is not checked. Warning, not error:
+  a description may legitimately state only context numbers. Runs over the pack's own policies
+  merged with the caller's (`_pack_policies`), so a pack with a Python registry pointer is checked
+  only for the policies passed in. Clean on both seed packs and jaci's six packs; a changed DSCR
+  in `DSCR-HIGH-LTV-DSCR`'s description is caught. Matrix cells are not compared (their values
+  live in profile tables keyed by axis bands). The note's second rule (a value enumerated in one
+  list must appear in every list enumerating the field) is not built: eligible/ineligible lists
+  legitimately differ, so it needs a declared relation first.
+
 - **`PolicyProfile` validates in a fresh process** (+20 / -9 lines, 4 files). Since the SDK's
   top-level names load lazily, nothing imported `finance.periods` before a profile was used, and
   `PolicyProfile.source_precedence`'s forward reference stayed unresolved: `PolicyProfile.from_yaml`
