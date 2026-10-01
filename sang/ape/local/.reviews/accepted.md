@@ -21,8 +21,8 @@ tests/test_run_worker.py :: claim-window-assert-narrow
 # built without one answers 409 at the first turn instead.
 plato/packs/check.py :: pack-check-assumes-fabric
 # 2.6.0 moved leaf modules under `jazzx_sdk.util` (`utc`, `digest`, `math.ratios`); the old paths
-# are gone in an unreleased version, no sibling repo imports them, and the CHANGELOG marks it breaking.
-jazzx_sdk/tools/ratio_evaluator.py :: old-paths-dropped-unshimmed
+# (and `tools.ratio_evaluator`) are gone in an unreleased version; the CHANGELOG marks it breaking.
+jazzx_sdk/util/__init__.py :: old-paths-dropped-unshimmed
 # 2.6.0 moved `conductor.{fanout,replication,ensemble}` under `conductor.strategies`; the facade
 # names are unchanged, no sibling repo imports the submodules, and the CHANGELOG marks it breaking.
 jazzx_sdk/conductor/strategies/__init__.py :: old-paths-dropped-unshimmed
