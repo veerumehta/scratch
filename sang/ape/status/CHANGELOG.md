@@ -7,6 +7,14 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **openai-agents locked at 0.22.3** (from 0.22.0; the `>=0.22.0` floor unchanged). Patch releases:
+  concurrent async SQLite session startup (japes uses `SQLiteSession`), conditional approvals
+  checked against validated arguments, subprocesses reaped on an early stream close, a missing
+  `OPENAI_API_KEY` no longer cached; 0.22.1 added configurable output-guardrail blocked messages
+  and server-wide guardrails on MCP tools, unused here so far. Its new dependency floors
+  (`httpx2`, `pyjwt`, `starlette`, `urllib3`) were already met by the lock. Agent, session, MCP,
+  guardrail and chat suites pass (763).
+
 - **`tenant_id` in a key on six shipped tables** (+58 / -10 lines, 7 files). `eval_experiment`,
   `eval_case_run`, `eval_optimization_job`, `eval_custom_scorer_revision`, `eval_dataset_version`
   and `japes_feedback_history` carried `tenant_id` as an indexed column only. Each gains a unique
