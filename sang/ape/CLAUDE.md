@@ -16,9 +16,12 @@ chat helpers, drafts, feedback factory, upload cap, kernel converter). Reviewed 
 `b91b3f90..7ed64fa3` and `7ed64fa3..HEAD`); full suite 7485 passed. Release script
 `/tmp/japes_release_260_to_plato.sh` (one commit on plato with parents origin/plato + origin/dev,
 push, PR to dev) is for the user to run; it supersedes `/tmp/japes_record_dev_after_86.sh`.
-Open: jaci-37's full needs list (`jaci/docs/plans/note_JACI_CONFIG_FIRST_AND_PLATO_APIS.md`),
-scope awaiting the user; confirmed bugs `kinds.py:485-489` (hardcoded `rich_evidence_requests`, no
-`policy_registry` to the governor); eval step 7.
+Then jaci-37's batch 1 (routes `/packs/{id}/active`, `/describe`, `/whoami`, `/info/catalog`,
+`/assistants`, session progress/chain, run chain, scripted sessions; eval `case_run` and
+`assistant_session`; path scorers; client contracts) and the loop fixes (governor policy registry,
+`rich_evidence_requests`, `pre_loop_reasoning`), `f6c9f367..HEAD`, reviewed clean, suite green.
+Open: jaci's later batches (composition, asset keys, documents, finance, loop knobs) await the
+user (`jaci/docs/plans/note_JACI_CONFIG_FIRST_AND_PLATO_APIS.md`); eval step 7.
 
 **Working branch is `v2.5.6`**, on `dev` at the PR #78 formal squash (`7a7a0950`). Its first
 slice (python executor) is squashed to `dev` (`da9a709d`) and `plato` (`6701d711`). Plato stays

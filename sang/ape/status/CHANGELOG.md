@@ -54,6 +54,23 @@ distribution (begun as 2.5.8).
     catalog's scorers come from `standard_scorers(llm)`; a session eval's turn scope wins over the
     experiment's. Left: a scripted session the idle sweep expires keeps its in-memory script, and
     two concurrent scripted creates race (relaxed demo only).
+  - jaci's review of the batch (+344 / -68 lines, 23 files, two commits): `jazzx-plato-client`
+    declares `pydantic` (a test reads each light package's imports against its declared
+    dependencies); `FeedbackApiSink` keeps its token and identity when the caller's provider
+    raises; an empty `session_id` is refused and scripts are looked up only for a real one, and a
+    used-up script fails the turn; retiring the active version is a 409, and `/active` answers the
+    served version (activated, else the newest) with `pinned`; `describe` without a registered
+    profile answers `profile_error`; the `assistant_session` eval closes its session and scores
+    the close, output always `{replies, ...}`; a `case_run` eval reports
+    `checkpoint: {"skipped": <name>}`; a scorer spec's unknown `params` are refused when the
+    template is built; `field_path` compares numbers only for real numbers, `ratio` refuses
+    low > high, `banded` refuses repeated edges and NaN; the client's stream parser follows the
+    event-stream rules; the client's and the SDK's `pack_archive` share one rule (any dot-named
+    member skipped, an assistant folder's domain manifest left out, the SDK's timestamp and mode)
+    and zip a folder to the same bytes; `describe` reports a schema error per entry and the pack
+    path as `<pack>`; `progress` with no turns is incomplete. Left: pre-loop reasoning's failure
+    mode, usage and model; eval case runs unpinned; idempotency where no store is wired; scripted
+    sessions per replica.
   - Not done here (jaci's later batches): composition, manifest asset keys, documents, finance,
     loop knobs, `/assess` options.
 
