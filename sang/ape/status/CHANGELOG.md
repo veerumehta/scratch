@@ -7,6 +7,37 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **`jazzx-eval-scorers`, the scorers without the SDK** (+1259 / -615 lines, 14 files). eval-service
+  cannot install japes (Python 3.11 vs >=3.12, `cryptography ^49` vs `>=50`, two top-level
+  `common` packages, path dependencies, ~1,900 modules on import); this is what it can take.
+  - `jazzx_eval_scorers/` beside the other two distributions: pydantic only, `python >=3.11`,
+    extra `schema` (`jsonschema`). `core.py` is the former `evaluation/scorers.py` (ScorerResult,
+    Finding, FunctionScorer, CompositeScorer, AdjudicatorScorer and its policies, ScorerRegistry,
+    ScorerSpec/build_composite, ScorerInfo, Prediction); `metrics.py` moves whole. `_support.py`
+    restates the two SDK helpers they used (a freezable name registry; `call_maybe_async`,
+    sync callables on a worker thread). Importing it loads no `jazzx_sdk`, `plato`, `common`,
+    `fastapi` or `azure` module (a subprocess test holds it).
+  - `judge.py`: `JudgeScorer(judge, ...)` and `judge_policy`, over a caller's
+    `judge(prompt) -> JudgeVerdict` coroutine. The SDK's `LLMJudgeScorer(llm, ...)` is a subclass
+    over `model_judge(llm)` (`structured_call`), and its `llm_judge` policy accepts `llm=` or
+    `judge=`; prompts unchanged.
+  - `primitives.py`, from eval-service's set, reshaped to the `Scorer` protocol (configuration
+    at construction, overridable from the score context as `ScorerSpec.params` arrive; a bad
+    configuration refused at construction; `score` always in [0, 1], counts in `metrics`, detail
+    in `metadata`): `RegexScorer` (flags by name, `search`/`match`/`fullmatch`, group
+    assertions, input capped at `DEFAULT_MAX_INPUT_CHARS`), `ContainsScorer` (`all`/`any`,
+    expected text as the fallback needle), `SchemaComplianceScorer` (Draft 7, JSON text parsed,
+    errors with their paths), `ArrayScorer` with `EquivalenceRule` / `labels_equivalent`
+    (rows by key or key pair, per-field and combined/any-field accuracy, present rate, missing
+    and extra counts, `treat_missing_as_fail`; passes at `threshold`, and an unknown
+    `primary_metric` is an error where eval-service fell back silently).
+  - `jazzx_sdk.evaluation.scorers` and `.metrics` re-export; every existing import works and is
+    the same class. `pyproject.toml` path dependency with the `schema` extra, lock updated,
+    Dockerfile copies it and the image smoke imports `jazzx_eval_scorers.core`.
+  - Not moved: trajectory and operational scorers (they read `CanonicalTrace`), QA and custom
+    scorers. Next: the eval-service PR swaps its primitives onto this package.
+- **Fix:** the pack audit read `X-Trace-Id` without `header_text` (`test_authority` caught it).
+
 - **openai-agents locked at 0.22.3** (from 0.22.0; the `>=0.22.0` floor unchanged). Patch releases:
   concurrent async SQLite session startup (japes uses `SQLiteSession`), conditional approvals
   checked against validated arguments, subprocesses reaped on an early stream close, a missing
