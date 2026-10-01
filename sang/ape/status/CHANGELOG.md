@@ -7,6 +7,12 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **Breaking (import paths): leaf utilities under `jazzx_sdk.util`** (+36 / -36 lines, 35 files).
+  `jazzx_sdk.utc` is `jazzx_sdk.util.utc`, `jazzx_sdk.digest` is `jazzx_sdk.util.digest`, beside
+  `jazzx_sdk.util.math.ratios`: modules with no SDK dependencies, in the lowest import layer, off
+  the package root. The old paths are gone (no sibling repo imports them); the review's
+  `old-paths-dropped-unshimmed` is accepted.
+
 - **Import cycles a fresh `import` of an SDK package hit** (+422 / -386 lines, 11 files, two
   commits; most of it the `ratio` move). Reported by jaci-37 (`import jazzx_sdk.modes` first in a
   process failed), bisected to the 2.6.0 carve-out; the cause is the lazy `jazzx_sdk/__init__`,
