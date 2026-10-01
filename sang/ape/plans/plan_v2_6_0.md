@@ -1,4 +1,4 @@
-# Plan: v2.5.8
+# Plan: v2.6.0 (begun as v2.5.8)
 
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 

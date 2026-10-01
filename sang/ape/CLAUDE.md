@@ -4,8 +4,9 @@
 
 ## Where things stand
 
-**Working branch is `v2.5.8`** (cut 2026-09-30 from `dev` at `2a2ad60b`, PR #86's 2.5.7 squash; SDK
-2.5.8, Plato 0.1.9; plan `plans/plan_v2_5_8.md` has the item table). Built on it, local and
+**Working branch is `v2.6.0`** (begun as `v2.5.8`, renamed 2026-09-30 when the user made the client
+package a minor: SDK 2.6.0, Plato 0.2.0, `jazzx-plato-client` 0.2.0; cut from `dev` at `2a2ad60b`,
+PR #86's 2.5.7 squash; plan `plans/plan_v2_6_0.md` has the item table). Built on it, local and
 unpushed: human checkpoints (case runs suspend/resume, run outcomes), config audit trail +
 conditional activation + assistant releases, queue cancellation, split identity veto, one token-bucket
 declaration, anthropic 1.x compatibility, sqlite claim compare-and-set, tiered materialize, and
