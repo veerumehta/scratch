@@ -7,6 +7,18 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **The SDK talks to Plato through `jazzx-plato-client`** (+34 / -12 lines, 5 files).
+  `FeedbackApiSink` posted to Plato's `/feedback` with its own httpx code; it now builds the body
+  and calls `PlatoClient.submit_feedback` (`prefix=""` on its API-root URL), passing its identity
+  headers and bearer token through the client's header provider, the sink's own winning as
+  before. Constructor unchanged; callers are tests only. Two client changes it needed:
+  `tenant_id` may be None (no `X-Tenant-Id`), and `PlatoError` is now an `httpx.HTTPError`, so the
+  sink's documented error type holds and `except httpx.HTTPError` catches client refusals.
+  - Import-linter: `jazzx_plato_client` and `jazzx_eval_contracts` are root packages, and a new
+    contract forbids them importing `jazzx_sdk`, `plato` or `common`. The CI job installs both
+    editable (`--no-deps`) first: uninstalled, the repo-root folder of the same name resolves
+    instead of the package. Reproduced in a clean venv: 5 contracts kept.
+
 - **`jazzx-plato-client`: `health()` and `turn_feedback(...)`**, asked for by jaci's adoption.
   `health()` reads `GET /health` at the service root (outside the API prefix; Plato serves it
   there). `turn_feedback(conversation_id=, message_id=, reaction=, rating=, text=, trace_id=,
