@@ -13,8 +13,9 @@ distribution (begun as 2.5.8).
   which no longer imports `fabric` first in an order that happened to resolve the cycles. Five
   packages failed alone (`modes`, `expressions`, `finance`, `statemachine`, `fabric.graph`); all
   pass at `origin/dev`. Fixes: `fabric.canonical` no longer imports `tools` (the ratio evaluator
-  moves to `fabric.canonical.ratio`, `tools.ratio_evaluator` re-exports it; the canonical layer
-  depended on a higher one); `fabric/__init__`'s guidance re-exports and `evaluation/__init__`'s
+  moves to a new lowest-layer package, `jazzx_sdk.numeric.ratios`, pure stdlib and pydantic, for
+  `fabric`, `finance` and `formal` to import; `tools.ratio_evaluator` re-exports it; the canonical
+  layer had depended on a higher one); `fabric/__init__`'s guidance re-exports and `evaluation/__init__`'s
   `EvaluatorMode` / `EvaluationReport` re-exports are lazy; `fabric.graph.proposal` imports the
   state-machine engine where it runs, and `condition_evaluator` the expression evaluator.
   `tests/test_import_each_package.py` imports all 74 packages, each in a fresh interpreter (about
