@@ -1,6 +1,6 @@
 # Claude Session Status
 
-**Last Updated**: 2026-09-28
+**Last Updated**: 2026-10-01
 
 ## Where things stand
 
@@ -19,9 +19,25 @@ push, PR to dev) is for the user to run; it supersedes `/tmp/japes_record_dev_af
 Then jaci-37's batch 1 (routes `/packs/{id}/active`, `/describe`, `/whoami`, `/info/catalog`,
 `/assistants`, session progress/chain, run chain, scripted sessions; eval `case_run` and
 `assistant_session`; path scorers; client contracts) and the loop fixes (governor policy registry,
-`rich_evidence_requests`, `pre_loop_reasoning`), `f6c9f367..HEAD`, reviewed clean, suite green.
-Open: jaci's later batches (composition, asset keys, documents, finance, loop knobs) await the
-user (`jaci/docs/plans/note_JACI_CONFIG_FIRST_AND_PLATO_APIS.md`); eval step 7.
+`rich_evidence_requests`, `pre_loop_reasoning`). Then, all on 2026-10-01 and each reviewed clean:
+jaci-37's two reviews of that work (client `pydantic` dep, sink token, scripted-session guards,
+retire guard, session evals that close, SSE parser, one pack-content rule); multi-replica
+activation (merge into the stored `PLATO_ACTIVE_PACK`, If-Match on `stored_version`); governed-route
+idempotency that replays (`server.idempotency`, table `japes_request_idempotency`, migration 0014);
+recovered step failures logged; per-model agent cost (`ModelCallLedger`, client `TurnUsage`); the
+review's open items (stale citations become governor required actions, fail-soft metered
+`pre_loop_reasoning` with `pre_loop_model` and `CaseResult.pre_loop`, eval `pack_version` +
+`MaterializedPacks`, `PlatoError` also a `RuntimeError`); five import cycles a fresh package import
+hit (`tests/test_import_each_package.py`); leaf modules under `jazzx_sdk.util` (`utc`, `digest`,
+`math.ratios`; breaking paths, accepted). Suite 7555 green. The release script still applies (it
+squashes the `v2.6.0` tip). jazzx-assistant review note: `/tmp/jazzx_assistant_dev_to_japes_review.md`.
+
+Open, awaiting the user: `missing_inputs: default` for assess (schema defaults); refresh the
+`dscr_core` seed from jaci's 0.2.0 or leave it (jaci owns the pack); jaci's later batches
+(composition, asset keys, documents, finance, loop knobs;
+`jaci/docs/plans/note_JACI_CONFIG_FIRST_AND_PLATO_APIS.md`); eval step 7; Acra 4.9 and caps.
+Deferred: `TODO(activation-merge-lost-update)`, `TODO(python-rules-assessed-twice)`, streamed
+agentic usage, scripted sessions per replica, the anthropic lock bump and live smoke.
 
 **Working branch is `v2.5.6`**, on `dev` at the PR #78 formal squash (`7a7a0950`). Its first
 slice (python executor) is squashed to `dev` (`da9a709d`) and `plato` (`6701d711`). Plato stays
