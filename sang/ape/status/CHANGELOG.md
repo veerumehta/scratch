@@ -7,6 +7,21 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **`fabric` no longer imports `conductor`** (REFACTOR-2.4 Phase 8, revised) (+36 / -23 lines, 6 files).
+  `import jazzx_sdk.fabric.canonical` loaded ten `conductor` modules, the engine among them,
+  through one edge: `condition_evaluator` read `ExecutionKind` from `conductor.pipeline`, whose
+  package init imports the engine. `ExecutionKind` now lives in `fabric.canonical.trace`, beside
+  the other step-vocabulary enums; `conductor.pipeline` and the `conductor` facade re-export it,
+  so every existing path (jaci's `from jazzx_sdk.conductor import ExecutionKind` included)
+  resolves unchanged. The four `fabric -> conductor` ignores are gone from `.importlinter`, so the
+  layer contract now enforces the direction; `test_the_canonical_package_loads_no_conductor_or_tools`
+  fails on the old tree. The plan's move of `condition_evaluator.py` out of `canonical/` is not
+  done: it now has about twenty SDK consumers across `pack`, `fabric.graph`, `canonical/caps`,
+  `formal`, `adjudication` and `server` (the plan saw one), jaci's tests pin its path, and the
+  payoff the plan named (the `tools`/`conductor`/`expressions` drag and the cycle) is gone with
+  this change and the earlier cycle cuts. `finance/filings.py`'s registration comment named an
+  import chain that no longer exists; it now states the real one (`jazzx_sdk.tools` imports it).
+
 - **Durable policy extraction runs** (+470 / -66 lines, 9 files). `PolicyExtractionService(store=)`
   records runs in an `ExtractionRunStore` (`server.policy_extract_runs`: the `ExtractionRun` model,
   the protocol, `InProcessExtractionRunStore`, which keeps the old `MAX_RUNS` cap; and
