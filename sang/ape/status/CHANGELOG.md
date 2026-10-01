@@ -7,6 +7,19 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **Import cycles a fresh `import` of an SDK package hit** (+~440 / -~400 lines, 11 files, two
+  commits; most of it the `ratio` move). Reported by jaci-37 (`import jazzx_sdk.modes` first in a
+  process failed), bisected to the 2.6.0 carve-out; the cause is the lazy `jazzx_sdk/__init__`,
+  which no longer imports `fabric` first in an order that happened to resolve the cycles. Five
+  packages failed alone (`modes`, `expressions`, `finance`, `statemachine`, `fabric.graph`); all
+  pass at `origin/dev`. Fixes: `fabric.canonical` no longer imports `tools` (the ratio evaluator
+  moves to `fabric.canonical.ratio`, `tools.ratio_evaluator` re-exports it; the canonical layer
+  depended on a higher one); `fabric/__init__`'s guidance re-exports and `evaluation/__init__`'s
+  `EvaluatorMode` / `EvaluationReport` re-exports are lazy; `fabric.graph.proposal` imports the
+  state-machine engine where it runs, and `condition_evaluator` the expression evaluator.
+  `tests/test_import_each_package.py` imports all 74 packages, each in a fresh interpreter (about
+  7 s, in parallel); it fails on the unfixed tree.
+
 - **jaci-37's review: the four open items** (+282 / -145 lines, 14 files, 8 commits).
   - Governor citations (SDK): `_stale_citations` returns its findings (deduped, a legacy alias or
     a rule of a policy not in force) and they land on the decision as
