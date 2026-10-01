@@ -7,6 +7,30 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **Breaking (packaging): `server` and `documents` extras** (+141 / -38 lines, 14 files).
+  - `server` = uvicorn: server and dual modes need `japes[server]`; without it
+    `_create_uvicorn_server` raises an `ImportError` naming the extra. FastAPI stays in core:
+    `common.core` (which the queue runtime imports) imports it at load, so it cannot move until
+    `common` stops doing that (a common-repo change).
+  - `documents` = pymupdf, python-docx, beautifulsoup4, feedparser. Every import is on use, through
+    `tools/documents/_deps.require(module, purpose)` (raises `ImportError` naming the extra) or the
+    readers' own `DocumentConversionError`; the RSS connector's module-level `feedparser` import is
+    now on use too. HTML text extraction already fell back without bs4.
+  - `plato` includes both (and `anthropic`), so the image and CI are unchanged. Tests: core imports
+    with the libraries blocked and both errors name their extra; the CI-extras check lists the
+    three new extras as subsets of `plato`; the submodule-deps check reads a lock marker given per
+    group (`{main = ..., dev = ...}`), which the relock produced for two packages.
+  - Consumers: **jaci** runs server mode and the document tools: `japes[server,documents]`
+    (it declares `pymupdf` itself). **jazzx-assistant** runs the queue runtime (no `server`) and
+    calls `jazzx_sdk.tools.to_markdown`: `japes[mlflow,documents]`; its mock Hub/API apps import
+    fastapi, still core. **juno** declares fastapi and uvicorn itself and imports only
+    `ClientLayer` from japes.
+- **`jazzx-eval-scorers` folded into `jazzx-eval-contracts`** as `jazzx_eval_contracts.scorers`
+  (`git mv`; +70 / -114 lines, 17 files): one light evaluation package for eval-service instead of
+  two. Contracts' floor drops to Python 3.11 (its code parses under the 3.11 grammar; no 3.12-only
+  APIs), gains the `schema` extra (`jsonschema`), and its description widens to contracts and
+  scorers, pydantic only. Version stays 0.1.0. SDK re-exports and the Dockerfile follow.
+
 - **Breaking (packaging): `anthropic` leaves core** (+47 / -7 lines, 4 files). It is the new
   `anthropic` extra, and `plato` includes it. `AgentExecutionService` no longer imports the
   Anthropic provider at module load: `.anthropic` imports it on first use, and without the SDK
