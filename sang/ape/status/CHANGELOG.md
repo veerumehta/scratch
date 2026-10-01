@@ -7,6 +7,13 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **`jazzx-plato-client`: `health()` and `turn_feedback(...)`**, asked for by jaci's adoption.
+  `health()` reads `GET /health` at the service root (outside the API prefix; Plato serves it
+  there). `turn_feedback(conversation_id=, message_id=, reaction=, rating=, text=, trace_id=,
+  agent_id=, source=, **fields)` builds a `submit_feedback` body with the SDK's `Feedback.for_turn`
+  fields, leaving unset ones out; `DEFAULT_REACTION` / `DEFAULT_SOURCE` are held to the SDK's
+  `Reaction.NEUTRAL` / `FeedbackSource.USER`, and the body validates as `FeedbackSubmit`.
+
 - **Breaking (packaging): `server` and `documents` extras** (+141 / -38 lines, 14 files).
   - `server` = uvicorn: server and dual modes need `japes[server]`; without it
     `_create_uvicorn_server` raises an `ImportError` naming the extra. FastAPI stays in core:
