@@ -7,7 +7,7 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
-- **Breaking (import path): `tools.ratio_evaluator` removed** (+3 / -10 lines, 3 files). The shim kept
+- **Breaking (import path): `tools.ratio_evaluator` removed** (+5 / -12 lines, 3 files). The shim kept
   for jaci is gone; `jazzx_sdk.util.math.ratios` is the module and `jazzx_sdk.tools` still
   re-exports its names. Its test moves to `tests/test_util_math_ratios.py`. jaci's
   `tests/unit/test_corrections.py` imports the old path and needs the new one.
