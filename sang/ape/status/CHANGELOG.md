@@ -7,7 +7,7 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
-- **Pack lint: a threshold the rule's description does not state** (+136 / -0 lines, 2 files).
+- **Pack lint: a threshold the rule's description does not state** (+125 / -0 lines, 2 files).
   `lint_pack` warns `threshold_not_in_description` when a rule's description states numbers and
   none of them is the numeric threshold its condition encodes: an `expression` value, or a `ratio`
   threshold resolved from the pack's profiles (decimal strings parsed), at any `all_of`/`any_of`
