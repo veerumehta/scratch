@@ -7,6 +7,50 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **jaci batch 1: Plato routes and client contracts for SDK-free DSCR and clinical intake, and
+  three loop fixes** (+1462 / -46 lines, 34 files, ten commits). From jaci's config-first inventory.
+  - Fixes in `pipelines/kinds.py`: `sdk_mode_factory` gives the governor the pack's
+    `policy_registry` (its citation and sunset checks ran nowhere on Plato); the investigator's
+    request shape is `conductor.rich_evidence_requests` (default true, as before); new
+    `conductor.pre_loop_reasoning` (default false) hands the run's `ReasoningAgent` to the
+    pre-loop `assess`, which `CaseRunService` builds only for an investigation-loop pack that sets
+    it. Reported but not a bug: schema-derived models admitting a null for an optional
+    non-nullable property is deliberate (strict structured output fills every field), and a test
+    pins it.
+  - Packs: `GET /packs/{id}/active` (version, digest, activated at/by from the audit trail; 404
+    with none), `GET /packs/{id}/{v}/describe` (`pack.inventory.describe_pack`: policies, programs,
+    default program, profiles, ontology, conductor, modes, evidence types, playbooks, skills,
+    metrics, checkpoints, every `*_schema` the conductor names; a part that fails is
+    `<part>_error`), `content_digest` on `PackCheckReport` (what publish records).
+  - `GET /whoami` (`server.whoami`: tenant, identity, `may_author`; no roles, which japes has no
+    source for) and `GET /info/catalog` (`server.catalog.platform_catalog`: modes, conductor,
+    pre-loop, condition, guardrail, compose, ground kinds, evidence sources and connectors,
+    scorers); `condition_evaluator.condition_kinds()`.
+  - Assistants: `GET /assistants` and `/assistants/{id}` (`AssistantRuntime.assistants` /
+    `describe`, over a new `assistant_ids()` on both manifest stores), read-gated;
+    `GET .../sessions/{sid}/progress` (`SessionRecorder.progress`, close's summary without
+    writing); session create takes `pack_version` (409 unless served) and `scripted_replies`
+    (relaxed posture only, 403 otherwise; per replica, through `AssistantRuntime.agent_with_llm`
+    and a `ScriptedLLM`); the session and `/chat` reply carry `pack` (the serving assistant pack's
+    id, version, digest).
+  - Canonical reads scoped by owner, not `trace_routes` (the canonical store is not tenant-keyed,
+    so a by-id read would cross tenants): `GET /runs/{id}/chain` (`CaseRunService.chain`) and
+    `GET .../sessions/{sid}/chain` (`SessionRecorder.chain`): Trace, Decision, Outcomes.
+  - Eval: `case_run` (`pack.eval_invoker.CaseRunInvoker`, the conductor without suspension) and
+    `assistant_session` (`server.eval_api.AssistantSessionInvoker`, scripted turns in one session;
+    output the session summary, or each answer) entities, wired in Plato. Scorers in
+    `jazzx_eval_contracts`: `field_path`, `ratio`, `banded`, `at_least` (each over
+    `actual_path`/`expected_path`); a configurable scorer built with no config takes it from the
+    template's `params`, so `standard_scorers` registers regex, contains, schema_compliance, array
+    and the four.
+  - `jazzx-plato-client`: `contracts` (Evidence, Decision, Trace, Outcome, Refusal,
+    PackCheckReport, ActivePack, PolicyAssessment, CaseResult, CaseRunChain, WhoAmI, ChatReply,
+    SessionRecord, SessionProgress; extra fields allowed; a test holds their fields to the
+    server's models) and methods for every new route plus pack contents/history and the eval
+    datasets/experiments/scorers. Methods still answer dicts.
+  - Not done here (jaci's later batches): composition, manifest asset keys, documents, finance,
+    loop knobs, `/assess` options.
+
 - **Plato's reusable logic moved into the SDK; Plato routes are HTTP translation over it**
   (+1633 / -1385 lines, 65 files, nine commits). No behavior change to Plato's routes; stored
   rows read as before (Plato passes its own table and key names in).

@@ -10,9 +10,15 @@ PR #86's 2.5.7 squash; plan `plans/plan_v2_6_0.md` has the item table). Built on
 unpushed: human checkpoints (case runs suspend/resume, run outcomes), config audit trail +
 conditional activation + assistant releases, queue cancellation, split identity veto, one token-bucket
 declaration, anthropic 1.x compatibility, sqlite claim compare-and-set, tiered materialize, and
-`jazzx-plato-client` (own distribution, Phases 1-2). Adversarial review over `origin/dev..HEAD`
-running at the end of 2026-09-30. Open: eval step 7 (user's call), documents upload, the record of
-`dev` on `plato` (`/tmp/japes_record_dev_after_86.sh`).
+`jazzx-plato-client` (own distribution, Phases 1-2), and Plato's reusable logic moved into the SDK
+(`d9666060..f6c9f367`: loader/check, pack lookup and gates, activation, case runs, formal worker,
+chat helpers, drafts, feedback factory, upload cap, kernel converter). Reviewed clean (two halves,
+`b91b3f90..7ed64fa3` and `7ed64fa3..HEAD`); full suite 7485 passed. Release script
+`/tmp/japes_release_260_to_plato.sh` (one commit on plato with parents origin/plato + origin/dev,
+push, PR to dev) is for the user to run; it supersedes `/tmp/japes_record_dev_after_86.sh`.
+Open: jaci-37's full needs list (`jaci/docs/plans/note_JACI_CONFIG_FIRST_AND_PLATO_APIS.md`),
+scope awaiting the user; confirmed bugs `kinds.py:485-489` (hardcoded `rich_evidence_requests`, no
+`policy_registry` to the governor); eval step 7.
 
 **Working branch is `v2.5.6`**, on `dev` at the PR #78 formal squash (`7a7a0950`). Its first
 slice (python executor) is squashed to `dev` (`da9a709d`) and `plato` (`6701d711`). Plato stays
