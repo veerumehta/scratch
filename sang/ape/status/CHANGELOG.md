@@ -7,7 +7,7 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
-- **A step failure `on_step_error` recovers is logged with its traceback** (+21 / -0 lines, 2
+- **A step failure `on_step_error` recovers is logged with its traceback** (+19 / -0 lines, 2
   files). `ConductorEngine` recorded it only on the span and the step note, so a chat-lifecycle
   host lost the traceback its own code used to log (found reviewing jazzx-assistant's
   `dev-to-japes`, whose orchestrator failure became an `operator_detail` string).
