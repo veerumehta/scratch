@@ -7,6 +7,15 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **`tenant_id` in a key on six shipped tables** (+58 / -10 lines, 7 files). `eval_experiment`,
+  `eval_case_run`, `eval_optimization_job`, `eval_custom_scorer_revision`, `eval_dataset_version`
+  and `japes_feedback_history` carried `tenant_id` as an indexed column only. Each gains a unique
+  constraint on `tenant_id` plus a key that is already unique (the primary key, or the existing
+  unique pair), the shape `turn_run` and `model_overlay` use, so no row can violate it and no
+  key changes. Plato migration `0013_tenant_keys` (batch mode, so sqlite rebuilds the table);
+  checked against a populated 0012 database: rows kept, constraints present. The tenancy guard
+  checks `register_all`'s tables with no exceptions; `TODO(shipped-tables-untenanted)` is closed.
+
 - **Review round 1 fixes** (+179 / -33 lines, 14 files), from the adversarial review over
   `origin/dev..HEAD`.
   - `conductor_suspension` keys on `tenant_id` (`DbSuspensionStore(db, tenant_id=)`, every query
