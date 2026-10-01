@@ -7,6 +7,23 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **jaci-37's review: the four open items** (+282 / -145 lines, 14 files, 8 commits).
+  - Governor citations (SDK): `_stale_citations` returns its findings (deduped, a legacy alias or
+    a rule of a policy not in force) and they land on the decision as
+    `policy_checks: [..., "policy_citations"]` and `required_actions: ["update the citation: ..."]`,
+    not only a log line. A decision schema opts in with a `policy_clauses_cited` string array.
+    The long rationale docstring is cut to two lines.
+  - Pre-loop reasoning (SDK, client contract): `assess` runs deterministically first (an input
+    refusal still raises), then reasons with a metered agent; a model error keeps the
+    deterministic assessment. `CaseResult.pre_loop` records `reasoned`, `model`, `usage`,
+    `cost_usd` and any `error`, carried across a suspension in its payload (not the context,
+    which the governor's prompt reads). `conductor.pre_loop_model` picks the model.
+    `TODO(python-rules-assessed-twice)`.
+  - Eval pins (SDK, Plato): `pack` and `case_run` eval outputs carry `pack_version`;
+    `pack.domain.MaterializedPacks` (per tenant, by content digest, `MATERIALIZED_PACKS_KEPT`)
+    loads a version once in Plato's eval `pack_for`. `config.version` pins the experiment.
+  - Client: `PlatoError` is an `httpx.HTTPError` and a `RuntimeError`.
+
 - **An agentic turn's cost prices each model call by the model that served it** (+211 / -20
   lines, 11 files, five commits). A skill with its own `model` was costed at the parent's rate:
   turn usage carried only summed tokens (the SDK's shared `Usage` records no model), and

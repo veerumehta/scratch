@@ -9,7 +9,31 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ## [Unreleased]
 
-### Changed: dscr-core's loan-amount band edges linked to the profile (0.20.13, branch `acra-programs`; needs japes `acra-lint`)
+### Changed: dscr-core 0.2.0 — the human checkpoint, the pack's own ratios, one assessment (0.20.8, branch `dscr-acra-0.2`; needs japes 2.6.0)
+- **Pack 0.2.0.** `conductor.human_checkpoint: ELIGIBILITY_DECISION_APPROVAL`: a Plato case run
+  waits after the governor for an underwriter, and the narrator runs only on an approval. The
+  decision schema drops `dscr`/`ltv`/`cltv` (a reasoner restated them, once as an LTV of 1.6 for
+  0.82); `metrics.yaml` derives `dscr` beside `cltv_pct`, and the page shows those. The version
+  moves off `0.1.0-draft`, which an earlier, different jaci dscr-core already holds on Plato.
+- **One assessment.** `run_eligibility_assessment(loan)` is `jazzx_sdk.pack.assessment.assess`
+  over the pack, the call Plato serves, mapped by `assessment_from_policy_assessment` for both
+  paths; `eligibility/compose.py` and `context.py` are removed with their tests
+  (`test_dscr_pack_assessment.py` holds the gold cases, the rule-field guard and the program
+  choice).
+- **The Plato path** (`dscr/plato_review.py`) reads the pack id and version from jaci's manifest
+  and pins every call to it, passes an idempotency key per Run click, stops a run at the
+  checkpoint, and `resume_on_plato` answers it (approve, reject, or replace the decision with a
+  reason code and authority basis) and follows the run past the replayed suspension. The DSCR page
+  picks the Acra program and renders the checkpoint.
+
+### Changed: the Plato paths through jazzx-plato-client; the model overlay removed (0.20.8, branch `dscr-acra-0.2`; needs japes 2.6.0)
+- `shared/plato.py`, `ci_spread/feedback.py` and `scripts/publish_packs_to_plato.py` take the client
+  and the pack packaging helpers from `jazzx_plato_client`; `plato_status` uses
+  `PlatoClient.health()`; ci_spread feedback is one dict body (`turn_feedback`), with the SDK's
+  store only in-process. `src/jaci/sdk/` (the model overlay, a no-op on every japes jaci runs
+  against) is removed, so `import jaci` no longer loads the SDK.
+
+### Changed: dscr-core's loan-amount band edges linked to the profile (0.20.8, branch `dscr-acra-0.2`; needs japes `acra-lint`)
 - The loan-amount axes of `DSCR-ELIG-CLTV-GRID`, `DSCR-VACANT-RT-CLTV` and `DSCR-VACANT-CO-CLTV`
   declare `domain_extensions.profile_custom_key` (`grid_loan_amount_band_edges`,
   `vacant_rate_term_loan_amount_band_edges`, `vacant_cash_out_loan_amount_band_edges`), and japes'
@@ -19,7 +43,7 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
   `DSCR_PLATINUM_SELECT` 1.1.0, each having lost its PPP rules to `DSCR_PROCESS` 2.0.0, and
   ENCODING_NOTES' profile counts and §1b are re-derived.
 
-### Changed: dscr-core's input vocabularies, state PPP rules once, linked loan bounds (0.20.12, branch `acra-programs`)
+### Changed: dscr-core's input vocabularies, state PPP rules once, linked loan bounds (0.20.8, branch `dscr-acra-0.2`)
 - **Vocabularies from the Plato seed.** japes' PR #81 enforced the DSCR input vocabularies in the
   seed schema and `assess` refuses a value outside them. `LoanApplication` now types the same
   fields as `Literal`s (`USState` with DC and the territories, `CitizenshipType`,
@@ -40,14 +64,14 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
   `plat_large_loan_amount`) declare profile keys, so the drift lint checks them.
   `TODO(loan-bound-profile-claim-false)` now covers only the matrix band edges, which need japes.
 
-### Changed: DSCR gold cases state the whole loan (0.20.11, branch `acra-programs`)
+### Changed: DSCR gold cases state the whole loan (0.20.8, branch `dscr-acra-0.2`)
 - japes' pack assessment now refuses an input that omits a field a rule reads, so the five DSCR
   gold cases carry every `LoanApplication` field (52), with the defaults `LoanApplication` gives;
   outcomes are unchanged. `assess_on_plato` already posts the whole model.
 - `TODO(absent-channel-escapes-correspondent)` is gone from `platinum_select.yaml` and
   `standard.yaml`.
 
-### Changed: dscr-core's Standard program re-based on its 8.17.2026 consolidation (0.20.10, branch `acra-programs`)
+### Changed: dscr-core's Standard program re-based on its 8.17.2026 consolidation (0.20.8, branch `dscr-acra-0.2`)
 - `DSCR_STANDARD` 3.0.0 cites the Standard consolidated guidelines v1.0 (Summary 8.17.2026 +
   Seller's Guide excerpt 2026-08-28); every rule description carries its STD-x number. The grid,
   ITIN and property-type tables already matched 8.17 cell for cell.
@@ -81,7 +105,7 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
   44 rules.
 - `test_dscr_standard.py`: 49 provisions, each in-process and through japes' `assess`.
 
-### Added: Platinum Select as dscr-core's second program (0.20.9, branch `acra-programs`)
+### Added: Platinum Select as dscr-core's second program (0.20.8, branch `dscr-acra-0.2`)
 - `policies/platinum_select.yaml`: `DSCR_PLATINUM_SELECT` (scope product, `overlay_id:
   platinum_select`, program `platinum_select`), 41 rules from the Platinum Select consolidated
   guidelines v1.0 (Summary 8.17.2026 + Seller's Guide excerpt 2026-08-28), each citing its PLAT-x.y:
@@ -110,7 +134,7 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
   `assess` reads an omitted field as missing and skips its rule, so these fail-closed defaults hold
   on Plato only because `assess_on_plato` posts the whole `LoanApplication`.
 
-### Changed: dscr-core split by Acra program (0.20.8, branch `acra-programs`; needs japes v2.5.6)
+### Changed: dscr-core split by Acra program (0.20.8, branch `dscr-acra-0.2`; needs japes v2.5.6)
 - `policies/eligibility.yaml` (`DSCR_ELIGIBILITY`, 42 rules) is now two policies with the same 42
   rules, each unchanged: `process.yaml` (`DSCR_PROCESS`, scope institution, the 8 condo/entity/fraud
   gates from the Commercial DSCR Loan Process Flow) and `standard.yaml` (`DSCR_STANDARD` 2.0.0,
