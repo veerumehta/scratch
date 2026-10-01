@@ -73,6 +73,20 @@ distribution (begun as 2.5.8).
     contents listing). Client-zipped digests change once (timestamp and mode now the SDK's); a republish is still `unchanged`, since `publish_pack` compares members, and the client's member set changes only for a `.pyc`/`.pyo` outside `__pycache__`. Left: pre-loop reasoning's failure
     mode, usage and model; eval case runs unpinned; idempotency where no store is wired; scripted
     sessions per replica.
+  - Pack activation across replicas (+130 / -12 lines, 7 files, five commits), from jaci's
+    verification pass and the review after it. Pins load per replica at boot, while the durable
+    `PLATO_ACTIVE_PACK` row is shared:
+    - an activation merges into the stored value (`_stored_active`), not this replica's
+      environment, which erased another replica's entry for a different pack (pre-existing);
+    - retiring a version refuses the replica's pin or the stored one (`_durably_active`);
+    - `If-Match` on activate compares with `_expected_active` (stored, else this replica's), and
+      `/active` reports that as `stored_version` ("" for none), so it round-trips; the client's
+      `activate_pack(if_match=)` sends it and `ActivePack.stored_version` types it; the quickstart
+      names it;
+    - `poetry.lock` relocked (`jazzx-plato-client`'s `pydantic`); the describe test also deletes a
+      schema, the case that carries a path.
+    - Left: `TODO(activation-merge-lost-update)`: two overlapping activations of different packs
+      keep only the later write (no compare-and-set on the settings store).
   - Not done here (jaci's later batches): composition, manifest asset keys, documents, finance,
     loop knobs, `/assess` options.
 
