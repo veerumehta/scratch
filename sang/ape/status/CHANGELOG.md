@@ -7,6 +7,15 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **Breaking (import paths): `conductor.strategies`** (REFACTOR-2.4 Phase 9) (+20 / -16 lines, 13 files).
+  `fanout`, `replication` and `ensemble` (the chain the engine never imports) move to
+  `jazzx_sdk.conductor.strategies.{fanout,replication,ensemble}`. `pipeline.py`, `checkpoint.py`
+  and the rest stay at the package root; the 36-name `jazzx_sdk.conductor` facade is unchanged,
+  so `jazzx_sdk.conductor.Checkpointer` (patched by string in jaci) and `jazzx_sdk.conductor.fan_out`
+  still resolve. Old submodule paths are gone, unshimmed: no sibling repo imports them (jaci's
+  fifteen consumers use the facade; its conductor unit tests pass against this tree). Accepted
+  in the review file as `old-paths-dropped-unshimmed`.
+
 - **`fabric` no longer imports `conductor`** (REFACTOR-2.4 Phase 8, revised) (+28 / -26 lines, 6 files).
   `import jazzx_sdk.fabric.canonical` loaded ten `conductor` modules, the engine among them,
   through one edge: `condition_evaluator` read `ExecutionKind` from `conductor.pipeline`, whose
