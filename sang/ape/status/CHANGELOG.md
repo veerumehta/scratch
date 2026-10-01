@@ -7,7 +7,7 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
-- **Import cycles a fresh `import` of an SDK package hit** (+~440 / -~400 lines, 11 files, two
+- **Import cycles a fresh `import` of an SDK package hit** (+422 / -386 lines, 11 files, two
   commits; most of it the `ratio` move). Reported by jaci-37 (`import jazzx_sdk.modes` first in a
   process failed), bisected to the 2.6.0 carve-out; the cause is the lazy `jazzx_sdk/__init__`,
   which no longer imports `fabric` first in an order that happened to resolve the cycles. Five
