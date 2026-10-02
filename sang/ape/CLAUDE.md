@@ -4,6 +4,18 @@
 
 ## Where things stand
 
+**Conductor pipeline (policy session, 2026-10-02)**: all five phases of
+`status/done_conductor_pipeline.md` built on `v2.6.0`, `000ff187..cab3f9b8`, local and unpushed;
+full-range adversarial review over `fab0793e..HEAD` clean (rounds 10 and 11). `conductor_pipeline`
+kind and `jazzx_sdk.pipelines.steps` (step kinds `document_ingest`, `policy_assessment`,
+`adjudication`, `investigation` with sentinel/convergence, `policy_check`, `playbook`,
+`human_checkpoint`, `narrate`; `jazzx_sdk.step_kinds` entry point; publish-time slot check);
+`investigation_loop` is its fixed pipeline, held to `tests/data/dscr_loop_snapshot.json`. Phase 2's
+runtime half (`POST/GET {prefix}/documents`, `BlobDocumentStore`, `PlatoWiring.documents_for`,
+pinning in `CaseRunService`) was built here by the user's direction; the runtime session was told.
+ci-spread-core's seed is a `conductor_pipeline` and publishes. jaci session told what to adopt.
+Open: jaci adoption; the seed manifest's three TODOs. Suite 7716 green.
+
 **Working branch is `v2.6.0`** (begun as `v2.5.8`, renamed 2026-09-30 when the user made the client
 package a minor: SDK 2.6.0, Plato 0.2.0, `jazzx-plato-client` 0.2.0; cut from `dev` at `2a2ad60b`,
 PR #86's 2.5.7 squash; plan `plans/plan_v2_6_0.md` has the item table). Built on it, local and
@@ -60,11 +72,12 @@ runners as adapters, `prepare`, `ChatError`/`chat_step_error`, completion on eve
 
 **Acra DSCR programs** (2026-09-30, local, unpushed): in the v2.5.6 squash `fc48deb4` are the
 seed split (`DSCR_PROCESS` core, `DSCR_STANDARD`, `DSCR_PLATINUM_SELECT`) and `assess`'s refusal of
-omitted or non-nullable-null facts. On `v2.5.8` as `eacaac6d`: lint reads a pack's
+omitted or non-nullable-null facts. On `v2.6.0` (was `v2.5.8`) as `eacaac6d`: lint reads a pack's
 own policies for program checks, `rule_repeated_across_programs`, `MatrixAxis.domain_extensions`
 band edges in the drift lint, the conductor raw-input decision, and the seed with PPP rules once in
 `DSCR_PROCESS` and linked loan bounds. jaci branch `acra-programs` tip
-`f3873da` needs it. Open: cap adjustments (declining market, Q-07/Q-08).
+`f3873da` needs it. Policy extraction fixes from jaci's first live run (`flex_` names, per-clause rule
+ids, gated thresholds, bounded segments, relevance gate, gpt-6-luna temperature) are `fab0793e`. Open: cap adjustments (declining market, Q-07/Q-08).
 
 **Chat runtime coordinator** (jazzx-assistant's second Notion page, `plans/plan_chat_runtime_coordinator.md`):
 Phase A (`b255d181..1da37c9d`) and Phase B B1-B5 (`aa59ddc6..cf3baa3a`: finish, admit, stop
@@ -154,6 +167,31 @@ there. A `git merge --squash` from a long-diverged branch hits stale-base confli
 where the target provably carries no work of its own, `git read-tree -u --reset <source>` is exact
 and conflict-free. **Check that precondition first** -- `dev` had diverged with a security fix
 `v2.5.4` lacked, and a tree copy there would have reverted three CVE alerts.
+
+## Who works on what (two japes sessions)
+
+Two Claude sessions work on japes at once, both committing to the working branch. Split by
+subsystem, by path, so each keeps its context loaded and commits do not collide.
+
+- **Policy session** (authoring and assessment): `pipelines/policy_*`, `pipelines/jtbdset.py`,
+  `pipelines/authoring_chat.py`, `pack/assessment.py`, `pack/lint.py`, `pack/rule_merge.py`,
+  `fabric/canonical/` policy, profile and lint, `formal/`, Plato's authoring, pack and assess routes,
+  seed domain packs (`plato/data/seed_packs/`), and anything Acra / DSCR. Also the conductor work
+  that runs a pack on a case (`plans/plan_conductor_pipeline.md`).
+- **Runtime session** (runs, chat, models): `runs/`, `pipelines/chat*.py` and the chat lifecycle,
+  `agents/interactive/`, grounding, the model and LLM layer (`llm/`, `agents/models.py`,
+  `agents/*_provider.py`), observability, Plato infrastructure, releases, squashes and versions.
+
+Rules:
+- **A finder reports to the owner, who fixes.** Message the owning session (`ListAgents`, then
+  `SendMessage`) with a repro. Fix across the line only when the owner is idle with a clean tree,
+  and tell it afterwards.
+- **Stage explicit paths, never `git add -A`**, and run `git status` first: the other session's
+  uncommitted work sits in the same tree. Amend only a commit of your own that is the tip.
+- **Shared files:** each session edits only its own paragraphs here and its own CHANGELOG entries.
+- **jaci changes go through the jaci session**, never edited from a japes session.
+- **Big new work starts from a plan doc, preferably in a fresh session.** The plan, not a long
+  conversation, carries the context.
 
 ## The adversarial review runs on Claude
 
