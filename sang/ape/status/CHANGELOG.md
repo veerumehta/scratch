@@ -71,6 +71,17 @@ distribution (begun as 2.5.8).
   Begun by a background agent that stalled before committing; reviewed and finished here.
   Not in it: `GET /decisions/{id}`, which jaci's note also asks for.
 
+- **Every synchronous call path refuses a batch-tier name; the tier is read once** (review of
+  15b55b1d). The refusal sat only in `resolve_model`, but `ReasoningAgent.run` stripped the tier
+  prefix before reaching it and a conductor mode's `api_model_name` stripped it through its
+  injected parser, so both still made a standard call at the batch discount; and the OpenAI chat
+  provider stripped it too. Each site re-derived the tier from a substring, and `with_cost_tier`'s
+  was case-sensitive where `parse_model_tier` is not (`FLEX_gpt-6` lost its flex tier).
+  `llm.model_identity` now has `cost_tier(name)` (`FLEX_TIER`, `BATCH_TIER` or None, any case,
+  past provider prefixes; `parse_model_tier` shares its walk) and `sync_model_name(name)` (flex
+  stripped, batch refused). Used by `resolve_model`, `ReasoningAgent.run`, `BaseMode.api_model_name`,
+  both OpenAI provider call paths and `with_cost_tier`. Tests for each path the review named.
+
 - **A `batch_` model name is refused for a synchronous call** (+14 / -4 lines, 2 files). Since the
   cost-tier prefix is stripped in `resolve_model` (fab0793e, flex reviewed sound: the card lookup
   normalizes the name, the agent keeps the prefixed name, and the ledger prices flex at half
