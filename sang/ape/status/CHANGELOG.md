@@ -7,6 +7,25 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **Skills invoked over HTTP, as governed turns** (Plato service Phase 3, stage 1, task 1)
+  (+411 / -27 lines, 9 files). The user decided (2026-10-02) that an invoke runs a normal chat turn
+  whose router may select only that skill, not a direct call: guardrails, hop authorization,
+  cost, the leak check and the turn's trace apply exactly as on `/chat`, so no ungoverned path
+  around an assistant exists. `agents.interactive.skill_invoke`: `skill_endpoints(agent)` (a skill
+  is invocable when it declares an `inputs` JSON Schema and no `visibility`, since a caller carries
+  no roles to meet one; a bare-name skill and one without `inputs` say why not),
+  `skill_input_problems` (jsonschema Draft 2020-12), `invoke_message`, and `PinnedAgent`, which
+  narrows `_select_skills` for the wrapped agent only (keyed by its `spec`, so a composed
+  assistant inside keeps its own skills) and keeps the pinned skill's last output. Plato:
+  `GET {prefix}/assistants/{aid}/skills`; `POST {prefix}/assistants/{aid}/skills/{skill}/invoke`
+  (governed: idempotent, configured-only), 404 for an unknown skill, 422 for one not invocable or a
+  body its schema refuses, both before any model; answers `SkillInvokeReply` (`skill`, `ran`,
+  `output` parsed as JSON where it parses, `reply` the turn's `ChatReply`). `/chat` and invoke share
+  `_blocking_turn`. `Skill.inputs`' comment, which said nothing reads it, now says what does.
+  Client: `skills`, `invoke_skill`, `SkillEndpoint`, `SkillInvokeReply`, held to the server. Stage
+  2 (schemas derived for every skill, typed signatures in `_build_parent_tools`) and the async
+  `actions`/`operations` shape and per-assistant OpenAPI follow.
+
 - **A chat turn's trace of record** (Plato service Phase 4) (+694 / -57 lines, 13 files). The user
   decided `CanonicalTrace` is the format of record (UAF item 9). `agents.interactive.turn_trace.TurnTrace`
   wraps the agent (`observe`) so each skill reply is heard through `on_skill_result`, and its
