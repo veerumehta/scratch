@@ -50,7 +50,9 @@ per the user; `edd40cc1` actions/operations; the OpenAPI commit after it).
    operation record rather than a new store).
 3. Per-assistant OpenAPI from `describe()`.
 
-Stage 2 (D4; its own commit; start in a fresh session):
+Stage 2 (D4): **done 2026-10-02, `df5e7755`** (`agents.interactive.skill_io`; `schema_model`
+moved to `jazzx_sdk.util`; a skill without `inputs` routes on `{input: str}`, a bare name on its
+catalog tool's schema). No live parent-model call yet: tested at the tool boundary only.
 4. Derived skill IO schemas from the wrapped agent/tool.
 5. Typed signatures for the `as_tool` and `spec_ref` branches of `_build_parent_tools`; every
    skill then gets a route.
