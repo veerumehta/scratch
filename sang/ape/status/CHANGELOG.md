@@ -595,6 +595,16 @@ distribution (begun as 2.5.8).
   nothing changes. Plato `POST /packs/{id}/assess?as_of=` (422 for a non-date); client
   `assess(as_of=)` and `PolicyAssessment.outcomes`. `DOMAIN_PACK_QUICKSTART.md` documents both.
 
+- **The executor's guard lets a lazy stdlib import load** (review of 3f6eba67). The guard refused
+  any import not loaded when it was installed, so a rule using `datetime.strptime` (which imports
+  `_strptime`, `locale` and `calendar` on first use) was withheld. It now allows, inside the
+  stdlib directories only (`sysconfig` `stdlib`/`platstdlib`, raw and resolved): the import of a
+  stdlib module not in `REFUSED_MODULES` (sockets, ssl, subprocess, ctypes, multiprocessing,
+  asyncio, select/selectors, shutil, tempfile, urllib, http and the like), a read-only open of its
+  file, and the `os.listdir`/`os.scandir` the import system makes. Every other open, listing and
+  `os.`/`socket.`/`subprocess.`/`ctypes.` event stays refused. Test for the `strptime` case,
+  which fails on the old guard.
+
 - **The python executor is hardened and runs on deployed tiers** (+87 / -40 lines, 7 files).
   `LocalPythonExecutor`'s child, in addition to `-I -S`, an empty environment, the CPU/memory/
   file-size limits and the wall-clock kill: a read-only working directory (`READ_ONLY_DIR_MODE`);
