@@ -55,8 +55,24 @@ Plato Phase 4 (each chat turn's `CanonicalTrace` with release/skill versions, `G
 skill, 202 actions + `/operations/{id}`, per-assistant OpenAPI), the batch-tier and executor fixes;
 `7bba88aa..b23c4663`, adversarial review over `cd61f0f4..` clean after 3 rounds (the older
 `b694cf1a..040092c9` range reviewed in a worktree, fixes folded into the tip). Suite 7857 green
-before the review fixes. Next: Phase 3 stage 2 (typed skill tools) in a fresh session from that
-plan; executor Linux check `/tmp/japes_executor_linux_check.sh` still unrun.
+before the review fixes. Phase 3 stage 2 (typed skill tools) is `df5e7755` (built by the policy
+session; suite 7878). **Pending for the cross-repo session:**
+1. After the policy session's v2.6.0-wide comment trim commits: check `df5e7755` and the trim have
+   had an adversarial review; check open Dependabot alerts on `main`; then the user runs
+   `/tmp/japes_release_260_to_plato.sh` (it squashes the `v2.6.0` tip).
+2. The executor's Linux layers (netns, `RLIMIT_NPROC`) are untested: `/tmp/japes_executor_linux_check.sh`
+   once Docker is up.
+3. `plans/plan_plato_phases_3_4.md`: all done but D3 (BPMN process-start, deferred until a consumer
+   and the runtime's URL/auth exist); move it to `status/` when D3 is settled or dropped.
+4. Not built, asked by jaci: `GET /decisions/{id}` (its Plato APIs note, line 216); per-call
+   latency / provider queue time on a turn's usage (unqueued, needs the user).
+5. Policy session's open asks (`/tmp/japes_policy_handoff.md`): CRE's `evidence.<type>.attested` fact
+   and deterministic `decision.conditions` (Mesa Verde / MAA gold cases, user-prioritised); the
+   ci-spread-core seed resync from jaci 65e1ed5; jaci's intake test expecting pre-ca92911c
+   `had_structured_view=False` (a jaci-session edit if the behaviour is intended).
+6. `TODO(inline-schema-refs-unresolved)` in `skill_invoke.skills_openapi`.
+7. jazzx-assistant: the dev-to-japes review note `/tmp/jazzx_assistant_dev_to_japes_review.md` was
+   written for them; confirm it reached them.
 
 Open, awaiting the user: `missing_inputs: default` for assess (schema defaults); refresh the
 `dscr_core` seed from jaci's 0.2.0 or leave it (jaci owns the pack); jaci's later batches
