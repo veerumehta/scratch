@@ -6,6 +6,18 @@ Status: plan, Rev 1 (2026-10-02), written against `v2.6.0` at `fab0793e`. **Deci
 taken as recommended (2026-10-02).** Owner: the policy session
 (CLAUDE.md "Who works on what"); §3.3 and §3.6 touch the runtime session's `runs/` and blob routes.
 
+**Built 2026-10-02 on `v2.6.0`, all five phases, local and unpushed** (`000ff187` Phase 1,
+`7bcbd8c8` + `d5a03339` Phase 2 with the documents route built here by the user's direction,
+`aaf93c12` Phase 3, `0796d9de` Phase 4, `333b386d` + `b0203ffa` Phase 5, review fixes through
+`7c250b9f` and after; full-range review over `fab0793e..HEAD` clean at round 10). Deviations:
+the steps-in-a-file key is `steps: <file>` (not `pipeline:`, Plato's refused Python pointer);
+documents are content-addressed blobs with a JSON sidecar (no table, no migration); the
+adjudication step reads the assessment (its outcomes name the rules in force); C&I's entity
+extraction stays the authoring repo's (an image step-kind plugin), and its evaluator and persist
+steps are not step kinds (the run persists; scoring is an eval experiment). Open: jaci adopts the
+dscr-core and ci-spread-core manifests (through the jaci session); the TODOs in the ci-spread-core
+seed manifest.
+
 ## 0. What this extends
 
 - `plan_plato_domain_pack_runtime.md` §6 "Later": *a second conductor kind (`conductor_pipeline`:
