@@ -7,6 +7,18 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **Skill invoke: what makes a skill invocable, tightened** (review of `cd61f0f4..54600ce6`). A
+  skill of an assistant whose profile needs `scope` was listed invocable and published in the
+  OpenAPI document, yet every invoke failed (`respond` refuses a turn missing required scope, and
+  an invoke carries none); it is now not invocable, naming the scope. A skill whose `inputs` is not
+  valid JSON Schema made both routes answer 500 (`UnknownType` from the validator); `skill_endpoints`
+  now runs `check_schema` and marks it not invocable with the schema error. A skill action whose
+  skill a new release dropped between start and claim now fails its run ("no longer invocable")
+  instead of completing with no skill offered. `_CurrentCanonical`, whose docstring claimed a
+  rebuildable fabric nothing rebuilds, is gone: the trace route reads `runtime.fabric.canonical`.
+  `TODO(inline-schema-refs-unresolved)` in `skills_openapi`: a skill schema's local `$ref`s resolve
+  against the document root once inlined (no seed skill declares `$defs`).
+
 - **Per-assistant OpenAPI** (Plato service Phase 3, stage 1, task 3) (+75 / -2 lines, 5 files).
   `skill_invoke.skills_openapi(endpoints, base=, title=, version=, description=, reply_schema=)`
   writes an OpenAPI 3.1 document (`OPENAPI_VERSION`; its schemas are JSON Schema 2020-12, as
