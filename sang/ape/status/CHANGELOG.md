@@ -7,6 +7,16 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **Per-assistant OpenAPI** (Plato service Phase 3, stage 1, task 3) (+75 / -2 lines, 5 files).
+  `skill_invoke.skills_openapi(endpoints, base=, title=, version=, description=, reply_schema=)`
+  writes an OpenAPI 3.1 document (`OPENAPI_VERSION`; its schemas are JSON Schema 2020-12, as
+  `Skill.inputs` is) with `invoke` and `actions` per invocable skill, the request body the skill's
+  `inputs`. Plato `GET {prefix}/assistants/{aid}/openapi.json`, `info` from the manifest's name and
+  description and `version` the bound release (`unreleased` when none). The test round-trips it:
+  a body the document's schema accepts is accepted by the route it names. No OpenAPI validator is
+  installed, so the document's shape is asserted, not validated against the 3.1 meta-schema.
+  Client `assistant_openapi`. A skill not yet invocable (no `inputs`) is absent until stage 2.
+
 - **Skill actions: 202 and an operation to poll** (Plato service Phase 3, stage 1, task 2)
   (+148 / -10 lines, 6 files). `POST {prefix}/assistants/{aid}/skills/{skill}/actions` validates as
   invoke does (404, 422 before any model), then starts a run on the streamed chat's
