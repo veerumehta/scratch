@@ -143,6 +143,34 @@ Steps, kinds, state, the publish check and the dscr-core manifest are the policy
 documents route, blob scoping and `CaseRunner`'s handling of a document-bearing input are the runtime
 session's; Phase 2 starts by agreeing that interface with it.
 
+### 3.7 Phase 2 interface (proposed to the runtime session, 2026-10-02)
+
+Facts that shape it (survey at `502701f0`): `BlobStore` has no tenant scoping or cap; the only
+upload routes are the pack ones (`read_capped`, `PLATO_PACK_UPLOAD_MAX_BYTES`); nothing maps a
+document id to a blob; `DocumentAgent.process_blob(pointer, filename=, schema=)` gives a
+`PageLocator` only with a page view (DocIntel), else `SectionLocator`; `process_dir` (collections)
+never builds one; DSCR's `property_value` is `required`, so submit refuses a record missing it.
+
+Runtime session owns:
+- `POST {prefix}/documents` (multipart, `read_capped`, cap from config) -> `{document_id, sha256,
+  media_type, filename, byte_size}`. Stored in a tenant-keyed blob (`documents/<tenant>/sha256/<hex>`)
+  plus a tenant-scoped record mapping `document_id` to pointer, filename, media type, sha256.
+  `GET {prefix}/documents/{id}` metadata. Another tenant's id is a 404.
+- Submit: a case input's `documents: [{document_id}]` resolves at submit (unknown id: 422) and the
+  run pins `[{document_id, sha256, filename, media_type}]` beside the pack pin.
+- Execution: `CaseRunService._execute` passes `documents=` to `run_case`: a resolver
+  `async (document_id) -> DocumentRef(pointer, filename, media_type, sha256, blob)` that refuses a
+  digest that no longer matches the pin.
+
+Policy session owns:
+- `document_ingest` step (`agent: document_agent.yaml`, `schema:` the extraction schema,
+  `fills: input`), writing `documents` (per document: class, fields with `SourceCoordinate`) and
+  merging filled fields into `input` with their source; a contradicting field is a conflict that
+  routes to the checkpoint.
+- Submit validation: a field the pack's `document_ingest` step can fill is optional at submit; the
+  input model is re-validated after the merge, and the omitted-fact refusal runs then.
+- Page citation: a page view for text-layer PDFs without DocIntel, so a filled field cites a page.
+
 ## 4. Decisions
 
 | # | Question | Decided (2026-10-02, as recommended) |
