@@ -3,13 +3,13 @@
 Live plan, runtime session. Source of scope: `plans/Plato/plan_JAPES_PLATO_SERVICE.md` §Phase 3,
 §Phase 4. Written 2026-10-02 from the v2.6.0 tree; start a fresh session from this file.
 
-## Gates (decide before building)
+## Decisions (made 2026-10-02)
 
-| # | Decision | Gates | Recommendation |
-|---|---|---|---|
-| UAF-9 | Trace format of record | Phase 4 | `CanonicalTrace` (the companion doc's recommendation). Release and skill versions ride `VersionBundle.extra` and `CanonicalTrace.metadata` (Spec-v1.5 frozen `trace.py`). |
-| D4 | Per-skill IO on the execution path | Phase 3 tasks 1-3, 5 | Derive `Skill.inputs`/`outputs` JSON Schema from the wrapped agent/tool; give the `as_tool` and `spec_ref` branches of `_build_parent_tools` typed signatures. The deepest change (every assistant's tool path): its own commit, full suite plus dependent packs. |
-| D3 | Who owns process-start (`runtime/process-instances`) | Phase 3 task 6 | Plato, as a credentialed outbound client; needs the BPMN runtime's URL, auth and a test instance. Without those, defer task 6. |
+| # | Decision | Outcome |
+|---|---|---|
+| UAF-9 | Trace format of record | **`CanonicalTrace`.** Release and skill versions ride `VersionBundle.extra` and `CanonicalTrace.metadata` (Spec-v1.5 frozen `trace.py`); named fields would be a cross-team spec change. MLflow/OTel traces stay observability, not the record. |
+| D4 | Per-skill IO on the execution path | **Staged.** Stage 1: invoke routes and OpenAPI only for skills with a typed signature today, or a hand-declared schema. Stage 2: derive schemas and typed signatures for the `as_tool` and `spec_ref` branches of `_build_parent_tools`, as its own commit with the full suite plus dependent packs. |
+| D3 | Who owns process-start | **Deferred.** Revisit when a consumer exists and the BPMN runtime's URL, auth and a test instance are provided; Plato is the intended owner then. |
 
 ## Order
 
@@ -35,20 +35,27 @@ claims it, so its release belongs on the terminal event the coordinator writes.
 Acceptance: a released assistant's trace names its release and every skill version invoked; a
 legacy one is marked; the interactive suite passes with no releases present.
 
-### Phase 3 — generated skill routes, async operations, OpenAPI, process-start (L)
+### Phase 3 — generated skill routes, async operations, OpenAPI (L; process-start deferred)
 
-1. Derived skill IO schemas (D4).
-2. Typed signatures in `_build_parent_tools` (D4; own commit).
-3. `POST /v1/assistants/{id}/skills/{skill}/invoke` per skill from the resolved release, on
-   `GovernedRouter`, body validated against the input schema, honouring `Skill.visibility`.
-4. `POST .../actions` -> 202 + operation ref; `GET /v1/operations/{id}` (reuse `runs/` for the
+Stage 1 (D4):
+1. `POST /v1/assistants/{id}/skills/{skill}/invoke` per skill from the resolved release, on
+   `GovernedRouter`, body validated against the input schema, honouring `Skill.visibility`; only
+   skills with a typed signature or a declared schema get a route, the rest are listed as not
+   invocable.
+2. `POST .../actions` -> 202 + operation ref; `GET /v1/operations/{id}` (reuse `runs/` for the
    operation record rather than a new store).
-5. Per-assistant OpenAPI from `describe()`.
-6. Process-start client (D3).
+3. Per-assistant OpenAPI from `describe()`.
+
+Stage 2 (D4; its own commit):
+4. Derived skill IO schemas from the wrapped agent/tool.
+5. Typed signatures for the `as_tool` and `spec_ref` branches of `_build_parent_tools`; every
+   skill then gets a route.
+
+Deferred (D3): the process-start client.
 
 Acceptance (the plan's): a frontend builds a screen from the generated docs alone; a malformed
 body is refused before a model; adding a skill changes no code in `plato/`; an async action
-reaches a terminal state; a process instance starts and its completion is observed.
+reaches a terminal state. (Process-start acceptance waits with D3.)
 
 ## Split
 
