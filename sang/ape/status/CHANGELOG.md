@@ -586,6 +586,16 @@ distribution (begun as 2.5.8).
     logged at info; borrowing-request mechanics, interest payment dates and a handbook cover page
     were proposed as rules. With no fields declared, everything is still proposed.
 
+- **Review round 2 fixes** (`cd61f0f4..` re-review). The executor's module docstring and guard
+  comment overclaimed after the lazy-import fix (they said every further import and open is
+  refused); both now state the rule as it is: a stdlib import outside `REFUSED_MODULES`, and a
+  read-only open or listing inside the stdlib, nothing else. The guard also read write intent only
+  from a mode string, so `os.open(<stdlib file>, O_WRONLY)` (an `open` event with `mode=None` and
+  the flags) passed; it now refuses any `O_WRONLY`/`O_RDWR`/`O_TRUNC`/`O_CREAT`/`O_APPEND` flag
+  (test fails on the previous guard; `check_python_rule` bars `os` regardless). `assessment.py`'s
+  two copies of "the fields rules in force read" are one `_fields_read`. A skill action's
+  claim-time invocability check runs before the turn's trace is opened.
+
 - **Evidence freshness reaches derived metrics; only what is read counts** (review of 040092c9;
   fixed by the runtime session in the policy session's path, its owner idle with a clean tree)
   (+106 / -11 lines, 3 files). A stale or undated field was withheld from the rules, but metrics
