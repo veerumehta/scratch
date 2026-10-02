@@ -7,6 +7,19 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **Skill actions: 202 and an operation to poll** (Plato service Phase 3, stage 1, task 2)
+  (+148 / -10 lines, 6 files). `POST {prefix}/assistants/{aid}/skills/{skill}/actions` validates as
+  invoke does (404, 422 before any model), then starts a run on the streamed chat's
+  `ChatCoordinator` under a queue key of its own (`action:<uuid>`, so actions run beside each
+  other) and answers 202 `{operation_id, status}`; the operation id is the run id, so the run
+  store's claim, heartbeat, reaper and journal are the operation's. The run's turn spec pins the
+  skill (`PinnedAgent`) and its terminal event carries `skill`, `skill_ran` and `skill_output`.
+  `GET {prefix}/operations/{id}` answers `{operation_id, assistant_id, skill, status, done,
+  result}` (`result` the terminal event once done); a run of another tenant, or one that is not a
+  skill action, is 404. Needs the streaming wiring (a run store). `runs.ChatTurnSpec.terminal` is
+  now read when the run ends, not copied when the spec is built, so `on_complete` may add to it.
+  Client: `start_skill_action`, `operation`, `contracts.Operation` (held to the route's keys).
+
 - **Skills invoked over HTTP, as governed turns** (Plato service Phase 3, stage 1, task 1)
   (+411 / -27 lines, 9 files). The user decided (2026-10-02) that an invoke runs a normal chat turn
   whose router may select only that skill, not a direct call: guardrails, hop authorization,
