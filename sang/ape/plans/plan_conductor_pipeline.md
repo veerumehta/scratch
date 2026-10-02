@@ -2,7 +2,8 @@
 
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 
-Status: plan, Rev 1 (2026-10-02), written against `v2.6.0` at `fab0793e`. Owner: the policy session
+Status: plan, Rev 1 (2026-10-02), written against `v2.6.0` at `fab0793e`. **Decisions D1-D6
+taken as recommended (2026-10-02).** Owner: the policy session
 (CLAUDE.md "Who works on what"); §3.3 and §3.6 touch the runtime session's `runs/` and blob routes.
 
 ## 0. What this extends
@@ -144,7 +145,7 @@ session's; Phase 2 starts by agreeing that interface with it.
 
 ## 4. Decisions
 
-| # | Question | Recommendation |
+| # | Question | Decided (2026-10-02, as recommended) |
 |---|---|---|
 | D1 | Steps inline in the manifest, or `pipelines.yaml`? | Both, as `pipeline:` already reads for the policy assets: inline for short lists, a file for C&I's thirteen. |
 | D2 | Typed `CaseState` or a free dict? | Typed: it is what makes the publish-time slot check possible. |
