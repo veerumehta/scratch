@@ -50,10 +50,26 @@ per the user; `edd40cc1` actions/operations; the OpenAPI commit after it).
    operation record rather than a new store).
 3. Per-assistant OpenAPI from `describe()`.
 
-Stage 2 (D4; its own commit):
+Stage 2 (D4; its own commit; start in a fresh session):
 4. Derived skill IO schemas from the wrapped agent/tool.
 5. Typed signatures for the `as_tool` and `spec_ref` branches of `_build_parent_tools`; every
    skill then gets a route.
+
+Stage 2 design notes (2026-10-02, from the tree):
+- A def-backed skill has nothing to derive from: its only schema source is a declared
+  `Skill.inputs`. A bare-name skill's catalog callable has a native signature (its FunctionTool's
+  `params_json_schema`), which is the one real derivation; make those invocable by reading it.
+- `agents.Agent.as_tool` (openai-agents 0.22.3) takes `parameters=` (a type), `input_builder=`
+  and `include_input_schema=`, so a typed def-backed skill tool needs no custom FunctionTool:
+  convert `Skill.inputs` to a pydantic model (flat object schemas of primitives, enums, arrays of
+  primitives; anything else stays untyped, as today) and pass it. Opt-in by declaring `inputs`:
+  a skill without one keeps today's `input: str` tool, byte for byte.
+- The composed (`spec_ref`) branch is a plain `function_tool`; give it the same model when its
+  skill declares `inputs`.
+- Strict JSON schema: an authored schema may not meet OpenAI strict mode; build the model so the
+  SDK's strict conversion holds, or fall back to untyped with a warning.
+- Acceptance: the full suite, the dependent packs (jaci's assistant packs) and a parent-model
+  call carrying structured args to a typed skill; a skill without `inputs` unchanged.
 
 Deferred (D3): the process-start client.
 
