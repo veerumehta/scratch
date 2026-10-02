@@ -182,7 +182,7 @@ where the target provably carries no work of its own, `git read-tree -u --reset 
 and conflict-free. **Check that precondition first** -- `dev` had diverged with a security fix
 `v2.5.4` lacked, and a tree copy there would have reverted three CVE alerts.
 
-## Who works on what (two japes sessions)
+## Who works on what (japes sessions)
 
 Two Claude sessions work on japes at once, both committing to the working branch, plus a
 cross-repo session that commits to neither path set. Split by subsystem, by path, so each keeps its
