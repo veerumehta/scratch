@@ -7,6 +7,27 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **CREMF: assessment outcomes and evidence freshness** (+368 / -25 lines, 11 files).
+  `PolicyAssessment.outcomes` maps every rule in force to an `AssessmentOutcome`: `pass`, `fail`,
+  `pending_evidence`, `pending_calculation`, `waiver_required`, `pre_review_required`,
+  `not_applicable`, `unable_to_evaluate` (the corpus's `ProgramEvaluation.outcome` vocabulary).
+  A violation routes by the rule's new `on_violation` (`fail` default, `waiver_required`,
+  `pre_review_required`; the corpus fans a Fail out to these) and still counts against `allowed`.
+  A rule not evaluated for a missing input is `pending_calculation` when that input is an
+  underivable metric, else `pending_evidence`; a withheld rule maps by its indeterminate reason,
+  which `_withheld_refusal` now records in the refusal's `domain_extensions`
+  (`indeterminate_reason`); a rule whose gate does not hold is `not_applicable`. `allowed`
+  semantics are unchanged. Evidence types gain `freshness_window_days`, `as_of_field` (required
+  with a window) and `missing_behavior` (`pending_evidence`, `fail`, `refuse`). `fields` keys name
+  the inputs a type supplies; when the evidence is undated or older than its window at
+  `assess(as_of=)` (default today, UTC), or (with `missing_behavior` set) a field is omitted,
+  those inputs are withheld and the rules reading them resolve by the behaviour: pending
+  (attested INDETERMINATE naming the stale evidence), failed (attested FAIL, added to
+  `violations`, `allowed` false), or the assessment refuses. A type declaring a non-refusing
+  `missing_behavior` takes its omitted facts out of the `missing_inputs: refuse` check. Unset,
+  nothing changes. Plato `POST /packs/{id}/assess?as_of=` (422 for a non-date); client
+  `assess(as_of=)` and `PolicyAssessment.outcomes`. `DOMAIN_PACK_QUICKSTART.md` documents both.
+
 - **The python executor is hardened and runs on deployed tiers** (+87 / -40 lines, 7 files).
   `LocalPythonExecutor`'s child, in addition to `-I -S`, an empty environment, the CPU/memory/
   file-size limits and the wall-clock kill: a read-only working directory (`READ_ONLY_DIR_MODE`);
