@@ -18,6 +18,9 @@ Phase 4 first: it is M, its gate has a recommendation, and it closes `TODO(strea
 
 ### Phase 4 — trace of record (M)
 
+**Done 2026-10-02, `7bba88aa`** (`agents.interactive.turn_trace`, Plato `GET {prefix}/traces/{id}`,
+`release_id`/`trace_id` on the stream end, client `trace`/`ChatStreamEnd`). Not in it: `GET /decisions/{id}`.
+
 Today: assistant releases exist (`manifest/store.py` `release_id`, `server/assistant_runtime.py`
 returns it with the agent; `/chat` names it). A streamed turn binds its agent when the worker
 claims it, so its release belongs on the terminal event the coordinator writes.
