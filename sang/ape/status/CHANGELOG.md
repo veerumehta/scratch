@@ -7,6 +7,28 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **A chat turn's trace of record** (Plato service Phase 4) (+694 / -57 lines, 13 files). The user
+  decided `CanonicalTrace` is the format of record (UAF item 9). `agents.interactive.turn_trace.TurnTrace`
+  wraps the agent (`observe`) so each skill reply is heard through `on_skill_result`, and its
+  `record`, the lifecycle's `on_complete`, writes one `CanonicalTrace` per turn through the
+  fabric's canonical store (a write failure is logged, never fails the turn). Its `VersionBundle`
+  sits at `metadata["version_bundle"]` (trace.py is Spec-v1.5 frozen, so no new named fields):
+  `model_versions` (the agent's model, or `unpinned`), `pack_version`, and in `extra` the
+  `agent_release_id` (or `legacy_unversioned: true` for an assistant with no frozen release),
+  `skill_versions` (each invoked skill's content pin, via `release.content_pin`, now module level),
+  `model_data_version` (`llm.cost.MODEL_DATA_VERSION`) and `models_served`. Each skill step
+  carries its own bundle through `TraceStepContextHelper`. `InteractiveAgent.skill_def(name)` is
+  public. `runs.ChatTurnSpec` gains `on_complete` and `terminal` (fields the run's terminal event
+  carries beside `TERMINAL_EVENT_KEYS`, which it may not name). Plato: `/chat` and `/chat/stream`
+  record the trace where the wiring has a fabric; `ChatReply.trace_id`; a streamed turn's terminal
+  event carries `release_id` and `trace_id` (`TODO(stream-release-id)` closed);
+  `GET {prefix}/traces/{trace_id}` on the read gate, a trace of another tenant the same 404 as a
+  missing one (`trace_router(visible=, dependencies=)`); no fabric, no trace and no route. Client:
+  `PlatoClient.trace`, `contracts.ChatStreamEnd`, `VersionBundle`, `Trace.metadata` and
+  `Trace.version_bundle`, `ChatReply.trace_id`; a test holds `VERSION_BUNDLE_KEY` to the SDK's.
+  Begun by a background agent that stalled before committing; reviewed and finished here.
+  Not in it: `GET /decisions/{id}`, which jaci's note also asks for.
+
 - **A `batch_` model name is refused for a synchronous call** (+14 / -4 lines, 2 files). Since the
   cost-tier prefix is stripped in `resolve_model` (fab0793e, flex reviewed sound: the card lookup
   normalizes the name, the agent keeps the prefixed name, and the ledger prices flex at half
@@ -16,7 +38,7 @@ distribution (begun as 2.5.8).
   caught); nothing in japes or jaci calls one.
 
 - **Policy extraction: percent units, timing discretion, mentioned fields, repeated clause
-  numbers** (+249 / -32 lines, 9 files). From jaci's C&I extraction re-run (OCC Commercial Loans
+  numbers** (+270 / -32 lines, 9 files, three commits). From jaci's C&I extraction re-run (OCC Commercial Loans
   plus the YETI loan agreement).
   - Units: `JtbdTemplate.units` (`{field: fraction | percent}`, `policy_conditions.FIELD_UNITS`)
     reaches `ConditionExtractor` and `PythonExtractor` (`units=`). A threshold or gate printed as a
@@ -25,18 +47,22 @@ distribution (begun as 2.5.8).
     no declared unit is refused to natural language (it was kept as 10 on a fraction field, so
     the gate held on every case). A number printed both as a percent and plain is refused; an
     unknown unit raises. Both prompts list each field with its unit (`described_fields`, `cltv (unit: fraction)`); the
-    Python prompt allows the N/100 conversion on a fraction field, and a Python rule over a
-    clause that prints a percent is refused when none of the fields it reads declares a unit
-    (`prints_percent`); the model's N/100 itself is not verified there.
+    Python prompt allows the N/100 conversion on a fraction field. A Python rule's scale is not
+    checked mechanically (`TODO(python-percent-unguarded)`: a literal in source cannot be tied to
+    its field without parsing the comparisons); its own cases and proposal review carry it.
+    "Percentage points" reads as a percent.
   - The condition prompt says discretion over when or how a comparison is tested ("or as
     otherwise specified by Lender" for a test date) leaves it deterministic, and that the fields
     listed are the ones the requirement constrains, not one it mentions in passing (the
     governing-law clause read `lien_position` for the word "liens"). Both are prompt changes, so
     they lower the rate rather than guarantee it; the relevance gate stays the drafted reads.
   - Citations: `ClauseSegment.section`, set by `clause_segments`, qualifies a clause number by the
-    `ARTICLE n` heading above it (`loan.pdf#ARTICLE 2 1.`, a markdown `## ARTICLE 2` too; a line
-    with lowercase after the number, such as a wrapped "Article 9 of the UCC", is prose), until a
-    `Schedule`/`Exhibit`/`Annex`/`Appendix` heading read the same way, leaving a `§`/`Section`/`Article`/`Clause` marker as printed; a section
+    `ARTICLE n` heading above it (`loan.pdf#ARTICLE 2 1.`, a markdown `## ARTICLE 2` too), or by a
+    titled one whose spaced dash (hyphen, en or em) sets off a capitalised title (`Article VIII -
+    Financial Covenant`, YETI's form, cited `#Article VIII 1.`). Any other line opening
+    "Article n" with lowercase after the number (a wrapped "Article 9 of the UCC") clears the
+    article rather than guess, as does a `Schedule`/`Exhibit`/`Annex`/
+    `Appendix` heading, leaving a `§`/`Section`/`Article`/`Clause` marker as printed; a section
     still repeated in the document carries its occurrence (`#1. (occurrence 2)`). `citation` and `coordinate` read it, and `split_long` pieces carry it.
     Rule ids are unchanged.
   - jaci: declare `units: {excess_availability_pct: fraction}` (and any other ratio field) on the
