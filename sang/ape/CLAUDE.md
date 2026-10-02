@@ -6,7 +6,13 @@
 
 **Conductor pipeline (policy session, 2026-10-02)**: all five phases of
 `status/done_conductor_pipeline.md` built on `v2.6.0`, `000ff187..cab3f9b8`, local and unpushed;
-full-range adversarial review over `fab0793e..HEAD` clean (rounds 10 and 11). `conductor_pipeline`
+full-range adversarial review over `fab0793e..1730b190` clean (rounds 33 and 35, after page
+labels/`ref`, documents API, required classes and many fix rounds). Then jaci-73's four extraction
+issues (`JtbdTemplate.units` fraction/percent, timing-discretion and constrained-fields prompt
+lines, article-qualified clause citations incl. titled `Article VIII - Title` headings),
+`e511e430` + `4d7a8ed8` + `cd61f0f4`, reviewed clean; jaci (2a238ad, `--units`) confirmed all four
+closed. Open low notes: orphan overlay refuses publish, composite live child unflagged,
+`TODO(python-percent-unguarded)`, `TODO(locator-printed-ref)`, `TODO(documents-converted-twice)`. `conductor_pipeline`
 kind and `jazzx_sdk.pipelines.steps` (step kinds `document_ingest`, `policy_assessment`,
 `adjudication`, `investigation` with sentinel/convergence, `policy_check`, `playbook`,
 `human_checkpoint`, `narrate`; `jazzx_sdk.step_kinds` entry point; publish-time slot check);
@@ -43,6 +49,14 @@ review's open items (stale citations become governor required actions, fail-soft
 hit (`tests/test_import_each_package.py`); leaf modules under `jazzx_sdk.util` (`utc`, `digest`,
 `math.ratios`; breaking paths, accepted). Suite 7555 green. The release script still applies (it
 squashes the `v2.6.0` tip). jazzx-assistant review note: `/tmp/jazzx_assistant_dev_to_japes_review.md`.
+Then (runtime session, 2026-10-02, after the user's decisions in `plans/plan_plato_phases_3_4.md`):
+Plato Phase 4 (each chat turn's `CanonicalTrace` with release/skill versions, `GET /traces/{id}`,
+`release_id` on the stream end), Phase 3 stage 1 (skill invoke as a governed turn pinned to the
+skill, 202 actions + `/operations/{id}`, per-assistant OpenAPI), the batch-tier and executor fixes;
+`7bba88aa..b23c4663`, adversarial review over `cd61f0f4..` clean after 3 rounds (the older
+`b694cf1a..040092c9` range reviewed in a worktree, fixes folded into the tip). Suite 7857 green
+before the review fixes. Next: Phase 3 stage 2 (typed skill tools) in a fresh session from that
+plan; executor Linux check `/tmp/japes_executor_linux_check.sh` still unrun.
 
 Open, awaiting the user: `missing_inputs: default` for assess (schema defaults); refresh the
 `dscr_core` seed from jaci's 0.2.0 or leave it (jaci owns the pack); jaci's later batches
