@@ -184,8 +184,13 @@ and conflict-free. **Check that precondition first** -- `dev` had diverged with 
 
 ## Who works on what (two japes sessions)
 
-Two Claude sessions work on japes at once, both committing to the working branch. Split by
-subsystem, by path, so each keeps its context loaded and commits do not collide.
+Two Claude sessions work on japes at once, both committing to the working branch, plus a
+cross-repo session that commits to neither path set. Split by subsystem, by path, so each keeps its
+context loaded and commits do not collide.
+
+**Session names lead with the model**, so `ListAgents` and a search find them: `opus-crossrepo`,
+`sonnet-runtime`, `sonnet-policy` (rename with `/rename <name>`). A session that switches model
+renames itself to match.
 
 - **Policy session** (authoring and assessment): `pipelines/policy_*`, `pipelines/jtbdset.py`,
   `pipelines/authoring_chat.py`, `pack/assessment.py`, `pack/lint.py`, `pack/rule_merge.py`,
@@ -195,6 +200,9 @@ subsystem, by path, so each keeps its context loaded and commits do not collide.
 - **Runtime session** (runs, chat, models): `runs/`, `pipelines/chat*.py` and the chat lifecycle,
   `agents/interactive/`, grounding, the model and LLM layer (`llm/`, `agents/models.py`,
   `agents/*_provider.py`), observability, Plato infrastructure, releases, squashes and versions.
+- **Cross-repo session** (Opus, `opus-crossrepo`): surveys and reviews across japes, jaci,
+  jazzx-assistant and the other sibling repos, cross-session coordination and handoffs; routes each
+  finding to the owning session and does no feature work in either path set above.
 
 Rules:
 - **A finder reports to the owner, who fixes.** Message the owning session (`ListAgents`, then
