@@ -7,7 +7,7 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
-- **A `batch_` model name is refused for a synchronous call** (+9 / -3 lines, 2 files). Since the
+- **A `batch_` model name is refused for a synchronous call** (+14 / -4 lines, 2 files). Since the
   cost-tier prefix is stripped in `resolve_model` (fab0793e, flex reviewed sound: the card lookup
   normalizes the name, the agent keeps the prefixed name, and the ledger prices flex at half
   rate), a `batch_` name made a standard call while the ledger, reading the prefixed name, priced
