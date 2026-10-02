@@ -40,7 +40,8 @@ legacy one is marked; the interactive suite passes with no releases present.
 
 ### Phase 3 — generated skill routes, async operations, OpenAPI (L; process-start deferred)
 
-Stage 1 (D4):
+Stage 1 (D4): **done 2026-10-02** (`a063de7b` invoke as a governed turn pinned to the skill,
+per the user; `edd40cc1` actions/operations; the OpenAPI commit after it).
 1. `POST /v1/assistants/{id}/skills/{skill}/invoke` per skill from the resolved release, on
    `GovernedRouter`, body validated against the input schema, honouring `Skill.visibility`; only
    skills with a typed signature or a declared schema get a route, the rest are listed as not
