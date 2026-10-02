@@ -586,6 +586,20 @@ distribution (begun as 2.5.8).
     logged at info; borrowing-request mechanics, interest payment dates and a handbook cover page
     were proposed as rules. With no fields declared, everything is still proposed.
 
+- **Evidence freshness reaches derived metrics; only what is read counts** (review of 040092c9;
+  fixed by the runtime session in the policy session's path, its owner idle with a clean tree)
+  (+106 / -11 lines, 3 files). A stale or undated field was withheld from the rules, but metrics
+  derived from it had already been computed from the raw input and stayed in the context and in
+  the caps: a CLTV rule was judged on a year-old appraisal and could pass (high). Gaps are now
+  computed from the input before derivation; a gap's fields are kept out of `_derive`, and a
+  metric reading one (`_metric_reads`: its bindings' names and refs) inherits the gap, so its
+  rules resolve by the evidence's `missing_behavior`, and it is left out of `caps_context`. A
+  `refuse` type refused the assessment even when no rule in force read its fields (a Standard
+  input over a Platinum-only field); `_gaps_read_by` keeps only gaps on fields rules in force read,
+  directly or through a metric. Evidence dated after the assessment day is a gap. A violation is
+  routed by the `on_violation` of the rule in its own policy (`(policy_id, rule_id)`), not the
+  last one of that id. A violation from failing evidence carries `policy_id`. Quickstart updated.
+
 - **CREMF: assessment outcomes and evidence freshness** (+368 / -25 lines, 11 files).
   `PolicyAssessment.outcomes` maps every rule in force to an `AssessmentOutcome`: `pass`, `fail`,
   `pending_evidence`, `pending_calculation`, `waiver_required`, `pre_review_required`,
