@@ -7,6 +7,494 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
 
+- **A `batch_` model name is refused for a synchronous call** (+9 / -3 lines, 2 files). Since the
+  cost-tier prefix is stripped in `resolve_model` (fab0793e, flex reviewed sound: the card lookup
+  normalizes the name, the agent keeps the prefixed name, and the ledger prices flex at half
+  rate), a `batch_` name made a standard call while the ledger, reading the prefixed name, priced
+  it at the batch discount: cost under-reported. `resolve_model` now raises `ValueError` for a
+  batch-tier name (detected by `parse_model_tier`, so a model id merely containing `batch_` is not
+  caught); nothing in japes or jaci calls one.
+
+- **Policy extraction: percent units, timing discretion, mentioned fields, repeated clause
+  numbers** (+249 / -32 lines, 9 files). From jaci's C&I extraction re-run (OCC Commercial Loans
+  plus the YETI loan agreement).
+  - Units: `JtbdTemplate.units` (`{field: fraction | percent}`, `policy_conditions.FIELD_UNITS`)
+    reaches `ConditionExtractor` and `PythonExtractor` (`units=`). A threshold or gate printed as a
+    percent ("10%", "10 percent") is kept on a `fraction` field as N/100 (the springing FCCR gate
+    becomes `excess_availability_pct < 0.1`), on a `percent` field as printed, and on a field with
+    no declared unit is refused to natural language (it was kept as 10 on a fraction field, so
+    the gate held on every case). A number printed both as a percent and plain is refused; an
+    unknown unit raises. Both prompts list each field with its unit (`described_fields`, `cltv (unit: fraction)`); the
+    Python prompt allows the N/100 conversion on a fraction field, and a Python rule over a
+    clause that prints a percent is refused when none of the fields it reads declares a unit
+    (`prints_percent`); the model's N/100 itself is not verified there.
+  - The condition prompt says discretion over when or how a comparison is tested ("or as
+    otherwise specified by Lender" for a test date) leaves it deterministic, and that the fields
+    listed are the ones the requirement constrains, not one it mentions in passing (the
+    governing-law clause read `lien_position` for the word "liens"). Both are prompt changes, so
+    they lower the rate rather than guarantee it; the relevance gate stays the drafted reads.
+  - Citations: `ClauseSegment.section`, set by `clause_segments`, qualifies a clause number by the
+    `ARTICLE n` heading above it (`loan.pdf#ARTICLE 2 1.`, a markdown `## ARTICLE 2` too; a line
+    with lowercase after the number, such as a wrapped "Article 9 of the UCC", is prose), until a
+    `Schedule`/`Exhibit`/`Annex`/`Appendix` heading read the same way, leaving a `§`/`Section`/`Article`/`Clause` marker as printed; a section
+    still repeated in the document carries its occurrence (`#1. (occurrence 2)`). `citation` and `coordinate` read it, and `split_long` pieces carry it.
+    Rule ids are unchanged.
+  - jaci: declare `units: {excess_availability_pct: fraction}` (and any other ratio field) on the
+    template its extraction script builds, or a percent-printed threshold on that field now comes
+    back natural language.
+
+- **Full-range review notes, rounds 33-34** (+72 / -4 lines, 5 files). Round 33 reported no
+  defects; its notes: an authoritative `policy_check` whose named policies (or, unnamed, any of the
+  pack's policies, since each can be in force for some program) hold a live rule is refused at
+  publish, since a check runs no reasoning agent and withholds that rule, refusing approval
+  wherever it applies; `RequiredClasses.values` takes an unquoted YAML flag or number key (`true:`,
+  `5:`) as its text, and refuses two keys a run matches as one (`5:` and `"5":`, `ABL` and
+  ` abl`); a failed live-rule scan is a publish problem, not "no live rules"; the quickstart says a missing fact is refused
+  after the documents' extraction, not before any model runs (document extraction is one).
+  ci-spread-core seed: `ontology/ci_lending.yaml` resynced from jaci `65e1ed5`.
+
+- **Full-range review fixes, round 32** (+20 / -7 lines, 4 files). The publish check matches a keyed
+  `required_classes`' values as the run does (`_value_key`), so a number or flag enum publishes
+  (it refused `"1"` for an integer `1`); ci-spread-core seed: `intake.yaml` from the authoring
+  repo (its required types now live in the manifest's table), the diagnose map spells `ABL` as
+  the schema does.
+
+- **Full-range review fixes, round 31** (+144 / -33 lines, 8 files). A keyed `required_classes` matches the
+  field's value as written (`True` is `"true"`, `5` is `"5"`), so a flag or number field no
+  longer falls silently to the default; adjudication's re-read names its temporary file by the
+  bare filename; a cite to page 0 or below cites the document, not a page; the quickstart lists
+  all five once-only step kinds. ci-spread-core seed: `financial_fields.json` asks for whole
+  dollars (a statement in thousands is scaled; each field `unit: USD`); the playbook `applies_to`
+  lists, the ontology's loan-type comment, `pipelines.yaml`'s header and the deal overlay resynced
+  from the authoring repo.
+
+- **Full-range review fixes, round 30** (+76 / -24 lines, 10 files). A field a document step can fill is
+  optional at submit only for a case naming documents (`input_model(with_documents=)`): one naming
+  none is refused at submit instead of failing later in the run. A required document class the
+  case's own evidence supplies (an `input` evidence source at a path the record fills) is not
+  missing, so a demo case carrying its evidence is not flagged for review. Adjudication cites that
+  are not a list read as none; page labels are read off the event loop; `had_structured_view`'s
+  description names the digital-PDF page view; two seed comments corrected.
+
+- **Required documents by an input field, and review round 29** (+118 / -16 lines, 7 files).
+  `document_ingest.required_classes` may be `{by, values, default}` (`RequiredClasses`): the
+  classes a case needs by the value of an input field, text compared ignoring case, `default` for
+  a value the map does not name; checked at publish (`by` an input field, every value one its
+  enum allows, every class in the taxonomy). ci-spread-core requires a borrowing base certificate
+  of ABL and revolving credit only, by `loan_type` (the authoring repo's request; it closes
+  `TODO(ci-required-documents-by-loan-type)`). Review: a number's short-value guard measures the
+  value as written (`1.0` is "1"), so a whole float no longer matches a stray "1"; a digital
+  PDF's `DocumentResult` reports its page view (`had_structured_view`); the C&I playbook reads the
+  decision's computed `leverage_x`.
+
+- **Printed page labels and the document's own references in citations** (+135 / -10 lines, 9 files). By
+  the user's direction (front matter numbered in roman numerals, tables and exhibits named in the
+  text). `PageLocator` gains `label` (the number printed on the page) and `ref` (the document's
+  name for the place: `Table 4.2`, `Exhibit B`, `§ 6.1`); `page` stays the physical 1-based page a
+  viewer opens, the standard practice (PDF page labels are presentation, `file.pdf#page=N` is
+  physical). `tools.documents.conversion.page_labels` reads a PDF's `/PageLabels` table (PyMuPDF);
+  `DocumentResult.page_labels` and `page_label_source` (`pdf_page_labels`) record it per document,
+  and `DocumentAgent.process` labels each page locator. Adjudication's evidence marks pages
+  `[page 5 (printed iv)]`; its prompt asks for the marker's page and the document's own name for
+  the place; `EvidenceCite.ref` reaches the citation's locator (a cite without a page becomes a
+  `SectionLocator` named by its ref). `TODO(locator-printed-ref)`: an extracted field's locator has
+  no `ref` yet; a caption read during conversion would give it one.
+
+- **Full-range review fixes, round 28** (+31 / -4 lines, 5 files). ci-spread-core no longer requires a
+  borrowing base certificate of every case (an ABL document; every term loan was left for review),
+  `TODO(ci-required-documents-by-loan-type)`; a hyphen in a range or date (`100-200`,
+  `FY2025-2026`) is not read as a minus; an input schema declaring `documents` (reserved for the
+  run's documents) is a check finding.
+
+- **Full-range review fixes, round 27** (+32 / -8 lines, 7 files). A printed number followed by a
+  separating comma is read (`$650,000, which`; round 25's pattern rejected any trailing comma);
+  ci-spread-core's convergence counts a borrowing base certificate as a structural source, as the
+  authoring repo's loop does; submit validates the record without its `documents`, as the run
+  does; a document class that is also an input field is a check finding (adjudication would read
+  document text for it).
+
+- **Full-range review fixes, round 26** (+56 / -9 lines, 7 files). A negative number is located as
+  printed (`-125,000`, `(125,000)`); a malformed adjudication cite is dropped
+  (`_BatchItemVerdict.valid_cites`) rather than failing the whole batched answer; a playbook
+  numeric test on a flag never holds; `describe_pack` keeps a metric id's first definition, as the
+  fact catalog does.
+
+- **Full-range review fixes, round 25** (+108 / -60 lines, 10 files). `locate_page_for_value` compares a
+  number by value against every number a page prints (`_printed_numbers`: `650,000`, `2.50` and
+  `2.5` alike, never part of a longer one), replacing four rounds of needle patches (`2.5` printed
+  `2.50x` went unlocated after round 22's); a playbook `_any` test flattens a list field and
+  ignores mappings (it raised on a hypotheses list field); `BlobDocumentStore` and the
+  adjudication pin check use `util.digest.content_digest`; `describe_pack`'s metrics are unique by
+  id; a check's `policies: []` is a check finding (it assessed every policy). The ci-spread-core
+  seed's ontology and `core.yaml` resynced from the authoring repo (no em-dashes; the repo named
+  in provenance), and its ontology comment no longer claims triples are written.
+
+- **Full-range review notes, round 24 (first clean full round)** (+46 / -62 lines, 3 files). Removed a
+  dead older copy of the adjudication step's body that round 23's edit left after its `return`; a
+  document with no text (a scan without a text layer) does not supply its class to adjudication;
+  the ci-spread-core decision and input schemas resynced from the authoring repo's re-export
+  (`advance_rates` as a `$ref` to a typed `AdvanceRates`; `loan_id` required); two CI tests assert
+  the outcome they are named for and resolve a `$ref`.
+
+- **Full-range review fixes, round 23** (+204 / -32 lines, 9 files). Adjudication: a rule the assessment
+  left pending is adjudicated when everything it reads is a document class the run supplies (a
+  reasoned assessment pends a document-reading rule, which adjudication then skipped silently);
+  one still pending is listed (`pending`) and counted unanswered, so it reaches the checkpoint and
+  the review flag; a violated rule whose action is not `deny` (`violated`) goes on the payload and,
+  unreviewed, leaves the Decision for review. `DocumentAgent.process` converts off the event loop
+  (its DocIntel page count is carried back to the caller's context). A subject field the input
+  does not require is a check finding. ci-spread-core seed schemas: `loan_id` required,
+  `BorrowingBase.total_availability`/`excess_availability` nullable (an unstated figure was an
+  affirmative zero that failed the availability rule), `advance_rates` declares
+  `accounts_receivable` and `inventory`. The snapshot's coverage check is its own test.
+
+- **ci-spread-core seed resynced from the authoring repo** (+40 / -14 lines, 6 files). The ontology
+  (0.2.2: `UCACashFlowResult` and `DebtServiceCoverage` over `adjusted_cash_flow`, clearing the
+  pack lint's `unreachable_derivation_input`), `RB_CI_OVERLAY`'s `overlay_id: rb-abl-2026`, the deal
+  overlay's rule-level `replaces:`, `core.yaml`'s header and provenance, and `pack_version:
+  0.3.0-draft`. The Python `class:` lines and eval paths stay stripped. `core.yaml` no longer names
+  a consumer module, so the pin of such files drops it.
+
+- **Full-range review fixes, round 22** (+29 / -7 lines, 6 files). The winning playbook leads, then
+  the always-included ones, whatever order the map lists them in (a working-capital loan reported
+  the memo scaffold as its top match); an integer never matches the whole part of a decimal
+  (`1,200` inside `1,200.45`); the checkpoint payload carries `check_errors`, so a check that
+  could not run is one the reviewer sees.
+
+- **Full-range review fixes, round 21** (+56 / -23 lines, 10 files). A number is located as a whole
+  number (`650,000` no longer matches inside `1,650,000` or `650,000,000`); the schema-only
+  fallback extraction keeps the conversion's page regions; `describe_pack` lists every assessing
+  step's metrics through the same `metric_refs` the fact catalog uses (ci-spread-core's check
+  metrics were missing from describe); a lint subject for unreadable steps is `conductor.steps`;
+  the deployed-posture storage warning names case documents too.
+
+- **Full-range review fixes, round 20** (+51 / -18 lines, 7 files). `document_ingest` is once-only (a
+  second one re-read every document and replaced the first's missing classes, clearing the review
+  flag); the fact catalog takes every assessing step's metrics (a `policy_check`'s too, so
+  ci-spread-core's `excess_availability_pct` is a typed fact); `describe_pack` reports an
+  unreadable steps file as an error entry; tests: the client contract reads the documents
+  route's own view, a run naming another tenant's document is a 422, document blobs have their
+  own directory.
+
+- **Full-range review fixes, round 19** (+51 / -19 lines, 5 files). `locate_page_for_value` adds a
+  separated needle only for a number of at least `THOUSANDS` (`650,000`, and `650,000.00` where
+  the value has cents), so `12.0` no longer matches a stray "12" and `0.8765` no longer matches
+  "0.88": a wrong page citation was silent. A subject field a document step fills is a check
+  finding (submit needs it first). `ModeFactory` states that it may be asked for `"sentinel"`.
+  The loop-vs-pipeline test compares `tests.loop_snapshot.project`'s projection, the snapshot's
+  own.
+
+- **Full-range review fixes, round 18** (+71 / -14 lines, 6 files). An authoritative `policy_check` is no
+  longer excused by adjudication's settled rules (reverting round 7's choice): adjudication judged
+  the record, the check assesses the decision's figures; the refusal now names what the
+  assessment withheld (`(withheld: R)`), which was round 7's complaint. Adjudication leaves a rule
+  the assessment left pending (missing, stale or uncomputable evidence) pending, so a stale value
+  is never adjudicated into a settlement. A `policy_check` that could not run leaves the Decision
+  for review (unless a reviewer saw it), and an authoritative one adds a required action.
+
+- **Full-range review fixes, round 17** (+73 / -14 lines, 6 files). `PolicyAssessment` records the rules
+  the policy check withheld an allow for (`withheld`) and refusals that named no rule
+  (`withheld_unattributed`, a policy outside its assumptions); an authoritative assessment is
+  excused only when that set is exactly live rules adjudication settled, with no violation, failed
+  cap or unattributed refusal. Before, an uncomputable deterministic rule (outcome
+  `pending_calculation`) or a failed assumption beside a settled live rule let an approval past a
+  failed gate. A `policy_check` whose figures cannot be assessed records a failed check
+  (`error`; authoritative: the approval withheld) instead of failing the run after the loop.
+
+- **Full-range review fixes, round 16** (+57 / -4 lines, 6 files). The checkpoint's payload names
+  `missing_documents`, so the gap a resolution clears from review is one the reviewer was shown; a
+  case naming documents for a pack with no `document_ingest` step is refused at submit and at
+  run (`check_documents_read`) rather than pinned and ignored; the step-kind docstrings state the
+  slot rule the check enforces; a document upload past the cap is tested (413).
+
+- **Full-range review fixes, round 15** (+84 / -31 lines, 8 files). `document_ingest`'s schema key is
+  `fields_schema` (the `*_schema` convention, so `describe_pack` lists it; was `schema`); a case
+  missing a required document class leaves its Decision for review unless a reviewer saw it, and
+  only the governor is said to see the gap (the narrator does not read the loop's metadata); a
+  playbook context naming an input or decision field the schema lacks is a check finding; a
+  pipeline of no steps is a check finding; the check's default-program and null-figure tests now
+  run the step.
+
+- **Full-range review fixes, round 14** (+101 / -42 lines, 11 files). A `policy_check`'s own
+  `default_program` is the one it is assessed under (`_program_policy_ids` reads the step's before
+  the pack's), and an unknown one is a check finding; `documents` is no longer a run-input slot
+  but `document_ingest`'s, and an `adjudication` over documents with no document step before it
+  is a check finding (`StepCheck.kinds_before`); one documents-shape rule (`document_refs`) for
+  submit and run; one durability gate (`plato.api.packs.refuse_ephemeral_blobs(action, why)`) for
+  pack publish and document upload; a pack schema object requiring keys it declares no properties
+  for is refused; a document agent's taxonomy entry that is neither a label nor `{label}` is a
+  check finding, not a crash.
+
+- **Full-range review fixes, round 13** (+69 / -8 lines, 8 files). A human checkpoint `reviews` the
+  decision (`StepKind.reviews`), so a later step that writes it (a `policy_check` after the
+  checkpoint) is a check finding: the reviewer approves the decision every later step keeps;
+  `POST /documents` refuses with 503 on a deployed replica whose blobs are not durable, the
+  guard pack publish already has; an adjudication with no live rules in force spends no model
+  call; the loop snapshot test requires a snapshot entry for every gold case.
+
+- **Full-range review fixes** (+110 / -29 lines, 10 files). A resumed run's later steps get the host's
+  `python_executor`, `documents` and `agents` (a `policy_check` after the checkpoint withheld
+  every python rule on resume); a `decision_field` the decision leaves null assesses the record
+  alone instead of failing the run; a diagnose rule testing an `input.` field for a value its enum
+  does not allow is a check finding, and the ci-spread-core seed's map now uses the input's
+  `LoanType` members (`revolving_credit` for `revolver`; `delayed_draw_term_loan`, no member,
+  dropped), so a revolver matches the ABL playbook; the seed's input schema drops
+  `special_instructions_path`, which nothing reads; `BlobDocumentStore`'s docstring states what a
+  concurrent first upload does.
+
+- **Review fixes over Phases 1-5** (+102 / -22 lines, 5 files). Every `always_include` playbook rule joins
+  the winning one (the credit memo scaffold was dropped whenever an analysis rule matched); an
+  authoritative `policy_check` counts the live rules adjudication settled; a decision field left
+  null never overwrites the record's fact in a check; `CaseResult.documents` reports missing
+  required classes when a run names no documents; an authoritative failure's rationale joins a
+  refusal's reasons instead of replacing them (`_with_clause`, shared with denials); a playbook
+  number test on a list or text never holds, and one on a `hypotheses.` source is a check
+  finding. The missing-documents note says the governor and narrator see it, which is what reads
+  `missing_documents`. Then: a playbook threshold that is not a number is a check finding (a
+  value that is not a number never satisfies a comparison), and a rationale clause is matched
+  whole, so one another contains (`CAP-1` in `CAP-10`) is still stated.
+  The diagnose map is then one typed model (`DiagnoseMap`, `DiagnoseRule`) that both the run
+  and the check read: a condition that is not `<name><test>`, an `_any` that is not a list,
+  a comparison to something that is not a number, and conditions that are not a mapping are
+  refused at publish rather than matching nothing; so is an `_any` list holding anything but
+  plain values.
+
+- **C&I as a `conductor_pipeline`: the playbook step, figures, documents in the loop, and the
+  ci-spread-core seed off Python** (+1426 / -33 lines, 18 files). Phase 5 of the conductor-pipeline plan.
+  - **`playbook`** (`PlaybookStep`: `diagnose_map`, `context`): the authoring repo's C&I playbook
+    walker generalized. Rules `{id, conditions, playbook_id, confidence_boost, always_include}`
+    with conditions `<name>_any` (text ignoring case), `_gt`, `_gte`, `_lt`, `_lte` over context
+    names sourced from `input.<f>`, `decision.<f>` or `hypotheses.<f>`; first non-always match
+    wins; `PLAYBOOK_BASE_CONFIDENCE` (or the map's `base_confidence`) plus boosts; each
+    recommended playbook's `## section_id:` sections are its guidance refs. Writes a new
+    `guidance` slot (`CaseResult.guidance`). Check: context sources, every rule's playbook
+    declared, every condition on a context name with a known test.
+  - **`policy_check.figures`**: names mapped to dotted paths into the decision; checked at
+    publish against the decision schema's fields.
+  - **Documents in the loop**: each admitted document is evidence of its class
+    (`source: document:<id>`, its extracted fields as data) for the verifier;
+    `document_ingest.required_classes` records `documents.missing` (in the loop's context
+    metadata as `missing_documents`), and the check refuses a class outside the agent's taxonomy.
+  - **The convergence gate counts only evidence a source supplied**, not UNAVAILABLE records.
+  - **`assess(policy_ids=)` skips program selection**, so a pack with programs and an input
+    naming none can still be checked against named policies.
+  - **Pack schemas: an `object` naming no `properties` is a mapping of any keys** (`dict[str,
+    Any]`). It was an empty model that dropped every key, which emptied C&I's
+    `advance_rates` and so its A/R and inventory advance checks.
+  - **ci-spread-core seed**: `conductor: kind: conductor_pipeline`, `[document_ingest (fills the
+    financials; requires financial statements, a BBC and a debt schedule), investigation
+    (sentinel; convergence on two iterations, the statements and a structural source),
+    policy_check (advisory, the four core policies over the recommendation's figures,
+    `excess_availability_pct` derived in `check_metrics.yaml`), human_checkpoint
+    (CREDIT_COMMITTEE_APPROVAL), playbook, narrate (approved decisions)]`. New files: the input,
+    hypothesis, decision and financial-fields JSON Schemas (from the authoring repo's models,
+    in the supported subset), `evidence_tools.yaml` (each type from the case's own `evidence`
+    object), `document_agent.yaml`, `check_metrics.yaml`. The seed publishes with no blocking
+    finding and runs (`tests/test_ci_pipeline.py`). Not carried over, as TODOs in the manifest:
+    entity extraction into the knowledge graph (`ci-entity-extraction-plugin`, the authoring
+    repo's capability, to install as a step-kind plugin), the RB program overlay in the check
+    (`ci-check-program-overlay`), `lien_position` (`ci-lien-position-derivation`). The evaluator
+    and persist steps have no step kind: a run already persists its Trace and Decision, and
+    scoring against ground truth is an eval experiment over the `case_run` entity.
+
+- **The investigation step's loop guards, and review fixes to adjudication** (+153 / -12 lines,
+  5 files). Phase 5's first part (C&I's loop), and the review over Phases 1-4.
+  - **`sentinel`** (`SentinelTuning`: `signal_decay_threshold`, `confidence_change_threshold`)
+    adds `SentinelMode` to the loop, capped at the step's `max_iterations`;
+    `sdk_mode_factory("sentinel", ...)` builds it (no model call, no context).
+  - **`convergence`** (`ConvergenceGate`: `min_iterations`, `evidence_all`, `evidence_any`) gates
+    the investigator's claim to have converged, C&I's "two iterations, the financial
+    statements and a structural source".
+  - Review fixes: a failed cap composition with no binding rule still blocks once adjudication
+    settles the live rules; a denial's rationale is stated once however often it is applied, and
+    a refusal's own reason is kept; adjudication decides only the rules the assessment names in
+    force (no legacy alias, nothing an overlay replaced), so it now `reads` the assessment;
+    adjudicated text is checked against the pinned digest, and its conversion runs off the event
+    loop.
+
+- **The `policy_check` step: an assessment over the decision's figures, after the loop** (+189 /
+  -5 lines, 5 files). Phase 4 of the conductor-pipeline plan (CRE's post-loop check).
+  - **`policy_check`** (`PolicyCheckStep`, the `AssessmentSpec` keys plus `decision_field`,
+    `policies`, `deterministic_verdict`): `assess` over the record with the decision (or its
+    `decision_field`, which must be a mapping) laid over it. Reads `decision`, writes `checks`
+    and `decision`, so one after the checkpoint or the narrator is a check finding. The result is
+    `CaseResult.checks.<id>`; `authoritative` folds a failed check into the governor's verdict
+    (and so into the Decision's `policy_refs`); `advisory` only records it. Check: the decision
+    schema has the `decision_field`, and every named policy is the pack's.
+  - **`assess(spec=, policy_ids=)`**: another step's settings; named policies are assessed as
+    given, outside any program (so a `scope: product` policy no program lists can be a check's).
+
+- **The `adjudication` step: a case's live rules decided against its documents** (+1793 / -28
+  lines, 10 files, 1297 of them the snapshot below). Phase 3 of the conductor-pipeline plan.
+  - **`adjudication`** (`agent:` an `AdjudicationAgentSpec` file, `rules: live`, `evidence:
+    documents`): the live partition (`partition_rules`) of the rules in force
+    (`pack.assessment.policies_in_force`, the selected program's, materialized as `assess` does),
+    run through `AdjudicationAgent` over the record, the assessment's derived metrics and, by
+    class, the run's documents' text marked `=== document <id> ===` and `[page N]` (the stored
+    bytes converted again; no model call). A rule sees a class's documents when its `reads` names
+    the class. Replicas collapse most-adverse first (`ADJUDICATION_PRIORITY`).
+  - **Citations**: a batched verdict may carry `cites` (`EvidenceCite`: document, page), kept on
+    the outcome's inputs under `CITES_INPUT_KEY`; the step turns them into `SourceCoordinate`s
+    (the document's `source_file_id`, a `PageLocator`, its sha256) on `RuleOutcome.citations`.
+    The batch prompt asks for them where the evidence marks documents and pages.
+  - **Verdict composition** (the plan's §2.4, D4): an adjudicated violation of a `deny` rule
+    (`denied`) withholds a governor approval, as an authoritative assessment's violation does,
+    and joins its violations; an undecided rule (indeterminate, or left by a failed segment) is
+    on the checkpoint's payload as `indeterminate` and, unreviewed, leaves the Decision for
+    review; an authoritative assessment failing only on live rules it withheld, all of which
+    adjudication `settled`, no longer overrides. `_Authoritative` is now `_Overriding`.
+    `CaseResult.adjudication` carries outcomes, narrative, `denied`, `settled`, `indeterminate`,
+    `failed_segments`.
+  - The investigation step `uses` the adjudication, so one placed after it is a check finding.
+  - **`tests/data/dscr_loop_snapshot.json`**: the five gold cases under `investigation_loop`
+    (both decisions, plain and suspend-resume), projected (`tests/loop_snapshot.py`) from the
+    output of the conductor as it was before Phase 1; `tests/test_loop_snapshot.py` holds the
+    current runner to it, which answers the review's note that the loop-vs-pipeline test compares
+    one engine with itself.
+  - The document step's publish type check reads each property as `schema_model` does
+    (`schema_facts`: a local `$ref`, a union with null), so the seed's `interest_rate` and
+    `property_type` no longer read as untyped.
+
+- **Documents on Plato: upload, pin, and resolve in a run** (+499 / -30 lines, 20 files). The
+  runtime half of the conductor-pipeline plan's Phase 2, built in the policy session by the user's
+  direction.
+  - **`fabric.blob.documents.BlobDocumentStore`**: a tenant's documents over a `BlobStore`. The id
+    is the sha256 of the bytes, so the same upload is the same document; keys sit under a digest
+    of the tenant id (`documents/<16 hex>/<sha256>`), so a tenant id never becomes a path and one
+    tenant cannot name another's document; metadata (`DocumentRef`: filename as a bare name,
+    media type, size) is a JSON sidecar, so there is no table or migration. The first upload's
+    filename stands. `DocumentRef` moved here from `pipelines.steps`, which re-exports it.
+  - **`POST {prefix}/documents`** (multipart `document`, `read_capped` at
+    `PLATO_DOCUMENT_UPLOAD_MAX_BYTES`, default 32 MiB, editable over `/config`; 422 for an empty
+    upload or a filename with a path) and **`GET {prefix}/documents/{id}`** (404 for an id the
+    caller's tenant has not stored). The pointer is never served. Mounted when the wiring sets
+    `PlatoWiring.documents_for`, which both shipped wirings do, over the pack-archive blob store.
+  - **Case runs**: `CaseRunService(documents_for=)` resolves a case's `documents` at submit
+    (unknown id or a mismatched `sha256`: 422) and pins `{document_id, sha256, filename,
+    media_type}` on the run; execution passes the tenant's store and the agents service to
+    `run_case`. `CaseRunInvoker(documents=)` does the same for eval cases.
+  - **Client**: `PlatoClient.upload_document` / `document`, contract `Document`;
+    `CaseResult.documents` on the client contract.
+  - Review-round fixes to the step: a document's pinned digest is checked before any model call
+    as well as after the read; two documents disagreeing on a filled field is a conflict
+    (`filled_from`); a conflict a reviewer resolved at the checkpoint no longer leaves the Decision
+    for review; the publish check refuses a document field typed differently from the input's.
+
+- **Documents in a case run: the `document_ingest` step** (+492 / -48 lines, 7 files). Phase 2 of the
+  conductor-pipeline plan, the policy session's half; the documents route, blob scoping and the
+  case submit/execute wiring are the runtime session's (plan §3.7).
+  - **`document_ingest`** (`agent:` a `DocumentAgentSpec` file, `fields_schema:` the fields to extract,
+    `fills: input`): each of the run input's `documents: [{document_id[, sha256]}]` is resolved by
+    the host's `DocumentSource` (`resolve(document_id) -> DocumentRef(pointer, filename, sha256,
+    media_type)`, plus its `blob`), run through `DocumentAgent.process_blob`, and refused when its
+    bytes are not the digest the run pinned. With `fills: input` a field the record left out takes
+    the first document's value, recorded in `CaseDocuments.filled` with its document and
+    `SourceCoordinate`; a field the record states differently (numbers by value, text ignoring case)
+    is a conflict, carried on the checkpoint's payload, on `CaseResult.documents`, and marking the
+    Decision `human_review_required`. The record is then validated in full, so a fact neither the
+    submitter nor a document supplied is refused before any model runs.
+  - **Submit**: `input_model(pack)` makes a field a `fills: input` step can supply optional
+    (`fillable_fields`); DSCR's `property_value` is `required`, so a loan with only an appraisal
+    was refused at submit. `CaseState` gains `record` (the input as submitted, less `documents`,
+    plus what was filled), which the assessment and the evidence tools now read, and
+    `documents: CaseDocuments` (refs, items, filled, conflicts). `documents` is a run-input slot.
+  - **Slot order**: a step that reads or uses a slot a later step writes is a finding, which now
+    covers an assessment placed before the documents that fill its input.
+  - **Pages without DocIntel.** `DocumentAgent` cites the page of a digital PDF: the conversion's
+    page regions become the page view (`page_view_from_regions`), and a field from a chunk on one
+    page takes that page. `locate_page_for_value` also finds a number printed with thousands
+    separators (`650,000` for `650000`).
+  - A non-mapping `conductor` block is a `conductor_unrunnable` finding (it published clean).
+  - Check: a document step's agent file, schema, and (with `fills: input`) every field it fills
+    being an input field.
+
+- **A pack declares its case workflow: the `conductor_pipeline` kind and step kinds**
+  (+1413 / -469 lines, 15 files). Phase 1 of the conductor-pipeline plan.
+  - **Step kinds** (`pipelines.steps`): a `StepKind` is a strict config model, the `CaseState`
+    slots it reads (and `uses` when present) and writes, and a runner; `once` allows one per
+    pipeline, `nested` marks a step that runs its own engine. `step_kinds()` holds the SDK's
+    `policy_assessment`, `investigation`, `human_checkpoint` and `narrate`, plus any an image
+    installs under the `jazzx_sdk.step_kinds` entry point; `GET /info/catalog` lists them as
+    `step_kinds`.
+  - **`CaseState`**: typed slots `input`, `documents`, `assessment`, `adjudication`, `decision`
+    (`CaseDecision`: decision, governor verdict, the reviewer's resolution and any replaced
+    decision), `checks`, `narrative`, `trace` (`CaseTrace`: mode calls, the investigation's
+    context, the assessment's reasoning record, where the checkpoint fell). It is what a
+    suspension stores; `restore_state` rebuilds it with the pack's types.
+  - **`conductor_pipeline`**: `steps:` inline, or a pack file holding the same list (`steps:
+    conductor_steps.yaml`; not `pipeline:`, which is the dotted Python pointer Plato refuses). The
+    steps run on a `ConductorEngine` over one `CaseState`; a human checkpoint suspends that engine
+    and `resume_case` continues it from the next step. The investigation's own engine streams its
+    mode steps in place of its container step, as before.
+  - **`investigation_loop` is that pipeline with fixed steps**, compiled from its block
+    (`[policy_assessment?, investigation, human_checkpoint?, narrate]`), so no manifest changes.
+    Both kinds run through `run_pipeline_case` / `resume_pipeline_case`, which replace
+    `run_investigation_case` / `resume_investigation_case`. Over the five DSCR gold cases the
+    decisions, governor verdicts, violations, binding caps, narratives, Traces and Decisions
+    match the previous implementation exactly (both decisions, plain and suspend-resume), and
+    `tests/test_case_pipeline.py` holds the loop and a hand-written equivalent pipeline (inline
+    and in a file) to the same. Visible differences: the assessment is now a step, so a run
+    streams a `policy_assessment` step first and a stop request before it ends the run without
+    one; a suspension's `payload` no longer carries `mode_calls` and `pre_loop` (the stored state
+    does); the trailing `finalize` record is gone from `steps`.
+  - **Publish check** (`conductor_problems`, `conductor_unrunnable`): a step of a kind the image
+    lacks, a step reading a slot no earlier step writes (a checkpoint before the investigation),
+    a step running before the step that writes a slot it `uses` (an authoritative investigation
+    before its assessment would decide without it), duplicate step ids, a second once-only step, and each kind's own checks (schemas, evidence
+    tools, modes and temperatures, the checkpoint among `human_checkpoints`, the narrate gate's
+    field in the decision schema). Problems name the step: `conductor.steps.<id>.<field>` for a
+    pipeline, the old `conductor.<key>` paths for `investigation_loop`.
+  - **One reader for the conductor's steps.** `step_entries(loader)` is what `assess`
+    (`assessment_entry` now takes the loader), the fact catalog's derived metrics, `describe_pack`'s
+    schemas, `pre_loop_agent` (a step's `reasoning` / `model`, `pre_loop_reasoning` /
+    `pre_loop_model` on the loop), case submit's subject field, `check_resolution` and the eval
+    invoker's checkpoint (`case_checkpoint`) read. A block with no `kind` still serves its
+    `pre_loop` assessment to `assess`. Lint's `invalid_assessment` and `unknown_default_program`
+    name the step's path (`step_subject`). An unreadable steps file is a conductor finding, not a
+    fact-catalog one. A `pre_loop` entry carrying a step-only key (`id`, `reasoning`, `model`) is
+    still refused, never overwritten by the loop's `pre_loop_reasoning` / `pre_loop_model`.
+  - `docs/DOMAIN_PACK_QUICKSTART.md` documents the kind.
+
+- **Policy extraction and model calls, from jaci's first live run of the policy pipeline.**
+  - **`flex_` model names.** The agents layer's `resolve_model` strips a cost-tier prefix
+    (`flex_`, `batch_`) for every caller, and `ReasoningAgent` turns a `flex_` OpenAI name into
+    `service_tier="flex"` unless its settings already name a tier. The default model is
+    `flex_gpt-6-luna`, which `ReasoningAgent` sent as given, so every extraction call (jaci's
+    script, Plato's authoring and policy-extract routes) answered 404 `model_not_found`. The tier
+    goes back on through one helper, `agents.models.with_cost_tier`, on every OpenAI path:
+    `ReasoningAgent`, `OpenAIProvider.build_agent`, its tool-calling path and its fast path.
+  - **`temperature` on `gpt-6-luna`.** A card may set `unsupported_always`: its refused params
+    are stripped on every call, not only alongside `reasoning_effort`. `gpt-6-luna`'s card sets it,
+    since its API rejects `temperature=0.1` on a plain call (jaci's live ACORD extraction test);
+    the gpt-5.4 family still keeps `temperature` without `reasoning_effort`, as confirmed live
+    before. `llm.providers.openai` was the one path still conditioning on `reasoning_effort` for
+    such a model; the agents providers and modes already stripped per card.
+  - **Rule ids per clause.** `segment_key` (the document's base name with its extension, or a
+    hash of the name where it slugs to nothing, and the clause's position) builds the rule ids of
+    `ModalClauseExtractor`, `ConditionExtractor` and `PythonExtractor`; a clause marker alone
+    repeats in a document that numbers clauses per article, so 119 clauses of a loan agreement
+    proposed 8 rules (the springing FCCR covenant shared an id with the interest clause and was
+    dropped). The propose step now merges candidates by content (action, gate, condition and
+    wording), so the same clause in two documents is still one proposal with both sources, under
+    its smallest id whatever the document order; two documents whose names slug alike get a
+    suffixed id (logged), never an overwritten rule.
+    `JtbdExtractor` was already unique: its section names are refused when repeated.
+  - **Gated thresholds.** `ConditionExtractor` may propose one gate with its threshold ("FCCR at
+    least 1.10 while availability is below 10%"): an applicability `expression` held to the same
+    checks as the threshold (a declared field, a numeric comparison, a printed number); a gate that
+    fails them, or names no field, refuses the expression rather than applying the threshold
+    always.
+  - **Unnumbered prose.** `ClauseSegmenter` splits a clause longer than `DEFAULT_MAX_UNIT_CHARS`
+    at blank lines, then at sentence ends (rejoined with spaces), and numbers the pieces in order
+    (`split_long`, now
+    shared with `SectionSegmenter`); the OCC handbook, which has no clause numbers, reached the
+    extractor as one 23,000-character segment and was proposed as one rule.
+  - **Relevance.** `ConditionExtractor` and `PythonExtractor` (for a clause, not when formalizing
+    an existing rule) propose nothing for a clause reading none of the pack's declared fields (a
+    drafted threshold field counts),
+    logged at info; borrowing-request mechanics, interest payment dates and a handbook cover page
+    were proposed as rules. With no fields declared, everything is still proposed.
+
 - **CREMF: assessment outcomes and evidence freshness** (+368 / -25 lines, 11 files).
   `PolicyAssessment.outcomes` maps every rule in force to an `AssessmentOutcome`: `pass`, `fail`,
   `pending_evidence`, `pending_calculation`, `waiver_required`, `pre_review_required`,
