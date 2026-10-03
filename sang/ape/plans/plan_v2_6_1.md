@@ -18,9 +18,9 @@ review (`REVIEW_UPSTREAM=origin/dev`) before opening the PR, not only incrementa
 
 | # | Question | Recommendation |
 |---|---|---|
-| D1 | fastapi/starlette out of core dependencies (A1) | Yes. Breaking for a consumer relying on japes for fastapi; juno, macer, jazzx-assistant declare their own. |
-| D2 | anthropic lock 0.111 -> 1.x (A2) | Yes, with the live smoke; jaci is pinned `<1.0` and is no constraint. |
-| D3 | Which deferred TODO groups (D) are in scope | Concurrency and safety groups; leave the rest. |
+| D1 | fastapi/starlette out of core dependencies (A1) | **Yes (2026-10-03).** Breaking for a consumer relying on japes for fastapi; juno, macer, jazzx-assistant declare their own. |
+| D2 | anthropic lock 0.111 -> 1.x (A2) | **Yes (2026-10-03)**, with the live smoke; jaci is pinned `<1.0` and is no constraint. |
+| D3 | Which deferred TODO groups (D) are in scope | **Concurrency and safety (2026-10-03)**; leave the rest. |
 | D4 | Policy-owned items (F) | The policy session's call; listed so nothing is lost. |
 
 ## A. Dependencies
