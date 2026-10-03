@@ -81,6 +81,28 @@ Ownership: authoring, review and lint are the policy session's (`plato/api/autho
 assess routes); the chat mount, SSE, jobs and client are the runtime session's. Gaps 2 to 8 therefore
 want a plan from the policy session; gap 1 and gaps 11 and 12 are mine.
 
+## Gap 1 design: mounting the authoring chat (runtime session)
+
+`build_authoring_chat(agents, service, store, tenant_id, reasoning)` returns a pipeline and components,
+and its five tools are bound to one tenant's extraction service and proposal store. Findings from
+reading the code (2026-10-03):
+
+- **Registering it as an assistant is blocked.** The assistant router (`chat`, `chat/stream`,
+  sessions, traces, releases) resolves agents from a manifest, but Plato has no API that creates a
+  manifest, and `AssistantRuntime` passes one shared `agent_extra` to every tenant's agent, so
+  tenant-bound tools have no way in (the governed context carries no tenant). A `tools_for(tenant)`
+  hook on `AssistantRuntime` plus a manifest seeding path would fix both, and would give the chat the
+  full assistant surface for free.
+- **Dedicated routes avoid both.** `POST {prefix}/authoring/chat` (blocking) and
+  `POST {prefix}/authoring/chat/stream` (SSE on `ChatCoordinator`, resumable like assistant runs),
+  with the tools built per request from `DbProposalStore(db, tenant_id)` and the extraction service
+  `create_authoring_router` already builds. The streaming half reuses the coordinator, run stream and
+  stop routes; what it duplicates is the turn assembly in `plato/api/assistants.py`.
+
+Recommendation: dedicated routes now (blocking first, then streaming), and move to the assistant
+registry when Plato can create manifests, so the chat is not a special case forever. Client
+methods and contracts land with each route.
+
 ## Caveats
 
 Plato route lists came from an inventory; three handlers were not opened (`POST /packs/drafts/{id}`,
