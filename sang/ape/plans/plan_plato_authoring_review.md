@@ -202,24 +202,24 @@ P1 is useful alone: the review loop works over HTTP before any UI. P4 depends on
 | Boot contract, deployment doc, releases | runtime session |
 | Authoring chat mount and its use of draft actor ids | runtime session |
 
-## 13. Decisions still needed
+## 13. Decisions (user, 2026-10-03)
 
-| # | Question | Recommendation |
+| # | Question | Decided |
 |---|---|---|
-| R1 | One open review per pack (partial unique index), or several concurrent? | One. Single author per pack (D5); a second review would race on the same draft. |
-| R2 | Reviewer assigned at submit (workbench) or any reviewer may decide? | Optional assignee; unassigned reviews show in every reviewer's inbox. |
-| R3 | Does direct archive upload `POST /packs` also need an approved review in strict? | No: it is the operator path for externally authored packs; document it. Say if it should be gated. |
-| R4 | Self-approval: allowed locally, refused deployed? | Yes, the toggle in section 2. |
-| H1 | Retention for `pack_draft_event` before/after text. | Keep all while a draft is open; on `discard` or after publish keep hashes and drop text after N days (config). Or keep forever, drafts are small. |
-| C2 | Re-anchor line comments across edits server-side? | No: carry `revision`, show outdated; rule anchors cover the structured case. |
-| Q1 | Gap 6 scope: persist lint only, or also build LLM quality rules like the workbench's? | Lint only now; LLM rules are a separate plan if the workbench team uses them. |
-| Q2 | Do untriaged lint errors block review submission? | Yes in deployed, advisory locally. |
-| J1 | Is KH publish of a JTBDSet wanted at all (needs the KH entity contract and a link table), or export-only? | Export-only until a consumer names the KH contract. |
-| M1 | Is the gateway's role claim name for reviewers `reviewer`, and is there an `author` role at all? | Confirm with the platform team; if no `author` role exists, treat any authenticated caller as author. |
-| D4 | MACER testing. | Still open, out of scope. |
+| R1 | One open review per pack, or several concurrent? | One (partial unique index). |
+| R2 | Reviewer assigned at submit, or any reviewer may decide? | Optional assignee; unassigned reviews show in every reviewer's inbox. |
+| R3 | Does direct archive upload `POST /packs` need an approved review in strict? | No; document it as the operator path. |
+| R4 | Self-approval | Refused deployed, allowed locally (the toggle in section 2). |
+| H1 | Retention for `pack_draft_event` before/after text | Keep all while a draft is open; after discard or publish keep hashes and drop text after a configured number of days. |
+| C2 | Re-anchor line comments server-side? | No: carry `revision`, show outdated. |
+| Q1 | Gap 6 scope | Lint only; LLM quality rules are a separate plan if wanted. |
+| Q2 | Untriaged lint errors block review submission? | Yes deployed, advisory locally. |
+| J1 | KH publish of a JTBDSet | Export only; no `pack_export_link` table until a consumer names the KH contract. |
+| M1 | Gateway role header and names | Unknown: make the header name and the reviewer and author role names config, defaulting to `X-User-Roles` and `reviewer`; with no author role configured, any authenticated caller may author. Confirm with the gateway team; P1 does not wait on it. |
+| D4 | MACER testing | Still open, out of scope. |
 
 ## 14. What would make this wrong
 
-- If the gateway does not forward `X-User-Roles` to Plato, D3 fails and a membership table returns; M1 checks this first, before P1.
+- If the gateway does not forward `X-User-Roles` to Plato, D3 fails and a membership table returns; M1's config defaults let P1 proceed meanwhile.
 - If several authors edit one pack (D5 reversed), the digest and revision pins make stale approvals correct but the draft itself still loses updates, so gap 10 moves to P1 and `TODO(draft-merge-lost-update)` stops being deferrable.
 - If the workbench team keeps its own project and git model, D1 fails and this surface has no consumer.
