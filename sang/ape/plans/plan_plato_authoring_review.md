@@ -7,6 +7,10 @@ Written 2026-10-03 by the policy session. Source: `note_plato_vs_policy_workbenc
 2026-10-03, and `policy-workbench/backend/app/api/{proposals,diff,comments,quality,users}.py` (read only).
 Nothing here is built.
 
+> Migration numbering (2026-10-03): `0016_cost_record` (gap 12, runtime session) is taken, so this plan's
+> migrations shift by one: `pack_review` is 0017, `pack_draft_event` 0018, `pack_lint_run` 0019, and any
+> export link 0020. Chain by `down_revision`; the names matter, not the numbers.
+
 ## Decisions already made (not reopened)
 
 | # | Decision |
