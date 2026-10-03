@@ -15,7 +15,7 @@ Nothing here is built.
 | D2 | Publish needs an approved `pack_review` in a deployed posture, optional locally. |
 | D3 | Roles from gateway `X-User-Roles` (`reviewer`, `author`), no membership tables. Pack owner = draft creator. `whoami` gains `roles`, `may_review`. |
 | D5 | One author per pack for now. Rebase and 3-way merge (gap 10) stay P2, out of scope. |
-| D4 | MACER testing: undecided, out of scope. |
+| D4 | No MACER integration. Testing a draft runs through the eval plane with a configured invoker; the SDK's `AdjudicationAgent` is the default, an external adjudicator is a config choice (P7). |
 | Gap 1 | Authoring chat is the runtime session's. This plan only fixes how review treats chat-made proposals (section 8). |
 
 ## 1. Facts from the code that shape the design
@@ -176,6 +176,7 @@ Chat (gap 1) makes no draft writes: its tools start an extraction (`service.subm
 | P4 | Gap 6: lint runs and triage, submit hook. | 0018 | Section 6 tests green; triage persists across a rerun. |
 | P5 | Gap 7: export routes; KH publish if J1 yes. | 0019 only if J1 | Round trip and fixture tests green. |
 | P6 | Gap 8: directory seam and routes. | none | Section 8 tests green. |
+| P7 | Draft testing (D4, the workbench's "Test with MACER"): an eval `Invoker` for an `adjudication` entity beside `pack` and `case_run` in `jazzx_sdk/pack/eval_invoker.py`, running `AdjudicationAgent` over the pack's rules for each case; `pack_for` resolves a draft as well as a version (`config["draft"]` or a digest pin, so a result names what it tested). Which adjudicator runs is config: the in-SDK agent by default, or an external one behind the same `Invoker` protocol (an HTTP adjudicator setting), so a MACER-style service needs config, not code. Reviewer-gated start, as the workbench's button is; results are experiments, so compare and baselines come free. Prior art first: grep `status/` for the adjudication chassis and conductor `adjudication` step kind. | none | An experiment over a draft runs and records the draft digest; swapping the configured adjudicator changes no code; a test that the invoker refuses a draft whose digest moved mid-run. |
 | Close | Full-range review (`REVIEW_UPSTREAM` the branch base), fixes, `done_` file moved with `git mv` from the `.scratch` root. | | Review clean. |
 
 P1 is useful alone: the review loop works over HTTP before any UI. P4 depends on P1's submit route; P5 and P6 are independent of the rest after P1.
@@ -216,7 +217,7 @@ P1 is useful alone: the review loop works over HTTP before any UI. P4 depends on
 | Q2 | Untriaged lint errors block review submission? | Yes deployed, advisory locally. |
 | J1 | KH publish of a JTBDSet | Export only; no `pack_export_link` table until a consumer names the KH contract. |
 | M1 | Gateway role header and names | Unknown: make the header name and the reviewer and author role names config, defaulting to `X-User-Roles` and `reviewer`; with no author role configured, any authenticated caller may author. Confirm with the gateway team; P1 does not wait on it. |
-| D4 | MACER testing | Still open, out of scope. |
+| D4 | MACER testing | No MACER integration; generalized draft testing on the eval plane, `AdjudicationAgent` by default, an external adjudicator by config (P7). |
 
 ## 14. What would make this wrong
 
