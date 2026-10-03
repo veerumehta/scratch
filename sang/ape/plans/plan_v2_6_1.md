@@ -25,18 +25,18 @@ review (`REVIEW_UPSTREAM=origin/dev`) before opening the PR, not only incrementa
 
 ## A. Dependencies
 
-1. **fastapi and starlette into extras** (`server`, `plato`). Since `common` `0cc5712` (#229), no
-   `common` module japes reaches imports fastapi, and neither does the SDK core (`jazzx_sdk`,
-   `agents.interactive`, `pipelines.chat`, `pack`, `fabric.db`, `runs`, `config`, `observability`,
-   `conductor`, each checked in a fresh interpreter). Module-scope importers: `server/` (10 files)
-   and `config/posture.py` (not loaded by `config`). Work: move the two declarations; make
-   `posture.py` import fastapi lazily or move it under `server`; a guard test that the core imports
-   load no `fastapi` (pattern: `test_no_backend_on_the_eager_path`); rewrite the stale
-   `pyproject.toml` comment on `opentelemetry-instrumentation-fastapi` (it cites an unguarded
-   `common` import that is gone) or drop that extra if nothing ships the instrumentor.
-   Consumers checked 2026-10-03: juno declares fastapi/starlette/uvicorn itself (19 importing
-   files); macer imports it only in `mock_knowledge_hub` (dev extra; its container installs it);
-   jazzx-assistant declares it.
+1. **fastapi into extras** (`server`, `plato`). **Built 2026-10-03.** `starlette` stays core:
+   `openai-agents` requires it (and `mcp`, which requires `uvicorn`), so every install has it; its
+   declaration is the CVE floor. Since `common` `0cc5712` (#229) no `common` module japes reaches
+   imports fastapi. A sweep importing every `jazzx_sdk` module with fastapi blocked: only
+   `server/` (10 modules) and `config/posture.py` fail (posture's `Request` must stay a module-level
+   import, and only `server/` and Plato import it). Guards in `tests/test_import_boundary.py`: an AST
+   check that nothing outside those imports fastapi at module scope, and a fresh-interpreter import
+   of the core packages with fastapi blocked. The stale comment on
+   `opentelemetry-instrumentation-fastapi` and the Dockerfile's "fastapi is core" comment are fixed.
+   Consumers checked: juno declares fastapi/starlette/uvicorn itself (19 importing files); macer
+   imports it only in `mock_knowledge_hub` (dev extra; its container installs it); jazzx-assistant
+   declares it.
 2. **anthropic 1.x lock bump + gated live smoke.** Code is 1.x-compatible since 2.5.8.
 3. **`TODO(kh-client-bump)`**: KH client pin (`pyproject.toml`), and with it KH's rego removal.
    Check what moved in `client-api` first.
