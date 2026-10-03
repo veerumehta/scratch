@@ -164,13 +164,13 @@ Publish gate: if `require_review` (explicit, else `strict_mode()`) then `require
 
 ## 9. Review of chat-made proposals
 
-Chat (gap 1) writes only per-rule proposals and, via `merge-rules`, draft files. Review treats both uniformly: a draft change by any actor produces a `pack_draft_event` with that actor, so a chat-made edit is reviewable in the diff and cannot be published without the review gate. The chat actor id is whatever `acting_user_id()` resolves for the turn (the human's); if the runtime session writes with a service id, events carry it, and review shows it. Ask for the runtime session: always set `actor_id` on its draft writes (a one-line contract, no code here).
+Chat (gap 1) makes no draft writes: its tools start an extraction (`service.submit`) and file a rule-edit proposal (`store.put_set`). Draft files change only through `merge-rules`, which already stamps `actor_id` from `CallerIdentity` (`vocabulary_review.py`). Neither `ExtractionRun` nor `Proposal` records its creator (`Proposal` has only `admitted_by`/`admitted_actor`), so chat-made runs and proposals are unattributable. P1 adds `created_by` (the acting user id, nullable for existing rows) to both, stamped by the service and store from `CallerIdentity`; tell the runtime session the field name when it lands, so the chat tools pass `CallerIdentity.from_context().user_id`. Review shows `created_by` beside each proposal.
 
 ## 10. Phased build order
 
 | Phase | Scope | Migration | Done when |
 |---|---|---|---|
-| P1 | Gaps 2 + 3: `CallerIdentity.roles`, `authoring_roles`, `pack_review` + `pack_comment` tables, review store and routes (no diff yet), publish gate, `whoami` fields, client methods, `created_by_user_id`. | 0016 | The 3.5 tests green on sqlite and Postgres; the strict-publish test fails on the pre-change tree and passes after; `ruff` and `lint-imports` clean; CHANGELOG entry; `docs/DEPLOYMENT_ENV.md` regenerated if the roles env vars enter `BOOT_CONTRACT` (see 11). |
+| P1 | Gaps 2 + 3: `CallerIdentity.roles`, `authoring_roles`, `pack_review` + `pack_comment` tables, review store and routes (no diff yet), publish gate, `whoami` fields, client methods, `created_by_user_id`, `created_by` on `Proposal` and `ExtractionRun` (section 9). | 0016 | The 3.5 tests green on sqlite and Postgres; the strict-publish test fails on the pre-change tree and passes after; `ruff` and `lint-imports` clean; CHANGELOG entry; `docs/DEPLOYMENT_ENV.md` regenerated if the roles env vars enter `BOOT_CONTRACT` (see 11). |
 | P2 | Gap 4: events, diff, revert, `head_revision`, review diff route. | 0017 | Section 4 tests green; review stale check uses the revision; draft write and event atomicity test passes. |
 | P3 | Gap 5: comment routes and client. | none | Section 5 tests green. |
 | P4 | Gap 6: lint runs and triage, submit hook. | 0018 | Section 6 tests green; triage persists across a rerun. |
