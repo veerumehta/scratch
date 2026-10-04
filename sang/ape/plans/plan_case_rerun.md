@@ -1,6 +1,6 @@
 # Case rerun: a run that starts from a prior run of the same case
 
-Status: live. Written 2026-10-04 on `v2.6.1`. Prior art read: `status/done_conductor_pipeline.md`
+Status: live. P1-P4 built 2026-10-04 on `v2.6.1` (commits `55620eee`, `60ac24d6` and the one after it); P5 (UI) is the open phase. Written 2026-10-04 on `v2.6.1`. Prior art read: `status/done_conductor_pipeline.md`
 (case runs, human checkpoint), `plan_plato_authoring_review.md` (reviewer roles). No earlier rerun plan.
 
 ## Why
@@ -47,8 +47,8 @@ Each phase is one commit with tests that fail on the old code; a CHANGELOG entry
   in `_start` like `documents`, carried on `CaseState.rerun` with the prior outcomes, record and
   document digests (`RerunBasis`).
 - `_run_adjudication` passes `prior_outcomes`, `changed_fields`, `rejected` to `adjudicate`;
-  `impacted_rules` gains `force` (rule ids always impacted); `resolve_run_mode` decides NO_OP and
-  FORCED_FULL.
+  `impacted_rules` gains `force` (rule ids always impacted); NO_OP and a full run on another version are decided inline in the step (`RunMode` is not used:
+  it expresses the same two cases less directly).
 - A pack with no `adjudication` step refuses `rejected` (nothing to reject against).
 - Tests: carry-forward of an unimpacted rule, a changed field re-runs only its readers, a rejection
   forces its rule, NO_OP calls no model, different version runs in full, wrong tenant/subject/
