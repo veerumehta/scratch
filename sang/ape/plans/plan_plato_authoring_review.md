@@ -223,6 +223,16 @@ P1 is useful alone: the review loop works over HTTP before any UI. P4 depends on
 | M1 | Gateway role header and names | Unknown: make the header name and the reviewer and author role names config, defaulting to `X-User-Roles` and `reviewer`; with no author role configured, any authenticated caller may author. Confirm with the gateway team; P1 does not wait on it. |
 | D4 | MACER testing | No MACER integration; generalized draft testing on the eval plane, `AdjudicationAgent` by default, an external adjudicator by config (P7). |
 
+## 13a. Deviations recorded during the build
+
+| Phase | Deviation |
+|---|---|
+| P1 | `pack_comment` is not created in `0017_pack_review`: the migration test needs a registered model per table, so it lands with P3's routes. |
+| P1 | Resubmit is legal from `approved` as well as `changes_requested`, only when the draft has outgrown the approval; otherwise 409 `the approval still stands`. |
+| P1 | Review events are a JSON column on `pack_review`, not an events table. |
+| P1 | Family check found `GET /packs/{id}/history` and `GET /packs/{id}/active` ungated in strict; both now withhold like their siblings. |
+| P1 | Strict posture, caller without roles: reviewer is refused; author follows M1 (any authenticated caller may author while no author role is configured). |
+
 ## 14. What would make this wrong
 
 - If the gateway does not forward `X-User-Roles` to Plato, D3 fails and a membership table returns; M1's config defaults let P1 proceed meanwhile.
