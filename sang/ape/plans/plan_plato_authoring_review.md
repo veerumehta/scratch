@@ -232,6 +232,10 @@ P1 is useful alone: the review loop works over HTTP before any UI. P4 depends on
 | P1 | Review events are a JSON column on `pack_review`, not an events table. |
 | P1 | Family check found `GET /packs/{id}/history` and `GET /packs/{id}/active` ungated in strict; both now withhold like their siblings. |
 | P1 | Strict posture, caller without roles: reviewer is refused; author follows M1 (any authenticated caller may author while no author role is configured). |
+| P4 | No `lint_run_id` column on `pack_review`; the submit answer returns it. Migration `0020_pack_lint_run` (`pack_lint_run`, `pack_lint_triage`). Finding key = hash of code, subject and detail. Deployed submit: 422 `lint_errors_untriaged`; local: advisory. |
+| P5 | Export only (J1). `GET /packs/{id}/{version}/jtbdset`, `GET /packs/drafts/{id}/jtbdset`. A program with no overlay policy is not exported (existing exporter). |
+| P6 | `SeenUsersDirectory` (ids only) when `PLATO_DIRECTORY_URL` is unset; `GatewayDirectory` forwards the caller's bearer token. |
+| P7 | No new client method (experiments take any entity type). `before_start` hook on the experiments router gates adjudication entities to reviewers. `config.draft` = the draft's content digest (`GET /packs/drafts/{id}` returns it). `PLATO_ADJUDICATOR_URL` selects an external adjudicator; its request contract is unconfirmed with any service. |
 
 ## 14. What would make this wrong
 
