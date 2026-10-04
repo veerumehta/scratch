@@ -30,3 +30,11 @@ jazzx_sdk/conductor/strategies/__init__.py :: old-paths-dropped-unshimmed
 # `.db`, ...); `jazzx_sdk.evaluation.feedback` re-exports the core names jaci imports, and the
 # empty `evaluation.reporters` package is gone. Breaking paths, marked in the CHANGELOG.
 jazzx_sdk/evaluation/feedback/__init__.py :: old-paths-dropped-unshimmed
+# The case-run hosts pass `agents=` and `documents=` to every conductor kind, and only case kinds
+# have `pre_loop` steps read for `assess`; no image installs a conductor kind (`jazzx_sdk.
+# conductor_kinds` is registered nowhere), and one written now takes `**options`.
+jazzx_sdk/pack/eval_invoker.py :: installed-kind-gets-new-kwargs
+jazzx_sdk/pack/case_runs.py :: installed-kind-gets-new-kwargs
+jazzx_sdk/pack/case_runs.py :: installed-kinds-get-new-kwargs
+jazzx_sdk/pipelines/kinds.py :: installed-kind-loses-assessment
+jazzx_sdk/pipelines/kinds.py :: custom-kind-loses-pre-loop-assess

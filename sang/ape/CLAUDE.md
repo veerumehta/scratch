@@ -22,7 +22,24 @@ pinning in `CaseRunService`) was built here by the user's direction; the runtime
 ci-spread-core's seed is a `conductor_pipeline` and publishes. jaci session told what to adopt.
 Open: jaci adoption; the seed manifest's three TODOs. Suite 7716 green.
 
-**Working branch is `v2.6.0`** (begun as `v2.5.8`, renamed 2026-09-30 when the user made the client
+**Working branch is `v2.6.1`** (cut 2026-10-03 from `dev` `b316b5d3`, after PR #88 squashed
+v2.6.0 to `dev` as `ec16ee93`; `main`'s `ae974845` recorded on `dev`, `dev` merged back into
+`plato` `3218ce12`). Carries the export docstring fix `cd053934`, fastapi optional `82c63683`, the authoring chat as
+a built-in assistant (Plato vs workbench gap 1) `d9320795`; version not bumped yet. Review owed over
+`cd053934..HEAD` (`/tmp/japes_review_261.sh`). Client coverage for jaci `5bc26321`; gaps 11 (extraction SSE, `d73682e9`) and 12 (queue and cost
+stats, migration `0016_cost_record`, streamed turns now report usage) built. `plan_plato_authoring_review.md` P1-P7 built (user decision via opus-xrepo; decisions in its section 13):
+P1 review and roles `a62d710a`, P2 draft history `f25e922c`, P3 comments `01e64ebe`, P4 lint runs and
+triage `ec0f2ea5` (migration 0020), P5 JTBDSet export `86372470`, P6 user directory seam `5d33a93d`,
+P7 adjudication eval entity over a pinned draft `421c0ff3`. Deviations for the plan's section 13a:
+P4 has no `lint_run_id` column on `pack_review` (it is in the submit answer), P5 export-only (J1),
+P6 default directory is ids seen in reviews and drafts, P7 needs no client method and adds
+`before_start` on the experiments router plus `PLATO_ADJUDICATOR_URL`. RESUME with the close: full-range
+review (`REVIEW_UPSTREAM=origin/dev`, user runs it) and its fixes, then `git mv` the plan to
+`status/done_`. Version not bumped.
+Candidates: fastapi/starlette to extras (juno, macer, jazzx-assistant declare their own),
+the two low review notes, `TODO(bare-tool-route-requires-defaults)`. v2.6.0 history below.
+
+**Was `v2.6.0`** (begun as `v2.5.8`, renamed 2026-09-30 when the user made the client
 package a minor: SDK 2.6.0, Plato 0.2.0, `jazzx-plato-client` 0.2.0; cut from `dev` at `2a2ad60b`,
 PR #86's 2.5.7 squash; plan `plans/plan_v2_6_0.md` has the item table). Built on it, local and
 unpushed: human checkpoints (case runs suspend/resume, run outcomes), config audit trail +
@@ -56,9 +73,17 @@ skill, 202 actions + `/operations/{id}`, per-assistant OpenAPI), the batch-tier 
 `7bba88aa..b23c4663`, adversarial review over `cd61f0f4..` clean after 3 rounds (the older
 `b694cf1a..040092c9` range reviewed in a worktree, fixes folded into the tip). Suite 7857 green
 before the review fixes. Phase 3 stage 2 (typed skill tools) is `df5e7755` (built by the policy
-session; suite 7878). **Pending for the cross-repo session:**
-1. After the policy session's v2.6.0-wide comment trim commits: check `df5e7755` and the trim have
-   had an adversarial review; check open Dependabot alerts on `main`; then the user runs
+session; suite 7878); the v2.6.0-wide comment trim is `d6f8a869` (190 files, AST-equal), `common`
+is at `0cc5712` (`8bf39f98`); urllib3 2.8.0; review fixes `fe40a989`, `deae5380`, `27508db8`.
+Adversarial review over `b23c4663..27508db8` clean (full pass, then incremental); suite 7881.
+Two low notes open (`facts-recursive-ref-unrefused`, `spec-ref-ignored-list-incomplete`).
+Released: PR #88 squash-merged to `dev` as `ec16ee93`; `dev` record of main's `ae974845` (`b316b5d3`)
+and `plato` merge-back of `ec16ee93` (`3218ce12`), both tree-unchanged, push via `/tmp/japes_plato_merge_dev_back.sh`. CI fix `a8ff86f8` on local `plato` (placeholder OpenAI key for 3 stubbed tests; `v2.6.0`
+`34582819`), push via `/tmp/japes_plato_ci_key_fix.sh`. Held for 2.6.1 on local branch
+`plato-held-2.6.1`: `7ec392af` (export
+docstring, also `v2.6.0` `b1ea1165`) (`db20cab7` dropped: the dev record replaces it).
+**Pending for the cross-repo session:**
+1. (done) The user runs
    `/tmp/japes_release_260_to_plato.sh` (it squashes the `v2.6.0` tip).
 2. The executor's Linux layers (netns, `RLIMIT_NPROC`) are untested: `/tmp/japes_executor_linux_check.sh`
    once Docker is up.

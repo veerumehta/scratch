@@ -2,10 +2,337 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+## [2.6.1] - unreleased
+
+Plato 0.2.1; `jazzx-plato-client` 0.2.1 (the client always carries Plato's version).
+
+- **PR #89 review comments** (bot, `dev` -> `main`). Fixed: an `assistant_session` eval case whose
+  `turns` is a string was iterated by character (it must be a non-empty list); a turn that fails
+  (or raises) now still closes the session recording; `InProcessTurnRunStore.expire_suspended`
+  re-reads each run as `reap_stale` does. Not changed: the in-process store's `claim_suspended`
+  against `request_stop` interleaving (no method awaits anything that suspends, so each runs to
+  completion; the class docstring says so), and the rename `workstation_python_executor` to
+  `local_python_executor` (deliberate, listed above; no alias for an unreleased version).
+- **sqlite: two runs of one key could be claimed at once** (PR #89's pytest failure,
+  `test_concurrent_claims_on_sqlite_have_one_winner[mixed]`). The claim's compare-and-set covered the
+  claimed run's own status only. A racer that had read the key idle and then read its head after
+  another had committed took the next queued run, so both ran. `_claim` now also requires that no
+  run of the key is RUNNING, in the same UPDATE (sqlite takes no key lock; Postgres' advisory lock
+  is unchanged and the extra predicate is harmless there). The race test staggers its racers so the
+  late-reader case happens every run (10 claims before the fix) instead of by timing.
+- **The client version is shown beside Plato's.** `plato._version.client_version()` reads the
+  installed `jazzx-plato-client`'s `__version__` (None when it is not installed); `/info` carries it
+  as `versions.plato_client`, the dashboard's Versions panel lists "Plato client", and the entry
+  point's `--check` output as `client_version`. The packs page now always lists each pack's
+  `X-Tenant-Id` (the column was hidden for a single tenant), and a version's detail row names the
+  header (`X-Tenant-Id: <tenant>`) its request already carried, so selecting a tenant first is not
+  required. (+~40 / -6 lines, 7 files)
+- **Review of the 2.6.1 range** (`origin/plato...HEAD`; slices 1 and 2 blocked). Fixed: replaying a
+  draft's history starts at the last reset at or before the revision, so a pack whose old draft
+  text was pruned can be reopened and still diff, revert and review (410 before); the authoring
+  chat's tools need the author role where the routes do (a viewer could start an extraction
+  through the chat); deleting a comment removes every reply under it, not only the direct ones;
+  a local publish of an approved review that matches the draft marks it published, and a direct
+  publish closes an approval the draft outgrew (it held the pack's review slot); a comment's
+  `review_id` must be a review of the same pack (404); `/whoami` `may_review` follows the posture
+  as `may_author` does; the lint-run list defaults to the store's limit constant; the gateway
+  directory counts `$skip` by records read; `contracts.__all__` lists each model once and the
+  five it left out; an unused constant. Tests: the retention test reads a pre-reset revision, a
+  fixed-clock stats test, a pasted assert, an unclosed client, and the strict gate test no longer
+  exempts the samples list. Left, as a `TODO(streamed-cost-user-from-context)`: a drained queued
+  turn is costed to the draining request's user.
+- **Testing a draft on the eval plane** (plan_plato_authoring_review P7; the workbench's "Test with
+  MACER", no MACER integration). An `adjudication` eval entity beside `pack` and `case_run`:
+  `AdjudicationInvoker` runs the SDK's `AdjudicationAgent` over the pack's active live rules with
+  the case input as the record (`config.model` and `config.replicas` override the agent's), and
+  `config.version` names a published version or `config.draft` the digest of an unpublished draft.
+  `pinned_draft_pack` hands the draft out only while its content digest is the pinned one: it
+  refuses on entry, and discards a case's result when the draft moved while the case ran, so a
+  result names what it tested (`output.draft`, `output.pack_version`). `GET /packs/drafts/{id}`
+  now carries the draft's `digest`. `PLATO_ADJUDICATOR_URL` swaps in `ExternalAdjudicationInvoker`,
+  which POSTs `{pack_id, pack_version, draft, rules, input}` and takes the JSON answer as the
+  output, so a MACER-style service is configuration. Starting an `adjudication` experiment takes
+  the reviewer role (`before_start` on the experiments router; other entity types are not
+  gated). Results are ordinary experiments, so compare and baselines apply. No new client
+  method: `create_experiment` and `start_experiment` already take any entity type. Not done: the
+  external adjudicator's request contract is this one, unconfirmed with any such service.
+  (+~330 / -5 lines, 7 files)
+- **User and reviewer lookup** (plan_plato_authoring_review P6, gap 8). `UserDirectory` seam in
+  `jazzx_sdk.server.directory`: `GatewayDirectory` reads the platform gateway's `GET /auth/user`
+  with the caller's own bearer token (pages of `DIRECTORY_PAGE_LIMIT` until the total, the same
+  OData paging and field mapping the workbench uses) and filters reviewers by the configured
+  reviewer role; `StaticDirectory` for tests; `SeenUsersDirectory`, the default without
+  `PLATO_DIRECTORY_URL`, offers the user ids seen in reviews and drafts (those named or deciding a
+  review are the reviewers; ids only, no names). No user table. `GET /users?q=&limit=` and
+  `GET /reviewers`, withheld in a strict posture without auth, answers capped at
+  `DIRECTORY_PAGE_LIMIT`; a missing token for the gateway is 401, a gateway failure 502 (the error
+  class only, never the body). Client: `search_users`, `list_reviewers`; contract
+  `DirectoryUser`. (+~330 / -0 lines, 8 files)
+- **JTBDSet export** (plan_plato_authoring_review P5, gap 7). `export_pack_jtbdset` writes a
+  pack's policies as a JTBDSet; `GET /packs/{id}/{version}/jtbdset` for a published version and
+  `GET /packs/drafts/{id}/jtbdset` for a draft (version `draft`), withheld in a strict posture
+  without auth like the other pack reads, 404 for an unknown pack, version or draft, 422 with the
+  reason when the set cannot be exported (a product-scope policy no program claims, a draft that
+  does not load). Programs come from overlay policies, so a program with no overlay is not
+  exported. Export only: no Knowledge Hub publish and no link table until a consumer names the
+  contract. Client: `export_jtbdset`, `export_draft_jtbdset`; contract `JtbdSetArtifact`.
+  (+~170 / -0 lines, 7 files)
+- **Lint runs of a draft, with triage** (plan_plato_authoring_review P4, gap 6). `run_lint` lints the
+  draft as it is and `DbLintRunStore` keeps the run (table `pack_lint_run`, migration
+  `0020_pack_lint_run`: revision, draft digest, who ran it, the report, error and warning counts).
+  A finding is keyed by a hash of its code, subject and detail, so triage (`pack_lint_triage`,
+  keyed by tenant, pack and finding key; `open`, `accepted`, `fixed`, `wont_fix`, a note, who and
+  when) belongs to the pack and holds for any later run with the same finding; a finding whose
+  text changed starts again as open. An error blocks until `accepted` or `wont_fix`. A draft that
+  does not load lints as one `draft_does_not_load` error. Routes: `POST` and `GET
+  /packs/drafts/{id}/lint-runs`, `GET /packs/lint-runs/{run_id}` (findings with key and triage,
+  `blocking`), `PUT /packs/lint-runs/{run_id}/findings/{key}` (author or reviewer role; 404 for a
+  key the run lacks, 422 for a status outside the four). Submitting a review lints the draft and
+  keeps the run (`lint_run_id` in the answer); a deployed Plato answers 422
+  `lint_errors_untriaged` with the findings while an error is untriaged, a local one only lists
+  them. Client: `run_pack_lint`, `list_pack_lint_runs`, `get_pack_lint_run`,
+  `triage_lint_finding`; contracts `PackLintRun`, `LintFindingState`. (+~590 / -3 lines, 10 files)
+- **Comments on a draft's content** (plan_plato_authoring_review P3, gap 5). A comment sits on the
+  draft, a file, a line range (`{"kind": "line", "start", "end"}`, with the file) or a rule
+  (`{"kind": "rule", "policy_id", "rule_id"}`, the structured address the workbench's graph-node
+  anchor lacks); `DbPackCommentStore` (table `pack_comment`, migration `0019_pack_comment`: a
+  surrogate key with a tenant-scoped unique `comment_id`) records its author, body, the draft
+  revision it was made at, the review it belongs to (the pack's open one unless named) and an
+  edit and a resolved stamp. Nothing is re-anchored on the server; the list says each comment is
+  `outdated`: a line range's file has events since its revision, or its rule is no longer in the
+  draft. Routes: `GET/POST {prefix}/packs/drafts/{id}/comments` (`review_id`, `path`,
+  `include_resolved`), `PATCH {prefix}/packs/comments/{id}` (`body`, its author only; `resolved`,
+  an author or reviewer), `DELETE .../comments/{id}` (its author or a reviewer; its replies go
+  with it). Adding validates the anchor against the draft (422 for an unknown rule or policy, a
+  line anchor without a path or past the file's last line, a backwards range, a path the draft
+  lacks) and a reply takes its thread's file, anchor and review. Commenting needs the author or
+  the reviewer role; reading is open. Client `list_draft_comments`, `add_draft_comment`,
+  `update_draft_comment`, `delete_draft_comment`; contract `PackComment`. `pack.diff.rules_in`
+  is now public. Tests (sqlite and Postgres where run): the store with edits, resolution, a thread
+  and two tenants; anchors, `outdated`, replies, rights and tenant isolation through the client;
+  each of the rule check, edit-own, delete rights, `outdated`, the role gate and reply inheritance
+  fails its test when removed.
+
+- **Draft history, diff and revert** (plan_plato_authoring_review P2, gap 4). Each change to a
+  draft is one `pack_draft_event` row (`opened`, `write`, `delete`, `revert`, `reset`; paths,
+  actor, before and after hashes and text; migration `0018_pack_draft_event`) written in the
+  transaction that made it, so a failed event leaves no write; a write of what is already there
+  records nothing. An event's id is the draft's revision. `DbPackDraftStore` gains `revision`,
+  `events` (paged by cursor, of one file if asked), `files_at` / `file_at` (replayed from the
+  events; a `reset` starts again), `revert` (a file or the whole draft back to a revision, a
+  `revert` event per file that changes, history only ever added to; reverting to when a file did
+  not exist deletes it) and `prune_event_text`. `UnknownRevision` and `EventTextPruned` are
+  `ValueError`s, so the routes' store wrapper does not turn them into a 503. New pure
+  `pack.diff.diff_files(base, head)`: per file added, removed or changed with a unified diff and
+  counts, and per rule (policy id, rule id) added, removed or changed, read from any YAML file
+  holding policies. Routes: `GET {prefix}/packs/drafts/{id}/events` (`after`, `path`, `limit`;
+  `next` cursor and the newest `revision`), `GET .../diff?against=base|revision:N` (404 unknown,
+  410 text dropped, 422 malformed), `POST .../revert` (author), and `GET
+  {prefix}/packs/reviews/{id}/diff`, the draft as it was when the review pinned it
+  (`pack_review.head_revision`, also in 0018) against the version it was opened from. A
+  discarded draft's old events lose their text after `PLATO_DRAFT_EVENT_TEXT_DAYS` (30; hashes
+  stay; an open draft keeps all), swept by the existing `job:run-reaper`. Found building it: a
+  review still `open` whose draft had changed could not be resubmitted, so it was stuck behind
+  `review_stale`; resubmit is now legal from `open` too, when the draft changed (409 otherwise).
+  Client `draft_events`, `draft_diff`, `revert_draft`, `pack_review_diff`; contracts
+  `DraftEvent`, `DraftEvents`, `PackDiff`, `FileDiff`, `RuleChange`, `PackReview.head_revision`.
+  Tests (sqlite and Postgres where run): event per change with hashes, replay and revert against
+  hand-written states, atomicity with an injected failure, unified text and rule changes written
+  out by hand, retention, the history over HTTP with pagination, the review diff keeping its pin;
+  each of event recording, the replay reset, the no-op rule, the pin and the revert gate fails its
+  test when removed.
+
+- **Pack review: a draft is reviewed before it is published** (plan_plato_authoring_review P1, gaps 2
+  and 3 with section 9). A **review** pins the draft it was opened on by digest (`draft_digest`, over
+  paths and contents); an approval stands only while the draft still has it. States `open`,
+  `approved`, `changes_requested`, `closed`, `published`, moved by the table in
+  `pack.review.next_state` (a resubmit re-pins the draft, out of `changes_requested` or out of an
+  approval the draft has outgrown); `DbPackReviewStore` (table `pack_review`, one `open` or
+  `approved` review per pack by a partial unique index, events kept on the row; migration
+  `0017_pack_review`). Routes: `POST/GET {prefix}/packs/drafts/{id}/review`, `GET
+  {prefix}/packs/reviews` (`state`, `mine`, `assigned=me` for the inbox: assigned to the caller or
+  to nobody), `.../reviews/pending-count`, `.../reviews/{id}`, `.../decision` (`approve` or
+  `request_changes` with a note), `.../close`, `.../resubmit`; each answers `stale` (the draft moved
+  on). **Publishing a draft needs an approved review where it is required** (`require_review`, else
+  a strict posture): 409 `review_required` or `review_stale`; locally it needs none, and an open
+  review a direct publish supersedes is closed "published directly". The answer carries
+  `review_id`. **Roles** from the gateway: `CallerIdentity.roles` (decoded `x-security-context.roles`
+  or the roles header), `AuthoringRoles` (`PLATO_REVIEWER_ROLE`, `PLATO_AUTHOR_ROLE`,
+  `PLATO_ROLES_HEADER`, `PLATO_REVIEW_ALLOW_SELF_APPROVAL`); `whoami` gains `roles` and
+  `may_review`, and `may_author` honours the author role; a configured author role (unset: any
+  authenticated caller may author, strict included) gates every pack, draft and authoring write, deciding needs the reviewer role, and a reviewer may not approve
+  what they submitted when deployed. **`created_by`** on `Proposal` (first proposer kept when a rule
+  is proposed again), `ExtractionRun` and `pack_draft.created_by_user_id`, stamped from the caller
+  by the extraction route, the authoring chat's tools and the draft store; `ProposalView` shows it.
+  The family check `test_plato_route_gates` enumerates every `/packs` and `/authoring` route in a
+  strict posture without auth and found two ungated reads: `GET /packs/{id}/history` (audit actors)
+  and `GET /packs/{id}/active` now withhold like their siblings. `pack_comment` arrives with its
+  routes (P3), not here. Client: `submit_pack_review`, `pack_review`, `get_pack_review`,
+  `list_pack_reviews`, `pack_review_pending_count`, `decide_pack_review`, `close_pack_review`,
+  `resubmit_pack_review`; contracts `PackReview`, `PackReviewEvent`, `PendingCount`, `WhoAmI.roles`
+  and `.may_review`, `created_by` on `ExtractionRun` and `ProposalView`. Tests (sqlite and Postgres
+  where run): every (state, verb) pair against a hand-written table, the store, the full strict
+  flow through the client (unreviewed, open, approved, stale after an edit, resubmitted,
+  published), self-approval, roles, one tenant, local publish; each of the publish gate,
+  self-approval refusal, reviewer role, author role on pack writes and on authoring writes, the
+  partial index, the stale check and the creator rule fails its test when removed.
+
+- **Queue and cost statistics** (Plato vs policy-workbench, gap 12). `GET {prefix}/queue-stats`:
+  this tenant's active runs by lane and status and the oldest queued wait, from the new
+  `TurnRunStore.active(limit=)` (queued, running, suspended; `ACTIVE_STATUSES`), filtered by the
+  tenant each run's input carries (`truncated` when it read `ACTIVE_RUN_LIMIT`). `GET
+  {prefix}/cost-stats?group_by=model|user|assistant|day&since=&until=`: one `CostRecord` per model
+  that served a turn (`llm.turn_cost.turn_cost_records`), written best-effort at the end of a
+  blocking and a streamed turn into the new tenant-keyed `japes_turn_cost` table through
+  `DbTenantCostStore(db, tenant_id=)` (migration `0016_cost_record`; the shared `cost_record` table
+  has no tenant key, which Plato's tenancy rule refuses), summed by `summarize` over the last
+  `COST_WINDOW_DAYS` unless `since` is given. `ModelCallLedger.usage()` gains `tokens_by_model`
+  so each record names its own tokens. **Streamed agentic turns now report usage**: the streamed
+  run had no ledger, so a streamed reply (what a UI uses) carried no usage and no cost; it now
+  does, and its final event carries it (`TODO(single-shot-stream-usage)`: a skill-less streamed
+  turn still reports none). Client `queue_stats`, `cost_stats`; contracts `QueueStats`,
+  `CostStats`, `TurnUsage.tokens_by_model`. Tests (sqlite and Postgres where run): queue counts by
+  lane, the store's active listing, record building and grouping, cost recorded and read back for
+  a blocking and a streamed turn, another tenant sees neither report, the store's per-tenant
+  isolation; each of the cost write, the
+  cost tenant filter, the queue tenant filter and the streamed write fails its test when removed.
+
+- **Extraction progress over SSE** (Plato vs policy-workbench, gap 11). `ExtractionRun.stage` is the
+  pipeline step that last finished, written through the new run-store `progress` (which counts as a
+  heartbeat and leaves an ended run alone) from the extraction's `on_step`. New
+  `GET {prefix}/authoring/extract/runs/{run_id}/stream`: one `run` event per change and a last
+  `end`, a `: keepalive` comment while quiet, read from the store so any replica serves it, 404 for
+  another tenant's run. `jazzx_sdk.server.sse` now holds `SSE_HEADERS`, `frame` and `keepalive`
+  (Plato's assistant routes and `run_routes` used their own copies). Client
+  `stream_extraction_run`; contract `ExtractionRun.stage`. Tests: stages in order then `end` (a
+  background task moves the run), another tenant, an ended run, and `progress` on the in-process,
+  sqlite and Postgres stores (the heartbeat assertion fails if the DB store drops it).
+
+- **`jazzx-plato-client` covers the caller-facing routes** (request from jaci's Domain tab).
+  New methods, 59 in all, in mixins of `PlatoClient` (`_authoring`, `_eval`, `_feedback`, so
+  `client.py` stays the core): policy authoring (`start_extraction`, `extraction_run(s)`,
+  `proposals`, `proposal`, `proposal_summary`, `decide_proposal`, `proposal_comments`,
+  `add_proposal_comment`, `merge_rules`), pack drafts (`drafts`, `draft`, `open_draft`,
+  `write_draft_file`, `delete_draft_file`, `discard_draft`, `publish_draft`,
+  `retire_pack_version`), evaluation (custom scorers and their revisions, scoring, dataset versions,
+  update and fork, experiment list, compare, baseline and rerun, optimizations, templates),
+  feedback (list, item, update, delete, review, history, duplicates, similar, export, aggregate,
+  to-dataset), feedback configuration (stored, default, per entity) and formal checks. Contracts for
+  the authoring shapes: `ExtractionRun`, `ProposalView`, `QueueSummary`, `ProposalComment`,
+  `RuleMergeResult`. The built-in authoring assistant is served by the existing `assistants`,
+  `chat` and `stream_chat`. A route-parity test calls every public method against a recorder and
+  compares it with a real app's route table in both directions, so a method that calls a route the
+  server does not serve, or a caller-facing route with no method, fails; the operator consoles,
+  database, settings and seeding routes and the HTML pages are listed as excluded there. An
+  end-to-end test runs the authoring loop through the client against a real app. Not covered: the
+  vocabulary `merge` route (Plato does not mount it) and `feedback/{id}/process` (not mounted by
+  default). `datasets()` and `dataset()` still take none of the filters the server accepts.
+
+- **The authoring chat is an assistant every tenant has** (Plato vs policy-workbench, gap 1)
+  (+191 / -46 lines tracked, plus 2 new files). `policy-authoring` is a built-in assistant, so the
+  assistant routes serve it: `chat`, `chat/stream`, sessions, traces, releases, skills, stop. New
+  `AssistantRuntime.add_builtin(BuiltinAssistant)`: its profile and skills join every tenant's
+  registries, its manifest is stored for a tenant that has none under that id (a tenant's own wins),
+  and `extra_for(tenant)` adds that tenant's tools to the agent, which is how the five authoring tools
+  bind to a tenant's stores. `Skill.tool` exposes one catalog tool directly with no sub-agent; manifest
+  validation and `bind_spec` accept only registry or def skills, so a manifest could not carry the bare
+  tools before. A tool skill's route schema is the catalog tool's (or its declared `inputs`), and the
+  inventory reports it as kind `tool`. `jazzx_sdk.server.authoring_assistant.authoring_builtin` builds
+  the manifest (`SPECIALIST`, `ASSISTANT` surface, `L1_RECOMMEND`: it files proposals only), the
+  profile and the skills. In Plato one `PolicyExtractionService` (`plato.api.authoring.
+  authoring_service`) now serves both the authoring routes and the chat tools, so a chat
+  `start_extraction` run is the router's run, with the same model, lint and relevance settings.
+  The tools take a `before_write` hook and Plato passes `write_gate`, so the chat refuses the writes
+  the routes refuse (a strict posture without auth) and answers `REFUSED`. Not attributable yet:
+  neither `ExtractionRun` nor `Proposal` records who created it. Tests: the chat reaches the router's
+  run list and review queue and another tenant sees neither, one shared service (fails against a
+  second one), the builtin yields per-tenant tools, a tenant's own manifest is kept, the gate refusal
+  starts nothing, and the `Skill.tool` unit cases.
+
+- **fastapi is optional** (extras `server` and `plato`; `starlette` stays core, since
+  `openai-agents` requires it). With `common` at `0cc5712` nothing the SDK reaches outside
+  `jazzx_sdk/server/` and `config/posture.py` imports fastapi, so a consumer using only the SDK no
+  longer installs it. **Breaking** for a consumer relying on japes for fastapi: install
+  `japes[server]` or declare it (juno, macer and jazzx-assistant already do). `annotated-doc`,
+  fastapi's helper, goes optional with it. Guards: `test_only_server_modules_import_fastapi_at_
+  module_scope` (AST, every SDK module) and `test_the_sdk_core_imports_without_fastapi` (fresh
+  interpreter, fastapi blocked); both fail on a planted import. Stale comments fixed: the
+  telemetry-instrumentor note in `pyproject.toml`, the Dockerfile's "fastapi is core", and the
+  import-boundary docstring's claim that `common` pulls fastapi.
+
+- **Feedback export window, stated as it is.** `iter_feedback` claimed later inserts cannot shift
+  pages; capping `until` at the export start only drops records *created* after it, and a record
+  created before but committed mid-export still shifts offset pages by one (a duplicate at a page
+  boundary, double-counted by `aggregate_feedback`). Docstring narrowed;
+  `TODO(export-window-not-insert-stable)` (HTTP race window is milliseconds; no shipped in-process
+  caller appends a pre-built `Feedback`).
+
 ## [2.6.0] - unreleased
 
 Plato 0.2.0; `jazzx-plato-client` 0.2.0. Cut as a minor version for the separate client
 distribution (begun as 2.5.8).
+
+- **Review of `b23c4663..26183127`** (slices 3 to 8; 1 and 2 got no verdict after a network drop,
+  9 sat past the 8-slice cap). `schema_model` raised `TypeError` for a `type` list and
+  `RecursionError` for a recursive `$ref`, which the publish-time slot check (catching `ValueError`)
+  and `skill_io.typed_inputs` (whose untyped fallback it bypassed) let through; both now raise
+  `ValueError` (a `type` list is refused, use `anyOf`; a `$defs` cycle is refused when the builder
+  is made). Four docstrings the trim made wider than the code: `ModalClauseExtractor` is the
+  `obligations` representation's extractor, not test-only; `DbSettingsStore.write` applies
+  bootstrap keys without persisting them; `split` with `vision` still raises when no page carries
+  an image; `schema_facts` checks top-level properties only. `TODO(composite-live-child-unflagged)`
+  on `AllOfEvaluator`. Full rerun, slice 2: a typed composed skill whose nested turn raised
+  aborted the parent turn (`typed_skill_tool` caught only `ValidationError`); it now hands the
+  model the SDK's error string, as the untyped and `as_tool` paths do. `Skill.spec_ref`'s comment
+  names the fields it ignores (not `inputs`, `description`, timeouts). `TODO(bare-tool-route-
+  requires-defaults)`; `TODO(inline-schema-refs-unresolved)` now says when it occurs.
+  Slice 8: the up-front `$defs` cycle walk was exponential on shared refs and raised
+  `AttributeError` for a non-object `$defs`; replaced by an in-progress check where a `$ref` is
+  resolved (the existing memo keeps it linear), `admits_null` memoised per def (it was itself
+  exponential through `anyOf` refs, before this work too), and a non-object `$defs` refused as
+  `ValueError`. `is_readable` and `default_components` docstrings narrowed to the code.
+
+- **urllib3 2.8.0** (floor `>=2.8.0`; Dependabot #129-#131: unbounded chunk-size line, HTTPS proxy
+  TLS config, chunked deflate loop). PyJWT is already 2.15.1 here (#126-#128, #132, #133 are
+  `main`'s 2.13.0 lock and close when 2.6.0 reaches `main`). README: changes land on `plato`, then
+  `dev`, then `main`.
+
+- **`common` submodule to `0cc5712`** (common #220 to #230: telemetry imported only when an
+  exporter is configured, tornado CVE bump, GCRA admission control, Kafka producer reuse, SAS start
+  time omitted, OTel log trace-context fix). Nothing japes imports was removed
+  (`utils/redis_rate_limiter.py` is gone; japes never used it). `common`'s own OTel pins do not reach
+  japes, which declares its own. Two `test_common_submodule_deps` parameters drop out because
+  `common.utils.telemetry` no longer imports the FastAPI instrumentor at module scope. Unrelated
+  to KH's rego removal, which rides the separate `knowledge-hub-client` pin.
+
+- **Comments and docstrings cut to a minimum** across the non-test Python files v2.6.0 changed
+  (+3168 / -13664 lines, 190 files). Rationale, history, cross-repo and customer references, spec
+  citations and restating comments removed; `Author:` lines, `TODO(slug)`s and `noqa` kept. Code is
+  unchanged: every file's AST, docstrings stripped, equals HEAD's. Docstrings that render elsewhere
+  changed with it: `plato --help`, route descriptions in the OpenAPI documents, and pydantic model
+  descriptions in JSON schemas. One test asserted the migrate route's old wording and now asserts
+  its 403 contract. Left as they were: attribute docstrings (the AST check reads them as code),
+  `@function_tool` docstrings (they are prompt text), and string literals.
+
+- **Typed skill tools; every skill gets a route** (Plato service Phase 3, stage 2) (+276 / -34
+  lines, 9 files, the `pack/schemas.py` move counted as its edits). A skill declaring `inputs` now
+  reaches the parent model as a tool typed by them: a def-backed skill's `as_tool` gets
+  `parameters=` a pydantic model built from the schema, and a composed (`spec_ref`) skill becomes a
+  `FunctionTool` with that model's strict schema, asking the nested assistant with the validated
+  arguments' JSON (a null for an omitted optional is dropped). The model comes from
+  `schema_model`, the pack-schema builder, moved to `jazzx_sdk.util.schema_model` so `agents` can
+  import it (`pack.schemas` re-exports it, paths unchanged); `additionalProperties: false` is
+  dropped first, since a strict tool schema implies it. Inputs outside that subset, or that fail
+  the SDK's strict conversion, keep the untyped tool with a warning. A skill without `inputs` is
+  unchanged (its tool schema is asserted equal to the SDK's own default). New
+  `agents.interactive.skill_io` (`typed_inputs`, `typed_skill_tool`, `UNTYPED_SKILL_INPUTS`).
+  Routes: a def-backed skill without `inputs` is now invocable with body `UNTYPED_SKILL_INPUTS`
+  (`{"input": str}`, the text its tool takes); a bare-name skill with the catalog tool's own
+  `params_json_schema` (`InteractiveAgent.skill_tool`), not invocable when the catalog lacks it.
+  Visibility and scope still refuse. No seed or jaci assistant skill declares `inputs`, so their
+  tools are unchanged and they gain routes only. Tested at the tool boundary through
+  `invoke_function_tool` with a real `Agent.as_tool` (structured args reach the sub-agent; an
+  out-of-schema argument never does); no live model call.
 
 - **Skill invoke: what makes a skill invocable, tightened** (review of `cd61f0f4..54600ce6`). A
   skill of an assistant whose profile needs `scope` was listed invocable and published in the
@@ -27,7 +354,7 @@ distribution (begun as 2.5.8).
   description and `version` the bound release (`unreleased` when none). The test round-trips it:
   a body the document's schema accepts is accepted by the route it names. No OpenAPI validator is
   installed, so the document's shape is asserted, not validated against the 3.1 meta-schema.
-  Client `assistant_openapi`. A skill not yet invocable (no `inputs`) is absent until stage 2.
+  Client `assistant_openapi`.
 
 - **Skill actions: 202 and an operation to poll** (Plato service Phase 3, stage 1, task 2)
   (+148 / -10 lines, 6 files). `POST {prefix}/assistants/{aid}/skills/{skill}/actions` validates as

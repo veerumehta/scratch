@@ -22,6 +22,13 @@ interesting land in X lately?" instead of manually `cd`-ing and running `git log
 Fetches (`--all`) before listing unless `--no-fetch`; never modifies a sibling repo. Override the
 assumed `~/src/`-equivalent root via `SISTER_REPOS_SRC_DIR` if this checkout doesn't live there.
 
+## `push_plato.sh` - Push the local plato squash and open the PR to dev
+
+Pushes local `plato` (one squash commit of the current version branch, parents `origin/plato` and
+`origin/dev`) and opens the PR `plato` -> `dev`, after checking both ancestries and listing open
+Dependabot alerts on `main`. Asks before the push and before the PR; run it yourself, since nothing
+else pushes.
+
 ## Promoted out of here
 
 `plato_wiring.py` now lives in `scripts/` (tracked): the wall it clears -- Plato refusing to start

@@ -9,6 +9,128 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ## [Unreleased]
 
+### Changed: pin japes 2.6.0 (`plato`)
+- `japes[server,documents]` (2.6.0 moved uvicorn and the document libraries out of core) plus
+  `jazzx-plato-client` from the same branch; `uv.lock` at `3218ce12`. `_without_nulls` in
+  `dscr/plato_review.py` stays: the pack-schema null fix is not on `plato`.
+
+### Changed: ci-spread-core runs on Plato as a `conductor_pipeline` (0.3.0-draft, branch `ci-pipeline`)
+- The manifest's `conductor:` block is japes' step-kind pipeline: `document_ingest` (fills the
+  application's financial fields from classified statements), `investigation` (sentinel; converges
+  after 2 iterations on the financial statements plus a debt schedule or UCC search),
+  `policy_check` over the recommendation's figures (advisory), `human_checkpoint`, `playbook`,
+  `narrate`. New pack files beside it: `schemas/` (three generated from the Pydantic models by
+  `scripts/export_pack_schemas.py`, which now writes the subset japes loads, plus
+  `financial_fields.json`), `evidence_tools.yaml` (each type from the case's `evidence` object),
+  `document_agent.yaml`, `check_metrics.yaml`. Not yet carried: KG entity extraction, the RB
+  overlay in the check, `lien_position`. The in-process `CIConductor` is unchanged; it never read
+  this block.
+- The C&I models say what the pack check reads: `CreditRecommendation.advance_rates` is an
+  `AdvanceRates` (nullable `accounts_receivable`, `inventory`), not a free dict; `BorrowingBase`'s
+  `total_availability` and `excess_availability` are None when not computed, not 0.0, which read
+  as a stated zero and failed CI-ABL-MIN-AVAILABILITY. The pack's `loan_application.json` requires
+  `loan_id` (its subject field); the in-process model still makes one up.
+- Required documents by loan type, one table for both paths: the document step's
+  `required_classes: {by: loan_type, ...}` asks an ABL or revolving line for its borrowing base
+  certificate and a term or working-capital loan for none (statements and a debt schedule always).
+  The in-process intake reads that table from the manifest; `intake.yaml` no longer lists the
+  types, so a term loan is no longer held for a certificate it cannot have. The Plato playbook
+  step reads the computed `decision.leverage_x`. The investigation also converges on a borrowing
+  base certificate, and the RB deal rule no longer `replaces` its own id.
+- The in-process `CIPlaybookExpert` compares loan types and risk flags ignoring case, as the SDK's
+  playbook step does. It compared risk flags as written, so the map's `LIEN_CONFLICT` never met a
+  hypothesis's `lien_conflict` and no in-process case matched a risk-flag rule. The map spells
+  `ABL`.
+- `diagnose_map.yaml` names the `LoanType` values: `revolving_credit`, not `revolver`, which no
+  application carries, so a revolving-credit deal now matches the ABL playbooks.
+- Pack lint clean of errors (branch `policy-extract`): DebtServiceCoverage divides
+  `UCACashFlowResult.adjusted_cash_flow` (ontology 0.2.2) rather than the uncomputable UCAcashFlow
+  concept, and `RB_CI_OVERLAY`'s `overlay_id` is its program's, `rb-abl-2026`.
+  `tests/unit/test_ci_pack_schemas.py`.
+- `extract_policy.py` passes the configured model as given; japes now handles the `flex_` tier.
+  Re-run: 6 rules from 142 clauses, unique ids, the FCCR covenant back but still natural-language.
+
+### Added: `extract_policy.py policy` drafts rules with the japes SDK policy pipeline (branch `policy-extract`)
+- New `policy` mode: converts each `--source` (a path, URL or `archive.zip::member`), runs
+  `run_policy_extract` with the `conditions` components over `--pack`, prints the pack lint and
+  writes a DRAFT YAML with provenance (`output/policy_drafts/`, gitignored). Nothing reaches a pack
+  until a person accepts it; the `checklist` and `playbook` modes are unchanged.
+- `ci-spread-core` 0.2.1-draft: `policies/core.yaml` is described as hand-authored, verified by
+  `verify-policy`. Its 3.5x / 3.0x leverage ceilings are pack convention: YETI's draft Loan and
+  Security Agreement's only financial covenant is a springing FCCR of 1.10x under 10% availability.
+  The docstrings and UI text that called the corpus "extracted" say so too.
+- Run over the OCC handbook and that agreement, the pipeline proposes 8 natural-language rules from
+  119 clauses, and none of them is the FCCR covenant or the advance rates: the agreement numbers its
+  clauses afresh in each article, so the rule ids collide. Reported to japes along with the
+  `flex_` model name `ReasoningAgent` sends as given (the script strips the tier).
+
+### Added: cre-underwriting-core as a pack Plato runs (0.20.8, branch `cre-pack`)
+- `config/packs/cre_underwriting_core/` gains a `pack_manifest.yaml` (an `investigation_loop`
+  conductor, its models, `max_iterations: 8`, the approve narrator gate, an advisory pre-loop
+  `policy_assessment` with `missing_inputs: skip`), `programs:` (core-only `core` and
+  `cre-acquisition-2026`, the MAA and CFI overlays), `metrics.yaml` (ltv, debt yield, stated DSCR
+  and occupancy, sponsor ratios), `evidence_types.yaml`, `evidence_tools.yaml` and Mesa Verde's
+  fixtures, and JSON schemas generated from the Pydantic models (`scripts/export_pack_schemas.py`
+  now covers both packs).
+- The policies move into the pack (`policies/cre_policies.yaml`). The MAA and CFI overlays declare
+  `scope: product`. The two LTV ceilings gate on `loan_purpose` through `applicability`; they named
+  it only in inert `parameters`, so both applied to every loan and an acquisition at 72% LTV broke
+  the 70% refinance ceiling.
+- `policies/registry.py` reads the core ids and overlay map from the pack, and `CREToolRegistry`'s
+  mocks serve the pack's fixtures, so neither restates pack data. `tests/unit/test_cre_pack.py`.
+- **Fixtures from real documents, keyed by loan, no `default`.** Mesa Verde's operating statement
+  is its application package's T-12 (NOI $3.559M, DSCR 1.30, insurance and tax flagged); the
+  former mocks (NOI $1.779M, 198 units, an invented sponsor) contradicted the case and drove a
+  live run to decline. The MAA lease-up keeps the synthetic evidence its case file states. A
+  document neither file holds (Mesa's rent roll and appraisal, any sponsor financials, title,
+  inspection) is UNAVAILABLE. Live on Plato, Mesa Verde now comes back approve-with-conditions with
+  NOI/DSCR/LTV from the T-12. Four integration tests that pinned the invented mock values now
+  assert what each file holds.
+- **Reasoner: conditions for documents not on file** (`mode_tuning/reasoner.md` v1.1.0). A standard
+  resting on a document absent from the attested evidence (Mesa Verde's appraisal, rent roll) is
+  conditioned on obtaining it, with a check where conditions are written. Mesa Verde's
+  Collateral & Valuation (appraisal) condition: 0 of 1 runs before, 4 of 4 after. The MAA lease-up
+  declines with or without the change (2 of 2 each), so that is not this edit.
+- **Reasoner: stabilized value for lease-up loans** (`reasoner.md` v1.2.0). A transitional or lease-up
+  loan is underwritten on the stabilized value and NOI (LTV over the stabilized value); a low as-is
+  value, low occupancy and in-place NOI below the stabilized NOI are execution risk to condition,
+  not grounds to decline; the occupancy decline rule is for stabilized assets. The MAA lease-up
+  went from decline (0 of 4, LTV read on the $45M as-is value) to approve-with-conditions at a 0.70
+  stabilized LTV (3 of 3). Mesa Verde stayed approve-with-conditions (6 of 6), but its appraisal
+  condition fell to 3 of 6: prompt wording has plateaued; the reliable fix is a deterministic
+  missing-document condition after the reasoner (the japes post-loop assessment).
+- **Mesa Verde's rent roll** (`fixtures/rent_roll.json`): from the commercial-lending demo's rent-roll
+  analysis, the only Mesa rent-roll source in the repo (there is no rent roll document): 198 units,
+  94.0% physical vs 89.4% economic occupancy, 9 leased but non-paying (7 unrenovated), unit mix and
+  effective rents; its EGI at economic occupancy is the T-12's $5,453,000. `cases.py` and the gold
+  case move from an assumed 252 units to 198, and the gold case expects the occupancy-gap condition
+  (underwrite on 89.4%) instead of "obtain a rent roll". Live: underwritten occupancy 0.894 and the
+  occupancy-gap conditions in 4 of 4 runs; the appraisal condition 2 of 4 (the plateau above).
+  Provenance wording matters: a note that the rent roll "is not in the application package" made
+  the verifier refuse to attest it (8 re-requests a run). `test_corrections` imports
+  `evaluate_covenant_policy` from `jazzx_sdk.tools`, now that japes dropped the
+  `tools.ratio_evaluator` shim.
+- **An LTV no dated appraisal supports is pending evidence** (`evidence_types.yaml`, japes 2.6.0's
+  evidence `fields`/`freshness_window_days`/`as_of_field`). The appraisal evidence type supplies
+  `property_value` and `ltv`, dated by a new optional `appraisal_date` input, valid 365 days. Mesa
+  Verde (an assumed purchase price) gets `CRE-LTV-CEILING-ACQUISITION: pending_evidence` in the
+  deterministic assessment, not a pass; the MAA lease-up states its 2026-03-15 appraisal and is
+  judged. Live: Mesa Verde's appraisal condition 4 of 4 (about half before), decisions and
+  occupancy unchanged; MAA still approve-with-conditions at a 0.70 stabilized LTV (2 of 2).
+- **Sponsor strength no dated financials support is pending evidence** (the same pattern): the
+  sponsor_financials evidence type supplies sponsor net worth, liquidity and their loan ratios,
+  dated by a new optional `sponsor_financials_date`, valid 365 days. Mesa Verde (no sponsor
+  figures) and the MAA lease-up (stated figures, undated) get `pending_evidence` on both sponsor
+  rules; dated, MAA's pass. Live: the sponsor condition in 5 of 5 runs across both cases, with the
+  appraisal condition and decisions unchanged. One Mesa run of three omitted the insurance/tax
+  confirmation condition.
+- **A rule for the T-12's flagged lines** (`CRE-T12-FLAGS-CLEARED`, core coverage policy): the
+  application states `t12_unconfirmed_lines` (and `t12_flagged_lines`), which `case_application`
+  takes from the T-12 (Mesa Verde: Insurance and Property Tax, 2), and the rule requires 0
+  (`require_evidence` on the operating statement, advisory). Mesa Verde's one deterministic
+  violation is now that rule. Live: the insurance/tax condition 3 of 3 (2 of 3 before), with the
+  appraisal and sponsor conditions and the decision unchanged; MAA (no flagged lines) unaffected.
+
 ### Changed: dscr-core 0.2.0 — the human checkpoint, the pack's own ratios, one assessment (0.20.8, branch `dscr-acra-0.2`; needs japes 2.6.0)
 - **Pack 0.2.0.** `conductor.human_checkpoint: ELIGIBILITY_DECISION_APPROVAL`: a Plato case run
   waits after the governor for an underwriter, and the narrator runs only on an approval. The

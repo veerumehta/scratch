@@ -2,7 +2,7 @@
 
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 
-Status: plan, 2026-09-30. Written against japes `eacaac6d` on `v2.5.8` (SDK 2.5.8, Plato 0.1.9),
+Status: plan, 2026-09-30. Written against japes `eacaac6d` on branch `v2.5.8` (renamed `v2.6.0`; there is no 2.5.8 release),
 with that branch's uncommitted working tree (it adds `resume_case_run` and `case_run_outcome` to
 `PlatoClient`). Ships as SDK 2.6.0 / Plato 0.2.0 / `jazzx-plato-client` 0.2.0 (§4 D3).
 
@@ -99,7 +99,7 @@ thing that is right.
 ## 5. Phases
 
 **Phase 1 — the package (japes).** After the uncommitted `resume_case_run` / `case_run_outcome`
-work on `v2.5.8` is committed, so the move does not fight it.
+work on the branch (then `v2.5.8`, now `v2.6.0`) is committed, so the move does not fight it.
 
 1.1 Create `jazzx_plato_client/` (layout in §2); `git mv jazzx_sdk/clients/plato_client.py
     jazzx_plato_client/jazzx_plato_client/client.py`; inline the header hook.
