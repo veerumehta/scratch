@@ -1,6 +1,6 @@
 # Plato UI: runs, cost, evaluation, and the workbench gap
 
-Status: live. Written 2026-10-04 on `v2.6.1`. Survey by an explorer over `plato/static`, `plato/api`,
+Status: live. U1-U3 built 2026-10-04 on `v2.6.1` (runs page at `/cases/ui`, with spend and queue; per-metric view on an experiment); U4-U8 open. Written 2026-10-04 on `v2.6.1`. Survey by an explorer over `plato/static`, `plato/api`,
 the workbench frontend and `status/note_plato_vs_policy_workbench.md`; claims about what the UI has
 were read from the pages. Companion to `plan_case_rerun.md` (U1 is that plan's P5).
 
@@ -30,7 +30,7 @@ editing, baselines, custom scorers, and the new adjudication and split scorers.
 | # | Surface | Routes | Value |
 |---|---|---|---|
 | U1 | **Runs page**: a case's runs and chain, a run's steps, decision, adjudicated outcomes (verdict, conditions, cites, vote split), documents (split parts, unsure pages, missing, conflicts); stop, resume, outcome; **rerun** with rejected cites | `/runs`, `/runs/{id}`, `/stream`, `/chain`, `/resume`, `/outcome`, `/packs/{id}/runs` | high, both domains |
-| U2 | **Cost and queue panels** on the dashboard | `/cost-stats`, `/queue-stats` | S; intake spend |
+| U2 | **Cost and queue** on the runs page (the dashboard has no tenant; both routes need one) | `/cost-stats`, `/queue-stats` | S; intake spend |
 | U3 | **Scorer breakdown** on an experiment: per-case metrics, the adjudication and split scorers' own numbers (false pass, fragile, status counts) | `/eval/experiments/{id}/cases`, `/scorers` | high |
 | U4 | Dataset golden-case editor | `/eval/datasets/...` | M |
 | U5 | Baseline trend and regression gate view | `/eval/baselines`, `/compare` | M |
