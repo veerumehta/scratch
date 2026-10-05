@@ -19,8 +19,9 @@ editing, baselines, custom scorers, and the new adjudication and split scorers.
 ## Decisions (judgment; the user stepped away)
 
 1. **Stay on static pages for now** (the user is content with imperfect but functional until React
-   comes later). U7 is built in static form: no in-text comment highlighting, no side-by-side diff;
-   those are what React will add.
+   comes later). U7 is built in static form, and the backend does the hard parts: diffs come as aligned rows
+   (`/diff/rows`) with line comments attached, so side-by-side, folding and inline threads need no
+   React. What React adds later is client-side state across panels and richer editing.
 2. **One page per working surface**, in the nav: Runs is new; cost and queue go on the dashboard;
    scorer drill-down goes on the evaluation page.
 3. **Every control a route refuses is hidden by the server's own predicate**, as the other pages do.
