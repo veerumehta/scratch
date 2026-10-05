@@ -1,6 +1,6 @@
 # Plato UI: runs, cost, evaluation, and the workbench gap
 
-Status: live. U1-U3 built 2026-10-04 on `v2.6.1` (runs page at `/cases/ui`, with spend and queue; per-metric view on an experiment); U4-U8 open. Written 2026-10-04 on `v2.6.1`. Survey by an explorer over `plato/static`, `plato/api`,
+Status: live. U1-U3 built 2026-10-04 on `v2.6.1` (runs page at `/cases/ui`, with spend and queue; per-metric view on an experiment); U4-U7 built as static pages (reviews `/reviews/ui`, scorers `/scorers/ui`, dataset editing and baseline line on the evaluation page); U8 open and React deferred. Written 2026-10-04 on `v2.6.1`. Survey by an explorer over `plato/static`, `plato/api`,
 the workbench frontend and `status/note_plato_vs_policy_workbench.md`; claims about what the UI has
 were read from the pages. Companion to `plan_case_rerun.md` (U1 is that plan's P5).
 
@@ -18,8 +18,9 @@ editing, baselines, custom scorers, and the new adjudication and split scorers.
 
 ## Decisions (judgment; the user stepped away)
 
-1. **Stay on static pages.** A React shell is a separate, larger decision; none of U1-U6 needs it.
-   U7 (workbench parity) is where it starts to hurt and is queued, not started.
+1. **Stay on static pages for now** (the user is content with imperfect but functional until React
+   comes later). U7 is built in static form: no in-text comment highlighting, no side-by-side diff;
+   those are what React will add.
 2. **One page per working surface**, in the nav: Runs is new; cost and queue go on the dashboard;
    scorer drill-down goes on the evaluation page.
 3. **Every control a route refuses is hidden by the server's own predicate**, as the other pages do.
