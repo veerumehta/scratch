@@ -106,6 +106,6 @@ profiles, k9 templates); which model a product uses; MLflow experiment and tag n
 | U1 | Digest scope: prompt text only, or also a behaviour digest over prompt, model, sampling params and tools (kernel's `version_hash`)? **Decided:** both, prompt digest plus a per-step `behaviour_digest`. |
 | U2 | Should the SDK loader serve consumers' own prompt files (A2), or only SDK and pack prompts? **Decided:** yes. |
 | U3 | Registry backend: the SDK's existing `prompt_registry_db`, or knowledge_hub's versioned prompt store? **Decided:** the SDK's own registry. |
-| U4 | When does jazzx-assistant get this: next `dev` to `main` release, or a targeted backport? | Next release; no backport. |
+| U4 | When does jazzx-assistant get this: next `dev` to `main` release, or a targeted backport? **Decided:** next `dev` to `main` release, no backport to 2.5.0. Adoption note `/tmp/jazzx_assistant_models_prompts.md`, forwarded by the user. |
 | U5 | jaci's six model mechanisms: collapse to pack YAML plus env as in step 2? | Yes. |
 | U6 | Do juno or k9 get an invitation to adopt provenance, or are they left alone? | Left alone until they ask. |
