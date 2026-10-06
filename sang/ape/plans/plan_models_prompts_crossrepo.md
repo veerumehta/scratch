@@ -99,7 +99,7 @@ profiles, k9 templates); which model a product uses; MLflow experiment and tag n
    SDK; nothing changes in those repos.
 5. juno, k9, macer: nothing planned.
 
-## 6. Decisions for the user (U1-U3 answered 2026-10-06)
+## 6. Decisions for the user (all answered 2026-10-06)
 
 | # | Question | Recommendation |
 |---|---|---|
@@ -108,4 +108,4 @@ profiles, k9 templates); which model a product uses; MLflow experiment and tag n
 | U3 | Registry backend: the SDK's existing `prompt_registry_db`, or knowledge_hub's versioned prompt store? **Decided:** the SDK's own registry. |
 | U4 | When does jazzx-assistant get this: next `dev` to `main` release, or a targeted backport? **Decided:** next `dev` to `main` release, no backport to 2.5.0. Adoption note `/tmp/jazzx_assistant_models_prompts.md`, forwarded by the user. |
 | U5 | jaci's six model mechanisms: collapse to pack YAML plus env as in step 2? | Yes. |
-| U6 | Do juno or k9 get an invitation to adopt provenance, or are they left alone? | Left alone until they ask. |
+| U6 | Do juno or k9 get an invitation to adopt provenance, or are they left alone? **Decided:** left alone for now. |
