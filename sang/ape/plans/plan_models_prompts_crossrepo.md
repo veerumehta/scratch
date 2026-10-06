@@ -92,6 +92,7 @@ profiles, k9 templates); which model a product uses; MLflow experiment and tag n
    list, and the unused `.env.template` entries); delete the legacy prompt fallback and tree; show
    model and prompt provenance on run views and in downloads; pin ci-spread's tenant. Breaking for
    jaci, which is fine.
+   **Done 2026-10-06** (jaci `dev`, unpushed: `791158e` prompts, `44ce0e9` models, `bd4bf90` provenance, `0107429` tenant). Deviations: ci-spread's tenant is not pinned (it broke the gateway-tenant path); C&I feedback falls back to `acme-hospital` only when neither setting nor gateway names one. ci-spread-core names no models, so in-process C&I moves from `flex_gpt-5.4` to `JACI_LLM_MODEL` (`flex_gpt-6-luna`). KYC (`gpt-4o`), KYC-Anthropic and earnings (Anthropic SDK) left provider-bound pending the user.
 3. **jazzx-assistant**, after the next `dev` to `main` release: provenance at zero code via A3/A4;
    load the gate prompt through A1 with its version; store prompt refs on `AssistantAnswer` beside
    `model_name`. Through its own team, with an adoption note written from here.
