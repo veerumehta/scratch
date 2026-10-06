@@ -2,7 +2,7 @@
 
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 
-Status: proposed (2026-10-06). Companion to `plan_models_prompts_defaults.md` (the SDK and Plato
+Status: SDK first slice built on the `v2.6.1` working tree (2026-10-06, sonnet-runtime), committed by the user's `/tmp/japes_commit_models_prompts.sh`; sibling steps not started. Companion to `plan_models_prompts_defaults.md` (the SDK and Plato
 build, runtime session). This file covers the sibling repos: what each does today, who adopts what,
 what the SDK must offer so adoption is config, and what the SDK work would break. Written from five
 read-only surveys (jaci, jazzx-assistant, juno, macer + macer-japes, and kernel, eval-service,
@@ -61,10 +61,12 @@ Nobody records which prompt produced an output. The only prior art for doing so 
 | A6 | `select_model(step, *, request=None, pack=None, tenant=None)` with one order: request, then step override, then pack/profile, then tenant default, then env (`resolve_model(prefix)` keeps consumer prefixes such as `JACI`), then provider default. Returns the model and where it came from. | jaci, Plato |
 | A7 | `selectable_models()`: model cards (plus overlay) whose provider has a key. Pricing a consumer adds at runtime must be visible to it, or there should be a supported way to add a card instead of mutating `MODEL_PRICING`. | Plato UI, jazzx-assistant |
 | A8 | Provenance lives in its own field (`provenance: [StepProvenance]`), not inside `usage`. `usage` stays numeric. Published as a contract in `jazzx-plato-client`. | jazzx-assistant's cost code, jaci pages |
-| A9 | `compose_mode_prompt` raises when the base prompt is missing instead of returning nothing, so no consumer silently falls back to stale local copies. | jaci |
+| A9 | `compose_mode_prompt` raises when the base prompt is missing. Already true (`FileNotFoundError`); the silent fallback is jaci's own `prompt_loader.py`, so the fix is jaci's. | jaci |
 
 **Stays consumer-owned:** domain prompt content (jaci pack tuning, assistant persona and skills, juno
 profiles, k9 templates); which model a product uses; MLflow experiment and tag names; UI.
+
+**Built in the first slice:** A1/A2 (`jazzx_sdk.prompts.load_prompt`, `PromptRef`; lookup pack `prompts/`, then `JAPES_PROMPT_ROOTS`, then SDK files; no front-matter version means the content hash), A5 (`register_best_effort`; `DbPromptRegistry` tenant-keyed, migration 0021; Plato registers prompt files at startup), A6/A7 (`jazzx_sdk.llm.selection`: `select_model`, `selectable_models`, `check_selectable`; `register_model_card` is the supported way to add a card), A8 (`provenance: [StepProvenance]` beside numeric `usage` on `ExtractionRun` and `CaseResult`, plus `CaseResult.model`; in the client contracts). Model choice reaches `ReasoningAgent` through a `RunSettings` context variable. **Not built:** A3/A4 (needed before jazzx-assistant's step 3); investigation-mode prompts recorded as `inline` digests, document-step and condition-evaluator prompts still code.
 
 ## 4. What the SDK work would break, by repo
 
@@ -97,13 +99,13 @@ profiles, k9 templates); which model a product uses; MLflow experiment and tag n
    SDK; nothing changes in those repos.
 5. juno, k9, macer: nothing planned.
 
-## 6. Decisions for the user
+## 6. Decisions for the user (U1-U3 answered 2026-10-06)
 
 | # | Question | Recommendation |
 |---|---|---|
-| U1 | Digest scope: prompt text only, or also a behaviour digest over prompt, model, sampling params and tools (kernel's `version_hash`)? | Both: `prompt.digest` for prompt comparisons, `behaviour_digest` per step for "what changed". |
-| U2 | Should the SDK loader serve consumers' own prompt files (A2), or only SDK and pack prompts? | Yes; otherwise jazzx-assistant and jaci each re-derive provenance. |
-| U3 | Registry backend: the SDK's existing `prompt_registry_db`, or knowledge_hub's versioned prompt store? | SDK's own now; KH only if prompts must be shared across services. |
+| U1 | Digest scope: prompt text only, or also a behaviour digest over prompt, model, sampling params and tools (kernel's `version_hash`)? **Decided:** both, prompt digest plus a per-step `behaviour_digest`. |
+| U2 | Should the SDK loader serve consumers' own prompt files (A2), or only SDK and pack prompts? **Decided:** yes. |
+| U3 | Registry backend: the SDK's existing `prompt_registry_db`, or knowledge_hub's versioned prompt store? **Decided:** the SDK's own registry. |
 | U4 | When does jazzx-assistant get this: next `dev` to `main` release, or a targeted backport? | Next release; no backport. |
 | U5 | jaci's six model mechanisms: collapse to pack YAML plus env as in step 2? | Yes. |
 | U6 | Do juno or k9 get an invitation to adopt provenance, or are they left alone? | Left alone until they ask. |
