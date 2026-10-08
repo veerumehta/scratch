@@ -2,7 +2,8 @@
 
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 
-    python scripts/local/run_catalog_extract_offline.py documents/Acra --out now.json \\
+    python scripts/local/run_catalog_extract_offline.py documents/Acra \\
+        --out documents/Acra/outputs/offline-catalog/offline.json \\
         --reference-pack ci-spread-core
 
 Calls the configured model (the same default Plato uses unless ``--model``), so it costs a few

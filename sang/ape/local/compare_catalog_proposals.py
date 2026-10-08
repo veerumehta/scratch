@@ -2,7 +2,8 @@
 
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 
-    python scripts/local/compare_catalog_proposals.py snapshot baseline.json --tenant acra-lending
+    python scripts/local/compare_catalog_proposals.py snapshot documents/Acra/outputs/ui-baseline/baseline.json \\
+        --tenant acra-lending
     python scripts/local/compare_catalog_proposals.py compare baseline.json now.json
 
 A later extraction folds into the same store: proposals it re-finds keep their id, and the ones it

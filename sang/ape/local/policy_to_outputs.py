@@ -2,10 +2,14 @@
 
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 
-    python scripts/local/policy_to_outputs.py documents/Acra --out out/acra \\
+    python scripts/local/policy_to_outputs.py documents/Acra \\
         --pack-dir plato/data/seed_packs/acra_dscr_policy --reference-pack ci-spread-core
 
-Outputs, one directory each under ``--out`` (pick with ``--only catalog,jtbd``; default all):
+Documents live in ``documents/<Tenant>/`` (gitignored) and so do the results: by default
+``documents/<Tenant>/outputs/extract-<date>-<time>/``, so a tenant's sources and what came of them
+sit in one folder. ``--out`` names another place.
+
+Outputs, one directory each under that folder (pick with ``--only catalog,jtbd``; default all):
 
     catalog/       catalog.schema.json (every proposal applied, a preview) and proposals.json
     jtbd/          policy.yaml (jobs as rules), proposals.json, lint.txt
@@ -26,6 +30,7 @@ import argparse
 import asyncio
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +41,8 @@ SEED_PACKS = Path("plato/data/seed_packs")
 DOCUMENT_SUFFIXES = {".docx", ".pdf", ".md", ".txt"}
 TEMPLATE_FILE = "jtbd_template.yaml"
 CATALOG_FILE = "catalog.schema.json"
+#: Where a documents folder keeps what was made from it.
+OUTPUTS_DIR = "outputs"
 
 
 def _reference(pack_id: str) -> dict:
@@ -114,8 +121,10 @@ async def _run(args: argparse.Namespace) -> int:
     ensure_provider_key()
     files = sorted(p for p in Path(args.documents).iterdir() if p.suffix.lower() in DOCUMENT_SUFFIXES)
     documents = [(p.name, await asyncio.to_thread(convert_document, str(p))) for p in files]
-    out_root = Path(args.out)
+    out_root = Path(args.out) if args.out else (
+        Path(args.documents) / OUTPUTS_DIR / datetime.now().strftime("extract-%Y-%m-%d-%H%M"))
     out_root.mkdir(parents=True, exist_ok=True)
+    print(f"writing to {out_root}", file=sys.stderr)
     reasoning = ReasoningAgent(AgentExecutionService(), model=args.model or resolve_model())
     references = _reference(args.reference_pack) if args.reference_pack else {}
 
@@ -159,7 +168,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("documents", help="a directory of policy documents")
-    parser.add_argument("--out", required=True)
+    parser.add_argument("--out", help="default: <documents>/outputs/extract-<date>-<time>")
     parser.add_argument("--only", help=f"comma-separated outputs, from {','.join(ORDER)}")
     parser.add_argument("--pack", default="acra-dscr-policy", help="the pack id proposals are filed under")
     parser.add_argument("--pack-dir", help="a pack directory: its template and the pack the lint checks")
