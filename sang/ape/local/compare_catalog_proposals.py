@@ -39,7 +39,7 @@ def load(path: str) -> list[dict[str, Any]]:
 
 
 def newest_set(proposals: list[dict[str, Any]]) -> str:
-    return max(proposals, key=lambda p: p.get("last_seen") or "")["set_id"]
+    return max(proposals, key=lambda p: p.get("last_seen") or "").get("set_id", "")
 
 
 def describe(proposals: list[dict[str, Any]]) -> dict[str, Any]:
@@ -89,14 +89,14 @@ async def _snapshot(args: argparse.Namespace) -> None:
 def _compare(args: argparse.Namespace) -> None:
     before, after = load(args.baseline), load(args.current)
     chosen = args.set or newest_set(after)
-    new_run = [p for p in after if p["set_id"] == chosen]
+    new_run = [p for p in after if p.get("set_id", "") == chosen]
     _print("baseline", describe(before))
     _print(f"new run ({chosen})", describe(new_run))
     old, new = describe(before)["names"], describe(new_run)["names"]
     print(f"names in both: {len(old & new)}; only in baseline: {len(old - new)}; "
           f"only in the new run: {len(new - old)}")
     print(f"  only in the new run: {sorted(new - old)[:SAMPLE]}")
-    left_over = [p for p in after if p["set_id"] != chosen and p["status"] == "proposed"]
+    left_over = [p for p in after if p.get("set_id", "") != chosen and p["status"] == "proposed"]
     if left_over:
         print(f"note: {len(left_over)} proposals from earlier runs are still pending in the store; "
               f"the review page shows them beside the new run's")
