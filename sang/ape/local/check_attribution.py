@@ -27,6 +27,10 @@ ATTRIBUTION = "Author: Virendra Mehta <virendra.mehta@jazzx.ai>"
 # there is nowhere to put a comment, and a stray key would change the content digest.
 CHECKED_SUFFIXES = {".py", ".yml", ".yaml", ".sh", ".toml", ".md"}
 
+# Content another repo owns, copied in unchanged: it carries its owner's headers, not ours, and an
+# edit here would make the next sync a conflict. Still checked for AI markers.
+VENDORED = ("plato/data/seed_packs/acra_dscr_policy/",)
+
 # Anything implying the work was machine-generated. Checked case-insensitively over the whole file.
 AI_MARKERS = re.compile(
     r"co-authored-by:\s*claude|generated with \[?claude|🤖 generated|"
@@ -65,7 +69,7 @@ def check(paths: list[Path]) -> int:
             text = path.read_text(errors="ignore")
         except OSError:
             continue
-        if ATTRIBUTION not in text:
+        if ATTRIBUTION not in text and not str(path).startswith(VENDORED):
             missing.append(path)
         found = AI_MARKERS.search(text)
         if found:
