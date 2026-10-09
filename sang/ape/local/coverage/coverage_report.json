@@ -1,0 +1,3175 @@
+{
+  "tenant": "acra-lending",
+  "pack": "acra-dscr-policy",
+  "documents": [
+    {
+      "document": "standard",
+      "jobs": 56,
+      "python_rules": 26,
+      "job_status": {
+        "covered_partial": 20,
+        "not_computable": 30,
+        "computable_but_missing": 1,
+        "covered": 5
+      },
+      "orphan_python_rules": 1,
+      "python_rules_aligned": 25,
+      "covered_share": 0.446,
+      "job_rows": [
+        {
+          "job": "citizenship_eligibility_and_documentation",
+          "section": "Borrower citizenship and first-time homebuyers",
+          "reads": [
+            "citizenship_type"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "17"
+          ]
+        },
+        {
+          "job": "first_time_homebuyer_requirements",
+          "section": "Borrower citizenship and first-time homebuyers",
+          "reads": [
+            "first_time_homebuyer",
+            "borrower_entity_type",
+            "fico",
+            "cltv_pct",
+            "loan_amount",
+            "product_is_interest_only",
+            "reserves_months",
+            "loan_purpose",
+            "occupancy_subtype"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "34"
+          ]
+        },
+        {
+          "job": "foreign_national_limits_and_escrow_waiver",
+          "section": "Borrower citizenship and first-time homebuyers",
+          "reads": [
+            "citizenship_type",
+            "loan_purpose",
+            "cltv_pct",
+            "fico",
+            "escrow_waiver_requested"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "17"
+          ]
+        },
+        {
+          "job": "itin_limits_and_credit_reporting",
+          "section": "Borrower citizenship and first-time homebuyers",
+          "reads": [
+            "citizenship_type",
+            "loan_amount",
+            "fico",
+            "cltv_pct",
+            "loan_purpose"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "18"
+          ]
+        },
+        {
+          "job": "non_permanent_resident_limits",
+          "section": "Borrower citizenship and first-time homebuyers",
+          "reads": [
+            "citizenship_type",
+            "loan_amount",
+            "cltv_pct"
+          ],
+          "status": "not_computable",
+          "why": "The printed limit includes an 80% CLTV check, but cltv_pct is not among the job\u2019s final listed reads or the available schema fields.",
+          "missing": [
+            "cltv_pct"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "bankruptcy_and_foreclosure_restrictions",
+          "section": "Credit scores, tradelines, housing history and escrow waiver",
+          "reads": [
+            "bankruptcy_or_foreclosure",
+            "months_since_bankruptcy_or_foreclosure",
+            "loan_purpose",
+            "cltv_pct"
+          ],
+          "status": "not_computable",
+          "why": "The numeric seasoning bands require comparing case CLTV with the applicable maximum, but CLTV is not among the job\u2019s listed fields.",
+          "missing": [
+            "cltv_pct"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "credit_scores_and_tradelines",
+          "section": "Credit scores, tradelines, housing history and escrow waiver",
+          "reads": [
+            "credit_score_count",
+            "tradelines_meet_requirement",
+            "cltv_pct",
+            "gross_rental_income",
+            "pitia",
+            "mortgage_history_0x30x24"
+          ],
+          "status": "not_computable",
+          "why": "CLTV cannot be checked from the listed fields, and applying the 1-score \u201cActual to Max 700\u201d instruction requires the actual score.",
+          "missing": [
+            "cltv_pct",
+            "fico"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "decisioning_score_confirmation_for_entity_borrower",
+          "section": "Credit scores, tradelines, housing history and escrow waiver",
+          "reads": [
+            "borrower_entity_type",
+            "entity_is_borrower_1"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields do not establish whether there are several guarantors or whether Acra confirmation was requested.",
+          "missing": [
+            "guarantor count or whether there are several guarantors",
+            "whether Acra confirmation has been requested"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "escrow_waiver",
+          "section": "Credit scores, tradelines, housing history and escrow waiver",
+          "reads": [
+            "escrow_waiver_requested",
+            "loan_amount",
+            "cltv_pct",
+            "fico",
+            "mortgage_history_0x30x24",
+            "citizenship_type",
+            "first_time_homebuyer",
+            "vacant_property",
+            "loan_purpose",
+            "property_currently_listed_for_sale"
+          ],
+          "status": "not_computable",
+          "why": "The waiver criteria include an 80% CLTV limit, but CLTV is not among the listed fields.",
+          "missing": [
+            "cltv_pct"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "mortgage_and_rental_rating_history_scope",
+          "section": "Credit scores, tradelines, housing history and escrow waiver",
+          "reads": [
+            "loan_purpose",
+            "housing_history",
+            "ownership_months"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields do not establish the required property-specific payment history, documentation scope, or maturity and extension facts.",
+          "missing": [
+            "Reported-mortgage status and mortgage history by property and period",
+            "Documentation contents for unreported mortgages and DSCR requirements",
+            "Whether file documents suggest a major credit event",
+            "Loan maturity date and written-extension status"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "mortgage_history_restrictions",
+          "section": "Credit scores, tradelines, housing history and escrow waiver",
+          "reads": [
+            "housing_history",
+            "loan_purpose",
+            "cltv_pct"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "28"
+          ]
+        },
+        {
+          "job": "reserves_for_fico_below_620",
+          "section": "Credit scores, tradelines, housing history and escrow waiver",
+          "reads": [
+            "fico",
+            "reserves_months"
+          ],
+          "status": "computable_but_missing",
+          "why": "The rule is a direct comparison: if fico is below 620, check whether reserves_months is at least 12.",
+          "missing": [],
+          "model_decided": true
+        },
+        {
+          "job": "short_sale_deed_in_lieu_and_modification_restrictions",
+          "section": "Credit scores, tradelines, housing history and escrow waiver",
+          "reads": [
+            "short_sale_dil_or_modification",
+            "months_since_short_sale_dil_or_modification",
+            "loan_purpose",
+            "cltv_pct"
+          ],
+          "status": "not_computable",
+          "why": "The numeric CLTV limits require a CLTV comparison, but cltv_pct is not in the application schema.",
+          "missing": [
+            "cltv_pct"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "apply_no_ratio_dscr_treatment",
+          "section": "DSCR calculation, qualifying rent and rent evidence",
+          "reads": [
+            "dscr_documentation_type",
+            "cltv_pct",
+            "fico",
+            "loan_purpose",
+            "occupancy_subtype",
+            "property_type",
+            "vacant_property",
+            "mixed_use",
+            "rural_property",
+            "first_time_homebuyer",
+            "listed_for_sale_last_6_months"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "15",
+            "16"
+          ]
+        },
+        {
+          "job": "apply_situation_specific_minimum_dscrs",
+          "section": "DSCR calculation, qualifying rent and rent evidence",
+          "reads": [
+            "cltv_pct",
+            "loan_amount",
+            "credit_score_count",
+            "tradelines_meet_requirement",
+            "rural_property",
+            "property_type",
+            "first_time_homebuyer",
+            "vacant_property",
+            "loan_purpose",
+            "listed_for_sale_last_6_months",
+            "mixed_use",
+            "occupancy_subtype",
+            "property_state",
+            "reserves_months",
+            "dscr_documentation_type"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "16",
+            "30"
+          ]
+        },
+        {
+          "job": "calculate_dscr",
+          "section": "DSCR calculation, qualifying rent and rent evidence",
+          "reads": [
+            "dscr_documentation_type",
+            "gross_rental_income",
+            "pitia",
+            "interest_rate",
+            "product_is_interest_only",
+            "interest_only_10_40",
+            "loan_purpose",
+            "loan_amount"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields do not provide the required rent choice, Note payment details, subordinate-lien status, or unresolved confirmations needed to determine the ratio.",
+          "missing": [
+            "annual in-place rent and market rent as separate values",
+            "\u00a714.14 market-rent definition or supporting documentation",
+            "Note terms identifying the first payment due and its payment amount",
+            "PITIA component amounts and payment frequency",
+            "subordinate-financing amount and whether a subordinate lien is permitted (Acra confirmation Q-18)",
+            "Acra confirmation for the interest-only denominator payment (Q-26)",
+            "criteria needed to determine whether the file qualifies for No Ratio DSCR"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "determine_qualifying_rent_and_actual_rent_support",
+          "section": "DSCR calculation, qualifying rent and rent evidence",
+          "reads": [
+            "gross_rental_income",
+            "vacant_property",
+            "loan_purpose",
+            "dscr_documentation_type",
+            "current_lease_in_place"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "14"
+          ]
+        },
+        {
+          "job": "review_rent_schedule_or_appraisal_form",
+          "section": "DSCR calculation, qualifying rent and rent evidence",
+          "reads": [
+            "property_type",
+            "occupancy_subtype",
+            "loan_purpose",
+            "dscr_documentation_type",
+            "gross_rental_income"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields cannot establish the required document\u2019s content or appraiser credentials, or the transaction and qualifying-income conditions that trigger a 1007.",
+          "missing": [
+            "whether a 1007 or replacement form was provided and its form type",
+            "appraiser identity, state licensure, and signature",
+            "whether the transaction is a lease-option purchase",
+            "whether the required down payment comes from excess monthly rent contributions",
+            "whether proposed rental income is being used to qualify"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "review_short_term_rental_rents_and_caps",
+          "section": "DSCR calculation, qualifying rent and rent evidence",
+          "reads": [
+            "occupancy_subtype",
+            "property_type",
+            "cltv_pct",
+            "fico",
+            "loan_purpose",
+            "dscr_documentation_type"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "15"
+          ]
+        },
+        {
+          "job": "review_tenant_occupied_payment_evidence",
+          "section": "DSCR calculation, qualifying rent and rent evidence",
+          "reads": [
+            "current_lease_in_place",
+            "occupancy_subtype",
+            "borrower_entity_type",
+            "entity_is_borrower_1",
+            "reserves_months",
+            "housing_history",
+            "mortgage_history_0x30x24"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields cannot establish rental-payment receipt evidence or resolve the forbearance trigger and entity-Applicant ambiguity.",
+          "missing": [
+            "Forbearance within the last 12 months",
+            "Documentation showing timely receipt of the prior two months\u2019 rental payments",
+            "Confirmation of who counts as the Applicant for an entity borrower (Acra Q-20)"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "substantiate_excessive_monthly_rent",
+          "section": "DSCR calculation, qualifying rent and rent evidence",
+          "reads": [
+            "property_type",
+            "occupancy_subtype",
+            "gross_rental_income",
+            "current_lease_in_place"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields cannot establish whether rent is excessive or whether documentation supports that it is typical for the area.",
+          "missing": [
+            "Documentation content supporting area-typical rent (such as comparable local ads, an appraisal rent schedule, or a market rent survey)",
+            "Local market rent data for comparison"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "due_diligence_and_background_checks",
+          "section": "Entity borrowers, guarantors and trusts",
+          "reads": [],
+          "status": "not_computable",
+          "why": "reads no loan field"
+        },
+        {
+          "job": "entity_documentation",
+          "section": "Entity borrowers, guarantors and trusts",
+          "reads": [
+            "borrower_entity_type",
+            "entity_documents_complete"
+          ],
+          "status": "covered",
+          "python_rules": [
+            "23",
+            "24",
+            "25"
+          ]
+        },
+        {
+          "job": "entity_eligibility_and_guarantees",
+          "section": "Entity borrowers, guarantors and trusts",
+          "reads": [
+            "borrower_entity_type",
+            "entity_is_borrower_1",
+            "first_time_homebuyer"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "22",
+            "23"
+          ]
+        },
+        {
+          "job": "revocable_living_trust_title_vesting",
+          "section": "Entity borrowers, guarantors and trusts",
+          "reads": [],
+          "status": "not_computable",
+          "why": "reads no loan field"
+        },
+        {
+          "job": "documents_signed_outside_the_u_s",
+          "section": "Foreign-national eligibility and documentation",
+          "reads": [],
+          "status": "not_computable",
+          "why": "reads no loan field"
+        },
+        {
+          "job": "foreign_account_funds",
+          "section": "Foreign-national eligibility and documentation",
+          "reads": [],
+          "status": "not_computable",
+          "why": "reads no loan field"
+        },
+        {
+          "job": "foreign_national_closing_documents",
+          "section": "Foreign-national eligibility and documentation",
+          "reads": [],
+          "status": "not_computable",
+          "why": "reads no loan field"
+        },
+        {
+          "job": "foreign_national_credit_references",
+          "section": "Foreign-national eligibility and documentation",
+          "reads": [],
+          "status": "not_computable",
+          "why": "reads no loan field"
+        },
+        {
+          "job": "foreign_national_eligibility",
+          "section": "Foreign-national eligibility and documentation",
+          "reads": [
+            "citizenship_type",
+            "loan_purpose"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "19"
+          ]
+        },
+        {
+          "job": "apply_reserves_by_stated_trigger",
+          "section": "Funds to close, seasoning and reserves",
+          "reads": [
+            "fico",
+            "first_time_homebuyer",
+            "vacant_property",
+            "loan_purpose",
+            "listed_for_sale_last_6_months",
+            "reserves_months",
+            "pitia"
+          ],
+          "status": "not_computable",
+          "why": "Several reserve triggers depend on unlisted loan or insurance facts, and cash-in-hand consistency requires Guide-based judgment.",
+          "missing": [
+            "LTV, or loan amount and property value to calculate it",
+            "Forbearance or mortgage lates in the last 12 months",
+            "Tenant-occupied status and timely receipt of the prior two months\u2019 rent",
+            "Whether rent loss insurance is required, obtainable, and how many months of coverage are missing",
+            "Cash-in-hand availability and whether its use is consistent with the Guide"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "verify_applicant_contribution_and_gift_fund_requirements",
+          "section": "Funds to close, seasoning and reserves",
+          "reads": [
+            "property_type",
+            "occupancy_subtype"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields identify the property category but cannot verify the contribution amount or funds, and gift-documentation requirements require reviewing the referenced guide and documents.",
+          "missing": [
+            "Applicant contribution amount",
+            "Evidence that contributed funds are the applicant\u2019s own, sourced, and seasoned",
+            "Purchase price",
+            "Whether gift funds are used",
+            "Gift-fund documentation content",
+            "Seller\u2019s Guide Appendix B"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "verify_funds_documentation_and_seasoning",
+          "section": "Funds to close, seasoning and reserves",
+          "reads": [
+            "loan_purpose",
+            "cltv_pct",
+            "citizenship_type"
+          ],
+          "status": "not_computable",
+          "why": "The required thresholds and checks depend on fields absent from the schema and on documentation or unresolved transaction and foreign-funds details.",
+          "missing": [
+            "cltv_pct (not present in the schema)",
+            "funds_to_close amount",
+            "consumer-transaction status",
+            "documentation and source-account evidence (including seasoning duration and verification method)",
+            "whether funds are held in a foreign bank or currency, and repatriation timing/evidence"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "delayed_financing_cap",
+          "section": "Loan amount, contributions and matrix eligibility",
+          "reads": [
+            "delayed_financing",
+            "loan_amount"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "42",
+            "8"
+          ]
+        },
+        {
+          "job": "dscr_for_loans_above_2_000_000",
+          "section": "Loan amount, contributions and matrix eligibility",
+          "reads": [
+            "loan_amount",
+            "dscr_documentation_type"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields identify the loan amount and documentation type, but do not provide a DSCR value to compare with 1.0.",
+          "missing": [
+            "DSCR value or the documentation content needed to establish it"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "gifted_funds_contribution",
+          "section": "Loan amount, contributions and matrix eligibility",
+          "reads": [],
+          "status": "not_computable",
+          "why": "reads no loan field"
+        },
+        {
+          "job": "interest_only_loan_amount_and_fico",
+          "section": "Loan amount, contributions and matrix eligibility",
+          "reads": [
+            "product_is_interest_only",
+            "interest_only_10_40",
+            "loan_amount",
+            "fico"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "34"
+          ]
+        },
+        {
+          "job": "investment_property_matrix_cltv",
+          "section": "Loan amount, contributions and matrix eligibility",
+          "reads": [
+            "loan_amount",
+            "fico",
+            "cltv_pct",
+            "loan_purpose",
+            "occupancy_subtype"
+          ],
+          "status": "covered",
+          "python_rules": [
+            "10",
+            "11",
+            "37",
+            "44"
+          ]
+        },
+        {
+          "job": "loan_amount_and_seller_contributions",
+          "section": "Loan amount, contributions and matrix eligibility",
+          "reads": [
+            "loan_amount",
+            "seller_concession_pct"
+          ],
+          "status": "covered",
+          "python_rules": [
+            "9"
+          ]
+        },
+        {
+          "job": "loan_amount_below_200_000_cltv_limit",
+          "section": "Loan amount, contributions and matrix eligibility",
+          "reads": [
+            "loan_amount",
+            "loan_purpose",
+            "cltv_pct"
+          ],
+          "status": "not_computable",
+          "why": "The rule requires comparing CLTV with a purpose-specific limit, but CLTV is not among the listed fields.",
+          "missing": [
+            "cltv_pct"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "matrix_cash_in_hand_footnotes",
+          "section": "Loan amount, contributions and matrix eligibility",
+          "reads": [
+            "loan_amount"
+          ],
+          "status": "not_computable",
+          "why": "The listed field loan_amount cannot establish the LTV threshold, and applying Footnote 2 also depends on unresolved scope confirmation.",
+          "missing": [
+            "LTV",
+            "Acra confirmation on footnote scope and the LTV/CLTV wording (Q-17)"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "check_published_program_scope",
+          "section": "Program scope, occupancy and qualification",
+          "reads": [
+            "loan_amount",
+            "fico",
+            "cltv_pct",
+            "loan_purpose",
+            "dscr_documentation_type",
+            "citizenship_type",
+            "property_type",
+            "property_state"
+          ],
+          "status": "covered",
+          "python_rules": [
+            "15",
+            "38",
+            "6"
+          ]
+        },
+        {
+          "job": "check_required_loan_documents_and_property_listing",
+          "section": "Program scope, occupancy and qualification",
+          "reads": [
+            "dscr_documentation_type",
+            "loan_purpose",
+            "residential_unit_count"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "42"
+          ]
+        },
+        {
+          "job": "review_qualification_basis_and_transaction_purpose",
+          "section": "Program scope, occupancy and qualification",
+          "reads": [
+            "dscr_documentation_type",
+            "loan_purpose",
+            "delayed_financing",
+            "loan_amount"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields can identify qualification type, purpose, delayed-financing status, and loan amount, but cannot verify the required documentation, underwriting actions, or cashflow basis.",
+          "missing": [
+            "Business Purpose Attestation execution with loan documents",
+            "Borrowing-entity income documentation status",
+            "Whether DTI was calculated",
+            "Evidence that qualification is based on subject-property rent or actual/market cashflow"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "verify_investment_property_occupancy",
+          "section": "Program scope, occupancy and qualification",
+          "reads": [
+            "occupancy_subtype",
+            "residential_unit_count",
+            "property_type",
+            "current_lease_in_place",
+            "vacant_property"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields can indicate property type, unit count, occupancy subtype, lease status, and vacancy, but do not establish owner identity or the occupants\u2019 principal year-round residence.",
+          "missing": [
+            "whether the owner is an individual and does not occupy the property",
+            "whether non-owner individuals occupy it as their principal year-round residence"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "declining_market_cltv_adjustment",
+          "section": "Property eligibility and property-specific conditions",
+          "reads": [
+            "property_state",
+            "cltv_pct"
+          ],
+          "status": "not_computable",
+          "why": "Property state alone cannot determine whether the market is declining, and the schema lacks cltv_pct to check the adjustment.",
+          "missing": [
+            "declining-market status or market data",
+            "cltv_pct"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "eligible_property_types_and_above_80_ltv",
+          "section": "Property eligibility and property-specific conditions",
+          "reads": [
+            "property_type",
+            "property_state"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "29"
+          ]
+        },
+        {
+          "job": "mixed_use_property",
+          "section": "Property eligibility and property-specific conditions",
+          "reads": [
+            "mixed_use",
+            "dscr_documentation_type"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields do not establish the 1.2 DSCR ratio or whether \u00a710.7\u2019s conditions are met.",
+          "missing": [
+            "DSCR ratio inputs (for example, gross_rental_income and pitia), which are not among the listed fields",
+            "The requirements in \u00a710.7 and evidence needed to verify them"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "property_listed_for_sale",
+          "section": "Property eligibility and property-specific conditions",
+          "reads": [
+            "listed_for_sale_last_6_months",
+            "property_currently_listed_for_sale",
+            "loan_purpose",
+            "current_lease_in_place",
+            "vacant_property",
+            "dscr_documentation_type",
+            "prepayment_penalty_requested",
+            "property_state",
+            "reserves_months",
+            "interest_only_10_40",
+            "product_is_interest_only",
+            "cltv_pct",
+            "property_value"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "31"
+          ]
+        },
+        {
+          "job": "property_type_cltv_caps",
+          "section": "Property eligibility and property-specific conditions",
+          "reads": [
+            "property_type",
+            "loan_purpose",
+            "property_state",
+            "cltv_pct"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields identify the applicable cap but do not provide CLTV or enough information to verify the DSCR condition.",
+          "missing": [
+            "cltv_pct",
+            "DSCR value or the inputs needed to determine whether DSCR is at least 1.0"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "rent_loss_insurance",
+          "section": "Property eligibility and property-specific conditions",
+          "reads": [
+            "residential_unit_count",
+            "occupancy_subtype",
+            "cltv_pct",
+            "gross_rental_income",
+            "reserves_months"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "32"
+          ]
+        },
+        {
+          "job": "rural_or_unique_property",
+          "section": "Property eligibility and property-specific conditions",
+          "reads": [
+            "rural_property",
+            "property_type",
+            "loan_purpose",
+            "cltv_pct",
+            "fico"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "30"
+          ]
+        },
+        {
+          "job": "vacant_property",
+          "section": "Property eligibility and property-specific conditions",
+          "reads": [
+            "vacant_property",
+            "loan_purpose",
+            "fico",
+            "loan_amount",
+            "cltv_pct",
+            "dscr_documentation_type",
+            "prepayment_penalty_requested",
+            "interest_only_10_40",
+            "product_is_interest_only",
+            "reserves_months",
+            "ownership_months"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "34",
+            "42"
+          ]
+        },
+        {
+          "job": "apply_declining_market_cltv_reduction",
+          "section": "Unassigned provisions",
+          "reads": [
+            "cltv_pct"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields do not establish whether the property is in a declining market, and the CLTV field needed to record the adjustment is absent.",
+          "missing": [
+            "declining-market status",
+            "cltv_pct"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "check_delayed_financing_loan_cap",
+          "section": "Unassigned provisions",
+          "reads": [
+            "delayed_financing",
+            "loan_amount"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "8"
+          ]
+        },
+        {
+          "job": "check_ineligible_state",
+          "section": "Unassigned provisions",
+          "reads": [
+            "property_state"
+          ],
+          "status": "covered",
+          "python_rules": [
+            "9"
+          ]
+        }
+      ],
+      "rule_rows": [
+        {
+          "rule": "10",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b611",
+          "reads": [
+            "loan_amount",
+            "fico",
+            "loan_purpose",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "investment_property_matrix_cltv"
+          ],
+          "note": "Implements the FICO- and transaction-specific CLTV check for loans of $1,500,000 or less. It rejects higher loan amounts rather than checking the other loan-amount tier, so it does not implement the full published matrix check.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "investment_property_matrix_cltv",
+              0.648
+            ],
+            [
+              "loan_amount_below_200_000_cltv_limit",
+              0.433
+            ]
+          ]
+        },
+        {
+          "rule": "11",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b612",
+          "reads": [
+            "fico",
+            "loan_amount",
+            "loan_purpose",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "investment_property_matrix_cltv"
+          ],
+          "note": "The rule selects matrix CLTV limits by loan amount, FICO, and purpose, but does not compare CLTV against the selected limit or complete handling for all matrix entries.",
+          "numbers_not_in_clause": [
+            "2000000"
+          ],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "investment_property_matrix_cltv",
+              0.525
+            ],
+            [
+              "loan_amount_below_200_000_cltv_limit",
+              0.408
+            ]
+          ]
+        },
+        {
+          "rule": "14",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b615",
+          "reads": [
+            "vacant_property",
+            "loan_purpose",
+            "gross_rental_income",
+            "dscr_documentation_type"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "determine_qualifying_rent_and_actual_rent_support"
+          ],
+          "note": "Checks that positive rental income for a vacant-property purchase uses a 1007 or 1025, but does not verify that the required 1007 survey is present.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "review_rent_schedule_or_appraisal_form",
+              0.704
+            ],
+            [
+              "substantiate_excessive_monthly_rent",
+              0.582
+            ]
+          ]
+        },
+        {
+          "rule": "15",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b616",
+          "reads": [
+            "occupancy_subtype",
+            "loan_purpose",
+            "fico",
+            "cltv_pct",
+            "dscr_documentation_type",
+            "gross_rental_income",
+            "pitia",
+            "reserves_months",
+            "property_type",
+            "property_state"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "apply_no_ratio_dscr_treatment",
+            "review_short_term_rental_rents_and_caps",
+            "check_published_program_scope"
+          ],
+          "note": "The rule checks short-term-rental CLTV/FICO limits and low-or-no-ratio CLTV caps, but does not implement the jobs\u2019 other documentation, scope, or condition checks.",
+          "numbers_not_in_clause": [
+            "80"
+          ],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "apply_no_ratio_dscr_treatment",
+              0.374
+            ],
+            [
+              "apply_situation_specific_minimum_dscrs",
+              0.368
+            ]
+          ]
+        },
+        {
+          "rule": "16",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b617",
+          "reads": [
+            "dscr_documentation_type",
+            "cltv_pct",
+            "loan_amount",
+            "credit_score_count",
+            "tradelines_meet_requirement",
+            "rural_property",
+            "property_type",
+            "first_time_homebuyer",
+            "vacant_property",
+            "loan_purpose",
+            "listed_for_sale_last_6_months",
+            "mixed_use",
+            "gross_rental_income",
+            "pitia"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "apply_no_ratio_dscr_treatment",
+            "apply_situation_specific_minimum_dscrs"
+          ],
+          "note": "The rule bypasses DSCR calculation for No Ratio files and applies several situation-specific minimums. It does not check the No Ratio documentation, cap, or insurance requirements, and it omits the mixed-use minimum and other qualifications in job 14.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "apply_no_ratio_dscr_treatment",
+              0.583
+            ],
+            [
+              "apply_situation_specific_minimum_dscrs",
+              0.529
+            ]
+          ]
+        },
+        {
+          "rule": "17",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b618",
+          "reads": [
+            "citizenship_type",
+            "loan_purpose",
+            "fico",
+            "cltv_pct",
+            "loan_amount"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "citizenship_eligibility_and_documentation",
+            "foreign_national_limits_and_escrow_waiver"
+          ],
+          "note": "The rule partially handles citizenship categories and applies the Foreign National FICO and CLTV checks. It does not implement the documentation requirements or escrow-waiver check, and it returns false for Permanent Residents and Non-Permanent Residents. The ITIN branch is truncated before any limits are checked.",
+          "numbers_not_in_clause": [
+            "1000000"
+          ],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "itin_limits_and_credit_reporting",
+              0.784
+            ],
+            [
+              "non_permanent_resident_limits",
+              0.692
+            ]
+          ]
+        },
+        {
+          "rule": "18",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b619",
+          "reads": [
+            "tradelines_meet_requirement"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "itin_limits_and_credit_reporting"
+          ],
+          "note": "Checks the requirement that scores and tradelines are reported under the correct ITIN or SSN, which is one part of job 3.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "first_time_homebuyer_requirements",
+              0.471
+            ],
+            [
+              "itin_limits_and_credit_reporting",
+              0.224
+            ]
+          ]
+        },
+        {
+          "rule": "19",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.10 \u00b61",
+          "reads": [
+            "loan_purpose"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "foreign_national_eligibility"
+          ],
+          "note": "Checks only that the loan purpose is business purpose; it does not check the other foreign-national eligibility requirements.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "foreign_national_eligibility",
+              0.645
+            ],
+            [
+              "foreign_account_funds",
+              0.263
+            ]
+          ]
+        },
+        {
+          "rule": "22",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b61",
+          "reads": [
+            "borrower_entity_type",
+            "loan_purpose",
+            "occupancy_subtype"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "entity_eligibility_and_guarantees"
+          ],
+          "note": "Checks the business-purpose investment-property condition for entity borrowers, but not the full entity, ownership, title, or guarantee requirements.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "entity_eligibility_and_guarantees",
+              0.514
+            ],
+            [
+              "entity_documentation",
+              0.18
+            ]
+          ]
+        },
+        {
+          "rule": "23",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b62",
+          "reads": [
+            "borrower_entity_type",
+            "first_time_homebuyer",
+            "entity_documents_complete"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "entity_eligibility_and_guarantees",
+            "entity_documentation"
+          ],
+          "note": "Checks allowed entity type and prior-homeownership attestation from job 23, plus entity-document completeness from job 22; it does not implement all checks in either job.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "entity_eligibility_and_guarantees",
+              0.552
+            ],
+            [
+              "entity_documentation",
+              0.336
+            ]
+          ]
+        },
+        {
+          "rule": "24",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b63",
+          "reads": [
+            "entity_documents_complete"
+          ],
+          "relation": "implements",
+          "jobs": [
+            "entity_documentation"
+          ],
+          "note": "The rule checks whether required entity documentation is complete, matching job 22.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "entity_documentation",
+              0.626
+            ],
+            [
+              "entity_eligibility_and_guarantees",
+              0.08
+            ]
+          ]
+        },
+        {
+          "rule": "25",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b64",
+          "reads": [
+            "entity_documents_complete"
+          ],
+          "relation": "duplicate",
+          "jobs": [
+            "entity_documentation"
+          ],
+          "note": "The rule checks entity document completeness, which duplicates job 22\u2019s entity documentation check.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "entity_documentation",
+              0.508
+            ],
+            [
+              "due_diligence_and_background_checks",
+              0.205
+            ]
+          ]
+        },
+        {
+          "rule": "28",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b67",
+          "reads": [
+            "housing_history",
+            "loan_purpose",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "mortgage_history_restrictions"
+          ],
+          "note": "Implements the printed label- and purpose-specific CLTV limits, including treating Ineligible as ineligible. It does not check that Acra has confirmed label definitions or seasoning.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "mortgage_history_restrictions",
+              0.633
+            ],
+            [
+              "mortgage_and_rental_rating_history_scope",
+              0.586
+            ]
+          ]
+        },
+        {
+          "rule": "29",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b68",
+          "reads": [
+            "property_type",
+            "loan_purpose",
+            "cltv_pct",
+            "property_state",
+            "gross_rental_income",
+            "pitia",
+            "short_sale_dil_or_modification",
+            "months_since_short_sale_dil_or_modification",
+            "escrow_waiver_requested",
+            "loan_amount",
+            "fico",
+            "mortgage_history_0x30x24",
+            "citizenship_type"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "eligible_property_types_and_above_80_ltv"
+          ],
+          "note": "Checks that the property type is eligible, but does not implement the above-80% LTV restriction.",
+          "numbers_not_in_clause": [
+            "1500000"
+          ],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "escrow_waiver",
+              0.406
+            ],
+            [
+              "property_type_cltv_caps",
+              0.404
+            ]
+          ]
+        },
+        {
+          "rule": "30",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b69",
+          "reads": [
+            "loan_purpose",
+            "cltv_pct",
+            "property_type",
+            "property_state",
+            "rural_property",
+            "fico",
+            "pitia",
+            "gross_rental_income",
+            "vacant_property",
+            "loan_amount",
+            "product_is_interest_only",
+            "reserves_months",
+            "ownership_months"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "apply_situation_specific_minimum_dscrs",
+            "rural_or_unique_property"
+          ],
+          "note": "The rule checks the >80% CLTV property limitation and rural-property CLTV, FICO, and DSCR requirements. It does not check reserves or account for possible further LTV reductions for unusual properties, so it only partially implements these jobs.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "vacant_property",
+              0.524
+            ],
+            [
+              "rural_or_unique_property",
+              0.386
+            ]
+          ]
+        },
+        {
+          "rule": "31",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b610",
+          "reads": [
+            "listed_for_sale_last_6_months"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "property_listed_for_sale"
+          ],
+          "note": "The rule returns the six-month listing-period flag but does not check the listed-property loan conditions.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "property_listed_for_sale",
+              0.458
+            ],
+            [
+              "rent_loss_insurance",
+              0.29
+            ]
+          ]
+        },
+        {
+          "rule": "32",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b611",
+          "reads": [
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "rent_loss_insurance"
+          ],
+          "note": "Implements the stated \u226470% CLTV exemption check, but not the other rent loss insurance requirements in job 50.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "verify_funds_documentation_and_seasoning",
+              0.514
+            ],
+            [
+              "verify_applicant_contribution_and_gift_fund_requirements",
+              0.439
+            ]
+          ]
+        },
+        {
+          "rule": "34",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b613",
+          "reads": [
+            "product_is_interest_only",
+            "interest_only_10_40",
+            "loan_amount",
+            "fico",
+            "first_time_homebuyer",
+            "vacant_property",
+            "loan_purpose",
+            "property_currently_listed_for_sale",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "interest_only_loan_amount_and_fico",
+            "vacant_property",
+            "first_time_homebuyer_requirements"
+          ],
+          "note": "Checks the interest-only loan amount and FICO requirements, and also applies the first-time-homebuyer and vacant-property-refinance restrictions. The rule does not cover every requirement in those broader jobs.",
+          "numbers_not_in_clause": [
+            "0.80",
+            "1040",
+            "250000",
+            "3000000"
+          ],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "interest_only_loan_amount_and_fico",
+              0.308
+            ],
+            [
+              "vacant_property",
+              0.301
+            ]
+          ]
+        },
+        {
+          "rule": "36",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b615",
+          "reads": [
+            "property_state",
+            "property_type",
+            "residential_unit_count",
+            "borrower_entity_type",
+            "loan_amount",
+            "interest_rate",
+            "loan_purpose",
+            "prepayment_penalty_requested"
+          ],
+          "relation": "no_job",
+          "jobs": [],
+          "note": "The rule checks state-specific prepayment penalty buy-out restrictions. None of the listed jobs states that check.",
+          "numbers_not_in_clause": [
+            "1000000"
+          ],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "check_delayed_financing_loan_cap",
+              0.203
+            ],
+            [
+              "check_published_program_scope",
+              0.186
+            ]
+          ]
+        },
+        {
+          "rule": "37",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b616",
+          "reads": [
+            "loan_amount",
+            "fico",
+            "loan_purpose",
+            "cltv_pct",
+            "citizenship_type",
+            "occupancy_subtype",
+            "credit_score_count",
+            "tradelines_meet_requirement",
+            "housing_history",
+            "bankruptcy_or_foreclosure",
+            "months_since_bankruptcy_or_foreclosure",
+            "short_sale_dil_or_modification",
+            "months_since_short_sale_dil_or_modification",
+            "property_type",
+            "residential_unit_count",
+            "rural_property",
+            "first_time_homebuyer",
+            "vacant_property"
+          ],
+          "relation": "implements",
+          "jobs": [
+            "investment_property_matrix_cltv"
+          ],
+          "note": "The rule applies the published matrix CLTV limits by loan amount, FICO, and transaction type, matching job 37.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "apply_no_ratio_dscr_treatment",
+              0.245
+            ],
+            [
+              "apply_situation_specific_minimum_dscrs",
+              0.244
+            ]
+          ]
+        },
+        {
+          "rule": "38",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b617",
+          "reads": [
+            "loan_amount",
+            "fico",
+            "loan_purpose"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "check_published_program_scope"
+          ],
+          "note": "Implements the published minimum-FICO-by-loan-amount check, including the purchase-only condition for scores 620\u2013639 in the $1,500,001\u2013$2,000,000 band. It does not check the other program-scope requirements.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "investment_property_matrix_cltv",
+              0.354
+            ],
+            [
+              "loan_amount_below_200_000_cltv_limit",
+              0.314
+            ]
+          ]
+        },
+        {
+          "rule": "42",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b621",
+          "reads": [
+            "delayed_financing",
+            "loan_amount",
+            "dscr_documentation_type",
+            "residential_unit_count",
+            "vacant_property",
+            "loan_purpose",
+            "ownership_months"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "delayed_financing_cap",
+            "check_required_loan_documents_and_property_listing",
+            "vacant_property"
+          ],
+          "note": "Implements job 33\u2019s delayed-financing cap. It checks the 1007 requirement only for 2\u20134-unit DSCR files (job 42) and the 15-month ownership condition only for vacant rate-and-term refinances (job 52), so those jobs are only partially covered.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "review_qualification_basis_and_transaction_purpose",
+              0.3
+            ],
+            [
+              "apply_reserves_by_stated_trigger",
+              0.263
+            ]
+          ]
+        },
+        {
+          "rule": "44",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b623",
+          "reads": [
+            "loan_amount",
+            "fico"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "investment_property_matrix_cltv"
+          ],
+          "note": "Implements the job\u2019s check for FICO below 600 when the loan amount is $1,500,000 or less.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "matrix_cash_in_hand_footnotes",
+              0.355
+            ],
+            [
+              "delayed_financing_cap",
+              0.315
+            ]
+          ]
+        },
+        {
+          "rule": "6",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b67",
+          "reads": [
+            "loan_amount",
+            "fico",
+            "cltv_pct",
+            "gross_rental_income",
+            "pitia",
+            "loan_purpose",
+            "dscr_documentation_type",
+            "citizenship_type",
+            "property_type",
+            "property_state"
+          ],
+          "relation": "implements",
+          "jobs": [
+            "check_published_program_scope"
+          ],
+          "note": "Checks the published program-level scope, including amount, credit, leverage, DSCR, borrower, property, and state requirements.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "check_published_program_scope",
+              0.614
+            ],
+            [
+              "itin_limits_and_credit_reporting",
+              0.277
+            ]
+          ]
+        },
+        {
+          "rule": "8",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b69",
+          "reads": [
+            "delayed_financing",
+            "loan_amount"
+          ],
+          "relation": "duplicate",
+          "jobs": [
+            "delayed_financing_cap",
+            "check_delayed_financing_loan_cap"
+          ],
+          "note": "The rule checks the stated $1.5MM delayed-financing cap, which is listed under both job 33 and job 54.",
+          "numbers_not_in_clause": [
+            "1500000"
+          ],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "review_qualification_basis_and_transaction_purpose",
+              0.613
+            ],
+            [
+              "delayed_financing_cap",
+              0.486
+            ]
+          ]
+        },
+        {
+          "rule": "9",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b610",
+          "reads": [
+            "loan_amount",
+            "seller_concession_pct",
+            "property_state"
+          ],
+          "relation": "implements",
+          "jobs": [
+            "loan_amount_and_seller_contributions",
+            "check_ineligible_state"
+          ],
+          "note": "Checks the loan amount range and $50 increments, seller-contribution limit, and that the property state is not SD.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "loan_amount_and_seller_contributions",
+              0.507
+            ],
+            [
+              "check_delayed_financing_loan_cap",
+              0.458
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "document": "platinum",
+      "jobs": 52,
+      "python_rules": 25,
+      "job_status": {
+        "covered_partial": 23,
+        "computable_but_missing": 2,
+        "not_computable": 27
+      },
+      "orphan_python_rules": 0,
+      "python_rules_aligned": 25,
+      "covered_share": 0.442,
+      "job_rows": [
+        {
+          "job": "borrower_citizenship_eligibility",
+          "section": "Borrower eligibility and credit history",
+          "reads": [
+            "citizenship_type"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "13",
+            "40"
+          ]
+        },
+        {
+          "job": "credit_tradelines",
+          "section": "Borrower eligibility and credit history",
+          "reads": [
+            "credit_score_count",
+            "tradelines_meet_requirement"
+          ],
+          "status": "computable_but_missing",
+          "why": "The rule compares credit_score_count to 3 and uses tradelines_meet_requirement for applicants with 2 or fewer scores.",
+          "missing": [],
+          "model_decided": true
+        },
+        {
+          "job": "decisioning_credit_score",
+          "section": "Borrower eligibility and credit history",
+          "reads": [
+            "borrower_entity_type",
+            "channel",
+            "cltv_pct",
+            "credit_score_count",
+            "fico"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "10",
+            "29",
+            "31"
+          ]
+        },
+        {
+          "job": "escrow_waiver",
+          "section": "Borrower eligibility and credit history",
+          "reads": [
+            "escrow_waiver_requested",
+            "loan_amount",
+            "mortgage_history_0x30x24"
+          ],
+          "status": "not_computable",
+          "why": "The loan amount and stated mortgage-history check use listed fields, but deciding whether the loan is Section 35 requires an unlisted status field.",
+          "missing": [
+            "Section 35 loan status"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "first_time_homebuyer_eligibility",
+          "section": "Borrower eligibility and credit history",
+          "reads": [
+            "first_time_homebuyer"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "13",
+            "14",
+            "40"
+          ]
+        },
+        {
+          "job": "guarantor_homeownership_experience_and_attestation",
+          "section": "Borrower eligibility and credit history",
+          "reads": [
+            "borrower_entity_type",
+            "first_time_homebuyer",
+            "housing_history"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields do not resolve when \u00a73.12 applies or identify which guarantor has qualifying prior homeownership experience.",
+          "missing": [
+            "\u00a73.12 applicability rule",
+            "guarantor identification and linkage to housing history",
+            "housing-history evidence of prior homeownership"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "housing_history_and_previous_credit_events",
+          "section": "Borrower eligibility and credit history",
+          "reads": [
+            "housing_history",
+            "bankruptcy_or_foreclosure",
+            "months_since_bankruptcy_or_foreclosure",
+            "short_sale_dil_or_modification",
+            "months_since_short_sale_dil_or_modification"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "21"
+          ]
+        },
+        {
+          "job": "impounds_for_property_listed_for_sale",
+          "section": "Borrower eligibility and credit history",
+          "reads": [
+            "property_currently_listed_for_sale"
+          ],
+          "status": "computable_but_missing",
+          "why": "The listed-for-sale field directly determines whether impounds are required.",
+          "missing": [],
+          "model_decided": true
+        },
+        {
+          "job": "mortgage_and_rental_payment_history",
+          "section": "Borrower eligibility and credit history",
+          "reads": [
+            "housing_history",
+            "bankruptcy_or_foreclosure"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields cannot establish the required property-specific documentation, mortgage coverage, or written maturity extension.",
+          "missing": [
+            "Housing-history and payment-document contents",
+            "Property and residence identities, including DSCR subject/borrower/guarantor scope",
+            "Reported mortgage tradelines and which mortgages are unreported",
+            "Loan maturity date and written-extension evidence"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "borrower_and_guarantor_due_diligence",
+          "section": "Borrowing entities, guarantors, documentation, and trusts",
+          "reads": [
+            "borrower_entity_type"
+          ],
+          "status": "not_computable",
+          "why": "borrower_entity_type alone cannot establish whether due diligence is current, who was covered, or which background checks were ordered.",
+          "missing": [
+            "due diligence completion and currency date",
+            "loan approval and draw dates",
+            "guarantor and Key Principal/Entity identities, ownership, and control",
+            "review scope",
+            "background-check orders, providers, and categories"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "borrower_citizenship_and_first_time_homebuyer_eligibility",
+          "section": "Borrowing entities, guarantors, documentation, and trusts",
+          "reads": [
+            "citizenship_type",
+            "first_time_homebuyer"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "13",
+            "14",
+            "40"
+          ]
+        },
+        {
+          "job": "entity_documentation",
+          "section": "Borrowing entities, guarantors, documentation, and trusts",
+          "reads": [
+            "borrower_entity_type",
+            "entity_documents_complete"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields do not expose the documents\u2019 contents or the conditional facts needed to verify the requirements and rule out borrower-letter exceptions.",
+          "missing": [
+            "Document contents, completeness, and legibility",
+            "Whether required documents were supplied versus excused by borrower letters",
+            "Ownership, signer authority, and transaction authorization evidence",
+            "Document discrepancies and identity-name matches",
+            "Formation and operating jurisdictions and qualification requirements",
+            "Document dates, closing date, and applicable exception conditions",
+            "Stock, tax, EIN, resolution, and power-of-attorney evidence and requirements"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "entity_eligibility_and_title_structure",
+          "section": "Borrowing entities, guarantors, documentation, and trusts",
+          "reads": [
+            "borrower_entity_type",
+            "entity_is_borrower_1",
+            "loan_purpose",
+            "property_type"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields do not capture the required title, entity, and ownership facts, and Acra's discretionary acceptance requires judgment.",
+          "missing": [
+            "title holders and whether each direct owner is a borrowing entity",
+            "Acra's discretionary acceptance of a title-holding entity",
+            "entity assets and business activities needed to establish SPE status",
+            "entity formation and base location",
+            "foreign ownership",
+            "ownership and nesting structure, including subsidiary count and ownership"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "entity_ownership_guarantees_and_homeownership_requirements",
+          "section": "Borrowing entities, guarantors, documentation, and trusts",
+          "reads": [
+            "borrower_entity_type",
+            "first_time_homebuyer"
+          ],
+          "status": "not_computable",
+          "why": "The two listed fields do not establish ownership, guarantee documents or terms, changes, or guarantor-specific homeownership and attestation evidence.",
+          "missing": [
+            "Individuals\u2019 direct and indirect ownership percentages",
+            "Which owners provide approved recourse guarantees and the guarantee terms",
+            "Number of guarantors and whether their recourse is joint and several",
+            "Operating agreement/bylaw ownership changes and their timing relative to the Application Date and application process",
+            "Evidence of a guarantor\u2019s prior homeownership",
+            "Which borrower or guarantor attested on the application that they are not a first-time homebuyer"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "revocable_living_trust_title_vesting",
+          "section": "Borrowing entities, guarantors, documentation, and trusts",
+          "reads": [
+            "entity_documents_complete"
+          ],
+          "status": "not_computable",
+          "why": "Document completeness alone cannot establish the trust\u2019s contents, legal validity, or other required determinations.",
+          "missing": [
+            "Trust or Certification of Trust content, including existence/date, parties, trustee powers, revocability, signing requirements, tax ID, title instructions, and unmodified status",
+            "State-law validity",
+            "Trustor and beneficiary identities and relationships",
+            "Trustee/Trustor identity match or Acra Senior Management exception",
+            "Mortgage authority, beneficiary consent, lender-rights and unusual-risk determinations",
+            "Any Legal-required supporting documentation"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "calculate_dscr_and_apply_channel_minimum",
+          "section": "DSCR calculation, qualifying rent, and rent evidence",
+          "reads": [
+            "channel",
+            "gross_rental_income",
+            "pitia",
+            "product_is_interest_only",
+            "interest_only_10_40",
+            "dscr_documentation_type"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "12"
+          ]
+        },
+        {
+          "job": "establish_qualifying_rent",
+          "section": "DSCR calculation, qualifying rent, and rent evidence",
+          "reads": [
+            "gross_rental_income",
+            "dscr_documentation_type",
+            "current_lease_in_place"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "11"
+          ]
+        },
+        {
+          "job": "resolve_recent_forbearance_or_mortgage_late_rent_condition",
+          "section": "DSCR calculation, qualifying rent, and rent evidence",
+          "reads": [
+            "housing_history",
+            "mortgage_history_0x30x24",
+            "reserves_months"
+          ],
+          "status": "not_computable",
+          "why": "The decision requires external Acra confirmation and rental-payment evidence and tenant-occupancy information beyond the listed reads.",
+          "missing": [
+            "Acra confirmation on whether \u00a75.32 applies and covers the case",
+            "tenant-occupancy status (for example, occupancy_subtype; not among the listed reads)",
+            "evidence of timely receipt of the prior two months\u2019 rental payments",
+            "Acra confirmation of the relationship to the 0x30x12 requirement"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "verify_current_lease_for_cash_out_refinance",
+          "section": "DSCR calculation, qualifying rent, and rent evidence",
+          "reads": [
+            "loan_purpose",
+            "current_lease_in_place"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "13"
+          ]
+        },
+        {
+          "job": "verify_rent_schedule_and_excessive_rent_support",
+          "section": "DSCR calculation, qualifying rent, and rent evidence",
+          "reads": [
+            "property_type",
+            "residential_unit_count",
+            "occupancy_subtype",
+            "dscr_documentation_type",
+            "current_lease_in_place"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields do not establish excessive rent, appraiser qualifications, the content of supporting documentation, or external Acra confirmation.",
+          "missing": [
+            "whether rent is excessive",
+            "appraiser identity and state licensure",
+            "whether area-typical rent support is provided and what it contains",
+            "Acra confirmation"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "verify_rider_and_rent_loss_insurance",
+          "section": "DSCR calculation, qualifying rent, and rent evidence",
+          "reads": [
+            "loan_purpose",
+            "property_type",
+            "residential_unit_count",
+            "occupancy_subtype"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields may identify covered loans, but do not establish rider execution or the content and adequacy of insurance coverage.",
+          "missing": [
+            "whether all borrowers executed the One- to Four-Family Rider with the loan documents",
+            "whether rent loss insurance coverage meeting \u00a723.40 is provided"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "apply_cltv_over_75_00_reserve_requirement",
+          "section": "Funds to close, gift funds, seasoning, and reserves",
+          "reads": [
+            "cltv_pct",
+            "reserves_months"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "36"
+          ]
+        },
+        {
+          "job": "apply_funds_to_close_seasoning_verification_trigger",
+          "section": "Funds to close, gift funds, seasoning, and reserves",
+          "reads": [
+            "cltv_pct",
+            "loan_purpose"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "25"
+          ]
+        },
+        {
+          "job": "apply_listed_for_sale_reserve_requirement",
+          "section": "Funds to close, gift funds, seasoning, and reserves",
+          "reads": [
+            "listed_for_sale_last_6_months",
+            "reserves_months"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields support a 24-month comparison, but deciding whether cash-in-hand may count requires information or judgment not captured by those fields.",
+          "missing": [
+            "cash-in-hand eligibility and consistency with the Guide"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "apply_rent_loss_insurance_reserve_requirement",
+          "section": "Funds to close, gift funds, seasoning, and reserves",
+          "reads": [],
+          "status": "not_computable",
+          "why": "reads no loan field"
+        },
+        {
+          "job": "apply_tenant_occupied_payment_history_reserve_trigger",
+          "section": "Funds to close, gift funds, seasoning, and reserves",
+          "reads": [],
+          "status": "not_computable",
+          "why": "reads no loan field"
+        },
+        {
+          "job": "check_minimum_funds_to_close_documentation",
+          "section": "Funds to close, gift funds, seasoning, and reserves",
+          "reads": [],
+          "status": "not_computable",
+          "why": "reads no loan field"
+        },
+        {
+          "job": "review_investment_property_gift_funds",
+          "section": "Funds to close, gift funds, seasoning, and reserves",
+          "reads": [
+            "occupancy_subtype"
+          ],
+          "status": "not_computable",
+          "why": "Occupancy subtype can identify the investment-property condition, but the listed fields cannot verify the contribution threshold or assess gift documentation against Appendix B.",
+          "missing": [
+            "applicant(s)' own contribution amount, source, and seasoning",
+            "purchase price",
+            "whether gift funds are used",
+            "gift documentation content",
+            "applicable Appendix B requirements"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "validate_loan_amount_and_amount_based_cltv_limit",
+          "section": "Funds to close, gift funds, seasoning, and reserves",
+          "reads": [
+            "loan_amount",
+            "cltv_pct"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "10",
+            "31",
+            "8"
+          ]
+        },
+        {
+          "job": "check_loan_amount_limits",
+          "section": "Loan amounts, FICO, and CLTV limits",
+          "reads": [
+            "loan_amount",
+            "delayed_financing"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "10",
+            "32",
+            "35",
+            "9"
+          ]
+        },
+        {
+          "job": "check_matrix_and_cltv_limits",
+          "section": "Loan amounts, FICO, and CLTV limits",
+          "reads": [
+            "fico",
+            "loan_purpose",
+            "cltv_pct",
+            "channel",
+            "loan_amount",
+            "property_type",
+            "residential_unit_count",
+            "product_is_interest_only",
+            "interest_only_10_40",
+            "listed_for_sale_last_6_months"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "10",
+            "29",
+            "31",
+            "5",
+            "9"
+          ]
+        },
+        {
+          "job": "establish_decisioning_fico",
+          "section": "Loan amounts, FICO, and CLTV limits",
+          "reads": [
+            "fico",
+            "credit_score_count",
+            "borrower_entity_type",
+            "tradelines_meet_requirement"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields cannot establish which borrower or guarantor\u2019s score applies under the selection rules.",
+          "missing": [
+            "Primary Wage Earner designation and middle score",
+            "Personal guarantors\u2019 middle scores",
+            "Guarantor ownership percentages and whether they are equal"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "apply_state_prepayment_restriction_triggers",
+          "section": "Prepayment penalties and state restrictions",
+          "reads": [
+            "property_state",
+            "residential_unit_count",
+            "borrower_entity_type",
+            "loan_amount",
+            "interest_rate",
+            "loan_purpose"
+          ],
+          "status": "not_computable",
+          "why": "Unit count and borrower_entity_type do not establish residential classification or the individual name in which a loan closes, both of which are required by the printed triggers.",
+          "missing": [
+            "Residential property classification (not just residential_unit_count)",
+            "Loan closing/vesting name or confirmation that the loan closes in an individual's name"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "review_prepayment_requirement_for_property_listed_for_sale",
+          "section": "Prepayment penalties and state restrictions",
+          "reads": [
+            "listed_for_sale_last_6_months",
+            "property_state",
+            "prepayment_penalty_requested"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "28"
+          ]
+        },
+        {
+          "job": "review_printed_prepayment_structures",
+          "section": "Prepayment penalties and state restrictions",
+          "reads": [
+            "prepayment_penalty_requested"
+          ],
+          "status": "not_computable",
+          "why": "The requested flag alone does not identify the selected structure, and validating a 4-year structure requires Acra confirmation.",
+          "missing": [
+            "selected prepayment structure",
+            "Acra confirmation for any 4-year structure"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "observe_unprinted_interest_only_minimums",
+          "section": "Products, ARM terms, and interest-only requirements",
+          "reads": [
+            "product_is_interest_only"
+          ],
+          "status": "not_computable",
+          "why": "The listed field identifies interest-only loans, but it cannot establish whether the Q-09 confirmation request has been noted.",
+          "missing": [
+            "Q-09 Acra confirmation-request status"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "review_interest_only_payment_terms",
+          "section": "Products, ARM terms, and interest-only requirements",
+          "reads": [
+            "product_is_interest_only"
+          ],
+          "status": "not_computable",
+          "why": "The listed field only indicates whether the product is interest-only; checking the mechanics and Note-based DSCR review requires payment terms and source-document content.",
+          "missing": [
+            "PLAT-9.6 mechanics",
+            "Note payment terms, including the first payment due",
+            "interest-only term, accrued-interest calculation, recast amount, and maturity/remaining term",
+            "DSCR denominator treatment, preserving Q-21 as unresolved"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "verify_arm_terms",
+          "section": "Products, ARM terms, and interest-only requirements",
+          "reads": [
+            "fico"
+          ],
+          "status": "not_computable",
+          "why": "FICO alone cannot establish whether the loan is a 5 Yr ARM or compare its index, caps, and margin.",
+          "missing": [
+            "product or ARM term",
+            "ARM index",
+            "ARM caps",
+            "ARM margin"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "verify_eligible_product",
+          "section": "Products, ARM terms, and interest-only requirements",
+          "reads": [],
+          "status": "not_computable",
+          "why": "reads no loan field"
+        },
+        {
+          "job": "verify_interest_only_limits",
+          "section": "Products, ARM terms, and interest-only requirements",
+          "reads": [
+            "product_is_interest_only",
+            "cltv_pct",
+            "property_currently_listed_for_sale"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "27"
+          ]
+        },
+        {
+          "job": "verify_business_purpose_attestation_when_applicable",
+          "section": "Program scope, occupancy, purpose, and qualification",
+          "reads": [],
+          "status": "not_computable",
+          "why": "reads no loan field"
+        },
+        {
+          "job": "verify_channel_dscr_minimum",
+          "section": "Program scope, occupancy, purpose, and qualification",
+          "reads": [
+            "channel",
+            "gross_rental_income",
+            "pitia"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "12",
+            "5"
+          ]
+        },
+        {
+          "job": "verify_dscr_transaction_and_investment_property_documentation",
+          "section": "Program scope, occupancy, purpose, and qualification",
+          "reads": [
+            "loan_purpose",
+            "residential_unit_count",
+            "property_type"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields cannot verify the required documents, insurance, or property-list contents.",
+          "missing": [
+            "DSCR transaction status and documentation types provided (including whether a 1007 or only a Form 1025 was provided)",
+            "One- to Four-Family Rider execution status",
+            "Rent loss insurance coverage status under \u00a723.40",
+            "Application or Schedule of Real Estate Owned contents"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "verify_loan_purpose_and_vacancy",
+          "section": "Program scope, occupancy, purpose, and qualification",
+          "reads": [
+            "loan_purpose",
+            "loan_amount",
+            "vacant_property",
+            "current_lease_in_place"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "33",
+            "34",
+            "35",
+            "7"
+          ]
+        },
+        {
+          "job": "verify_non_owner_occupancy",
+          "section": "Program scope, occupancy, purpose, and qualification",
+          "reads": [
+            "property_type",
+            "residential_unit_count",
+            "occupancy_subtype",
+            "current_lease_in_place"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "6"
+          ]
+        },
+        {
+          "job": "cash_out_lease_and_one_to_four_family_rider",
+          "section": "Property eligibility, location, and property-specific conditions",
+          "reads": [
+            "loan_purpose",
+            "dscr_documentation_type",
+            "current_lease_in_place",
+            "residential_unit_count",
+            "occupancy_subtype"
+          ],
+          "status": "not_computable",
+          "why": "The listed fields can support the lease check, but they do not show whether the required rider was executed with the loan documents.",
+          "missing": [
+            "One- to Four-Family Rider execution status or loan-document content"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "occupancy_and_vacancy_eligibility",
+          "section": "Property eligibility, location, and property-specific conditions",
+          "reads": [
+            "occupancy_subtype",
+            "vacant_property",
+            "property_type",
+            "residential_unit_count"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "23",
+            "33",
+            "34",
+            "40",
+            "6"
+          ]
+        },
+        {
+          "job": "property_listed_for_sale",
+          "section": "Property eligibility, location, and property-specific conditions",
+          "reads": [
+            "listed_for_sale_last_6_months",
+            "property_currently_listed_for_sale",
+            "occupancy_subtype",
+            "vacant_property",
+            "channel",
+            "reserves_months",
+            "product_is_interest_only",
+            "interest_only_10_40",
+            "prepayment_penalty_requested",
+            "property_value",
+            "cltv_pct",
+            "property_state",
+            "loan_purpose"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "29"
+          ]
+        },
+        {
+          "job": "property_location_and_declining_market",
+          "section": "Property eligibility, location, and property-specific conditions",
+          "reads": [
+            "property_state",
+            "cltv_pct"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "23",
+            "5"
+          ]
+        },
+        {
+          "job": "property_type_eligibility_and_cltv_limits",
+          "section": "Property eligibility, location, and property-specific conditions",
+          "reads": [
+            "property_type",
+            "cltv_pct",
+            "residential_unit_count",
+            "rural_property",
+            "mixed_use"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "22",
+            "23",
+            "29"
+          ]
+        },
+        {
+          "job": "rent_loss_insurance",
+          "section": "Property eligibility, location, and property-specific conditions",
+          "reads": [
+            "residential_unit_count",
+            "occupancy_subtype",
+            "cltv_pct",
+            "reserves_months"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "24"
+          ]
+        },
+        {
+          "job": "confirm_published_differences",
+          "section": "Published Platinum\u2013Standard differences",
+          "reads": [],
+          "status": "not_computable",
+          "why": "reads no loan field"
+        }
+      ],
+      "rule_rows": [
+        {
+          "rule": "10",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b611",
+          "reads": [
+            "loan_amount",
+            "delayed_financing",
+            "loan_purpose",
+            "fico",
+            "channel",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "check_matrix_and_cltv_limits",
+            "check_loan_amount_limits",
+            "validate_loan_amount_and_amount_based_cltv_limit",
+            "decisioning_credit_score"
+          ],
+          "note": "The rule implements the 75% loan-amount CLTV cap, the delayed-financing $1.5MM cap, and Correspondent 700\u2013719 CLTV limits. It covers only parts of those jobs: it omits other amount and matrix checks, and it applies a 55% cash-out limit at FICO 720 rather than leaving that treatment unsettled pending confirmation.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "check_matrix_and_cltv_limits",
+              0.592
+            ],
+            [
+              "check_loan_amount_limits",
+              0.45
+            ]
+          ]
+        },
+        {
+          "rule": "11",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b612",
+          "reads": [
+            "occupancy_subtype"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "establish_qualifying_rent"
+          ],
+          "note": "Checks only the exclusion of short-term rentals, which is one part of job 16.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "establish_qualifying_rent",
+              0.566
+            ],
+            [
+              "review_investment_property_gift_funds",
+              0.363
+            ]
+          ]
+        },
+        {
+          "rule": "12",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b613",
+          "reads": [
+            "channel",
+            "gross_rental_income",
+            "pitia"
+          ],
+          "relation": "duplicate",
+          "jobs": [
+            "calculate_dscr_and_apply_channel_minimum",
+            "verify_channel_dscr_minimum"
+          ],
+          "note": "The rule checks the channel-specific DSCR minimum stated in both jobs, but does not implement their other checks.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "calculate_dscr_and_apply_channel_minimum",
+              0.543
+            ],
+            [
+              "verify_channel_dscr_minimum",
+              0.479
+            ]
+          ]
+        },
+        {
+          "rule": "13",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b614",
+          "reads": [
+            "citizenship_type",
+            "first_time_homebuyer",
+            "loan_purpose",
+            "current_lease_in_place"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "verify_current_lease_for_cash_out_refinance",
+            "borrower_citizenship_and_first_time_homebuyer_eligibility",
+            "borrower_citizenship_eligibility",
+            "first_time_homebuyer_eligibility"
+          ],
+          "note": "The rule checks the cash-out lease requirement and the first-time homebuyer restriction. It accepts US citizens but rejects Permanent Residents rather than checking their required documentation, so the citizenship requirements are only partially implemented.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "verify_current_lease_for_cash_out_refinance",
+              0.457
+            ],
+            [
+              "borrower_citizenship_and_first_time_homebuyer_eligibility",
+              0.396
+            ]
+          ]
+        },
+        {
+          "rule": "14",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b615",
+          "reads": [
+            "citizenship_type",
+            "first_time_homebuyer"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "first_time_homebuyer_eligibility",
+            "borrower_citizenship_and_first_time_homebuyer_eligibility"
+          ],
+          "note": "The rule fully checks that the applicant is not a first-time homebuyer and checks the listed citizenship exclusions. It does not verify US-citizen or permanent-resident status or the required permanent-resident documents, so it only partially implements job 10.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "borrower_citizenship_and_first_time_homebuyer_eligibility",
+              0.749
+            ],
+            [
+              "borrower_citizenship_eligibility",
+              0.575
+            ]
+          ]
+        },
+        {
+          "rule": "21",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b67",
+          "reads": [
+            "housing_history"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "housing_history_and_previous_credit_events"
+          ],
+          "note": "Checks the printed \u201c0x30x12\u201d housing-history requirement, but not the previous-credit-event seasoning requirement.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "housing_history_and_previous_credit_events",
+              0.426
+            ],
+            [
+              "mortgage_and_rental_payment_history",
+              0.424
+            ]
+          ]
+        },
+        {
+          "rule": "22",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b68",
+          "reads": [
+            "property_type",
+            "rural_property",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "property_type_eligibility_and_cltv_limits"
+          ],
+          "note": "The rule applies the stated eligible types, rural-property exclusion, and 75% CLTV limit, but rejects all unlisted property types instead of treating them as not addressed.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "property_type_eligibility_and_cltv_limits",
+              0.475
+            ],
+            [
+              "property_location_and_declining_market",
+              0.291
+            ]
+          ]
+        },
+        {
+          "rule": "23",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b69",
+          "reads": [
+            "property_type",
+            "property_state",
+            "rural_property",
+            "vacant_property",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "property_location_and_declining_market",
+            "property_type_eligibility_and_cltv_limits",
+            "occupancy_and_vacancy_eligibility"
+          ],
+          "note": "The rule checks the excluded locations, property-type exclusions and stated CLTV caps, and rejects vacant properties. It does not apply the declining-market CLTV reduction, assess occupancy requirements, or preserve the not-addressed status of property types.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "property_location_and_declining_market",
+              0.543
+            ],
+            [
+              "property_type_eligibility_and_cltv_limits",
+              0.529
+            ]
+          ]
+        },
+        {
+          "rule": "24",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b610",
+          "reads": [
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "rent_loss_insurance"
+          ],
+          "note": "Checks only the stated \u226470% CLTV exemption from rent loss insurance.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "rent_loss_insurance",
+              0.488
+            ],
+            [
+              "property_listed_for_sale",
+              0.416
+            ]
+          ]
+        },
+        {
+          "rule": "25",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b611",
+          "reads": [
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "apply_funds_to_close_seasoning_verification_trigger"
+          ],
+          "note": "Checks only whether CLTV exceeds 70%; it does not evaluate the transaction type or the business-purpose funds-to-close condition in the seasoning-verification trigger.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "apply_funds_to_close_seasoning_verification_trigger",
+              0.702
+            ],
+            [
+              "check_minimum_funds_to_close_documentation",
+              0.544
+            ]
+          ]
+        },
+        {
+          "rule": "27",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b613",
+          "reads": [
+            "product_is_interest_only",
+            "cltv_pct",
+            "property_currently_listed_for_sale"
+          ],
+          "relation": "duplicate",
+          "jobs": [
+            "verify_interest_only_limits"
+          ],
+          "note": "The rule repeats both PLAT-9.3 and PLAT-9.5 checks in job 39.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "verify_interest_only_limits",
+              0.789
+            ],
+            [
+              "observe_unprinted_interest_only_minimums",
+              0.531
+            ]
+          ]
+        },
+        {
+          "rule": "28",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b614",
+          "reads": [
+            "listed_for_sale_last_6_months"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "review_prepayment_requirement_for_property_listed_for_sale"
+          ],
+          "note": "Checks the six-month listed-for-sale flag and identifies the three-year minimum, but cannot verify the requested penalty or state exception.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "apply_state_prepayment_restriction_triggers",
+              0.388
+            ],
+            [
+              "review_prepayment_requirement_for_property_listed_for_sale",
+              0.317
+            ]
+          ]
+        },
+        {
+          "rule": "29",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b615",
+          "reads": [
+            "channel",
+            "fico",
+            "loan_purpose",
+            "loan_amount",
+            "property_type",
+            "residential_unit_count",
+            "listed_for_sale_last_6_months",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "decisioning_credit_score",
+            "check_matrix_and_cltv_limits",
+            "property_listed_for_sale",
+            "property_type_eligibility_and_cltv_limits"
+          ],
+          "note": "Implements the stated FICO-band and Correspondent CLTV caps, plus applicable CLTV caps for loan amount, property type, and listed-for-sale status. It does not cover every requirement in these jobs, such as decisioning-score selection, the exact-720 confirmation, property eligibility determinations, or the full listed-for-sale test.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "check_matrix_and_cltv_limits",
+              0.472
+            ],
+            [
+              "property_type_eligibility_and_cltv_limits",
+              0.217
+            ]
+          ]
+        },
+        {
+          "rule": "31",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b617",
+          "reads": [
+            "loan_amount",
+            "fico",
+            "cltv_pct",
+            "loan_purpose",
+            "channel"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "check_matrix_and_cltv_limits",
+            "validate_loan_amount_and_amount_based_cltv_limit",
+            "decisioning_credit_score"
+          ],
+          "note": "Implements the FICO floor, purpose-based CLTV limits, amount-triggered 75% cap, and Correspondent 700\u2013719 CLTV restriction. It does not implement the full decisioning-score selection or all amount and CLTV requirements in those jobs.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "confirm_published_differences",
+              0.458
+            ],
+            [
+              "check_matrix_and_cltv_limits",
+              0.32
+            ]
+          ]
+        },
+        {
+          "rule": "32",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b618",
+          "reads": [
+            "delayed_financing",
+            "loan_amount"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "check_loan_amount_limits"
+          ],
+          "note": "Checks the $1.5MM delayed-financing loan cap, which is one part of job 29.",
+          "numbers_not_in_clause": [
+            "1500000"
+          ],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "check_loan_amount_limits",
+              0.391
+            ],
+            [
+              "verify_eligible_product",
+              0.23
+            ]
+          ]
+        },
+        {
+          "rule": "33",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b619",
+          "reads": [
+            "vacant_property"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "occupancy_and_vacancy_eligibility",
+            "verify_loan_purpose_and_vacancy"
+          ],
+          "note": "Checks the not-vacant requirement, which is one check in each listed job.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "occupancy_and_vacancy_eligibility",
+              0.222
+            ],
+            [
+              "verify_loan_purpose_and_vacancy",
+              0.21
+            ]
+          ]
+        },
+        {
+          "rule": "34",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b620",
+          "reads": [
+            "vacant_property"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "occupancy_and_vacancy_eligibility",
+            "verify_loan_purpose_and_vacancy"
+          ],
+          "note": "Checks only that the property is not vacant, which is one check within each job.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "occupancy_and_vacancy_eligibility",
+              0.183
+            ],
+            [
+              "verify_loan_purpose_and_vacancy",
+              0.158
+            ]
+          ]
+        },
+        {
+          "rule": "35",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b621",
+          "reads": [
+            "delayed_financing",
+            "loan_amount"
+          ],
+          "relation": "duplicate",
+          "jobs": [
+            "check_loan_amount_limits",
+            "verify_loan_purpose_and_vacancy"
+          ],
+          "note": "Repeats the delayed-financing $1.5MM loan-amount cap check stated in both jobs.",
+          "numbers_not_in_clause": [
+            "1500000"
+          ],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "check_loan_amount_limits",
+              0.454
+            ],
+            [
+              "establish_qualifying_rent",
+              0.282
+            ]
+          ]
+        },
+        {
+          "rule": "36",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b622",
+          "reads": [
+            "cltv_pct",
+            "reserves_months"
+          ],
+          "relation": "duplicate",
+          "jobs": [
+            "apply_cltv_over_75_00_reserve_requirement"
+          ],
+          "note": "The rule repeats the six-month reserves check for CLTV above 75.00%.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "apply_cltv_over_75_00_reserve_requirement",
+              0.517
+            ],
+            [
+              "property_location_and_declining_market",
+              0.303
+            ]
+          ]
+        },
+        {
+          "rule": "40",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b626",
+          "reads": [
+            "citizenship_type",
+            "first_time_homebuyer",
+            "vacant_property",
+            "occupancy_subtype"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "borrower_citizenship_and_first_time_homebuyer_eligibility",
+            "borrower_citizenship_eligibility",
+            "first_time_homebuyer_eligibility",
+            "occupancy_and_vacancy_eligibility"
+          ],
+          "note": "The rule checks eligible citizenship status, non-first-time-homebuyer status, and non-vacancy, but omits other requirements in those jobs. The Short-Term Rental exclusion is not stated in the listed jobs.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "borrower_citizenship_and_first_time_homebuyer_eligibility",
+              0.335
+            ],
+            [
+              "borrower_citizenship_eligibility",
+              0.268
+            ]
+          ]
+        },
+        {
+          "rule": "5",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b66",
+          "reads": [
+            "loan_amount",
+            "fico",
+            "loan_purpose",
+            "cltv_pct",
+            "channel",
+            "pitia",
+            "gross_rental_income",
+            "citizenship_type",
+            "property_type",
+            "property_state"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "check_matrix_and_cltv_limits",
+            "verify_channel_dscr_minimum",
+            "property_location_and_declining_market"
+          ],
+          "note": "Implements the stated CLTV caps for FICO 730+, channel-specific minimum DSCR, and location exclusions. It does not implement the other checks described in those jobs.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "verify_eligible_product",
+              0.341
+            ],
+            [
+              "check_matrix_and_cltv_limits",
+              0.275
+            ]
+          ]
+        },
+        {
+          "rule": "6",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b67",
+          "reads": [
+            "occupancy_subtype"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "verify_non_owner_occupancy",
+            "occupancy_and_vacancy_eligibility"
+          ],
+          "note": "Checks the Non-Owner Occupied condition in both jobs, but not their other requirements.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "review_investment_property_gift_funds",
+              0.413
+            ],
+            [
+              "verify_non_owner_occupancy",
+              0.281
+            ]
+          ]
+        },
+        {
+          "rule": "7",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b68",
+          "reads": [
+            "loan_purpose",
+            "channel",
+            "vacant_property",
+            "current_lease_in_place",
+            "loan_amount",
+            "pitia",
+            "gross_rental_income"
+          ],
+          "relation": "duplicate",
+          "jobs": [
+            "verify_loan_purpose_and_vacancy"
+          ],
+          "note": "Repeats job 43\u2019s purpose, vacancy, delayed-financing cap, and cash-out lease checks. The channel-specific DSCR thresholds are not stated by any listed job.",
+          "numbers_not_in_clause": [
+            "1500000"
+          ],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "verify_loan_purpose_and_vacancy",
+              0.684
+            ],
+            [
+              "occupancy_and_vacancy_eligibility",
+              0.517
+            ]
+          ]
+        },
+        {
+          "rule": "8",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b69",
+          "reads": [
+            "loan_amount",
+            "cltv_pct"
+          ],
+          "relation": "duplicate",
+          "jobs": [
+            "validate_loan_amount_and_amount_based_cltv_limit"
+          ],
+          "note": "The rule duplicates job 28: it enforces the loan amount minimum, maximum, and $50 increments, plus the 75% CLTV cap for amounts below $350,000 or above $1,500,000.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "validate_loan_amount_and_amount_based_cltv_limit",
+              0.497
+            ],
+            [
+              "verify_rider_and_rent_loss_insurance",
+              0.464
+            ]
+          ]
+        },
+        {
+          "rule": "9",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b610",
+          "reads": [
+            "loan_amount",
+            "fico",
+            "loan_purpose",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "check_matrix_and_cltv_limits",
+            "check_loan_amount_limits"
+          ],
+          "note": "The rule applies the matrix CLTV limits, but it treats exactly 720 as settled under the 700 row, contrary to job 30\u2019s confirmation requirement, and omits that job\u2019s other stated caps. It also checks only the $2,000,000 upper loan-amount bound from job 29, not the minimum, $50 increments, or delayed-financing limit.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "check_matrix_and_cltv_limits",
+              0.406
+            ],
+            [
+              "validate_loan_amount_and_amount_based_cltv_limit",
+              0.376
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "cost": {
+    "calls": 98,
+    "input_tokens": 100950,
+    "output_tokens": 6625,
+    "cost_usd": 0.0283,
+    "cost_is_upper_bound": false,
+    "budget_usd": 5.0,
+    "stopped_on_budget": false
+  },
+  "failed_segments": [
+    {
+      "run": "fa8c8374 python platinum",
+      "segment": "Section 3.12 \u00b62",
+      "reason": "Not reproduced when re-run alone (it extracted, or the sectioning named it differently). The run record keeps only the name. Both runs overlapped OpenAI's 429 limit (10 RateLimitErrors, 3 calls failed after their retries in each), so the cause is most likely the rate limit; unverified.",
+      "representation": "python"
+    },
+    {
+      "run": "fa8c8374 python platinum",
+      "segment": "Section 3.12 \u00b63",
+      "reason": "Not reproduced when re-run alone (it extracted, or the sectioning named it differently). The run record keeps only the name. Both runs overlapped OpenAI's 429 limit (10 RateLimitErrors, 3 calls failed after their retries in each), so the cause is most likely the rate limit; unverified.",
+      "representation": "python"
+    },
+    {
+      "run": "fa8c8374 python platinum",
+      "segment": "Section 3.12 \u00b64",
+      "reason": "Not reproduced when re-run alone (it extracted, or the sectioning named it differently). The run record keeps only the name. Both runs overlapped OpenAI's 429 limit (10 RateLimitErrors, 3 calls failed after their retries in each), so the cause is most likely the rate limit; unverified.",
+      "representation": "python"
+    },
+    {
+      "run": "230d1542 jtbd standard",
+      "segment": "Products, interest-only terms and subordinate financing",
+      "reason": "Not reproduced when re-run alone (it extracted, or the sectioning named it differently). The run record keeps only the name. Both runs overlapped OpenAI's 429 limit (10 RateLimitErrors, 3 calls failed after their retries in each), so the cause is most likely the rate limit; unverified.",
+      "representation": "jtbd"
+    },
+    {
+      "run": "230d1542 jtbd standard",
+      "segment": "Prepayment penalty structures and state restrictions",
+      "reason": "Not reproduced when re-run alone (it extracted, or the sectioning named it differently). The run record keeps only the name. Both runs overlapped OpenAI's 429 limit (10 RateLimitErrors, 3 calls failed after their retries in each), so the cause is most likely the rate limit; unverified.",
+      "representation": "jtbd"
+    },
+    {
+      "run": "230d1542 jtbd standard",
+      "segment": "Cross-feature CLTV caps, adjustments and minimum FICO reference",
+      "reason": "Not reproduced when re-run alone (it extracted, or the sectioning named it differently). The run record keeps only the name. Both runs overlapped OpenAI's 429 limit (10 RateLimitErrors, 3 calls failed after their retries in each), so the cause is most likely the rate limit; unverified.",
+      "representation": "jtbd"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "run": "fa8c8374 python platinum",
+    "segment": "Section 3.12 \u00b62",
+    "reason": "not reproduced: it extracted this time",
+    "chars": 1646,
+    "representation": "python"
+  },
+  {
+    "run": "fa8c8374 python platinum",
+    "segment": "Section 3.12 \u00b63",
+    "reason": "not reproduced: it extracted this time",
+    "chars": 1870,
+    "representation": "python"
+  },
+  {
+    "run": "fa8c8374 python platinum",
+    "segment": "Section 3.12 \u00b64",
+    "reason": "not reproduced: it extracted this time",
+    "chars": 1495,
+    "representation": "python"
+  },
+  {
+    "run": "230d1542 jtbd standard",
+    "segment": "Products, interest-only terms and subordinate financing",
+    "reason": "not reproduced: the sectioning named it differently this time",
+    "representation": "jtbd"
+  },
+  {
+    "run": "230d1542 jtbd standard",
+    "segment": "Prepayment penalty structures and state restrictions",
+    "reason": "not reproduced: it extracted this time",
+    "chars": 2571,
+    "representation": "jtbd"
+  },
+  {
+    "run": "230d1542 jtbd standard",
+    "segment": "Cross-feature CLTV caps, adjustments and minimum FICO reference",
+    "reason": "not reproduced: the sectioning named it differently this time",
+    "representation": "jtbd"
+  }
+]
