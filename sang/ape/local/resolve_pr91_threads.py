@@ -19,23 +19,23 @@ OWNER, REPO, PR = "JazzX-LLC", "japes", 91
 # (path, phrase in the first comment, reply). First match wins.
 RULES = [
     ("plato/api/pack_review.py", "fails open",
-     "Fixed in 23874a8b for a strict posture: a review nobody owns (no submitter and no draft "
+     "Fixed for the next release (v2.6.2), for a strict posture: a review nobody owns (no submitter and no draft "
      "creator on record) is refused with a 403 instead of being open to any author. A relaxed "
      "posture still allows it by decision: review gating is optional locally, and a draft made "
      "without identity has nobody to check against. "
      "`test_resubmitting_a_review_nobody_owns_is_refused_in_a_strict_posture` and its relaxed "
      "twin pin both."),
     ("jazzx_sdk/pack/review_db.py", "decision_note",
-     "Fixed in 23874a8b: a resubmit clears `decision_note` with `decided_by` and `decided_at`, so "
+     "Fixed for the next release (v2.6.2): a resubmit clears `decision_note` with `decided_by` and `decided_at`, so "
      "the next reviewer never sees the previous reviewer's note under no author."),
     ("plato/api/stats.py", "truncated",
-     "Fixed in 5aeade22, at the query rather than the flag: `TurnRunStore.active(input_equals=)` "
+     "Fixed for the next release (v2.6.2), at the query rather than the flag: `TurnRunStore.active(input_equals=)` "
      "selects the tenant's runs before the limit (a JSON-path filter on Postgres and sqlite), so "
      "another tenant's backlog neither crowds this tenant's runs out of the report nor marks it "
      "truncated, and `truncated` is about this tenant's own count. This route is the only caller "
      "of `active`; `cost-stats` reads a per-tenant store already."),
     ("jazzx_sdk/pack/review.py", "Lossy decode",
-     "Fixed in 23874a8b: the digest decodes with `surrogateescape`, which is reversible, so two "
+     "Fixed for the next release (v2.6.2): the digest decodes with `surrogateescape`, which is reversible, so two "
      "files that differ only in non-UTF-8 bytes digest differently. A review approved before this "
      "of a draft holding non-UTF-8 bytes no longer matches and must be resubmitted (409 "
      "`review_stale` until then); noted in the CHANGELOG."),
@@ -47,21 +47,21 @@ RULES = [
      "`lock_timeout` on the migration connection; the three-step backfill would add risk for no "
      "gain here."),
     ("jazzx_sdk/server/eval_api.py", "dict(response.usage)",
-     "Fixed in 5aeade22: `dict(response.usage) if response.usage else None`, as the session "
+     "Fixed for the next release (v2.6.2): `dict(response.usage) if response.usage else None`, as the session "
      "invoker already did. It is the only `dict(<x>.usage)` of an optional value in `jazzx_sdk`, "
      "`plato` and the client; the test runs usage `None`, `{}` and a real value and raises "
      "`TypeError` on the old line."),
     ("jazzx_plato_client/_feedback.py", "Boolean query",
      "Not a defect: httpx writes a bool query value as `true`/`false` (`httpx.QueryParams("
-     "{'a': True})` is `a=true`), so no `_query` copy needs to lowercase it. A test (5aeade22) "
+     "{'a': True})` is `a=true`), so no `_query` copy needs to lowercase it. A test "
      "holds the wire format for the feedback and eval mixins and a stream, so a change of "
      "transport would be caught."),
     ("jazzx_sdk/evaluation/adjudication_scorers.py", "KeyError",
-     "Fixed in 5aeade22: both reads go through `_votes_by_status`, which returns no votes for a "
+     "Fixed for the next release (v2.6.2): both reads go through `_votes_by_status`, which returns no votes for a "
      "tally with no `split` (or a non-mapping one), read as unanimous. The tally carries `split` "
      "today; this covers runs stored before it did and hand-written ones."),
     ("plato/api/pack_review.py", "Self-approval guard",
-     "Fixed in 5aeade22 for a strict posture, at the cause: submitting, deciding, closing and "
+     "Fixed for the next release (v2.6.2), for a strict posture, at the cause: submitting, deciding, closing and "
      "resubmitting a review, and commenting or triaging, need a caller user id (401), so the "
      "self-approval check and the audit trail always have an identity. Locally nothing changes: "
      "self-approval is allowed there by default, and with it explicitly off an anonymous caller "
