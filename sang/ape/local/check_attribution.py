@@ -29,7 +29,7 @@ CHECKED_SUFFIXES = {".py", ".yml", ".yaml", ".sh", ".toml", ".md"}
 
 # Content another repo owns, copied in unchanged: it carries its owner's headers, not ours, and an
 # edit here would make the next sync a conflict. Still checked for AI markers.
-VENDORED = ("plato/data/seed_packs/acra_dscr_policy/",)
+VENDORED = ("plato/data/seed_packs/acra_dscr_policy/", "tests/data/packs/")
 
 # Anything implying the work was machine-generated. Checked case-insensitively over the whole file.
 AI_MARKERS = re.compile(
