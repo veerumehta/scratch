@@ -96,9 +96,13 @@ documents are not kept), so it cannot recover from a bad excerpt.
 ## Merge gating
 
 `PLATO_REQUIRE_TRIAL` (default on when deployed, off locally): `merge-rules` refuses a proposal no
-completed trial judged at its current content digest (409 naming them), and a merged rule records
-`domain_extensions.trial_ref = {trial_id, passed, cases, indeterminate}`. A changed or re-extracted
-proposal has a new digest, so its old trial no longer counts.
+completed trial judged at its current content digest, or whose trial did not pass (409 naming them).
+Acceptance is baseline-pinned: `trial_ref` passes when no case fails that did not fail in the trial
+of the proposal it repairs (`derived_from`; none means an empty baseline), and a repair, which
+records the cases that failed before it (`Proposal.repair_cases`, taken from the trial it answers
+and required: a repair with no failing case is refused), passes at least one of them. A merged rule
+records `domain_extensions.trial_ref = {trial_id, passed, cases, indeterminate, new_failures, fixed,
+baseline}`. A changed or re-extracted proposal has a new digest, so its old trial no longer counts.
 
 ## The executor on Linux
 
