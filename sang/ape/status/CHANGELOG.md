@@ -4,6 +4,14 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 ## [2.6.2] - unreleased
 
+- **Review fixes over the trial, library and fix work.** A figure, date or other value with digits
+  is grounded by a quote only when it appears in the quote (a category or yes/no still needs only a
+  real quote), a document read's page comes from the locator the ingest step records, superseding a
+  proposal no longer rewrites who decided it (`ProposalStore.annotate`), a fix's re-trial takes the
+  reviewer role before anything is filed, library use is read from a rule's imports (any form) at the
+  extractor, lint and re-test, a rule returning nothing is withheld as such rather than as missing
+  evidence, gold keyed by a proposal's root id still applies to its fixes, an unknown proposal's trial
+  is a 404, and `/info` reports python rules as unchecked where nothing asked for an executor.
 - **Generated rules are trialled before they merge, and written against a helper library.**
   *Trial.* `rule_trial` is an eval entity (`jazzx_sdk.pack.rule_trial`): a case's documents are read by
   the pack's own `document_ingest` step and its record assessed with a set of unmerged proposals
