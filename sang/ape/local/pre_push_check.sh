@@ -202,6 +202,25 @@ else
     [[ -z "$actionable$unpatched" ]] && echo "  ok  no open Dependabot alerts"
 fi
 
+# ── 2d. models the providers serve that we do not track ───────────────────────
+# One cheap list call per provider (about two seconds, cached for a day), never a failure: no key,
+# no network or a provider error is "not checked". On a terminal it offers to ignore what it
+# found. The price diff (`scripts/update_model_pricing.py`) takes about a minute, so it is not run
+# here: this only reminds when it has not been run for a week.
+say "2d/4  models the providers serve that model_data.json does not track"
+if [[ "${JAPES_SKIP_MODEL_CHECK:-}" == "1" ]]; then
+    echo "  --  skipped (JAPES_SKIP_MODEL_CHECK=1)"
+else
+    model_started=$(date +%s)
+    python scripts/check_new_models.py --cache "$STAMP_DIR/models-cache.json" || echo "  --  model check failed to run (ignored)"
+    echo "  ($(( $(date +%s) - model_started ))s)"
+    price_stamp="$STAMP_DIR/price-diff-last-run"
+    if [[ ! -f "$price_stamp" || -n "$(find "$price_stamp" -mtime +7 2>/dev/null)" ]]; then
+        echo "  --  prices not compared against the vendors' pages for over a week:"
+        echo "      python scripts/update_model_pricing.py && touch \"$price_stamp\""
+    fi
+fi
+
 # ── 3. the suite ──────────────────────────────────────────────────────────────
 # `JAPES_SKIP_SUITE=1` keeps the review, which `--quick` does not: the review is the step that
 # catches what a green suite does not, and the suite is the slow one. Symmetric with the

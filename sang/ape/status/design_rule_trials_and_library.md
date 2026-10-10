@@ -127,5 +127,7 @@ through the catalog. 35 of 51 generated rules were inert. Reads now arrive as `i
 - No per-rule gold exists yet for DSCR: the baseline can only say the decision-level gold is contradicted.
 - A quote-grounded document field proves the quoted words exist, not that they support the value
   (`TODO(quote-not-checked-against-value)`).
-- The before/after of regenerating the 51 with the library prompt is not measured (needs a model-spend
-  ceiling from the user).
+- Regenerating the 51 with the library prompt was measured (`ape/local/mining/r1_before_after.md`, $0.04):
+  violations 46% -> 15%, 17 of the 21 always-violating rules fixed; the clean_pass and band_boundary
+  decision flips remain, from rules that state a conditional requirement without its condition. Scope
+  (applicability) is what per-rule gold and the fix loop address, not the library.
