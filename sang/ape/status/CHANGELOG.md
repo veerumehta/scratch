@@ -4,6 +4,103 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 ## [2.6.2] - unreleased
 
+- **Reference without gold, and acceptance pinned to a baseline.** `jazzx_sdk.evaluation.silver`
+  builds a reference when no one has labelled the cases: where two systems agree the case is
+  `silver_consensus`, where they disagree a blinded judge panel decides (`silver_adjudicated`) or the
+  case is `unresolved` and left out, and the reference is frozen (digest, version, train / validation /
+  holdout manifests) before any candidate is generated. A candidate is accepted on net known gain
+  (fixes minus regressions over the known results) with no consensus regression. Keyed by (case, rule),
+  so it serves rule trials as well as a single metric. A rule proposal or a repair is accepted only
+  with no new failure over a pinned baseline (`trial_ref` gains `baseline`, `new_failures`, `fixed`,
+  `repair_cases`), and `fix_proposal` refuses a repair that carries no failing-before case it then
+  passes (+586 / -39 lines, 9 files).
+
+- **Extraction proxies that need no ground truth.** A quote is bound to its value and to the page
+  it is on: `supported`, `contradicted` or `unverified` by a normalised comparison of the value with the
+  quote's tokens, units and sign (a checkbox mark excluded), closing the quote-not-checked item.
+  `jazzx_sdk.pack.demand` derives what the pack's rules demand of documents (from the fields they
+  read, not a hand table) and accounts for each field with a reason: `label_present_not_read`,
+  `low_confidence`, `ambiguous`, `unmapped`, `not_in_documents`, `no_documents`. A focused read, one
+  cheap call per document, fills only the demanded gaps and records every disagreement with the first
+  read without overwriting it (+617 / -35 lines, 10 files).
+
+- **Run health is a layer.** `HealthSignal` (critical, warn, info) carries evidence; stage-end checks
+  derive signals (zero model calls where one was expected, budget starvation); a final gate is
+  `PASS`, `PASS_WITH_WARNINGS`, `RETRYABLE` or `FAIL`, where a critical signal fails the run and
+  `RETRYABLE` is never final. Case runs and experiments report it beside their status, and the runs
+  page shows it (+249 / -10 lines, 6 files).
+
+- **Lint fixes that refuse rather than guess, as review comments.** Fixers are pure and guarded: a
+  file is written only if it parses before and after, only the fixer's declared fields changed, and a
+  re-lint shows fewer findings of that code and no more of any other; otherwise the whole file is
+  refused. Findings become pack comments anchored to the policy (not an array index), triage is
+  carried by anchor, readiness (gating "send for review") is separate from advisory findings,
+  duplicates fold, a pack's `lint_filters.yaml` retires a rule or marks false positives, and an
+  unchanged policy is not linted again (content memo) (+1067 / -22 lines, 7 files).
+
+- **Judge answers are remembered, spend has a ceiling, matching is many to many.** `CachedJudge`
+  keys each answer by the SHA-256 of model, scope and prompt, so a replay makes no call; `SpendCap`
+  reserves before a call and settles after, and stops before a call it cannot afford. The pair matcher
+  returns `missed` and `unrequested` buckets instead of forcing a one-to-one pairing. Table
+  `japes_judge_cache`, migration 0026 (+628 / -6 lines, 8 files).
+
+- **Guidelines are versioned, content-digested artifacts.** Per tenant, `G1`, `G2` ... are immutable
+  and digested; a diff reports changed sections by markdown heading; a version can be withdrawn only
+  if it is the latest published of its set and no live pack version is certified against it. A pack
+  manifest pins `guidelines: {set, version, digest}`, checked at publish (422 `guideline_pin`).
+  Extraction can run from a version (documents named `<path>@G<n>`) and re-extract only what changed;
+  proposals from a changed or removed file are marked stale. The packs page has a Guidelines section
+  and proposal cards show the version and a stale badge. A draft that depends on a version does not
+  block its withdrawal yet (+1438 / -9 lines, 20 files).
+
+- **Chat runtime: names, status, titles, typed errors.** `ChatTurn.display_names` rewrites internal
+  names in streamed text and in the final answer, whole words and longest first, correct when a name
+  is split across chunks (`jazzx_sdk.util.stream_rewrite`). `ChatTurn.activity` (an `ActivityTracker`
+  and a `StatusVocabulary`) publishes a `StatusEvent` per stage (started, finished, failed, with its
+  lane: check, retrieve, reason, compose, record, and its time) and puts a compact summary in
+  `ChatRun.diagnostics["activity"]`. `ChatStageError(ChatError(...))` lets a stage fail the turn with a
+  chosen code, message and retryability. `ChatTurn.persona_suffix` appends to one turn's instructions
+  and is recorded in provenance. `pipelines.titles.title_conversation` names a conversation once from
+  its first exchange and never raises. `decode_security_context` and `get_current_user_subject` keep a
+  non-UUID subject as given. `llm.cost.assert_models_priced` names every unpriced model. The agent emits
+  a `<agent>:guidance` span saying why guidance was or was not applied (`applied`, `no_match`,
+  `inactive`, `retrieval_failed`, `no_guidance_store`), and `list_static_feedback` asks for approved
+  feedback only and drops an item that states another status or entity (+852 / -33 lines, 18 files).
+
+- **Comparisons: McNemar, export, paths.** An experiment comparison carries the exact McNemar p-value of
+  `fixed` against `broke`, exports as a cases CSV or a deterministic ZIP (summary, cases, scorers), and a
+  new path comparison reports the steps each paired case ran: edit distance, alignment, where the
+  paths part, per-step timing, the distinct paths with their shares, and a definition diff of two
+  pipelines. CSV cells that would run as formulas are written as text, in these exports and in the
+  feedback export (+692 / -16 lines, 15 files).
+
+- **Scorers and datasets.** A `classification` scorer separates a wrong class from an invented one
+  (`unknown_label`) and skips a case with no expected label; a failure stored on an experiment, an
+  optimization job, a feedback record or a candidate is redacted and bounded. Dataset cases import and
+  export as CSV (`POST /eval/datasets/import-csv` names every bad row and creates nothing unless all
+  are good; a row without an id is named from its content, so a second import makes the same cases;
+  `GET .../{id}/export`), and a dataset can be mirrored into MLflow best effort, one way
+  (`MirroringDatasetStore`) (+442 / -12 lines, 13 files).
+
+- **Prompt searches.** An optimization job names its search: `reflective` (built in), or `gepa` and
+  `meta_prompt` when `PLATO_OPTIMIZER_REFLECTION_MODEL` is set, run through MLflow's optimizers while
+  japes scores every candidate with its own predict function and scorer and picks the better of the
+  returned prompt and the seed; `target_score`, `patience` and `max_candidates` stop the backend. Those
+  searches call their provider through MLflow, outside the SDK's metering and caps. A fix ledger over
+  an entity's jobs (`GET /eval/optimizations/ledger`) sets each job's hoped-for lift against what it
+  gained and lists the prompts that did not help; a new search is told them and drops them if proposed
+  again (`use_history`). A winning prompt that drops the current prompt's front matter or headings is
+  refused at apply (409) unless `allow_structure_change`, and the proposer drops such proposals
+  (+809 / -15 lines, 13 files).
+
+- **An agent judge.** `AgentJudgeScorer` lets a judge model call tools before its verdict: tools are an
+  allow-list, `max_steps` bounds the model calls (the last is a forced verdict), output is cut, a tool
+  that raises tells the judge, and a case it could not decide is returned skipped rather than as a 0.
+  Tools are `call_scorer` (a named subset of the built-in scorers; never another judge) and
+  `judge_with_rubric` (a one-shot judge, which may be cached and capped). Authors declare one as a
+  custom scorer of kind `agent_judge` (guidelines, tools, max steps), also on the scorers page
+  (+448 / -3 lines, 5 files).
+
 - **Review fixes over the trial, library and fix work.** A figure, date or other value with digits
   is grounded by a quote only when it appears in the quote (a category or yes/no still needs only a
   real quote), a document read's page comes from the locator the ingest step records, superseding a
