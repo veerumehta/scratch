@@ -1,0 +1,1681 @@
+[
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 6,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 6,
+  "soft_reads": 0,
+  "returns": {
+   "False": 4,
+   "True": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Lt": 1,
+   "Gt": 5,
+   "Eq": 4,
+   "LtE": 2
+  },
+  "membership": 0,
+  "cases": 16,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 16,
+   "boundary_misses": 0
+  },
+  "source_lines": 27
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 1,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 1,
+  "soft_reads": 0,
+  "returns": {
+   "Compare": 1
+  },
+  "none_guards": 0,
+  "normalizers": {
+   "lower": 1,
+   "strip": 1
+  },
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "NotIn": 1
+  },
+  "membership": 1,
+  "cases": 2,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 2,
+   "boundary_misses": 0
+  },
+  "source_lines": 5
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 3,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 3,
+  "soft_reads": 0,
+  "returns": {
+   "False": 1,
+   "BoolOp": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Eq": 2,
+   "Gt": 1,
+   "GtE": 1
+  },
+  "membership": 0,
+  "cases": 4,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 4,
+   "boundary_misses": 0
+  },
+  "source_lines": 13
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 4,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 4,
+  "soft_reads": 0,
+  "returns": {
+   "False": 2,
+   "True": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "NotEq": 1,
+   "Eq": 1
+  },
+  "membership": 0,
+  "cases": 6,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 6,
+   "boundary_misses": 0
+  },
+  "source_lines": 13
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 2,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 2,
+  "soft_reads": 0,
+  "returns": {
+   "BoolOp": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "NotIn": 1
+  },
+  "membership": 1,
+  "cases": 6,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 6,
+   "boundary_misses": 0
+  },
+  "source_lines": 10
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 1,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 1,
+  "soft_reads": 0,
+  "returns": {
+   "Compare": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Eq": 1
+  },
+  "membership": 0,
+  "cases": 2,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 2,
+   "boundary_misses": 0
+  },
+  "source_lines": 3
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 3,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 3,
+  "soft_reads": 0,
+  "returns": {
+   "False": 2,
+   "True": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "NotIn": 1,
+   "In": 1,
+   "Gt": 1
+  },
+  "membership": 2,
+  "cases": 7,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 7,
+   "boundary_misses": 0
+  },
+  "source_lines": 18
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 5,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 5,
+  "soft_reads": 0,
+  "returns": {
+   "False": 3,
+   "Compare": 1,
+   "True": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "In": 3,
+   "LtE": 1
+  },
+  "membership": 3,
+  "cases": 10,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 10,
+   "boundary_misses": 0
+  },
+  "source_lines": 20
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 1,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 1,
+  "soft_reads": 0,
+  "returns": {
+   "Compare": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "LtE": 1
+  },
+  "membership": 0,
+  "cases": 2,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 2,
+   "boundary_misses": 0
+  },
+  "source_lines": 3
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 1,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 1,
+  "soft_reads": 0,
+  "returns": {
+   "False": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Gt": 1
+  },
+  "membership": 0,
+  "cases": 2,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 2,
+   "boundary_misses": 0
+  },
+  "source_lines": 6
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 3,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 3,
+  "soft_reads": 0,
+  "returns": {
+   "BoolOp": 1,
+   "True": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "LtE": 1
+  },
+  "membership": 0,
+  "cases": 4,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 4,
+   "boundary_misses": 0
+  },
+  "source_lines": 4
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 1,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 1,
+  "soft_reads": 0,
+  "returns": {
+   "False": 1,
+   "True": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {},
+  "membership": 0,
+  "cases": 2,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 2,
+   "boundary_misses": 0
+  },
+  "source_lines": 11
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 8,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 8,
+  "soft_reads": 0,
+  "returns": {
+   "Name": 1
+  },
+  "none_guards": 1,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Eq": 4,
+   "In": 2,
+   "GtE": 1,
+   "LtE": 7,
+   "Lt": 1,
+   "Gt": 1,
+   "Is": 1
+  },
+  "membership": 2,
+  "cases": 22,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 22,
+   "boundary_misses": 0
+  },
+  "source_lines": 45
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 5,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 5,
+  "soft_reads": 0,
+  "returns": {
+   "False": 2,
+   "Compare": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Gt": 2,
+   "Lt": 2,
+   "NotIn": 1,
+   "Eq": 1,
+   "LtE": 3
+  },
+  "membership": 1,
+  "cases": 17,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 17,
+   "boundary_misses": 0
+  },
+  "source_lines": 25
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 2,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 2,
+  "soft_reads": 0,
+  "returns": {
+   "Name": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "LtE": 1
+  },
+  "membership": 0,
+  "cases": 4,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 4,
+   "boundary_misses": 0
+  },
+  "source_lines": 9
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 1,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 1,
+  "soft_reads": 0,
+  "returns": {
+   "UnaryOp": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {},
+  "membership": 0,
+  "cases": 2,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 2,
+   "boundary_misses": 0
+  },
+  "source_lines": 2
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 1,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 1,
+  "soft_reads": 0,
+  "returns": {
+   "UnaryOp": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {},
+  "membership": 0,
+  "cases": 2,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 2,
+   "boundary_misses": 0
+  },
+  "source_lines": 2
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 2,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 2,
+  "soft_reads": 0,
+  "returns": {
+   "Compare": 1,
+   "True": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "LtE": 1
+  },
+  "membership": 0,
+  "cases": 3,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 3,
+   "boundary_misses": 0
+  },
+  "source_lines": 4
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 2,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 2,
+  "soft_reads": 0,
+  "returns": {
+   "Compare": 1,
+   "True": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Gt": 1,
+   "GtE": 1
+  },
+  "membership": 0,
+  "cases": 3,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 3,
+   "boundary_misses": 0
+  },
+  "source_lines": 5
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 4,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 4,
+  "soft_reads": 0,
+  "returns": {
+   "BoolOp": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "In": 1,
+   "NotEq": 1
+  },
+  "membership": 1,
+  "cases": 6,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 6,
+   "boundary_misses": 0
+  },
+  "source_lines": 7
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 10,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 10,
+  "soft_reads": 0,
+  "returns": {
+   "False": 9,
+   "True": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 1,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Lt": 3,
+   "Gt": 3,
+   "NotEq": 1,
+   "GtE": 1,
+   "In": 3,
+   "Eq": 2,
+   "LtE": 1,
+   "NotIn": 2
+  },
+  "membership": 5,
+  "cases": 26,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 26,
+   "boundary_misses": 0
+  },
+  "source_lines": 33
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 1,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 1,
+  "soft_reads": 0,
+  "returns": {
+   "Compare": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Eq": 1
+  },
+  "membership": 0,
+  "cases": 2,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 2,
+   "boundary_misses": 0
+  },
+  "source_lines": 2
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 7,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 7,
+  "soft_reads": 0,
+  "returns": {
+   "False": 6,
+   "Compare": 2
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 1,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "NotIn": 1,
+   "Eq": 4,
+   "Gt": 1,
+   "LtE": 1,
+   "GtE": 2
+  },
+  "membership": 1,
+  "cases": 8,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 8,
+   "boundary_misses": 0
+  },
+  "source_lines": 31
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 2,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 2,
+  "soft_reads": 0,
+  "returns": {
+   "False": 2,
+   "True": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Lt": 2,
+   "Gt": 3,
+   "NotEq": 1
+  },
+  "membership": 0,
+  "cases": 15,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 15,
+   "boundary_misses": 0
+  },
+  "source_lines": 9
+ },
+ {
+  "set": "acra-platinum-fa8c8374",
+  "reads": 4,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 4,
+  "soft_reads": 0,
+  "returns": {
+   "False": 2,
+   "Compare": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Gt": 1,
+   "Lt": 1,
+   "GtE": 2,
+   "NotIn": 1,
+   "LtE": 1
+  },
+  "membership": 1,
+  "cases": 20,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 20,
+   "boundary_misses": 0
+  },
+  "source_lines": 27
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 4,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 4,
+  "soft_reads": 0,
+  "returns": {
+   "False": 2,
+   "BoolOp": 1
+  },
+  "none_guards": 1,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Gt": 1,
+   "GtE": 1,
+   "IsNot": 1,
+   "LtE": 1
+  },
+  "membership": 0,
+  "cases": 34,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 34,
+   "boundary_misses": 0
+  },
+  "source_lines": 29
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 4,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 4,
+  "soft_reads": 0,
+  "returns": {
+   "False": 1,
+   "BoolOp": 1
+  },
+  "none_guards": 1,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "LtE": 4,
+   "GtE": 10,
+   "IsNot": 1
+  },
+  "membership": 0,
+  "cases": 28,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 27,
+   "disagrees": 1,
+   "boundary_misses": 0
+  },
+  "source_lines": 37
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 4,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 4,
+  "soft_reads": 0,
+  "returns": {
+   "Compare": 1,
+   "True": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Eq": 1,
+   "Gt": 1,
+   "In": 1
+  },
+  "membership": 1,
+  "cases": 6,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 6,
+   "boundary_misses": 0
+  },
+  "source_lines": 9
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 10,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 10,
+  "soft_reads": 0,
+  "returns": {
+   "False": 4,
+   "True": 1
+  },
+  "none_guards": 5,
+  "normalizers": {
+   "lower": 4,
+   "strip": 5,
+   "upper": 1
+  },
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 1,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Eq": 7,
+   "Lt": 5,
+   "Gt": 3,
+   "IsNot": 3,
+   "In": 4,
+   "Is": 2
+  },
+  "membership": 4,
+  "cases": 20,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 19,
+   "disagrees": 1,
+   "boundary_misses": 0
+  },
+  "source_lines": 55
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 14,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 14,
+  "soft_reads": 0,
+  "returns": {
+   "True": 2,
+   "Compare": 1
+  },
+  "none_guards": 0,
+  "normalizers": {
+   "lower": 3
+  },
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 1,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "In": 8,
+   "Gt": 2,
+   "LtE": 1,
+   "GtE": 1
+  },
+  "membership": 8,
+  "cases": 10,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 10,
+   "boundary_misses": 0
+  },
+  "source_lines": 38
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 5,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 5,
+  "soft_reads": 0,
+  "returns": {
+   "True": 1,
+   "False": 7,
+   "Compare": 2
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Eq": 6,
+   "In": 3,
+   "NotEq": 1,
+   "LtE": 6,
+   "Gt": 1
+  },
+  "membership": 3,
+  "cases": 23,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 23,
+   "boundary_misses": 0
+  },
+  "source_lines": 51
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 1,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 1,
+  "soft_reads": 0,
+  "returns": {
+   "Compare": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Is": 1
+  },
+  "membership": 0,
+  "cases": 2,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 2,
+   "boundary_misses": 0
+  },
+  "source_lines": 2
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 1,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 1,
+  "soft_reads": 0,
+  "returns": {
+   "Compare": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Eq": 1
+  },
+  "membership": 0,
+  "cases": 2,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 2,
+   "boundary_misses": 0
+  },
+  "source_lines": 2
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 3,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 3,
+  "soft_reads": 0,
+  "returns": {
+   "True": 1,
+   "BoolOp": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Eq": 3
+  },
+  "membership": 0,
+  "cases": 4,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 4,
+   "boundary_misses": 0
+  },
+  "source_lines": 8
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 3,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 3,
+  "soft_reads": 0,
+  "returns": {
+   "BoolOp": 1
+  },
+  "none_guards": 0,
+  "normalizers": {
+   "casefold": 1,
+   "strip": 1
+  },
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "In": 1,
+   "Is": 2
+  },
+  "membership": 1,
+  "cases": 6,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 6,
+   "boundary_misses": 0
+  },
+  "source_lines": 21
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 1,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 1,
+  "soft_reads": 0,
+  "returns": {
+   "Compare": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Is": 1
+  },
+  "membership": 0,
+  "cases": 2,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 2,
+   "boundary_misses": 0
+  },
+  "source_lines": 2
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 1,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 1,
+  "soft_reads": 0,
+  "returns": {
+   "Subscript": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {},
+  "membership": 0,
+  "cases": 2,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 2,
+   "boundary_misses": 0
+  },
+  "source_lines": 2
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 3,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 3,
+  "soft_reads": 0,
+  "returns": {
+   "BoolOp": 1
+  },
+  "none_guards": 1,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "IsNot": 1,
+   "LtE": 1
+  },
+  "membership": 0,
+  "cases": 13,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 13,
+   "boundary_misses": 0
+  },
+  "source_lines": 12
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 13,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 13,
+  "soft_reads": 0,
+  "returns": {
+   "False": 10,
+   "True": 1
+  },
+  "none_guards": 3,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 1,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "NotIn": 1,
+   "Is": 1,
+   "IsNot": 2,
+   "In": 1,
+   "Eq": 3,
+   "Lt": 4,
+   "Gt": 4
+  },
+  "membership": 2,
+  "cases": 14,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 14,
+   "boundary_misses": 0
+  },
+  "source_lines": 66
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 13,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 13,
+  "soft_reads": 0,
+  "returns": {
+   "False": 9,
+   "True": 4
+  },
+  "none_guards": 1,
+  "normalizers": {
+   "lower": 3,
+   "strip": 3
+  },
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 3,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Gt": 4,
+   "In": 9,
+   "NotIn": 1,
+   "IsNot": 1,
+   "Lt": 11,
+   "LtE": 1,
+   "Eq": 2,
+   "GtE": 1
+  },
+  "membership": 10,
+  "cases": 27,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 26,
+   "raised": 1,
+   "keyerror": 1,
+   "boundary_misses": 0
+  },
+  "source_lines": 64
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 1,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 1,
+  "soft_reads": 0,
+  "returns": {
+   "Subscript": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {},
+  "membership": 0,
+  "cases": 2,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 2,
+   "boundary_misses": 0
+  },
+  "source_lines": 2
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 1,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 1,
+  "soft_reads": 0,
+  "returns": {
+   "Compare": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "LtE": 1
+  },
+  "membership": 0,
+  "cases": 3,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 3,
+   "boundary_misses": 0
+  },
+  "source_lines": 4
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 9,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 9,
+  "soft_reads": 0,
+  "returns": {
+   "True": 2,
+   "False": 4
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Lt": 2,
+   "Eq": 1,
+   "Gt": 2
+  },
+  "membership": 0,
+  "cases": 11,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 11,
+   "boundary_misses": 0
+  },
+  "source_lines": 22
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 8,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 8,
+  "soft_reads": 0,
+  "returns": {
+   "True": 1,
+   "UnaryOp": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "In": 2,
+   "Eq": 20,
+   "LtE": 9,
+   "Gt": 2,
+   "Lt": 2
+  },
+  "membership": 2,
+  "cases": 17,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 17,
+   "boundary_misses": 0
+  },
+  "source_lines": 59
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 18,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 18,
+  "soft_reads": 0,
+  "returns": {
+   "Name": 1
+  },
+  "none_guards": 17,
+  "normalizers": {
+   "lower": 5,
+   "strip": 5
+  },
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "IsNot": 16,
+   "LtE": 37,
+   "GtE": 3,
+   "Eq": 13,
+   "Lt": 3,
+   "Gt": 1,
+   "Is": 1
+  },
+  "membership": 0,
+  "cases": 8,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 8,
+   "boundary_misses": 0
+  },
+  "source_lines": 127
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 3,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 3,
+  "soft_reads": 0,
+  "returns": {
+   "Compare": 3,
+   "False": 1,
+   "True": 2
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "LtE": 7,
+   "GtE": 2,
+   "Lt": 1,
+   "Eq": 1
+  },
+  "membership": 0,
+  "cases": 11,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 11,
+   "boundary_misses": 0
+  },
+  "source_lines": 17
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 7,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 7,
+  "soft_reads": 0,
+  "returns": {
+   "Name": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Gt": 1,
+   "LtE": 2,
+   "NotEq": 1,
+   "Eq": 2,
+   "Lt": 1
+  },
+  "membership": 0,
+  "cases": 6,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 6,
+   "boundary_misses": 0
+  },
+  "source_lines": 23
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 2,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 2,
+  "soft_reads": 0,
+  "returns": {
+   "UnaryOp": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "LtE": 1,
+   "Lt": 1
+  },
+  "membership": 0,
+  "cases": 4,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 4,
+   "boundary_misses": 0
+  },
+  "source_lines": 4
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 10,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 10,
+  "soft_reads": 0,
+  "returns": {
+   "False": 8,
+   "True": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {
+   "Decimal": 9
+  },
+  "date_uses": 0,
+  "divisions": 1,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [
+   "decimal"
+  ],
+  "compares": {
+   "Lt": 3,
+   "Gt": 3,
+   "NotEq": 2,
+   "LtE": 4,
+   "NotIn": 2,
+   "Eq": 2,
+   "GtE": 1,
+   "In": 1
+  },
+  "membership": 3,
+  "cases": 21,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "raised": 11,
+   "agrees": 10,
+   "boundary_misses": 0
+  },
+  "source_lines": 69
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 2,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 2,
+  "soft_reads": 0,
+  "returns": {
+   "False": 1,
+   "True": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "Gt": 1
+  },
+  "membership": 0,
+  "cases": 3,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 3,
+   "boundary_misses": 0
+  },
+  "source_lines": 4
+ },
+ {
+  "set": "acra-standard-53ed2625",
+  "reads": 3,
+  "undeclared": [],
+  "unused_reads": [],
+  "hard_reads": 3,
+  "soft_reads": 0,
+  "returns": {
+   "BoolOp": 1
+  },
+  "none_guards": 0,
+  "normalizers": {},
+  "rounders": {},
+  "date_uses": 0,
+  "divisions": 0,
+  "hundreds": 0,
+  "helpers": 0,
+  "imports": [],
+  "compares": {
+   "LtE": 3,
+   "Eq": 1,
+   "NotEq": 1
+  },
+  "membership": 0,
+  "cases": 8,
+  "unknown_reads": [],
+  "case_outcomes": {
+   "agrees": 8,
+   "boundary_misses": 0
+  },
+  "source_lines": 10
+ }
+]
