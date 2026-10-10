@@ -242,3 +242,17 @@ R0 and R7 do not depend on the rest and can start first; R1 can precede R3.
 4. **Order**: R0 (mine) then R1, or R3 (trial) first so the 51 existing rules get judged before the
    library changes what is generated?
 5. **Deployed python**: confirm python rules stay off in deployed tenants until R7 passes.
+
+### Decided (user, 2026-10-09)
+
+1. Gold cases: a real sanitized Acra package with an expected-outcomes sheet; synthetic cases from the
+   seed's gold loans are used only until it arrives.
+2. `require_trial`: on for deployed tenants, optional locally.
+3. Library home: inside the SDK as `jazzx_sdk.rules.lib`, with its own library version recorded per rule;
+   a separate distribution only if packs need independent pins.
+4. Order: R0 and R7 first (independent), then R3 on the existing 51 rules for a baseline, then R1, R2,
+   R4, R5, R6.
+5. Python rules stay off in deployed tenants until R7 passes.
+
+After the phases land: a status doc describing the whole rule and code design (the ladder, library,
+trial, provenance, executor), written to `status/` alongside moving this plan to `done_`.
