@@ -43,7 +43,8 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
   (`ground_by_quote`, basis recorded on the field; a quote proves the words exist, not that they support
   the value, `TODO(quote-not-checked-against-value)`); the governor's own verdict and rationale are
   kept and what overrode them is recorded in `GovernorDecision.overrides`; the DSCR seed is resynced
-  from jaci 0.2.14 (+3027 / -112 lines, 66 files, since the second review round).
+  from jaci 0.2.14. Regenerating the 51 generated rules with the library prompt cut violations over the
+  synthetic gold loans from 46% to 15% for $0.04 (+3027 / -112 lines, 66 files, since the second review round).
 
 - **Packs declare the japes they need; one-of expected values; grounding by evidence; governor
   overrides recorded.** A manifest (domain or assistant) may carry `requires: {japes: ">=2.6.2"}` (a
