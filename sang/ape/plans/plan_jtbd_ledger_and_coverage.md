@@ -1,7 +1,7 @@
 # Plan: a JTBD ledger, JTBD to code, coverage as a count, and list-first authoring pages
 
-Status: proposed 2026-10-11 (opus-xrepo, from the user's direction). Not started; three decisions below
-are the user's. Evidence: `plans/note_acra_jtbd_rules_review.md` (the Acra review) and
+Status: approved 2026-10-11 (opus-xrepo, from the user's direction); decisions taken (below), routed
+to sonnet-runtime. Not started. Evidence: `plans/note_acra_jtbd_rules_review.md` (the Acra review) and
 `ape/local/coverage/review_20261011/`. Prior art: `plan_policy_jtbd_extraction.md`,
 `plan_dscr_programs_compare.md` (JTBDSet import, `jtbd_match`, `jtbd_compare`), `plan_plato_ui.md`
 (static pages, U1-U7), `plan_plato_authoring_review.md` (reviews, comments, lint triage).
@@ -73,13 +73,13 @@ Static pages stay, as `plan_plato_ui.md` decided: a sortable, filterable table w
 plain JS over one JSON route. If row editing (checks, links) grows beyond that, it is the trigger for
 the React decision that plan deferred.
 
-## Decisions (the user's)
+## Decisions (the user's, 2026-10-11)
 
-1. **The ledger's storage**: the draft's procedure rules plus `implements` links on code rules
-   (recommended: no new table; versioned with the pack), or a separate ledger table.
-2. **Acra's ledger**: Acra's own 123/108 jobs as the record with ours as the cross-check
-   (recommended: it is the customer's own decomposition and finer-grained), or ours.
-3. **UI**: static pages as above (recommended), or take the React decision now.
+1. **The ledger's storage**: the draft's procedure rules plus `implements` links on code rules. No
+   new table; the ledger is versioned and published with the pack.
+2. **Acra's ledger**: Acra's own 123 Standard / 108 Platinum jobs are the record; our extracted
+   JTBDs and segment to code are cross-checks.
+3. **UI**: static pages, as above. React is revisited only if row editing outgrows them.
 
 ## Tests
 
