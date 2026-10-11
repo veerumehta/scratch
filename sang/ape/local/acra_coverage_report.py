@@ -40,9 +40,36 @@ STOP = set("the and for that with this are not any must may has have from per sh
            "only also such these those other more less must".split())
 
 
-def _fetch() -> list[dict]:
+ACRA_JTBD = {"standard": ROOT / "documents" / "Acra" / "acra_New_Guideline_JTBD.json",
+             "platinum": ROOT / "documents" / "Acra" / "acra_New_Guideline_JTBD_Platinum.json"}
+
+
+def _fetch(run_ids: set[str] | None = None) -> list[dict]:
+    """The pack's proposals; with ``run_ids``, only those a listed run last proposed."""
     with httpx.Client(timeout=30, headers={"x-tenant-id": TENANT}) as http:
-        return http.get(f"{API}/authoring/review/{PACK}/proposals").json()
+        proposals = http.get(f"{API}/authoring/review/{PACK}/proposals").json()
+    return [p for p in proposals if run_ids is None or p.get("run_id") in run_ids]
+
+
+def _final_run_ids(path: Path) -> set[str]:
+    """The last attempt of each run in an `acra_rerun_extractions.py` output."""
+    return {job["attempts"][-1]["run_id"] for job in json.loads(path.read_text())}
+
+
+def _acra_jobs(doc: str) -> list[dict]:
+    """Acra's JTBD file for ``doc``, each job shaped like a procedure proposal: the purpose is the
+    skill, the step the COMMON requirement text, the reads the metric keys."""
+    artifact = json.loads(ACRA_JTBD[doc].read_text())
+    jobs = []
+    for value in artifact["values"]:
+        text = next((r.get("requirement_text", "") for r in value.get("requirements") or []
+                     if r.get("investor") == "COMMON"), "")
+        reads = [m["metric_key"] for m in value.get("loan_metrics") or [] if m.get("metric_key")]
+        jobs.append({"name": f"acra-{doc}.jtbd.{value['mnemonic']}", "excerpt": text,
+                     "reasoning": f"from section '{value.get('section', '')}'",
+                     "rule": {"condition": {"kind": "procedure", "purpose": value.get("skill", ""),
+                                            "steps": [text], "checks": [], "reads": reads}}})
+    return jobs
 
 
 def _kind(p: dict) -> str:
@@ -285,15 +312,21 @@ async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", default="/tmp/cov")
     parser.add_argument("--budget", type=float, default=5.0)
+    parser.add_argument("--runs", default="", help="an acra_rerun_extractions.py output: only its runs")
+    parser.add_argument("--jobs", choices=("ours", "acra"), default="ours",
+                        help="the job side: our extracted JTBDs, or Acra's JTBD files")
     args = parser.parse_args()
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
     from jazzx_sdk.agents.service import AgentExecutionService
 
-    proposals = [p for p in _fetch() if p["kind"] == "rule"]
+    run_ids = _final_run_ids(Path(args.runs)) if args.runs else None
+    proposals = [p for p in _fetch(run_ids) if p["kind"] == "rule"]
     sets = {(doc, kind): [p for p in proposals if _doc(p) == doc and _kind(p) == kind]
             for doc in ("standard", "platinum") for kind in ("procedure", "python")}
+    if args.jobs == "acra":
+        sets.update({(doc, "procedure"): _acra_jobs(doc) for doc in ("standard", "platinum")})
     schema_fields = set(json.loads(SCHEMA.read_text())["properties"])
     Match, Computable = _schemas()
     agent = Tally(AgentExecutionService(), args.budget)
@@ -303,9 +336,15 @@ async def main() -> None:
         print(f"{doc}: {len(jobs)} jobs, {len(rules)} python rules", flush=True)
         documents.append(await analyse(doc, jobs, rules, agent, schema_fields, Match, Computable))
         print(f"  cost so far ${agent.cost:.4f}", flush=True)
-    failed = json.loads((out / "failed_segments.json").read_text()) if (out / "failed_segments.json").exists() else []
-    report = {"tenant": TENANT, "pack": PACK, "documents": documents, "cost": agent.summary(),
-              "failed_segments": failed}
+    if args.runs:
+        failed = [{"run": f"{a['run_id'][:8]} {job['representation']} {job['document']}",
+                   "representation": job["representation"], "segment": segment}
+                  for job in json.loads(Path(args.runs).read_text())
+                  for a in job["attempts"][-1:] for segment in a["failed_segments"]]
+    else:
+        failed = json.loads((out / "failed_segments.json").read_text()) if (out / "failed_segments.json").exists() else []
+    report = {"tenant": TENANT, "pack": PACK, "jobs_from": args.jobs, "runs": sorted(run_ids or []),
+              "documents": documents, "cost": agent.summary(), "failed_segments": failed}
     (out / "coverage_report.json").write_text(json.dumps(report, indent=2))
     _xlsx(report, out / "coverage_report.xlsx")
     for d in documents:
