@@ -1,0 +1,13 @@
+jtbd:platinum attempt 1: run 92c879283dd14cb9b137d6bd44e9f45e
+jtbd:standard attempt 1: run 633a72d5d9ee438faeee6cc4d2531ccf
+jtbd:platinum run 92c87928 succeeded: 49 proposals, 0 of 12 parts failed, $0.0164
+python:standard attempt 1: run 66449c2d0afe433785a75bc04c35fdc8
+jtbd:standard run 633a72d5 succeeded: 68 proposals, 0 of 16 parts failed, $0.0216
+python:platinum attempt 1: run 6b4bd3745887438280887d32f5671e70
+python:platinum run 6b4bd374 succeeded: 23 proposals, 2 of 42 parts failed, $0.0238
+python:platinum attempt 2: run 86577f56ecf643d09d192405462ea959
+python:standard run 66449c2d succeeded: 22 proposals, 1 of 48 parts failed, $0.0319
+python:standard attempt 2: run bedb0ad98d4f4db5beb318948150e187
+python:platinum run 86577f56 succeeded: 25 proposals, 1 of 42 parts failed, $0.0227
+python:standard run bedb0ad9 succeeded: 25 proposals, 1 of 48 parts failed, $0.0316
+wrote /Users/sangit/src/.scratch/sang/ape/local/coverage/runs_20261011.json

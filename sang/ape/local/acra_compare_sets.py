@@ -39,7 +39,8 @@ from acra_coverage_report import (  # noqa: E402
 
 CANDIDATES = 6
 TEXT_CHARS = 1500
-CODE_LINES = 25
+#: Lines of a rule's code the model sees: all of every generated rule (the longest was 173).
+CODE_LINES = 400
 PARALLEL = 4
 RELATIONS = ("same", "differs", "partial", "none")
 

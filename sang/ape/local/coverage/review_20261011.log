@@ -1,0 +1,21 @@
+standard: 68 jobs, 26 python rules
+  cost so far $0.0190
+platinum: 49 jobs, 27 python rules
+  cost so far $0.0329
+standard {'jobs': 68, 'python_rules': 26, 'job_status': {'covered_partial': 18, 'not_computable': 38, 'computable_but_missing': 5, 'covered': 7}, 'orphan_python_rules': 3, 'covered_share': 0.368}
+platinum {'jobs': 49, 'python_rules': 27, 'job_status': {'covered_partial': 22, 'not_computable': 21, 'covered': 2, 'computable_but_missing': 4}, 'orphan_python_rules': 0, 'covered_share': 0.49}
+{'calls': 110, 'input_tokens': 117592, 'output_tokens': 7467, 'cost_usd': 0.0329, 'cost_is_upper_bound': False, 'budget_usd': 5.0, 'stopped_on_budget': False}
+standard: 123 jobs, 26 python rules
+  cost so far $0.0268
+platinum: 108 jobs, 27 python rules
+  cost so far $0.0501
+standard {'jobs': 123, 'python_rules': 26, 'job_status': {'covered_partial': 29, 'covered': 7, 'not_computable': 87}, 'orphan_python_rules': 5, 'covered_share': 0.293}
+platinum {'jobs': 108, 'python_rules': 27, 'job_status': {'not_computable': 76, 'covered': 7, 'covered_partial': 25}, 'orphan_python_rules': 5, 'covered_share': 0.296}
+{'calls': 175, 'input_tokens': 188696, 'output_tokens': 12715, 'cost_usd': 0.0501, 'cost_is_upper_bound': False, 'budget_usd': 5.0, 'stopped_on_budget': False}
+python_programs: 26 vs 27 -> {'partial': 7, 'differs': 5, 'none': 8, 'same': 6}, right unmatched 7; cost so far $0.0191
+jtbd_programs: 68 vs 49 -> {'partial': 26, 'differs': 21, 'same': 9, 'none': 12}, right unmatched 4; cost so far $0.0688
+acra_programs: 123 vs 108 -> {'same': 36, 'differs': 37, 'none': 24, 'partial': 26}, right unmatched 10; cost so far $0.1537
+acra_vs_jtbd_std: 123 vs 68 -> {'same': 66, 'partial': 41, 'differs': 12, 'none': 4}, right unmatched 0; cost so far $0.2271
+acra_vs_jtbd_plat: 108 vs 49 -> {'same': 47, 'partial': 45, 'differs': 13, 'none': 3}, right unmatched 0; cost so far $0.2958
+{'calls': 448, 'input_tokens': 1094126, 'output_tokens': 100982, 'cost_usd': 0.2958, 'cost_is_upper_bound': False, 'budget_usd': 5.0, 'stopped_on_budget': False}
+wrote /Users/sangit/src/.scratch/sang/ape/local/coverage/review_20261011

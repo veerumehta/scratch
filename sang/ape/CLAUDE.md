@@ -103,10 +103,18 @@ and `plato` merge-back of `ec16ee93` (`3218ce12`), both tree-unchanged, push via
 `34582819`), push via `/tmp/japes_plato_ci_key_fix.sh`. Held for 2.6.1 on local branch
 `plato-held-2.6.1`: `7ec392af` (export
 docstring, also `v2.6.0` `b1ea1165`) (`db20cab7` dropped: the dev record replaces it).
+**Local Plato (:8000) runs from its own worktree** `/Users/sangit/src/japes-plato`, pinned to a commit,
+so a branch switch in the main checkout cannot break a running server (it did on 2026-10-11: a lazy import
+of a moved module failed every extraction run). `ape/local/plato_worktree.sh pin|start|stop|restart [rev]|status`;
+env file, pack blobs/cache and documents stay in the main checkout, named absolutely; log `.plato-local.log`.
+
 **Cross-repo session state (opus-xrepo, 2026-10-10).** Routes work to `sonnet-runtime` (holds runtime and
 policy paths; no policy session runs) and `sonnet-jaci`. Scenario priority: DSCR, then CRE; elsewhere TODO.
 - In flight with sonnet-runtime: `plans/plan_sibling_ideas_oct.md` (all three tiers of the 2026-10-10 sibling
-  survey plus guideline versioning), then the review script's per-range resume and usage logging.
+  survey plus guideline versioning).
+- Review script resume and usage logging done (scratch `de0a773`, tested against a fake CLI only): fix
+  rounds resume the slice's session (cap `REVIEW_MAX_RESUMES`, `REVIEW_RESUME_MAX_PERCENT`), a `USAGE:` line
+  per block. `REVIEW_FULL=1` (the japes review script's setting) never resumes; unset it for fix rounds.
 - Done: rule trials R0-R7 (`status/done_rule_trials_and_library.md`, design in
   `status/design_rule_trials_and_library.md`); DSCR Plato eval 100% (jaci 0.2.14); AML 91-100% (jaci 0.2.13);
   coverage report (scratch `ape/local/coverage/`); DocIntel engines (vision wins on the Acra appraisal).
@@ -266,12 +274,11 @@ context loaded and commits do not collide.
 `sonnet-runtime`, `sonnet-policy` (rename with `/rename <name>`). A session that switches model
 renames itself to match.
 
-- **Policy session** (authoring and assessment): `pipelines/policy_*`, `pipelines/jtbdset.py`,
-  `pipelines/authoring_chat.py`, `pack/assessment.py`, `pack/lint.py`, `pack/rule_merge.py`,
+- **Policy session** (authoring and assessment): `pipelines/policy/`, `pack/assessment.py`, `pack/lint.py`, `pack/rule_merge.py`,
   `fabric/canonical/` policy, profile and lint, `formal/`, Plato's authoring, pack and assess routes,
   seed domain packs (`plato/data/seed_packs/`), and anything Acra / DSCR. Also the conductor work
   that runs a pack on a case (`plans/plan_conductor_pipeline.md`).
-- **Runtime session** (runs, chat, models): `runs/`, `pipelines/chat*.py` and the chat lifecycle,
+- **Runtime session** (runs, chat, models): `runs/`, `pipelines/chat/` and the chat lifecycle,
   `agents/interactive/`, grounding, the model and LLM layer (`llm/`, `agents/models.py`,
   `agents/*_provider.py`), observability, Plato infrastructure, releases, squashes and versions.
 - **Cross-repo session** (Opus, `opus-crossrepo`): surveys and reviews across japes, jaci,

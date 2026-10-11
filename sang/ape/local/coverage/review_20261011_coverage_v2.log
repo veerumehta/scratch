@@ -1,0 +1,14 @@
+standard: 68 jobs, 26 python rules
+  cost so far $0.0162
+platinum: 49 jobs, 27 python rules
+  cost so far $0.0304
+standard {'jobs': 68, 'python_rules': 26, 'job_status': {'covered_partial': 29, 'not_computable': 33, 'computable_but_missing': 5, 'covered': 1}, 'orphan_python_rules': 2, 'covered_share': 0.441}
+platinum {'jobs': 49, 'python_rules': 27, 'job_status': {'covered_partial': 24, 'not_computable': 19, 'covered': 2, 'computable_but_missing': 4}, 'orphan_python_rules': 0, 'covered_share': 0.531}
+{'calls': 103, 'input_tokens': 117875, 'output_tokens': 6947, 'cost_usd': 0.0304, 'cost_is_upper_bound': False, 'budget_usd': 5.0, 'stopped_on_budget': False}
+standard: 123 jobs, 26 python rules
+  cost so far $0.0305
+platinum: 108 jobs, 27 python rules
+  cost so far $0.0590
+standard {'jobs': 123, 'python_rules': 26, 'job_status': {'covered_partial': 33, 'not_computable': 81, 'computable_but_missing': 6, 'covered': 3}, 'orphan_python_rules': 4, 'covered_share': 0.293}
+platinum {'jobs': 108, 'python_rules': 27, 'job_status': {'not_computable': 65, 'covered_partial': 31, 'computable_but_missing': 8, 'covered': 4}, 'orphan_python_rules': 4, 'covered_share': 0.324}
+{'calls': 213, 'input_tokens': 240279, 'output_tokens': 15959, 'cost_usd': 0.059, 'cost_is_upper_bound': False, 'budget_usd': 5.0, 'stopped_on_budget': False}

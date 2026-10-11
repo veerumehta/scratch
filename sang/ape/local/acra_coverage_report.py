@@ -34,7 +34,8 @@ TENANT, PACK = "acra-lending", "acra-dscr-policy"
 SCHEMA = ROOT / "plato" / "data" / "seed_packs" / "acra_dscr_policy" / "schemas" / "loan_application.json"
 CANDIDATES = 5
 EXCERPT_CHARS = 1800
-CODE_LINES = 30
+#: Lines of a rule's code the model sees: all of every generated rule (the longest was 173).
+CODE_LINES = 400
 STOP = set("the and for that with this are not any must may has have from per shall will than then "
            "all its into over each been being their there which when where who whose does done "
            "only also such these those other more less must".split())
@@ -52,8 +53,17 @@ def _fetch(run_ids: set[str] | None = None) -> list[dict]:
 
 
 def _final_run_ids(path: Path) -> set[str]:
-    """The last attempt of each run in an `acra_rerun_extractions.py` output."""
-    return {job["attempts"][-1]["run_id"] for job in json.loads(path.read_text())}
+    """Every succeeded attempt in an `acra_rerun_extractions.py` output. A proposal carries the run
+    that last proposed it, and names are per segment, so a part one attempt lost and another
+    extracted is counted once."""
+    return {a["run_id"] for job in json.loads(path.read_text()) for a in job["attempts"]
+            if a["status"] == "succeeded"}
+
+
+def _still_failed(job: dict) -> list[str]:
+    """The parts every succeeded attempt of ``job`` failed."""
+    done = [set(a["failed_segments"]) for a in job["attempts"] if a["status"] == "succeeded"]
+    return sorted(set.intersection(*done)) if done else ["(no attempt succeeded)"]
 
 
 def _acra_jobs(doc: str) -> list[dict]:
@@ -193,6 +203,12 @@ COMPUTE_SYSTEM = (
     "rule over exactly those fields can decide it: computable=true when the checks reduce to comparisons "
     "over the listed fields; false when it needs judgment, a document's content, an external lookup, or "
     "a field that is not listed (name those in `missing`). One short sentence in `why`.")
+COMPUTE_SYSTEM_FOREIGN = (
+    "A JTBD job names a guideline requirement and the metric keys it reads, in another vocabulary than "
+    "the loan application schema. Say whether a deterministic rule over schema fields can decide it: "
+    "computable=true when the checks reduce to comparisons over fields the schema has (under any name); "
+    "false when it needs judgment, a document's content, an external lookup, or a field the schema "
+    "lacks (name those in `missing`). One short sentence in `why`.")
 
 
 def _job_card(i: int, job: dict) -> str:
@@ -217,15 +233,24 @@ async def tie_break(agent, rule: dict, cands: list[tuple[int, float]], jobs: lis
     return out, True
 
 
+#: Set for Acra's jobs, whose metric keys name fields in Acra's vocabulary, not the schema's.
+FOREIGN_VOCABULARY = False
+
+
 async def computability(agent, job: dict, schema_fields: set[str], Computable):
     c = job["rule"]["condition"]
     reads = c.get("reads") or []
-    known = [r for r in reads if r in schema_fields]
+    if FOREIGN_VOCABULARY:
+        reading = (f"The job's metric keys, in another vocabulary (map each to a schema field by "
+                   f"meaning, e.g. LoanCore.cltv_percent is cltv_pct; the job may also need schema "
+                   f"fields its keys do not name): {', '.join(reads) or '(none)'}")
+    else:
+        reading = f"The job reads: {', '.join(r for r in reads if r in schema_fields) or '(none)'}"
     prompt = (f"JOB: {_job_card(0, job)}\nPurpose: {c.get('purpose', '')}\nSteps: "
               f"{' | '.join(c.get('steps') or [])}\nFields the loan application schema has: "
-              f"{', '.join(sorted(schema_fields))}\nThe job reads: {', '.join(known) or '(none)'}")
+              f"{', '.join(sorted(schema_fields))}\n{reading}")
     try:
-        result = await agent.run(system_prompt=COMPUTE_SYSTEM,
+        result = await agent.run(system_prompt=COMPUTE_SYSTEM_FOREIGN if FOREIGN_VOCABULARY else COMPUTE_SYSTEM,
                                  messages=[{"role": "user", "content": prompt}],
                                  output_schema=Computable, temperature=0.0)
     except Exception as exc:  # noqa: BLE001
@@ -259,7 +284,7 @@ async def analyse(doc: str, jobs: list[dict], rules: list[dict], agent, schema_f
             full = any(a["relation"] == "implements" for a in aligned[k])
             row.update(status="covered" if full else "covered_partial",
                        python_rules=[rule_rows[a["rule"]]["rule"] for a in aligned[k]])
-        elif not reads:
+        elif not reads and not FOREIGN_VOCABULARY:
             row.update(status="not_computable", why="reads no loan field")
         else:
             comp, ok = await computability(agent, job, schema_fields, Computable)
@@ -326,6 +351,8 @@ async def main() -> None:
     sets = {(doc, kind): [p for p in proposals if _doc(p) == doc and _kind(p) == kind]
             for doc in ("standard", "platinum") for kind in ("procedure", "python")}
     if args.jobs == "acra":
+        global FOREIGN_VOCABULARY
+        FOREIGN_VOCABULARY = True
         sets.update({(doc, "procedure"): _acra_jobs(doc) for doc in ("standard", "platinum")})
     schema_fields = set(json.loads(SCHEMA.read_text())["properties"])
     Match, Computable = _schemas()
@@ -337,10 +364,11 @@ async def main() -> None:
         documents.append(await analyse(doc, jobs, rules, agent, schema_fields, Match, Computable))
         print(f"  cost so far ${agent.cost:.4f}", flush=True)
     if args.runs:
-        failed = [{"run": f"{a['run_id'][:8]} {job['representation']} {job['document']}",
+        failed = [{"run": " ".join([*(a["run_id"][:8] for a in job["attempts"]),
+                                    job["representation"], job["document"]]),
                    "representation": job["representation"], "segment": segment}
                   for job in json.loads(Path(args.runs).read_text())
-                  for a in job["attempts"][-1:] for segment in a["failed_segments"]]
+                  for segment in _still_failed(job)]
     else:
         failed = json.loads((out / "failed_segments.json").read_text()) if (out / "failed_segments.json").exists() else []
     report = {"tenant": TENANT, "pack": PACK, "jobs_from": args.jobs, "runs": sorted(run_ids or []),

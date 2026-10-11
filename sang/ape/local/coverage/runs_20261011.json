@@ -1,0 +1,105 @@
+[
+ {
+  "representation": "jtbd",
+  "document": "standard",
+  "policy_id": "acra-standard",
+  "attempts": [
+   {
+    "run_id": "633a72d5d9ee438faeee6cc4d2531ccf",
+    "status": "succeeded",
+    "segments": 16,
+    "failed_segments": [],
+    "proposals": 68,
+    "cost_usd": 0.0216,
+    "started_at": "2026-10-11T16:47:52.494890Z",
+    "finished_at": "2026-10-11T17:27:06.630290Z",
+    "error": ""
+   }
+  ]
+ },
+ {
+  "representation": "jtbd",
+  "document": "platinum",
+  "policy_id": "acra-platinum",
+  "attempts": [
+   {
+    "run_id": "92c879283dd14cb9b137d6bd44e9f45e",
+    "status": "succeeded",
+    "segments": 12,
+    "failed_segments": [],
+    "proposals": 49,
+    "cost_usd": 0.0164,
+    "started_at": "2026-10-11T16:47:52.389930Z",
+    "finished_at": "2026-10-11T17:18:52.217397Z",
+    "error": ""
+   }
+  ]
+ },
+ {
+  "representation": "python",
+  "document": "standard",
+  "policy_id": "acra-standard",
+  "attempts": [
+   {
+    "run_id": "66449c2d0afe433785a75bc04c35fdc8",
+    "status": "succeeded",
+    "segments": 48,
+    "failed_segments": [
+     "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b67"
+    ],
+    "proposals": 22,
+    "cost_usd": 0.0319,
+    "started_at": "2026-10-11T17:18:54.550396Z",
+    "finished_at": "2026-10-11T18:01:16.392336Z",
+    "error": ""
+   },
+   {
+    "run_id": "bedb0ad98d4f4db5beb318948150e187",
+    "status": "succeeded",
+    "segments": 48,
+    "failed_segments": [
+     "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b613"
+    ],
+    "proposals": 25,
+    "cost_usd": 0.0316,
+    "started_at": "2026-10-11T18:01:26.962041Z",
+    "finished_at": "2026-10-11T19:15:54.387059Z",
+    "error": ""
+   }
+  ]
+ },
+ {
+  "representation": "python",
+  "document": "platinum",
+  "policy_id": "acra-platinum",
+  "attempts": [
+   {
+    "run_id": "6b4bd3745887438280887d32f5671e70",
+    "status": "succeeded",
+    "segments": 42,
+    "failed_segments": [
+     "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b615",
+     "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b622"
+    ],
+    "proposals": 23,
+    "cost_usd": 0.0238,
+    "started_at": "2026-10-11T17:27:24.715389Z",
+    "finished_at": "2026-10-11T18:00:04.425587Z",
+    "error": ""
+   },
+   {
+    "run_id": "86577f56ecf643d09d192405462ea959",
+    "status": "succeeded",
+    "segments": 42,
+    "failed_segments": [
+     "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b68"
+    ],
+    "proposals": 25,
+    "cost_usd": 0.0227,
+    "started_at": "2026-10-11T18:00:26.798602Z",
+    "finished_at": "2026-10-11T18:55:45.952086Z",
+    "error": ""
+   }
+  ]
+ }
+]

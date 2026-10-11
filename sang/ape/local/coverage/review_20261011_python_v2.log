@@ -1,0 +1,2 @@
+python_programs: 26 vs 27 -> {'differs': 7, 'none': 8, 'partial': 5, 'same': 6}, right unmatched 8; cost so far $0.0211
+{'calls': 26, 'input_tokens': 62887, 'output_tokens': 6049, 'cost_usd': 0.0211, 'cost_is_upper_bound': False, 'budget_usd': 5.0, 'stopped_on_budget': False}

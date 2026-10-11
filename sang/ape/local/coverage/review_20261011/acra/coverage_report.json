@@ -1,0 +1,4632 @@
+{
+  "tenant": "acra-lending",
+  "pack": "acra-dscr-policy",
+  "jobs_from": "acra",
+  "runs": [
+    "633a72d5d9ee438faeee6cc4d2531ccf",
+    "66449c2d0afe433785a75bc04c35fdc8",
+    "6b4bd3745887438280887d32f5671e70",
+    "86577f56ecf643d09d192405462ea959",
+    "92c879283dd14cb9b137d6bd44e9f45e",
+    "bedb0ad98d4f4db5beb318948150e187"
+  ],
+  "documents": [
+    {
+      "document": "standard",
+      "jobs": 123,
+      "python_rules": 26,
+      "job_status": {
+        "covered_partial": 33,
+        "not_computable": 81,
+        "computable_but_missing": 6,
+        "covered": 3
+      },
+      "orphan_python_rules": 4,
+      "python_rules_aligned": 22,
+      "covered_share": 0.293,
+      "job_rows": [
+        {
+          "job": "PRE-TYPES",
+          "section": "Appraisal Review",
+          "reads": [
+            "SubjectProperty.property_type"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "29"
+          ]
+        },
+        {
+          "job": "PRE-TYPE-CAPS",
+          "section": "Appraisal Review",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "29"
+          ]
+        },
+        {
+          "job": "PRE-RURAL",
+          "section": "Appraisal Review",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "30"
+          ]
+        },
+        {
+          "job": "PRE-DECLMKT",
+          "section": "Appraisal Review",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "not_computable",
+          "why": "The rule needs the appraisal\u2019s market-condition finding and applicable cap, and CLTV cannot be determined from the available fields without lien amounts.",
+          "missing": [
+            "appraisal declining-market indicator",
+            "applicable CLTV cap",
+            "CLTV (including any subordinate-lien amounts)"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "PRE-LOCATION",
+          "section": "Appraisal Review",
+          "reads": [],
+          "status": "not_computable",
+          "why": "Property state is available, but Alaska and North Dakota outcomes depend on which Summary version governs.",
+          "missing": [
+            "Guideline Summary version governing the loan"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "PRE-VACANT-ELIG",
+          "section": "Appraisal Review",
+          "reads": [
+            "SubjectProperty.occupancy_type"
+          ],
+          "status": "computable_but_missing",
+          "why": "The vacancy check maps to vacant_property and the transaction check maps to loan_purpose, so the stated pass or routing decision is rule-based.",
+          "missing": [],
+          "model_decided": true
+        },
+        {
+          "job": "PRE-VACANT-RT",
+          "section": "Appraisal Review",
+          "reads": [
+            "LoanCore.cltv_percent",
+            "RatioSet.reserves_months"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "16",
+            "30"
+          ]
+        },
+        {
+          "job": "PRE-VACANT-CO",
+          "section": "Appraisal Review",
+          "reads": [
+            "LoanCore.cltv_percent",
+            "RatioSet.total_monthly_income_usd"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "30"
+          ]
+        },
+        {
+          "job": "PRE-LISTDEF",
+          "section": "Appraisal Review",
+          "reads": [],
+          "status": "computable_but_missing",
+          "why": "The schema includes `listed_for_sale_last_6_months`, which directly represents the six-month listing check.",
+          "missing": [],
+          "model_decided": true
+        },
+        {
+          "job": "PRE-LISTCOND",
+          "section": "Appraisal Review",
+          "reads": [
+            "LoanCore.cltv_percent",
+            "RatioSet.reserves_months"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "31"
+          ]
+        },
+        {
+          "job": "PRE-MIXEDUSE",
+          "section": "Appraisal Review",
+          "reads": [
+            "SubjectProperty.is_mixed_use"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "16"
+          ]
+        },
+        {
+          "job": "AFC-GIFT-MIN",
+          "section": "Asset Assessment",
+          "reads": [
+            "LoanCore.down_payment.percent_of_purchase_price"
+          ],
+          "status": "not_computable",
+          "why": "The check requires gift-use and verified own-funds data plus purchase price, none of which are available as schema fields.",
+          "missing": [
+            "gift funds used",
+            "borrower\u2019s own sourced and seasoned funds amount",
+            "purchase price",
+            "down-payment percentage metric",
+            "document evidence establishing source and seasoning"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "AFC-SEASON-THRESH",
+          "section": "Asset Assessment",
+          "reads": [
+            "LoanCore.required_to_close_usd"
+          ],
+          "status": "not_computable",
+          "why": "The trigger requires funds-to-close, CLTV, and transaction classification not reliably available in the schema, and the outcome also depends on whether seasoning evidence is obtained.",
+          "missing": [
+            "Funds to close amount",
+            "CLTV percentage",
+            "Business-purpose versus consumer-transaction classification",
+            "Seasoning verification status/evidence"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "AFC-VERIF-DOCS",
+          "section": "Asset Assessment",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema has no fields for required accounts or asset-document type and content, so the acceptable-document checks cannot be reduced to schema comparisons.",
+          "missing": [
+            "whether seasoning verification is required and which accounts require it",
+            "asset verification document type for each relied-on account",
+            "bank statement recency or covered months",
+            "whether a VOD shows current and average balances"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "AFC-30DAY-MIN",
+          "section": "Asset Assessment",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema lacks account-level asset-documentation periods and the information needed to determine whether additional domestic seasoning applies.",
+          "missing": [
+            "Relied-on accounts",
+            "Asset-documentation coverage period for each account",
+            "Whether funds are domestic",
+            "Acra confirmation of any additional domestic seasoning"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "AFC-FOREIGN-REPAT",
+          "section": "Asset Assessment",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema lacks the asset, repatriation, and closing-date data needed to verify timing, and the rule\u2019s scope is unresolved.",
+          "missing": [
+            "whether closing funds are held in a foreign bank or currency",
+            "whether those funds are relied on for closing",
+            "repatriation evidence and date",
+            "expected closing date",
+            "business-day calendar or calculation convention",
+            "Q-12 clarification on whether the rule applies to non-Foreign Nationals"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "AFC-RESERVE-LTV80",
+          "section": "Asset Assessment",
+          "reads": [
+            "RatioSet.reserves_months"
+          ],
+          "status": "not_computable",
+          "why": "LTV can be derived from loan_amount and property_value and reserves_months can be compared with 6, but the schema does not establish that the reserves are verified, documented, and on a PITIA basis.",
+          "missing": [
+            "verified/documented reserves after closing",
+            "confirmation that reserves_months are calculated on a PITIA basis"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "AFC-RESERVE-FICO",
+          "section": "Asset Assessment",
+          "reads": [
+            "RatioSet.reserves_months"
+          ],
+          "status": "computable_but_missing",
+          "why": "The rule reduces to fico < 620 and reserves_months >= 12, and both fields are present in the schema.",
+          "missing": [],
+          "model_decided": true
+        },
+        {
+          "job": "AFC-RESERVE-TXN",
+          "section": "Asset Assessment",
+          "reads": [
+            "RatioSet.reserves_months"
+          ],
+          "status": "not_computable",
+          "why": "The reserve comparisons use an available reserves field, but deciding whether the 12-month trigger applies requires history and rent-receipt details the schema lacks.",
+          "missing": [
+            "Forbearance in the last 12 months",
+            "Mortgage late in the last 12 months with timing detail",
+            "Timely receipt of the prior two months\u2019 rent"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "AFC-RESERVE-TOTAL",
+          "section": "Asset Assessment",
+          "reads": [
+            "RatioSet.reserves_months"
+          ],
+          "status": "not_computable",
+          "why": "Several triggers and reserve-eligibility checks require document evidence or an unresolved guideline interpretation, not just the available schema fields.",
+          "missing": [
+            "Whether rent-loss insurance is unobtainable and the required/unobtained coverage months",
+            "Whether forbearance or late payments apply without receipts",
+            "Verified eligible post-closing reserve amounts and reserve source, including permitted cash-in-hand treatment",
+            "Resolution of Q-07 on highest-trigger versus cumulative reserves"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BET-ENTITY-ELIG",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The entity, occupancy, and purpose checks can map to schema fields, but verifying the required signer attestation needs document evidence not represented in the schema.",
+          "missing": [
+            "Executed business-purpose attestation by the entity\u2019s authorized signer"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BET-TITLE-HOLD",
+          "section": "Compliance and Closing",
+          "reads": [
+            "TitleInformation.title_held_in_names"
+          ],
+          "status": "not_computable",
+          "why": "The available borrower and entity fields do not establish the title commitment\u2019s vesting or whether Acra has accepted the entity.",
+          "missing": [
+            "Title vesting/title holder identity and type, including whether vesting is in individuals or a compliant revocable trust",
+            "Acra\u2019s acceptance status for an entity title holder"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BET-GUAR-20PCT",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema lacks the ownership details and guarantee execution and terms needed to verify the requirement.",
+          "missing": [
+            "individual owners and direct/indirect ownership percentages or ownership chain",
+            "whether each required owner executed a personal guarantee",
+            "whether each guarantee is on Exhibit 7 or an Acra-approved form",
+            "whether multiple guarantees are joint and several"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BET-SPE-DEF",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema lacks fields establishing the entity\u2019s purpose, full asset holdings, and series status; these require entity-document content.",
+          "missing": [
+            "entity purpose/business activity",
+            "entity assets and their types",
+            "series LLC designation"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BET-BORR-ONTITLE",
+          "section": "Compliance and Closing",
+          "reads": [
+            "TitleInformation.title_held_in_names"
+          ],
+          "status": "not_computable",
+          "why": "The schema has borrower fields but no title-holding entities to compare against them.",
+          "missing": [
+            "Title vesting entities / title_held_in_names"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BET-OWNCHG-LOOKBACK",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema lacks the ownership-change and guarantor details, and determining circumvention intent requires judgment.",
+          "missing": [
+            "Operating agreement/bylaws amendment dates and pre-/post-change ownership percentages",
+            "Application date and whether a change occurred during the application process",
+            "Pre-change owners\u2019 guarantor status",
+            "Judgment about intent to circumvent required guarantors"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BET-ENTITY-TYPES",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "covered_partial",
+          "python_rules": [
+            "23"
+          ]
+        },
+        {
+          "job": "BET-PROHIB-TYPES",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema can identify a borrower entity type, but lacks ownership-chain details needed to evaluate the nesting rule.",
+          "missing": [
+            "ownership-chain depth",
+            "whether a subsidiary is wholly owned",
+            "whether subsidiary owners are individuals",
+            "whether any owners are entities or trusts"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BET-FTHB-ATTEST",
+          "section": "Compliance and Closing",
+          "reads": [
+            "Borrower.is_first_time_homebuyer"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "23"
+          ]
+        },
+        {
+          "job": "BET-FORM-DOCS",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "covered_partial",
+          "python_rules": [
+            "23"
+          ]
+        },
+        {
+          "job": "BET-OPAGREEMENT",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "covered_partial",
+          "python_rules": [
+            "24"
+          ]
+        },
+        {
+          "job": "BET-OWN-EVID",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "covered_partial",
+          "python_rules": [
+            "24"
+          ]
+        },
+        {
+          "job": "BET-NAME-MATCH",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "covered_partial",
+          "python_rules": [
+            "24"
+          ]
+        },
+        {
+          "job": "BET-GOODSTAND",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "covered_partial",
+          "python_rules": [
+            "24",
+            "25"
+          ]
+        },
+        {
+          "job": "BET-EIN-TAXID",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "covered_partial",
+          "python_rules": [
+            "25"
+          ]
+        },
+        {
+          "job": "BET-AUTH-POA",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "covered_partial",
+          "python_rules": [
+            "25"
+          ]
+        },
+        {
+          "job": "BET-BGCHECK",
+          "section": "Compliance and Closing",
+          "reads": [
+            "CreditReport.ofac_alert"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the required search, party-coverage, and currency data, and determining adverse findings requires report content.",
+          "missing": [
+            "OFAC alert and other background-search results, including criminal, litigation, judgment, and lien findings",
+            "Search reports and their coverage for the borrower/entity, recourse guarantors, and 20%+ owners or managing-control parties",
+            "Loan approval/draw date and Acra's currency schedule (Q-25)"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BET-REVTRUST",
+          "section": "Compliance and Closing",
+          "reads": [
+            "TitleInformation.trust_name"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the trust-document contents and related eligibility and exception facts needed to evaluate these conditions.",
+          "missing": [
+            "TitleInformation.trust_name / title vesting in a trust",
+            "Trust agreement or Certification of Trust and its required statements",
+            "Trust validity under state law",
+            "Revocability and right to revoke",
+            "Trustor and trustee identities and whether they differ",
+            "Trustor natural-person status and primary-beneficiary status",
+            "Trustee powers to hold title and mortgage",
+            "Beneficiary consent provisions and lender-rights/no-impairment statements",
+            "Written Acra Senior Management exception"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "CMP-SRC-VERSION",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema lacks the source, approval, and confirmation records needed to verify governing versions and application of their requirements.",
+          "missing": [
+            "controlling Program Summary and Seller\u2019s Guide versions",
+            "lock date",
+            "source versions cited in underwriting approval",
+            "whether each version-sensitive rule was applied correctly",
+            "Acra confirmation-register responses and whether each was applied"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-TRADELINE",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "CreditReport.scores"
+          ],
+          "status": "computable_but_missing",
+          "why": "The score count maps to credit_score_count, and tradelines_meet_requirement captures whether the required tradeline depth is met.",
+          "missing": [],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-ONENOSCORE",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "not_computable",
+          "why": "The schema supports the housing-history and score inputs, but lacks the lien data to verify CLTV and a field showing the score tier actually applied.",
+          "missing": [
+            "CLTV or total lien balances needed to determine combined LTV",
+            "decisioning/pricing score actually used"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-DECSCORE",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "CreditReport.representative_score"
+          ],
+          "status": "not_computable",
+          "why": "The schema has only a single fico and score count, so it cannot determine the required per-party score convention or guarantor selection.",
+          "missing": [
+            "Individual credit scores for each borrower/guarantor from the credit reports",
+            "Guarantor identity and ownership percentages for entity borrowers",
+            "The confirmed score-selection rule for multiple scores and entity borrowers (Q-19)"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-MTG-RATING",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "Liability.late_30_days_count"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the per-property, trailing-12-month payment data and documentation status needed to verify completeness and determine the rating.",
+          "missing": [
+            "Liability.late_30_days_count for the trailing 12 months",
+            "Trailing-12-month 60-, 90-, and 120-day late-payment counts",
+            "Per-property mortgage and rental obligations and payment histories",
+            "Whether history is documented for unreported obligations"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-HIST-SCOPE",
+          "section": "Credit Review & Analysis",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema has only generic housing-history and credit-event fields, not the property- and person-level facts needed to determine scope and completeness.",
+          "missing": [
+            "Borrower/guarantor identities and their principal residences and second homes",
+            "Property-level housing-history documentation status",
+            "Credit-report indications of major credit events on additional properties",
+            "Housing-history status for any additional property flagged by a major credit event"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-MATURED",
+          "section": "Credit Review & Analysis",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema lacks these loan-level facts, and verifying written extensions requires reviewing document content.",
+          "missing": [
+            "Matured mortgage loan details, including maturity date and date used for rating",
+            "Whether a maturity extension occurred and whether it is documented in writing"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-MTGHIST-TIER",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "28"
+          ]
+        },
+        {
+          "job": "CRD-BKFC-SEASON",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "Borrower.bankruptcy_discharge_date",
+            "Borrower.foreclosure_date"
+          ],
+          "status": "not_computable",
+          "why": "The schema has a combined seasoning-months field and loan purpose, but lacks CLTV and the convention needed to assign the applicable tier.",
+          "missing": [
+            "Combined loan-to-value (CLTV), or the lien data needed to calculate it",
+            "Confirmed bankruptcy/foreclosure event-date and month-counting convention (Q-05)"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-SSDIL-SEASON",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "Borrower.has_preforeclosure_short_sale"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "29"
+          ]
+        },
+        {
+          "job": "CRD-ESCROW-WVR",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "LoanCore.is_escrow_waived"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "29"
+          ]
+        },
+        {
+          "job": "CRD-IMPOUNDS-REQ",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "LoanCore.is_escrow_waived"
+          ],
+          "status": "not_computable",
+          "why": "The schema can identify mandatory-impound categories, but cannot confirm the waiver status or that impounds were established.",
+          "missing": [
+            "actual escrow-waived status (escrow_waiver_requested does not establish whether a waiver was granted)",
+            "whether an escrow account is established"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-GUAR-SCOPE",
+          "section": "Credit Review & Analysis",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema has some credit-related fields but cannot identify and reconcile each qualifying owner and guarantor or verify that every requirement was evaluated for each guarantor.",
+          "missing": [
+            "Direct and indirect owner roster with ownership percentages",
+            "Executed guarantee status linked to each owner",
+            "Credit report and 1003 availability linked to each guarantor",
+            "Per-guarantor outcomes for tradeline, housing-history, credit-event, and FICO requirements"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BOR-CITZ",
+          "section": "Identification Requirements",
+          "reads": [
+            "Borrower.citizenship_status"
+          ],
+          "status": "not_computable",
+          "why": "citizenship_type can provide a classification, but the job also requires per-party coverage and verification of identification, tax-ID consistency, and foreign residence.",
+          "missing": [
+            "Borrower/guarantor-level citizenship classifications",
+            "tax_id_type",
+            "Identification and status evidence",
+            "Residence-outside-US confirmation"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BOR-PRA-ID",
+          "section": "Identification Requirements",
+          "reads": [
+            "Borrower.id_expiration"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "17"
+          ]
+        },
+        {
+          "job": "BOR-NPR-ID",
+          "section": "Identification Requirements",
+          "reads": [
+            "Borrower.id_expiration"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "17"
+          ]
+        },
+        {
+          "job": "BOR-NPR-LIMITS",
+          "section": "Identification Requirements",
+          "reads": [
+            "LoanCore.total_loan_amount_usd"
+          ],
+          "status": "not_computable",
+          "why": "Loan amount and NPR status are available, but the 80% CLTV check needs a metric the schema lacks.",
+          "missing": [
+            "CLTV percentage or the lien amounts needed to calculate it"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BOR-FN-DEF",
+          "section": "Identification Requirements",
+          "reads": [
+            "Borrower.citizenship_country"
+          ],
+          "status": "not_computable",
+          "why": "Citizenship type can indicate nationality, but the schema lacks the residence and immigration/work-authorization fields needed to determine Foreign National status.",
+          "missing": [
+            "primary residence/current address or residence country",
+            "non-resident-alien or permanent-residency status",
+            "US work-authorization/EAD status"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BOR-FN-CAPS",
+          "section": "Identification Requirements",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks fields to determine CLTV and lock pricing FICO, and the foreign-national loan-limit question requires an unresolved guideline confirmation.",
+          "missing": [
+            "CLTV (including any subordinate-lien amounts needed to determine it)",
+            "FICO used for pricing on the lock confirmation",
+            "Applicable matrix maximum loan amount or a confirmed foreign-national loan limit"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BOR-ITIN-DEF",
+          "section": "Identification Requirements",
+          "reads": [
+            "Borrower.tax_id_type"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the tax-ID, document-availability, residence, and supporting-document fields needed to determine ITIN status and its eligibility outcome.",
+          "missing": [
+            "borrower tax_id_type",
+            "EAD/visa or other Non-Permanent Resident document availability",
+            "borrower residence (inside or outside the US)",
+            "ITIN assignment letter on file",
+            "passport or other identity document on file"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BOR-ITIN-CAPS",
+          "section": "Identification Requirements",
+          "reads": [
+            "LoanCore.total_loan_amount_usd",
+            "LoanCore.cltv_percent"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "17"
+          ]
+        },
+        {
+          "job": "BOR-ITIN-CREDIT",
+          "section": "Identification Requirements",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema has no fields to compare the identifier on the credit report with the borrower's documented ITIN or SSN.",
+          "missing": [
+            "credit report identifier",
+            "borrower's documented identifier (ITIN or SSN)",
+            "tax_id_type"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BOR-FN-RESTRICT",
+          "section": "Identification Requirements",
+          "reads": [
+            "LoanCore.is_escrow_waived"
+          ],
+          "status": "not_computable",
+          "why": "Citizenship and escrow waiver status map to schema fields, but deciding how the unscoped Credit Requirements restriction applies requires external confirmation.",
+          "missing": [
+            "Acra Q-04 confirmation of the scope of the Credit Requirements panel\u2019s Foreign National restriction"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BOR-FTHB-DEF",
+          "section": "Identification Requirements",
+          "reads": [
+            "Borrower.is_first_time_homebuyer"
+          ],
+          "status": "not_computable",
+          "why": "The schema has first_time_homebuyer, but cannot verify the required evidence for every applicant or resolve conflicts between declarations and credit.",
+          "missing": [
+            "Applicant-level prior ownership declarations (including 1003 history)",
+            "Applicant-level REO/real-property ownership history",
+            "Applicant-level credit evidence of prior mortgages"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "FN-BIZPURPOSE",
+          "section": "Identification Requirements",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The borrower, purpose, and investment-occupancy checks map to schema fields, but attestation execution is not represented.",
+          "missing": [
+            "Business Purpose Attestation executed/status"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "FN-FX-REVIEW",
+          "section": "Identification Requirements",
+          "reads": [
+            "LoanCore.assets_after_closing_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the post-close asset amount and approval review evidence, which requires checking document content.",
+          "missing": [
+            "Post-close assets/liquidity in USD (assets_after_closing_usd)",
+            "Underwriting approval documentation of the post-close financial position and exchange-rate review"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "FN-OFAC-STATE",
+          "section": "Identification Requirements",
+          "reads": [
+            "CreditReport.ofac_alert"
+          ],
+          "status": "not_computable",
+          "why": "The schema has the subject state, but not the OFAC screening result or the external exclusion list needed to decide the checks.",
+          "missing": [
+            "OFAC screening result for all Foreign National borrowers and entities (CreditReport.ofac_alert)",
+            "Acra\u2019s supplied \u00a73.10 state-exclusion list"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "FN-ASSET-USD",
+          "section": "Identification Requirements",
+          "reads": [
+            "Asset.current_balance_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks asset and conversion fields, and verifying the documented current rate requires document content or an external lookup.",
+          "missing": [
+            "foreign-account status",
+            "foreign-currency balance and currency",
+            "documented xe.com/WSJ exchange rate, source, and date",
+            "USD-equivalent asset balance"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "FN-FUNDS-ESCROW",
+          "section": "Identification Requirements",
+          "reads": [
+            "LoanCore.required_to_close_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the required funds-to-close amount, closing date, and escrow receipt amount and date needed to verify timely full deposit.",
+          "missing": [
+            "LoanCore.required_to_close_usd",
+            "expected_closing_date",
+            "escrow_receipt_amount",
+            "escrow_receipt_date"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "FN-SEASON-60",
+          "section": "Identification Requirements",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema has no asset-document or seasoning fields, and verifying statements, translations, and chain-of-funds evidence requires document contents.",
+          "missing": [
+            "two most recent statements for each relied-on account",
+            "fund seasoning duration in days",
+            "whether statements are translated when needed",
+            "letter of explanation for unseasoned funds",
+            "60-day chain-of-funds evidence"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "FN-CREDIT-REF",
+          "section": "Identification Requirements",
+          "reads": [
+            "CreditReport.total_trade_lines"
+          ],
+          "status": "not_computable",
+          "why": "The schema has no fields to determine which reference documents are present or whether they satisfy the required document-specific tests.",
+          "missing": [
+            "credit reference type and presence (U.S. or international credit report, reference letter, or foreign bank statement)",
+            "U.S. credit report tradeline count and age of oldest qualifying tradeline",
+            "reference-letter originality and issuing institution qualification",
+            "foreign bank statement coverage of the past 60 days"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "FN-CLOSING-DOCS",
+          "section": "Identification Requirements",
+          "reads": [
+            "Borrower.power_of_attorney_used"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the POA-use and document/approval status fields needed to check the closing requirements.",
+          "missing": [
+            "Borrower.power_of_attorney_used",
+            "current passport, visa, or ITIN copy on file and current",
+            "title and closing agent approved or vetted by Acra",
+            "POA conformity with Acra and title requirements",
+            "executed IRS Form W-8BEN on file"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "FN-NOTARY",
+          "section": "Identification Requirements",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The checks require document and title-company details that are not fields in the schema.",
+          "missing": [
+            "document signing location",
+            "embassy/consular acknowledgment and seal",
+            "Hague Convention country status",
+            "authorized notary acknowledgment",
+            "apostille present, in English, and attached",
+            "title company acceptance"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-CALC",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "RatioSet.total_monthly_obligation_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema has gross_rental_income and pitia, but cannot establish the qualifying-rent comparison or verify the first-payment-due denominator.",
+          "missing": [
+            "Market rent from Form 1007/1025",
+            "Qualifying in-place rent from lease documentation",
+            "First payment due and payment schedule from the Note",
+            "PITIA component amounts and subordinate financing payment"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-PITIA",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "RatioSet.proposed_housing_expense_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema has only an aggregate PITIA field, not the component amounts, source-document evidence, or subordinate-lien details needed for deterministic validation.",
+          "missing": [
+            "P&I amount and confirmation it is the Note\u2019s first payment due",
+            "Annual property taxes and tax-source documentation",
+            "Annual insurance premium and policy documentation",
+            "Monthly HOA/condo fee and statement documentation",
+            "Subordinate-lien existence, position, monthly payment, and supporting statement",
+            "Component-level amounts and documentation status to verify the sum against the DSCR total"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-SUBFIN",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "Liability[is_subject_property_lien=True].monthly_payment_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema has no subordinate-lien liability or DSCR-denominator fields needed to verify the payment and its inclusion.",
+          "missing": [
+            "Whether a subordinate lien remains on the subject property after closing",
+            "Subject-property lien position",
+            "Subordinate lien monthly payment",
+            "Whether that payment is included in the DSCR denominator"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-QUALRENT",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "RealEstateOwned[is_subject_property=True].gross_rental_income_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema\u2019s gross_rental_income and vacancy/lease indicators do not provide the rent amounts or required document evidence, and Q-01 leaves the qualifying-rent rule unresolved.",
+          "missing": [
+            "1007/1025 market rent",
+            "Lease-based in-place rent",
+            "Two consecutive months of rent receipts and lease term through at least three months after closing",
+            "Subject-property identification for the rental-income record",
+            "Resolution of the Q-01 policy ambiguity"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-ACTRENT-DOC",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "RealEstateOwned[is_subject_property=True].gross_rental_income_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema has gross rental income but lacks the document-derived receipt, lease-term, closing-date, and rent-comparison facts needed for the checks.",
+          "missing": [
+            "two consecutive months of rental-receipt evidence and receipt dates/amounts",
+            "lease rent and expiration date",
+            "scheduled closing date",
+            "whether receipts are security deposits or prepaid rent",
+            "market rent for comparison",
+            "No Ratio status"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-VACANT-RENT",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "RatioSet.total_monthly_income_usd"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "14"
+          ]
+        },
+        {
+          "job": "DSCR-1007-REQ",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "AppraisalSummary.appraiser_license_number"
+          ],
+          "status": "not_computable",
+          "why": "The rule depends on appraisal-document contents and trigger facts that the schema does not provide.",
+          "missing": [
+            "Form 1007 presence and subject property type",
+            "appraiser state-license status",
+            "whether the file qualifies under DSCR",
+            "lease-option purchase status and whether excess rent funds the down payment",
+            "whether proposed rental income is used to qualify"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-RENT-XCESS",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "RealEstateOwned[is_subject_property=True].gross_rental_income_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema has gross_rental_income, but deciding this job requires comparing lease rent with market rent and verifying acceptable supporting evidence for the subject property.",
+          "missing": [
+            "lease_monthly_rent",
+            "market_rent_1007",
+            "acceptable_market_rent_support_on_file",
+            "subject_property_indicator"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-STR-FORM",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema has no fields for the rent form or appraiser signature and licensing, which require document review.",
+          "missing": [
+            "Presence and type of rent form (Form 1007 or STRpro/similar STR appraisal form)",
+            "Whether the form is signed by an appropriately licensed appraiser"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-STR-LEDGER",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "RealEstateOwned[is_subject_property=True].gross_rental_income_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema has gross_rental_income and occupancy_subtype, but cannot verify ledger documentation or resolve the policy-dependent Q-02 treatment.",
+          "missing": [
+            "12-month STR ledger presence, duration, and acceptable source",
+            "Whether the subject qualifies using STR actual rent versus market rent or No Ratio",
+            "Q-02 guidance for converting ledger receipts to qualifying rent and applying receipt/lease conditions"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-STR-CAPS",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "15"
+          ]
+        },
+        {
+          "job": "DSCR-FORB-OVL",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "RatioSet.reserves_months"
+          ],
+          "status": "not_computable",
+          "why": "Although reserves_months is available, applying the overlay also requires credit-history and rent-documentation details and identifying a guarantor-only trigger, which the schema does not provide.",
+          "missing": [
+            "Applicant forbearance within the last 12 months",
+            "Applicant mortgage late within the last 12 months",
+            "Documentation of timely receipt of the prior two months\u2019 rent",
+            "Whether the trigger arose only from an entity borrower\u2019s guarantor"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-LTV80",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "LoanCore.ltv_percent"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "30"
+          ]
+        },
+        {
+          "job": "DSCR-SUB1-NORATIO",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "not_computable",
+          "why": "The schema has loan purpose and FICO, but lacks CLTV and a numeric DSCR needed to determine applicability and enforce the caps.",
+          "missing": [
+            "CLTV percentage (LoanCore.cltv_percent)",
+            "Calculated DSCR"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-NORATIO-DOCS",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema lacks the required document, insurance, pricing, and decision-method indicators needed to evaluate the checks deterministically.",
+          "missing": [
+            "Form 1007/1025 on file",
+            "rent loss insurance coverage",
+            "No Ratio registration/qualification status",
+            "No Ratio or STR pricing appropriateness",
+            "whether a calculated DSCR was used to decision the file"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LFC-DSCR-FINAL",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "RatioSet.total_monthly_income_usd"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "16"
+          ]
+        },
+        {
+          "job": "DSCR-IO-DENOM",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "RatioSet.total_monthly_obligation_usd"
+          ],
+          "status": "not_computable",
+          "why": "The available PITIA field does not provide the payment components or Note terms needed to build and verify both denominators, and the governing minimum DSCR is absent.",
+          "missing": [
+            "Note first interest-only payment",
+            "recast principal-and-interest payment",
+            "monthly taxes, insurance, HOA, and subordinate payment amounts",
+            "governing minimum DSCR",
+            "qualifying DSCR calculation or value"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "RLI-PURPOSE",
+          "section": "Insurance Coverage Sufficiency & Policy Assessment",
+          "reads": [],
+          "status": "not_computable",
+          "why": "Determining coverage scope requires reading policy language, and the schema lacks the policy, coverage period, and requirement-status fields.",
+          "missing": [
+            "Rent loss policy/endorsement on file",
+            "Policy coverage of rental-income losses during post-casualty rehabilitation",
+            "Coverage period in months",
+            "Whether rent loss insurance is required (RLI-LTV-TRIGGER / RLI-CLTV-EXEMPT)"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "RLI-LTV-TRIGGER",
+          "section": "Insurance Coverage Sufficiency & Policy Assessment",
+          "reads": [
+            "LoanCore.ltv_percent"
+          ],
+          "status": "not_computable",
+          "why": "LTV can be derived from loan amount and property value, but the schema lacks the qualification-source and insurance evidence needed to decide the requirement.",
+          "missing": [
+            "Whether subject-property rents were used to qualify",
+            "Rent-loss insurance coverage amount/duration and whether it is on file or bound",
+            "Whether reserves qualify as a substitute under RLI-RESERVE-SUB"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "RLI-CLTV-EXEMPT",
+          "section": "Insurance Coverage Sufficiency & Policy Assessment",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "32"
+          ]
+        },
+        {
+          "job": "RLI-RESERVE-SUB",
+          "section": "Insurance Coverage Sufficiency & Policy Assessment",
+          "reads": [
+            "RatioSet.reserves_months"
+          ],
+          "status": "not_computable",
+          "why": "The reserve comparison can use reserves_months, but determining whether insurance is required and how many months are unobtainable needs fields or document evidence the schema lacks.",
+          "missing": [
+            "Rent loss insurance required status (RLI trigger)",
+            "Rent loss coverage months obtained",
+            "Evidence that the remaining coverage cannot be obtained"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-OCCUPANCY",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "SubjectProperty.occupancy_type"
+          ],
+          "status": "not_computable",
+          "why": "Although occupancy_subtype can represent occupancy_type, the required intent and document-consistency checks need information the schema does not contain.",
+          "missing": [
+            "Borrower/guarantor intent to occupy the subject",
+            "Appraisal occupancy observation",
+            "Evidence that any lease and other file documents are consistent with investment use"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-INV-PROP",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "SubjectProperty.number_of_units"
+          ],
+          "status": "not_computable",
+          "why": "Unit count and property type are available, but the remaining eligibility checks require lease/document content and eligibility facts the schema does not encode.",
+          "missing": [
+            "Whether the lease is to someone other than the owner and establishes a principal year-round residence",
+            "Whether the property qualifies as a documented short-term rental",
+            "Whether a vacant-purchase case is permitted"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-BIZPURPOSE",
+          "section": "Loan Program Eligibility",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema lacks the transaction and cash-flow qualification checks and cannot establish the attestation\u2019s contents, approval, or execution from document records.",
+          "missing": [
+            "business-purpose classification",
+            "whether qualification uses the subject property's actual or market cash flow (DSCR or No Ratio)",
+            "attestation presence in the closing package",
+            "attestation form identity or Acra approval",
+            "execution, required signer coverage, and signing date"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-BIZ-CONSUMER",
+          "section": "Loan Program Eligibility",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema cannot establish the transaction\u2019s documented use or attestation status, and consumer classification requires external confirmation.",
+          "missing": [
+            "stated use of proceeds",
+            "business-purpose classification and its basis",
+            "Business Purpose Attestation execution status",
+            "Acra confirmation for consumer classification"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-PURPOSE",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.loan_purpose"
+          ],
+          "status": "not_computable",
+          "why": "The schema has loan_purpose and delayed_financing, but deciding whether the declared purpose matches the transaction requires document content not represented in the schema.",
+          "missing": [
+            "Transaction-document agreement with declared purpose",
+            "Cash to borrower at refinance closing",
+            "Evidence of prior all-cash purchase for delayed financing"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-QUAL-METHOD",
+          "section": "Loan Program Eligibility",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema lacks the registration and document evidence needed to verify the qualification method against whether a ratio was calculated.",
+          "missing": [
+            "registered qualification method",
+            "lock confirmation registered method",
+            "calculated DSCR ratio or ratio-calculated status",
+            "Form 1007 / 1025 evidence"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-NO-DTI",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "RatioSet.dti_percent"
+          ],
+          "status": "not_computable",
+          "why": "The schema has no DTI or decision/documentation-status fields, so it cannot establish whether DTI affected the decision or income documentation was required.",
+          "missing": [
+            "DTI value or DTI-used-in-decision indicator",
+            "approval decision basis",
+            "income/employment documentation requirement status"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-RENTFORM",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "AppraisalSummary.form_type"
+          ],
+          "status": "not_computable",
+          "why": "The schema has unit count but not the appraisal form on file or the appraiser\u2019s licensing status, so the required checks cannot be reduced to comparisons over its fields.",
+          "missing": [
+            "AppraisalSummary.form_type / rent-schedule form presence (Form 1007 or 1025)",
+            "Appraiser state-licensed status"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-RIDER",
+          "section": "Loan Program Eligibility",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema has no fields for closing-document contents, signatures, attachment, or obligation routing, and the \u00a723.40 trigger criteria are not provided.",
+          "missing": [
+            "One- to Four-Family Rider presence and execution status",
+            "Execution by all required borrowers or authorized entity signers",
+            "Rider attachment to and reference in the security instrument",
+            "Rider status in the closing package (prepared versus signed)",
+            "Rent loss insurance obligation status and routing to RLI-LTV-TRIGGER",
+            "\u00a723.40 criteria needed to determine when rent loss insurance is required"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-REO-SCOPE",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "RealEstateOwned.property_use"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks per-property REO and credit-mortgage data needed to identify required properties and reconcile reported mortgages.",
+          "missing": [
+            "RealEstateOwned.property_use / per-property REO records",
+            "REO is_subject_property indicator",
+            "Borrower/guarantor identity linked to each REO property",
+            "Credit-reported mortgages and their mapping to listed properties",
+            "Borrower explanations for mortgages not mapped to listed properties"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-LOAN-AMT",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.total_loan_amount_usd"
+          ],
+          "status": "covered",
+          "python_rules": [
+            "6"
+          ]
+        },
+        {
+          "job": "LPE-SELLER-CONC",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "ClosingFee.seller_paid_at_closing_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema\u2019s seller_concession_pct does not establish the required contribution details, eligible use, or excess handling.",
+          "missing": [
+            "Purchase price/sale price",
+            "Total seller and interested-party contributions, including amounts paid before closing",
+            "Whether contributions are applied only to closing costs or prepaids, not the down payment",
+            "Whether excess contributions were removed or netted from the sales price"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-FTHB-COND",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "CreditReport.representative_score",
+            "LoanCore.cltv_percent",
+            "LoanCore.total_loan_amount_usd",
+            "RatioSet.reserves_months"
+          ],
+          "status": "not_computable",
+          "why": "The other checks map to schema fields, but CLTV cannot be established without combined lien balances, and the entity-borrower outcome depends on guarantor history and an external Acra determination.",
+          "missing": [
+            "CLTV / combined lien balance (including any subordinate liens)",
+            "Entity guarantors\u2019 prior-homeownership status",
+            "Acra\u2019s response to Q-09"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LFC-FICO-MTX",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.cltv_percent",
+            "CreditReport.representative_score"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "10",
+            "11",
+            "37"
+          ]
+        },
+        {
+          "job": "LFC-FICO-FLOOR",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "CreditReport.representative_score"
+          ],
+          "status": "covered",
+          "python_rules": [
+            "6"
+          ]
+        },
+        {
+          "job": "LFC-CASHHAND",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.cash_out_amount_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the cash-out amount and subordinate-financing data, and the unresolved footnote-scope and LTV/CLTV questions require confirmation rather than deterministic field comparisons.",
+          "missing": [
+            "Cash-in-hand/cash-out amount at closing",
+            "CLTV or subordinate-financing amount/presence",
+            "Confirmed footnote scope and LTV-versus-CLTV basis"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LFC-DELAY-FIN",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.total_loan_amount_usd"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "12",
+            "42",
+            "8"
+          ]
+        },
+        {
+          "job": "LFC-SMALL-LOAN",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "not_computable",
+          "why": "Loan amount and purpose are available, but the schema lacks the CLTV value required for the cap comparison.",
+          "missing": [
+            "CLTV percentage (cltv_percent), or the total lien balances needed to calculate it"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LFC-JUMBO-DSCR",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "RatioSet.total_monthly_income_usd"
+          ],
+          "status": "computable_but_missing",
+          "why": "Loan amount, rental income, PITIA, and DSCR documentation type support the threshold, ratio, and No Ratio checks.",
+          "missing": [],
+          "model_decided": true
+        },
+        {
+          "job": "LFC-CLTV-FINAL",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "29",
+            "37"
+          ]
+        },
+        {
+          "job": "LFC-FICO-FINAL",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "CreditReport.representative_score"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "38"
+          ]
+        },
+        {
+          "job": "PPT-PRODUCTS",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.amortization_type"
+          ],
+          "status": "not_computable",
+          "why": "The available interest-only flags do not identify the amortization, ARM period, and term needed to validate every eligible product combination.",
+          "missing": [
+            "amortization type (Fixed vs. ARM)",
+            "ARM fixed period (5/1 or 7/1)",
+            "loan term (360 or 480 months)",
+            "interest-only term (60 or 120 months)"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "PPT-ARM-TERMS",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.arm_margin_percent"
+          ],
+          "status": "not_computable",
+          "why": "The checks require comparing ARM terms and determining applicability, but the schema has no fields for those terms or an ARM/fixed-rate indicator.",
+          "missing": [
+            "ARM index type",
+            "ARM initial, periodic, and lifetime caps",
+            "ARM margin percent",
+            "ARM/fixed-rate product indicator"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "PPT-IO-PARAMS",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.total_loan_amount_usd",
+            "CreditReport.representative_score"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "34"
+          ]
+        },
+        {
+          "job": "PPT-IO-1040",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "34"
+          ]
+        },
+        {
+          "job": "PPT-IO-EXCL",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.interest_only_period_months"
+          ],
+          "status": "computable_but_missing",
+          "why": "The schema provides an interest-only indicator, first-time-homebuyer status, vacancy and loan-purpose fields, and the six-month listing indicator needed for deterministic checks.",
+          "missing": [],
+          "model_decided": true
+        },
+        {
+          "job": "PPT-IO-PMTCALC",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.note_rate_percent"
+          ],
+          "status": "not_computable",
+          "why": "The schema has loan amount and interest rate, but deciding whether the Note states the calculated payment and a recast over the remaining term requires document content and term details.",
+          "missing": [
+            "Note content: stated IO payment and recast provision",
+            "Loan term/maturity and interest-only period duration"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "PPT-SUBFIN-HELOC",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "Liability.credit_limit_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema has listed-for-sale fields but lacks the lien and CLTV inputs, and Acra confirmation requires an external determination.",
+          "missing": [
+            "subject-property subordinate-lien presence and lien position",
+            "lien type (HELOC)",
+            "HELOC credit line limit",
+            "current balance",
+            "CLTV value or inputs needed to calculate it",
+            "Acra eligibility confirmation"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "PPT-PPP-STRUCT",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.prepayment_penalty_term_months"
+          ],
+          "status": "not_computable",
+          "why": "The schema has only whether a prepayment penalty was requested, not its term or percentage schedule, which must be checked in the loan documents.",
+          "missing": [
+            "Prepayment penalty term in months (LoanCore.prepayment_penalty_term_months)",
+            "Prepayment percentage schedule stated in the Note/rider"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "PPT-PPP-MINTERM",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.prepayment_penalty_term_months"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the penalty-term field, and deciding whether the minimum applies requires a state-law allowability lookup.",
+          "missing": [
+            "LoanCore.prepayment_penalty_term_months (prepayment penalty term)",
+            "State prepayment-penalty allowability/restriction"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "PPT-PPP-STATE",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.prepayment_penalty_term_months"
+          ],
+          "status": "covered",
+          "python_rules": [
+            "36"
+          ]
+        }
+      ],
+      "rule_rows": [
+        {
+          "rule": "10",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b611",
+          "reads": [
+            "loan_amount",
+            "fico",
+            "loan_purpose",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "LFC-FICO-MTX"
+          ],
+          "note": "Implements the matrix CLTV check for loans of $1,500,000 or less. Higher loan-amount tiers return unknown, so the full matrix job is not implemented.",
+          "numbers_not_in_clause": [
+            "0.60",
+            "0.65",
+            "0.70",
+            "0.75",
+            "0.80",
+            "0.85"
+          ],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "LFC-FICO-MTX",
+              0.272
+            ],
+            [
+              "BOR-ITIN-CAPS",
+              0.166
+            ]
+          ]
+        },
+        {
+          "rule": "11",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b612",
+          "reads": [
+            "loan_amount",
+            "fico",
+            "loan_purpose",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "LFC-FICO-MTX"
+          ],
+          "note": "Implements the $2,000,001\u2013$3,000,000 matrix tier by applying its FICO and purpose-specific CLTV caps. It does not handle the other loan-amount tiers covered by job 105.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "LFC-FICO-MTX",
+              0.188
+            ],
+            [
+              "LFC-FICO-FLOOR",
+              0.183
+            ]
+          ]
+        },
+        {
+          "rule": "12",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b613",
+          "reads": [
+            "loan_amount",
+            "delayed_financing",
+            "product_is_interest_only",
+            "fico",
+            "loan_purpose",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "LFC-DELAY-FIN"
+          ],
+          "note": "The rule enforces the $1.5MM delayed-financing cap, but does not check the required evidence of the prior all-cash acquisition. Its interest-only, low-loan-amount CLTV, and over-$2MM DSCR checks are not stated by the listed jobs.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "LFC-CASHHAND",
+              0.226
+            ],
+            [
+              "LFC-DELAY-FIN",
+              0.142
+            ]
+          ]
+        },
+        {
+          "rule": "14",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b615",
+          "reads": [
+            "vacant_property",
+            "loan_purpose",
+            "dscr_documentation_type"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "DSCR-VACANT-RENT"
+          ],
+          "note": "The rule checks for Form 1007 on a vacant-property purchase, but job 76 also allows Form 1025 where applicable.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "DSCR-RENT-XCESS",
+              0.302
+            ],
+            [
+              "DSCR-1007-REQ",
+              0.276
+            ]
+          ]
+        },
+        {
+          "rule": "15",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b616",
+          "reads": [
+            "occupancy_subtype",
+            "loan_purpose",
+            "cltv_pct",
+            "fico"
+          ],
+          "relation": "duplicate",
+          "jobs": [
+            "DSCR-STR-CAPS"
+          ],
+          "note": "Repeats the short-term-rental caps and minimum FICO check in job 81.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "DSCR-STR-CAPS",
+              0.218
+            ],
+            [
+              "DSCR-FORB-OVL",
+              0.192
+            ]
+          ]
+        },
+        {
+          "rule": "16",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b617",
+          "reads": [
+            "loan_amount",
+            "credit_score_count",
+            "tradelines_meet_requirement",
+            "rural_property",
+            "property_type",
+            "first_time_homebuyer",
+            "vacant_property",
+            "loan_purpose",
+            "listed_for_sale_last_6_months",
+            "mixed_use",
+            "dscr_documentation_type",
+            "gross_rental_income",
+            "pitia"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "LFC-DSCR-FINAL",
+            "PRE-MIXEDUSE",
+            "PRE-VACANT-RT"
+          ],
+          "note": "Implements the listed minimum-DSCR checks and compares the ratio with the highest applicable threshold. It does not evaluate the above-80% LTV trigger, and it omits the additional approval conditions in jobs 10 and 6.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "LFC-DSCR-FINAL",
+              0.256
+            ],
+            [
+              "DSCR-NORATIO-DOCS",
+              0.175
+            ]
+          ]
+        },
+        {
+          "rule": "17",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b618",
+          "reads": [
+            "citizenship_type",
+            "fico",
+            "cltv_pct",
+            "loan_purpose",
+            "loan_amount"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "BOR-PRA-ID",
+            "BOR-NPR-ID",
+            "BOR-ITIN-CAPS"
+          ],
+          "note": "The rule applies the ITIN caps in job 58. For permanent and non-permanent residents, it flags the required identity or residency evidence as unavailable rather than verifying that the evidence is provided, so those checks are partial.",
+          "numbers_not_in_clause": [
+            "1000000"
+          ],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "BOR-ITIN-CAPS",
+              0.218
+            ],
+            [
+              "BOR-NPR-ID",
+              0.187
+            ]
+          ]
+        },
+        {
+          "rule": "18",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b619",
+          "reads": [
+            "tradelines_meet_requirement"
+          ],
+          "relation": "no_job",
+          "jobs": [],
+          "note": "The rule checks whether tradelines meet a requirement; none of the listed jobs specifies this check.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "LPE-FTHB-COND",
+              0.258
+            ],
+            [
+              "BOR-FN-RESTRICT",
+              0.175
+            ]
+          ]
+        },
+        {
+          "rule": "19",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.10 \u00b61",
+          "reads": [
+            "loan_purpose",
+            "occupancy_subtype"
+          ],
+          "relation": "no_job",
+          "jobs": [],
+          "note": "The rule checks that the loan is for a business purpose and the property is an investment property. None of the listed jobs checks this eligibility requirement.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "FN-FX-REVIEW",
+              0.21
+            ],
+            [
+              "FN-ASSET-USD",
+              0.199
+            ]
+          ]
+        },
+        {
+          "rule": "22",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b61",
+          "reads": [
+            "entity_is_borrower_1",
+            "loan_purpose",
+            "property_type"
+          ],
+          "relation": "no_job",
+          "jobs": [],
+          "note": "The rule checks that entity-borrower loans are for business purposes and investment properties. No listed job states that check.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "BET-OWNCHG-LOOKBACK",
+              0.261
+            ],
+            [
+              "BET-GUAR-20PCT",
+              0.24
+            ]
+          ]
+        },
+        {
+          "rule": "23",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b62",
+          "reads": [
+            "borrower_entity_type",
+            "entity_documents_complete",
+            "first_time_homebuyer"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "BET-ENTITY-TYPES",
+            "BET-FTHB-ATTEST",
+            "BET-FORM-DOCS"
+          ],
+          "note": "Checks listed allowed entity types, document completeness, and that the first-time-homebuyer flag is false. It does not check the US-formed/based or foreign-ownership restrictions, guarantor-specific prior ownership and attestation requirements, or the full documentation conditions.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "BET-ENTITY-TYPES",
+              0.284
+            ],
+            [
+              "BET-PROHIB-TYPES",
+              0.235
+            ]
+          ]
+        },
+        {
+          "rule": "24",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b63",
+          "reads": [
+            "entity_documents_complete"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "BET-OPAGREEMENT",
+            "BET-OWN-EVID",
+            "BET-NAME-MATCH",
+            "BET-GOODSTAND"
+          ],
+          "note": "The clause covers the operating agreement, ownership evidence, name matching, and good-standing documentation. It does not state all details of jobs 30 and 33, such as the no-conflict condition and good-standing timing or foreign qualification requirements.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "BET-OWN-EVID",
+              0.392
+            ],
+            [
+              "BET-OPAGREEMENT",
+              0.245
+            ]
+          ]
+        },
+        {
+          "rule": "25",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b64",
+          "reads": [
+            "entity_documents_complete"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "BET-GOODSTAND",
+            "BET-EIN-TAXID",
+            "BET-AUTH-POA"
+          ],
+          "note": "The aggregate entity-document completeness check covers the listed EIN, consent/resolution and POA requirements, and the foreign-qualification portion of job 33. The excerpt does not state job 33\u2019s good-standing requirement.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "BET-AUTH-POA",
+              0.301
+            ],
+            [
+              "BET-EIN-TAXID",
+              0.238
+            ]
+          ]
+        },
+        {
+          "rule": "28",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b67",
+          "reads": [
+            "housing_history",
+            "loan_purpose",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "CRD-MTGHIST-TIER"
+          ],
+          "note": "Implements the printed housing-history CLTV caps by loan purpose and tier, but does not record that the tier definitions are pending Acra confirmation.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "CRD-MTGHIST-TIER",
+              0.252
+            ],
+            [
+              "CRD-MTG-RATING",
+              0.25
+            ]
+          ]
+        },
+        {
+          "rule": "29",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b68",
+          "reads": [
+            "bankruptcy_or_foreclosure",
+            "short_sale_dil_or_modification",
+            "escrow_waiver_requested",
+            "property_type",
+            "loan_purpose",
+            "months_since_bankruptcy_or_foreclosure",
+            "months_since_short_sale_dil_or_modification",
+            "property_state",
+            "gross_rental_income",
+            "pitia",
+            "loan_amount",
+            "fico",
+            "mortgage_history_0x30x24",
+            "citizenship_type",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "PRE-TYPES",
+            "PRE-TYPE-CAPS",
+            "CRD-SSDIL-SEASON",
+            "CRD-ESCROW-WVR",
+            "LFC-CLTV-FINAL"
+          ],
+          "note": "Implements the listed property eligibility and cap checks, short-sale seasoning caps, and escrow-waiver eligibility in part. It also takes the minimum of the caps it evaluates and checks CLTV, but does not cover every cap or separate impound requirement described by those jobs.",
+          "numbers_not_in_clause": [
+            "1500000"
+          ],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "PRE-TYPE-CAPS",
+              0.19
+            ],
+            [
+              "LFC-CLTV-FINAL",
+              0.159
+            ]
+          ]
+        },
+        {
+          "rule": "30",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b69",
+          "reads": [
+            "rural_property",
+            "vacant_property",
+            "loan_purpose",
+            "cltv_pct",
+            "property_type",
+            "property_state",
+            "fico",
+            "gross_rental_income",
+            "pitia",
+            "loan_amount",
+            "reserves_months",
+            "escrow_waiver_requested",
+            "product_is_interest_only",
+            "prepayment_penalty_requested",
+            "ownership_months"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "PRE-VACANT-RT",
+            "PRE-VACANT-CO",
+            "PRE-RURAL",
+            "DSCR-LTV80"
+          ],
+          "note": "Implements parts of the vacant rate-and-term, vacant cash-out, rural-property, and above-80% LTV property-eligibility checks. Other conditions in those jobs are not implemented or are left unknown.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "PRE-VACANT-RT",
+              0.223
+            ],
+            [
+              "PRE-VACANT-CO",
+              0.195
+            ]
+          ]
+        },
+        {
+          "rule": "31",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b610",
+          "reads": [
+            "listed_for_sale_last_6_months"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "PRE-LISTCOND"
+          ],
+          "note": "Checks only the six-month listed-for-sale trigger, which is part of job 9; it does not check the \u00a711.5 loan conditions.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "PRE-LISTCOND",
+              0.28
+            ],
+            [
+              "PRE-MIXEDUSE",
+              0.24
+            ]
+          ]
+        },
+        {
+          "rule": "32",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b611",
+          "reads": [
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "RLI-CLTV-EXEMPT"
+          ],
+          "note": "Checks the CLTV \u2264 70% threshold, but does not flag the LTV/CLTV basis mismatch described in the job.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "AFC-GIFT-MIN",
+              0.233
+            ],
+            [
+              "AFC-SEASON-THRESH",
+              0.222
+            ]
+          ]
+        },
+        {
+          "rule": "34",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b613",
+          "reads": [
+            "product_is_interest_only",
+            "interest_only_10_40",
+            "loan_amount",
+            "fico",
+            "first_time_homebuyer",
+            "vacant_property",
+            "property_currently_listed_for_sale",
+            "loan_purpose",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "PPT-IO-PARAMS",
+            "PPT-IO-1040"
+          ],
+          "note": "The rule enforces the minimum loan amount and FICO floor for 5 Yr / 30 products (part of job 115) and the full stated parameters for 10 Yr / 40 loans (job 116). It does not apply job 115\u2019s stated $3M maximum to the 5 Yr / 30 products. The first-time-homebuyer, vacant-property-refinance, and for-sale restrictions have no matching candidate job.",
+          "numbers_not_in_clause": [
+            "1040",
+            "250000",
+            "3000000"
+          ],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "PPT-IO-PMTCALC",
+              0.215
+            ],
+            [
+              "PPT-ARM-TERMS",
+              0.188
+            ]
+          ]
+        },
+        {
+          "rule": "36",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b615",
+          "reads": [
+            "prepayment_penalty_requested",
+            "property_state",
+            "property_type",
+            "residential_unit_count",
+            "borrower_entity_type",
+            "loan_amount",
+            "interest_rate",
+            "loan_purpose"
+          ],
+          "relation": "implements",
+          "jobs": [
+            "PPT-PPP-STATE"
+          ],
+          "note": "Checks the state-specific prepayment-penalty restrictions and their listed conditions.",
+          "numbers_not_in_clause": [
+            "1000000"
+          ],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "PPT-PPP-STATE",
+              0.324
+            ],
+            [
+              "PPT-PPP-MINTERM",
+              0.106
+            ]
+          ]
+        },
+        {
+          "rule": "37",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b616",
+          "reads": [
+            "loan_amount",
+            "fico",
+            "loan_purpose",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "LFC-FICO-MTX",
+            "LFC-CLTV-FINAL"
+          ],
+          "note": "Implements the matrix CLTV check in job 105 and applies the small-loan cap, but does not determine the overall governing cap across all applicable limits as job 111 requires.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "LFC-CLTV-FINAL",
+              0.212
+            ],
+            [
+              "LFC-FICO-MTX",
+              0.14
+            ]
+          ]
+        },
+        {
+          "rule": "38",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b617",
+          "reads": [
+            "escrow_waiver_requested",
+            "fico"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "LFC-FICO-FINAL"
+          ],
+          "note": "Checks the 700 minimum FICO for an escrow waiver, one feature-specific floor in job 112.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "LFC-FICO-FINAL",
+              0.23
+            ],
+            [
+              "LFC-CLTV-FINAL",
+              0.161
+            ]
+          ]
+        },
+        {
+          "rule": "42",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b621",
+          "reads": [
+            "delayed_financing",
+            "loan_amount"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "LFC-DELAY-FIN"
+          ],
+          "note": "Checks the $1.5MM delayed-financing cap, but not the prior all-cash acquisition evidence requirement.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "LFC-DELAY-FIN",
+              0.147
+            ],
+            [
+              "AFC-RESERVE-TOTAL",
+              0.142
+            ]
+          ]
+        },
+        {
+          "rule": "44",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b623",
+          "reads": [
+            "loan_amount",
+            "fico"
+          ],
+          "relation": "no_job",
+          "jobs": [],
+          "note": "The rule checks a 600 FICO floor for loans of $1,500,000 or less. None of the listed jobs states that check; the decisioning-score job concerns score selection, not a minimum score.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "LFC-CASHHAND",
+              0.219
+            ],
+            [
+              "PPT-SUBFIN-HELOC",
+              0.179
+            ]
+          ]
+        },
+        {
+          "rule": "6",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b67",
+          "reads": [
+            "loan_amount",
+            "fico"
+          ],
+          "relation": "implements",
+          "jobs": [
+            "LPE-LOAN-AMT",
+            "LFC-FICO-FLOOR"
+          ],
+          "note": "Validates the loan amount range and $50 increments (job 102), and applies tiered minimum-FICO checks (partial job 106). It does not route below-floor scores for Acra confirmation, and its middle tier does not distinguish purchase from refinance.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "LFC-FICO-MTX",
+              0.153
+            ],
+            [
+              "LFC-CLTV-FINAL",
+              0.151
+            ]
+          ]
+        },
+        {
+          "rule": "8",
+          "citation": "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b69",
+          "reads": [
+            "delayed_financing",
+            "loan_amount"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "LFC-DELAY-FIN"
+          ],
+          "note": "Checks the $1.5MM delayed-financing cap, but not evidence of the prior all-cash acquisition.",
+          "numbers_not_in_clause": [
+            "1500000"
+          ],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "LFC-DELAY-FIN",
+              0.183
+            ],
+            [
+              "LPE-BIZPURPOSE",
+              0.173
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "document": "platinum",
+      "jobs": 108,
+      "python_rules": 27,
+      "job_status": {
+        "not_computable": 65,
+        "covered_partial": 31,
+        "computable_but_missing": 8,
+        "covered": 4
+      },
+      "orphan_python_rules": 4,
+      "python_rules_aligned": 23,
+      "covered_share": 0.324,
+      "job_rows": [
+        {
+          "job": "PRE-CONDO-CLTV",
+          "section": "Appraisal Review",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks CLTV and explicit warrantability fields, and applying the lower cap also requires an external FICO/purpose matrix lookup.",
+          "missing": [
+            "CLTV value (LoanCore.cltv_percent)",
+            "Warrantable Condo status",
+            "Otherwise-applicable FICO/purpose matrix cap lookup"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "PRE-DECLMKT",
+          "section": "Appraisal Review",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "not_computable",
+          "why": "The rule depends on appraisal content and cap/CLTV inputs not available in the schema.",
+          "missing": [
+            "Subject property's declining-market designation from the appraisal",
+            "Applicable base matrix CLTV cap",
+            "CLTV percentage (including any subordinate-lien amounts needed to calculate it)"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "PRE-INELIG-TYP",
+          "section": "Appraisal Review",
+          "reads": [
+            "SubjectProperty.condo_project_classification"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "22",
+            "23"
+          ]
+        },
+        {
+          "job": "PRE-LISTCOND",
+          "section": "Appraisal Review",
+          "reads": [
+            "LoanCore.cltv_percent",
+            "RatioSet.reserves_months"
+          ],
+          "status": "not_computable",
+          "why": "The schema has listed-for-sale, lease, reserves, channel, state, and some interest-only fields, but lacks other required checks and inputs for the LTV/CLTV calculation.",
+          "missing": [
+            "lien delinquency/default status",
+            "calculated DSCR",
+            "prepayment penalty term",
+            "state-specific prepayment-penalty restriction lookup",
+            "fully amortizing status beyond interest-only indicators",
+            "ltv_percent",
+            "cltv_percent",
+            "appraised value and lowest recent listing price",
+            "subordinate financing status",
+            "tax and insurance impound/escrow establishment"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "PRE-LISTDEF",
+          "section": "Appraisal Review",
+          "reads": [],
+          "status": "computable_but_missing",
+          "why": "The `listed_for_sale_last_6_months` field directly represents the six-month classification.",
+          "missing": [],
+          "model_decided": true
+        },
+        {
+          "job": "PRE-LOCATION",
+          "section": "Appraisal Review",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema has property_state for the eligibility comparison, but cannot verify that it matches the states in the appraisal and title documents.",
+          "missing": [
+            "Appraisal report subject-property state",
+            "Title commitment subject-property state"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "PRE-TYPES",
+          "section": "Appraisal Review",
+          "reads": [
+            "SubjectProperty.property_type"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "22",
+            "23"
+          ]
+        },
+        {
+          "job": "PRE-VACANT",
+          "section": "Appraisal Review",
+          "reads": [
+            "SubjectProperty.occupancy_type"
+          ],
+          "status": "not_computable",
+          "why": "The schema\u2019s vacancy and occupancy fields cannot verify appraisal contents, physical vacancy indicators, or consistency with separate inspection documents.",
+          "missing": [
+            "appraisal occupancy and property-condition findings",
+            "separate property inspection or Property Data Report occupancy findings"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "PRE-UNADDRESSED",
+          "section": "Appraisal Review",
+          "reads": [
+            "SubjectProperty.property_type"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "22",
+            "23"
+          ]
+        },
+        {
+          "job": "AFC-30DAY-MIN",
+          "section": "Asset Assessment",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The check requires reviewing asset documents to identify funds-to-close accounts and determine whether their documentation covers at least 30 days, which the schema fields do not provide.",
+          "missing": [
+            "Bank statements or VOD and their contents",
+            "Documentation period covered (start and end dates or number of days)",
+            "Identification of the source account(s) used for funds to close"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "AFC-FOREIGN-REPAT",
+          "section": "Asset Assessment",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The rule depends on document contents and dates absent from the schema, including whether the funds are foreign-held and whether repatriation occurred at least three business days before closing.",
+          "missing": [
+            "Whether funds to close are held in a foreign account or currency",
+            "Foreign bank statement contents",
+            "Repatriation date and confirmation that funds reached a US account (domestic bank statement or wire confirmation)",
+            "Scheduled closing date"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "AFC-GIFT-MIN",
+          "section": "Asset Assessment",
+          "reads": [
+            "Asset[is_gift=False].current_balance_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the required funds and purchase-price values, and sourcing and seasoning require document review.",
+          "missing": [
+            "borrower's own sourced and seasoned funds amount (excluding gifts)",
+            "purchase price",
+            "asset gift status",
+            "bank-statement evidence and seasoning period"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "AFC-RESERVE-CLTV",
+          "section": "Asset Assessment",
+          "reads": [
+            "RatioSet.reserves_months"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "26"
+          ]
+        },
+        {
+          "job": "AFC-RESERVE-OTHER",
+          "section": "Asset Assessment",
+          "reads": [
+            "RatioSet.reserves_months"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "26"
+          ]
+        },
+        {
+          "job": "AFC-SEASON-THRESH",
+          "section": "Asset Assessment",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "not_computable",
+          "why": "The trigger and outcome depend on values and document evidence absent from the schema, so they cannot be decided by deterministic rules over its fields.",
+          "missing": [
+            "CLTV (LoanCore.cltv_percent; no corresponding schema field)",
+            "Consumer-versus-business transaction purpose",
+            "Funds-to-close amount",
+            "Whether bank statements or VOD documenting seasoning are present and sufficient"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "AFC-VERIF-DOCS",
+          "section": "Asset Assessment",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The rule depends on document contents and a seasoning trigger, none of which are represented by the available schema fields.",
+          "missing": [
+            "whether seasoning verification is required",
+            "presence and type of source-account documentation (bank statement or VOD)",
+            "document recency and coverage of required months",
+            "whether a VOD shows current and average balance",
+            "account number and balance match to the source account"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "AFC-UNACCEPT-SRC",
+          "section": "Asset Assessment",
+          "reads": [
+            "Asset.asset_type"
+          ],
+          "status": "not_computable",
+          "why": "The check depends on asset-document contents and an external guideline, plus source and dollar-amount fields absent from the schema.",
+          "missing": [
+            "Asset.asset_type / asset source and ownership",
+            "Asset balances and deposit history, including large or irregular deposit sourcing",
+            "Acra Seller\u2019s Guide unacceptable-source list",
+            "Gift-fund transfer evidence and borrower contribution",
+            "Funds required to close and dollar amount of required reserves"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "AFC-RESERVE-TOTAL",
+          "section": "Asset Assessment",
+          "reads": [
+            "RatioSet.reserves_months"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "26",
+            "36"
+          ]
+        },
+        {
+          "job": "BET-AUTH-POA",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "covered",
+          "python_rules": [
+            "18"
+          ]
+        },
+        {
+          "job": "BET-BGCHECK",
+          "section": "Compliance and Closing",
+          "reads": [
+            "CreditReport.ofac_alert"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the required due-diligence reports, party scope, dates, findings, and dispositions, so the checks cannot be reduced to comparisons over its fields.",
+          "missing": [
+            "CreditReport.ofac_alert",
+            "Background check report presence, party coverage, and date",
+            "Loan approval or draw date",
+            "Entity, recourse guarantor, 20%+ owner, and managing-control party identities",
+            "Criminal, litigation, judgment, and lien findings",
+            "Underwriter disposition of adverse findings"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BET-BORR-ONTITLE",
+          "section": "Compliance and Closing",
+          "reads": [
+            "TitleInformation.manner_title_held"
+          ],
+          "status": "not_computable",
+          "why": "The rule requires identifying owners from title information and comparing them with all loan borrowers, which the schema does not provide.",
+          "missing": [
+            "TitleInformation.manner_title_held",
+            "direct title-owning entities from the Title Commitment",
+            "complete list of borrowing entities on the loan"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BET-EIN-TAXID",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "covered",
+          "python_rules": [
+            "18"
+          ]
+        },
+        {
+          "job": "BET-ENTITY-ELIG",
+          "section": "Compliance and Closing",
+          "reads": [
+            "Borrower.borrower_type"
+          ],
+          "status": "not_computable",
+          "why": "Entity type and occupancy can map to schema fields, but the schema lacks the required attestation and document-content confirmations.",
+          "missing": [
+            "Business Purpose Attestation execution and presence",
+            "Business-purpose transaction confirmation",
+            "Certificate of Formation / Articles of Organization content confirming legal entity status and matching borrower name"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BET-ENTITY-TYPES",
+          "section": "Compliance and Closing",
+          "reads": [
+            "Borrower.borrower_type"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "16"
+          ]
+        },
+        {
+          "job": "BET-FORM-DOCS",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "not_computable",
+          "why": "Schema fields can indicate entity status and document completion, but cannot verify the required document\u2019s contents, legibility, amendments, or substitution status.",
+          "missing": [
+            "formation document presence, type, completeness, and legibility",
+            "whether all formation-document amendments are present",
+            "whether a borrower letter substitutes for or excuses the document",
+            "entity state of formation"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BET-FTHB-ATTEST",
+          "section": "Compliance and Closing",
+          "reads": [
+            "Borrower.is_first_time_homebuyer"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "16"
+          ]
+        },
+        {
+          "job": "BET-GOODSTAND",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "covered_partial",
+          "python_rules": [
+            "17"
+          ]
+        },
+        {
+          "job": "BET-GUAR-20PCT",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema lacks the ownership, guarantee-execution, and guarantee-terms details needed to apply the checks.",
+          "missing": [
+            "individual owners and their direct or indirect ownership percentages",
+            "whether each qualifying owner executed a personal guarantee",
+            "whether guarantees provide joint-and-several recourse"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BET-OPAGREEMENT",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "covered_partial",
+          "python_rules": [
+            "17"
+          ]
+        },
+        {
+          "job": "BET-OWN-EVID",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "covered_partial",
+          "python_rules": [
+            "17"
+          ]
+        },
+        {
+          "job": "BET-OWNCHG-LOOKBACK",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema lacks the amendment and guarantor details needed to apply the lookback and determine whether a change circumvents the guarantee requirement.",
+          "missing": [
+            "Application date (submission_date does not necessarily establish it)",
+            "Ownership-percentage amendment history, including amendment dates and before/after percentages",
+            "Whether an amendment occurred during the application process",
+            "Guarantor ownership percentages and whether the amendment is relied on to avoid a required guarantee"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BET-PROHIB-TYPES",
+          "section": "Compliance and Closing",
+          "reads": [
+            "Borrower.borrower_type"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "16"
+          ]
+        },
+        {
+          "job": "BET-REVTRUST",
+          "section": "Compliance and Closing",
+          "reads": [
+            "TitleInformation.trust_name"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks trust-related fields, and the checks require reviewing trust documents and determining state-law validity.",
+          "missing": [
+            "TitleInformation.trust_name / trust vesting status",
+            "Trust agreement or certification contents: validity, revocability, Trustor identity and natural-person status, effective date, primary beneficiary, Trustee identity and mortgage/title powers, beneficiary-consent terms, and lender-creditor protections",
+            "Trustor/Trustee mismatch and written Senior Management exception",
+            "Trust tax identification number",
+            "State-law validity determination"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BET-SPE-DEF",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "covered_partial",
+          "python_rules": [
+            "15",
+            "16"
+          ]
+        },
+        {
+          "job": "BET-TITLE-HOLD",
+          "section": "Compliance and Closing",
+          "reads": [
+            "TitleInformation.title_held_in_names"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the proposed title vesting and Acra\u2019s entity-acceptance decision, which are required to determine eligibility.",
+          "missing": [
+            "Title Commitment proposed vesting/title holder names",
+            "Whether Acra accepted the named entity as a title holder"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BET-NAME-MATCH",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "covered_partial",
+          "python_rules": [
+            "17"
+          ]
+        },
+        {
+          "job": "CMP-SRC-VERSION",
+          "section": "Compliance and Closing",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema lacks the source-version and confirmation records, and deciding which versions govern requires Acra confirmation or lookup.",
+          "missing": [
+            "Applied Platinum Summary version",
+            "Applied Seller's Guide version",
+            "Underwriting approval/source-version citations",
+            "Loan application date",
+            "Loan lock date",
+            "Acra-confirmed governing versions for the loan's dates",
+            "Acra confirmation-register responses received (Q-01 to Q-22)",
+            "Record of whether each applicable response was applied"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-DECSCORE",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "CreditReport.representative_score"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the person-level score and ownership data needed to select the decisioning score.",
+          "missing": [
+            "Primary Wage Earner identification",
+            "Borrower- and guarantor-level middle credit scores",
+            "Guarantor ownership percentages"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-ESCROW-WVR",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "LoanCore.base_loan_amount_usd",
+            "LoanCore.is_hpml"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "38"
+          ]
+        },
+        {
+          "job": "CRD-FTHB-XREF",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "Borrower.is_first_time_homebuyer"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "14",
+            "21"
+          ]
+        },
+        {
+          "job": "CRD-HIST-SCOPE",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "RealEstateOwned.property_use"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks property-level ownership/use, credit-event linkage, and documentation-presence fields needed to determine scope and pass/fail.",
+          "missing": [
+            "RealEstateOwned.property_use per property",
+            "Major-credit-event flag linked to each owned property",
+            "Payment-history documentation presence per in-scope property"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-HOUSHIST",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "CreditReport.total_accounts_with_late"
+          ],
+          "status": "not_computable",
+          "why": "The available fields do not establish housing-specific 30-day delinquencies within the last 12 months, and the rule may require reviewing credit-report or verification-document content.",
+          "missing": [
+            "Mortgage/rental payments 30 or more days late in the most recent 12 months",
+            "Verification of Mortgage/Rent payment history when housing payments are absent from the credit report"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-IMPOUNDS",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "LoanCore.is_escrow_waived"
+          ],
+          "status": "not_computable",
+          "why": "The listing trigger is represented by listed_for_sale_last_6_months, but a waiver request cannot determine whether impounds were actually established.",
+          "missing": [
+            "Actual escrow/impound setup status (whether escrow is waived or impounds are established); escrow_waiver_requested only records a request."
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-MATURED",
+          "section": "Credit Review & Analysis",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema lacks the maturity and extension-documentation fields needed to verify the required rating treatment.",
+          "missing": [
+            "Mortgage maturity date",
+            "Original and revised maturity dates / whether a maturity extension applies",
+            "Whether a written maturity extension agreement is on file",
+            "Whether the loan was rated using the applicable maturity date"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-MINSCORE",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "CreditReport.representative_score",
+            "LoanCore.cltv_percent"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "35"
+          ]
+        },
+        {
+          "job": "CRD-MTG-RATING",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "Liability.late_30_days_count"
+          ],
+          "status": "not_computable",
+          "why": "The available mortgage-history field cannot establish the required property-by-property rating or documentation status, which depends on document contents and missing schema fields.",
+          "missing": [
+            "credit_report_date",
+            "property-level ownership/rental dates and payment histories",
+            "reported mortgage tradeline status by property",
+            "independent mortgage statement/VOM presence and its trailing-12-month payment history",
+            "whether missing documentation can be obtained before closing"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-ONETWOSCR",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "CreditReport.scores"
+          ],
+          "status": "computable_but_missing",
+          "why": "The score count maps to `credit_score_count` and overlay satisfaction to `tradelines_meet_requirement`, so the rule can determine applicability and flag one- or two-score files for underwriter confirmation.",
+          "missing": [],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-PCE-SEASON",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "Borrower.bankruptcy_discharge_date",
+            "Borrower.foreclosure_date"
+          ],
+          "status": "not_computable",
+          "why": "The combined flags and months-since fields cannot reliably distinguish covered events from modifications or verify seasoning for each event and guarantor.",
+          "missing": [
+            "A short-sale/deed-in-lieu indicator separate from modification",
+            "Event-specific seasoning values when multiple bankruptcy/foreclosure or short-sale/deed-in-lieu events are reported",
+            "Credit-event disclosures and dates for guarantors"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-PCESEASON",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "Borrower.bankruptcy_discharge_date"
+          ],
+          "status": "computable_but_missing",
+          "why": "Event-presence flags and the two months-since fields support the event check and 48-month comparison without needing the discharge date itself.",
+          "missing": [],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-TIEOWN",
+          "section": "Credit Review & Analysis",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema lacks per-guarantor ownership and credit-report data needed to evaluate the job\u2019s steps.",
+          "missing": [
+            "Each guarantor\u2019s ownership percentage and identity, as stated in the operating agreement or bylaws",
+            "Each tied-largest guarantor\u2019s middle credit score from the credit report"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-TRADELINE",
+          "section": "Credit Review & Analysis",
+          "reads": [
+            "CreditReport.open_trade_lines"
+          ],
+          "status": "computable_but_missing",
+          "why": "The repository-score count and tradelines_meet_requirement field support the required score-count and tradeline checks.",
+          "missing": [],
+          "model_decided": true
+        },
+        {
+          "job": "CRD-GUAR-SCOPE",
+          "section": "Credit Review & Analysis",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema has no ownership, guarantee, or per-guarantor credit-review fields, so it cannot establish that every required guarantor was evaluated and passed.",
+          "missing": [
+            "Direct and indirect ownership identities and percentages",
+            "Executed personal guarantees and guarantor identities",
+            "Per-guarantor credit-report presence and credit scores",
+            "Per-guarantor tradeline, 0x30x12 housing-history, and previous-credit-event evaluations and outcomes"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-1007-REQ",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "AppraisalSummary.form_type",
+            "AppraisalSummary.appraiser_license_number"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the appraisal and appraiser-license fields and does not fully represent the triggering conditions, including whether proposed rent is used to qualify.",
+          "missing": [
+            "AppraisalSummary.form_type / Form 1007 document presence and type",
+            "AppraisalSummary.appraiser_license_number",
+            "appraiser_license_state and license validity",
+            "DSCR-qualifying status",
+            "lease-option purchase funded from excess rent status",
+            "proposed rental income used to qualify"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-ACTRENT-DOC",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema lacks the lease and receipt details needed to verify payment history, amount matching, and lease duration after closing.",
+          "missing": [
+            "Lease monthly rent, start date, and expiration date",
+            "Scheduled closing date",
+            "Rent receipt evidence for two months, including dates and amounts",
+            "Whether receipts are security deposits or prepaid rent"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-CALC",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "RatioSet.total_monthly_obligation_usd"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "12"
+          ]
+        },
+        {
+          "job": "DSCR-CO-LEASE",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "LoanCore.loan_purpose"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "7"
+          ]
+        },
+        {
+          "job": "DSCR-FORB-OVL",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "Liability.late_30_days_count"
+          ],
+          "status": "not_computable",
+          "why": "The schema does not establish the required recent forbearance/late trigger or whether qualifying rent receipts are on file.",
+          "missing": [
+            "forbearance reported within the prior 12 months",
+            "mortgage late reported within the prior 12 months",
+            "rent-receipt evidence for the prior two months"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-LIST-MIN",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "RealEstateOwned.property_status"
+          ],
+          "status": "computable_but_missing",
+          "why": "The schema provides the recent-listing indicator, channel, gross rental income, and PITIA needed to calculate and compare DSCR to the channel minimum.",
+          "missing": [],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-MINRATIO",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "RatioSet.total_monthly_income_usd"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "12"
+          ]
+        },
+        {
+          "job": "DSCR-PITIA",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "RatioSet.proposed_housing_expense_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema has only the aggregate pitia value, so it cannot verify document-backed component amounts, applicability, or the denominator sum.",
+          "missing": [
+            "principal-and-interest amount",
+            "property tax amount",
+            "property insurance amount",
+            "association fee amount and applicability",
+            "subordinate lien existence and monthly payment",
+            "documentation presence for each PITIA component"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-QUALRENT",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "RealEstateOwned[is_subject_property=True].gross_rental_income_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema has gross_rental_income but lacks the document values and eligibility evidence needed to select and validate qualifying rent.",
+          "missing": [
+            "Form 1007/1025 market rent amount and presence",
+            "Documented actual lease rent amount",
+            "Lease expiration date and scheduled loan closing date",
+            "Rent-receipt evidence and number of months documented",
+            "Whether the subject property's rental use is long-term or short-term/nightly"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-RENT-XCESS",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "RealEstateOwned[is_subject_property=True].gross_rental_income_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema has rental income and property-type fields, but deciding whether rent is excessive requires market judgment and verifying acceptable supporting documents requires document contents.",
+          "missing": [
+            "whether lease rent is excessive relative to typical rents for the area",
+            "presence and qualifying content of classified ads, Form 1007, or a market rent survey"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-STR-EXCL",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "RealEstateOwned.property_use"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "11"
+          ]
+        },
+        {
+          "job": "DSCR-SUBFIN",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "Liability[is_subject_property_lien=True].monthly_payment_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema has PITIA but lacks the lien and payment fields needed to determine whether the subordinate payment is included in the DSCR denominator.",
+          "missing": [
+            "Subject-property subordinate lien indicator",
+            "Subordinate lien monthly payment",
+            "DSCR denominator or an indicator that the subordinate payment is included in it"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "DSCR-IO-DENOM",
+          "section": "Income Stability & Sufficiency Analysis",
+          "reads": [
+            "RatioSet.total_monthly_obligation_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the Note and payment-component details needed to build and compare both denominators; `pitia` alone does not establish them.",
+          "missing": [
+            "Note first payment due and recast payment",
+            "Taxes, insurance, association fees, and subordinate-lien monthly payment as separate amounts",
+            "Loan amortization term"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "RLI-CLTV-EXEMPT",
+          "section": "Insurance Coverage Sufficiency & Policy Assessment",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "24"
+          ]
+        },
+        {
+          "job": "RLI-LTV-TRIGGER",
+          "section": "Insurance Coverage Sufficiency & Policy Assessment",
+          "reads": [
+            "LoanCore.ltv_percent"
+          ],
+          "status": "not_computable",
+          "why": "LTV and unit count can be derived from schema fields, but the schema lacks whether subject rents qualify and whether a policy provides six months of coverage.",
+          "missing": [
+            "subject_property_rents_used_to_qualify",
+            "rent_loss_insurance_on_file",
+            "rent_loss_coverage_months"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "RLI-PURPOSE",
+          "section": "Insurance Coverage Sufficiency & Policy Assessment",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The checks require insurance-document contents and requirement applicability, which cannot be determined from the available schema fields.",
+          "missing": [
+            "Rent loss insurance policy or endorsement presence",
+            "Policy coverage scope for rental income losses during casualty-related rehabilitation",
+            "Declarations-page identification of the subject property as covered",
+            "Whether rent loss insurance is required for the transaction"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "RLI-RESERVE-SUB",
+          "section": "Insurance Coverage Sufficiency & Policy Assessment",
+          "reads": [
+            "RatioSet.reserves_months"
+          ],
+          "status": "not_computable",
+          "why": "The schema has reserves_months, but the rule also depends on insurance documentation and coverage details, plus verification of reserve assets.",
+          "missing": [
+            "rent loss insurance unavailability/denial status",
+            "months of rent loss coverage obtained",
+            "verified reserve assets or evidence that reserves are verified"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BOR-CITZ",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "Borrower.citizenship_status"
+          ],
+          "status": "not_computable",
+          "why": "citizenship_type can represent the declared status, but confirming every borrower has matching identification requires document information absent from the schema.",
+          "missing": [
+            "Per-borrower identification document presence and type/content"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BOR-FN-INELIG",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "Borrower.tax_id_type"
+          ],
+          "status": "not_computable",
+          "why": "The schema has citizenship_type but not tax ID type, and document consistency requires reviewing identification documents.",
+          "missing": [
+            "tax ID type (whether any borrower uses ITIN)",
+            "identification-document contents and consistency with declared citizenship status"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "BOR-FTHB",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "Borrower.is_first_time_homebuyer"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "14"
+          ]
+        },
+        {
+          "job": "BOR-GUAR-ATTEST",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "Borrower.is_first_time_homebuyer"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "16"
+          ]
+        },
+        {
+          "job": "BOR-PRA-ID",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "Borrower.id_expiration"
+          ],
+          "status": "not_computable",
+          "why": "The schema has citizenship_type and borrower_name, but the rule also requires document presence, document names, and an expiration-date comparison against the application date.",
+          "missing": [
+            "Permanent Resident Alien card expiration date",
+            "Permanent Resident Alien card presence",
+            "Social Security card or Form SSA-89 presence",
+            "Name on the Permanent Resident Alien card",
+            "Name on the Social Security card or Form SSA-89",
+            "Application date"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LFC-AMT-STEPDN",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.base_loan_amount_usd"
+          ],
+          "status": "not_computable",
+          "why": "Loan amount maps to `loan_amount`, but deciding pass or fail requires comparing proposed CLTV with 75%, and the schema has no CLTV field.",
+          "missing": [
+            "proposed CLTV percent"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LFC-CASHHAND",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.cash_out_amount_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema has loan_purpose and loan_amount, but lacks the proceeds amount and an LTV field needed to apply the caps.",
+          "missing": [
+            "cash_out_amount_usd (cash-in-hand proceeds)",
+            "LTV percent"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LFC-CORR-CAP",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "35"
+          ]
+        },
+        {
+          "job": "LFC-DELAY-FIN",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.base_loan_amount_usd"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "32"
+          ]
+        },
+        {
+          "job": "LFC-FICO-MTX",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.cltv_percent",
+            "CreditReport.representative_score"
+          ],
+          "status": "covered",
+          "python_rules": [
+            "10",
+            "9"
+          ]
+        },
+        {
+          "job": "LPE-BIZPURPOSE",
+          "section": "Loan Program Eligibility",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema lacks the attestation, execution, date, and DSCR-qualification details needed to apply the checks.",
+          "missing": [
+            "attestation presence and whether it is Exhibit 8 or an Acra-approved equivalent",
+            "attestation signatures and complete borrower/guarantor roster",
+            "attestation date",
+            "scheduled closing date",
+            "whether qualification uses the subject property's actual or market cash flow (DSCR)"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-CO-LEASE",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.loan_purpose"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "13"
+          ]
+        },
+        {
+          "job": "LPE-DECL-MKT",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "not_computable",
+          "why": "The rule depends on appraisal content and a matrix-derived CLTV, and the schema has no CLTV field or subordinate-lien data.",
+          "missing": [
+            "Appraisal-reported declining-market designation",
+            "CLTV (including subordinate-lien amounts)",
+            "Matrix-derived baseline CLTV for the borrower\u2019s profile"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-GIFT-MIN",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.down_payment.percent_of_purchase_price"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks purchase-price and asset-source, seasoning, and gift-fund details needed to calculate the borrower\u2019s qualifying contribution.",
+          "missing": [
+            "Purchase price",
+            "Borrower-owned sourced and seasoned asset amounts",
+            "Gift-fund amounts and identification",
+            "Whether gift funds are used"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-INELIG-LOC",
+          "section": "Loan Program Eligibility",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema has the application property state, but cannot verify it against the Appraisal Report as required.",
+          "missing": [
+            "Appraisal Report subject-property state"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-INV-PROP",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "SubjectProperty.number_of_units"
+          ],
+          "status": "not_computable",
+          "why": "Unit count and property type are available, but the schema lacks the lease details needed to verify a non-owner tenant and year-round residential tenancy.",
+          "missing": [
+            "lease tenant identity and whether the tenant is a borrower or guarantor",
+            "guarantor identity",
+            "lease term or year-round versus short-term status"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-LOAN-AMT",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.total_loan_amount_usd"
+          ],
+          "status": "not_computable",
+          "why": "The range and $50-increment checks use the available loan_amount field, but the required cross-reference cannot be checked without a separate application amount and a defined tolerance.",
+          "missing": [
+            "Separate Loan Application (1003) requested loan amount",
+            "Defined disclosure tolerance for comparing the application amount with the LOS amount"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-MIN-DSCR",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "RatioSet.total_monthly_income_usd"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "12"
+          ]
+        },
+        {
+          "job": "LPE-NO-DTI",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "RatioSet.dti_percent"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the DTI and decision-basis data, and verifying whether DTI was cited or used requires reviewing underwriting records.",
+          "missing": [
+            "RatioSet.dti_percent (DTI value)",
+            "UnderwritingSummary.underwriter_decision / decision basis",
+            "DSCR qualification method or status",
+            "Loan application income and employment fields"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-NO-RATIO",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "RatioSet.total_monthly_income_usd"
+          ],
+          "status": "not_computable",
+          "why": "The schema has fields to assess the channel minimum and program selection, but not whether an underwriting exception or override permits a below-minimum DSCR.",
+          "missing": [
+            "underwriting exception or override record"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-OCCUPANCY",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "SubjectProperty.occupancy_type"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "6"
+          ]
+        },
+        {
+          "job": "LPE-PURPOSE",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.loan_purpose"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "7"
+          ]
+        },
+        {
+          "job": "LPE-RENTFORM",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "AppraisalSummary.form_type"
+          ],
+          "status": "not_computable",
+          "why": "The unit count is available as residential_unit_count, but the rule also requires appraisal-document fields and content that the schema does not provide.",
+          "missing": [
+            "appraisal form type and presence",
+            "market rent conclusion",
+            "appraisal effective date",
+            "expected closing date",
+            "appraiser license number, state, and license expiry"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-REO-SCOPE",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "RealEstateOwned.property_use"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the property-level REO and credit-tradeline data needed to determine which required holdings are listed.",
+          "missing": [
+            "Schedule of Real Estate Owned property list and addresses",
+            "Use/occupancy classification for each owned property (subject, principal residence, second home, or investment)",
+            "Borrower ownership and principal-residence/second-home status for each property",
+            "Credit-report mortgage tradelines and their associated property addresses"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-RIDER",
+          "section": "Loan Program Eligibility",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The decision requires inspecting closing-document contents and comparing signatures and dates, and the rent loss insurance obligation is not represented by the available schema fields.",
+          "missing": [
+            "One- to Four-Family Rider presence in closing documents",
+            "Rider signature names",
+            "Rider execution date",
+            "Borrower names on the note and security instrument",
+            "Note or closing date",
+            "Rent loss insurance obligation flag"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-SIZE-CLTV",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "not_computable",
+          "why": "The schema has loan_amount but lacks the CLTV metric and the values needed to verify its calculation using the lower of appraised value or purchase price, including any subordinate liens.",
+          "missing": [
+            "cltv_percent",
+            "appraised_value",
+            "purchase_price",
+            "subordinate_lien_amounts"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-VACANT",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "SubjectProperty.occupancy_type"
+          ],
+          "status": "computable_but_missing",
+          "why": "The vacancy and active-lease checks can be evaluated using the schema\u2019s `vacant_property` and `current_lease_in_place` fields.",
+          "missing": [],
+          "model_decided": true
+        },
+        {
+          "job": "PPT-ARM-TERMS",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.arm_margin_percent"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the ARM terms and product type needed to compare the rider against the stated requirements.",
+          "missing": [
+            "Note/ARM Rider index, initial cap, periodic cap, lifetime cap, and margin",
+            "ARM/fixed-rate product indicator",
+            "LoanCore.arm_margin_percent (no matching schema field)"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "PPT-IO-CLTV",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the CLTV inputs and a field establishing the 5-year interest-only term.",
+          "missing": [
+            "calculated CLTV or all lien amounts needed to calculate it",
+            "interest-only term duration (specifically whether it is 5 years)"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "PPT-IO-LISTEDSALE",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.interest_only_period_months"
+          ],
+          "status": "computable_but_missing",
+          "why": "The schema provides interest-only status and whether the property was listed for sale in the last six months.",
+          "missing": [],
+          "model_decided": true
+        },
+        {
+          "job": "PPT-IO-MINPARAMS",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.base_loan_amount_usd"
+          ],
+          "status": "computable_but_missing",
+          "why": "The minimum amount and score checks map to loan_amount and fico, and the interest-only applicability check maps to product_is_interest_only.",
+          "missing": [],
+          "model_decided": true
+        },
+        {
+          "job": "PPT-IO-PMTCALC",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.interest_only_period_months"
+          ],
+          "status": "not_computable",
+          "why": "The check requires validating the Note\u2019s payment and amortization schedule, and the schema lacks those document details and the exact interest-only period.",
+          "missing": [
+            "Note-stated interest-only payment amount",
+            "Accrued monthly interest calculation at origination",
+            "Note amortization schedule and post-interest-only recast terms",
+            "Exact interest-only period in months"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "PPT-PPP-LISTEDSALE",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.prepayment_penalty_term_months"
+          ],
+          "status": "covered_partial",
+          "python_rules": [
+            "28"
+          ]
+        },
+        {
+          "job": "PPT-PPP-STATE",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.prepayment_penalty_term_months"
+          ],
+          "status": "not_computable",
+          "why": "Schema fields cover several restriction triggers, but cannot establish the loan\u2019s actual penalty terms or buy-out treatment, which require document content and an unresolved external definition.",
+          "missing": [
+            "Prepayment penalty term in months (no schema field equivalent)",
+            "Note/Prepayment Rider prepayment structure and buy-out provision",
+            "Acra\u2019s definition of \u201cBUY-OUT\u201d (Q-19)"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "PPT-PPP-STRUCT",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.prepayment_penalty_term_months"
+          ],
+          "status": "not_computable",
+          "why": "The schema lacks the selected term and percentage structure, and the job requires checking those values against the published options.",
+          "missing": [
+            "Prepayment penalty term (years/months); `prepayment_penalty_requested` only indicates whether one was requested.",
+            "Year-by-year prepayment penalty percentages/structure.",
+            "Note or Prepayment Rider content stating the selected term and percentages."
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "PPT-PRODUCTS",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.amortization_type"
+          ],
+          "status": "not_computable",
+          "why": "The schema only indicates whether the loan is interest-only, so it cannot determine the eligible product type or verify the Note against the Closing Disclosure.",
+          "missing": [
+            "Amortization type (fixed vs. ARM)",
+            "Loan term",
+            "Note product type",
+            "Closing Disclosure product description and consistency with the Note"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LFC-CLTV-FINAL",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.cltv_percent"
+          ],
+          "status": "covered",
+          "python_rules": [
+            "10",
+            "23",
+            "29",
+            "9"
+          ]
+        },
+        {
+          "job": "LPE-CHANNEL",
+          "section": "Loan Program Eligibility",
+          "reads": [
+            "LoanCore.channel"
+          ],
+          "status": "not_computable",
+          "why": "The schema has the channel field, but validating it against the lock/registration record and governing agreement requires document information not in the schema.",
+          "missing": [
+            "Lock/registration record counterparty type",
+            "Governing counterparty agreement type"
+          ],
+          "model_decided": true
+        },
+        {
+          "job": "LPE-BIZ-CONSUMER",
+          "section": "Loan Program Eligibility",
+          "reads": [],
+          "status": "not_computable",
+          "why": "The schema has fields for occupancy, qualification method, and loan purpose, but cannot verify the required attestation or resolve the external Acra confirmation.",
+          "missing": [
+            "LOS business-purpose classification flag",
+            "Business Purpose Attestation execution/status",
+            "Acra confirmation that a consumer DSCR transaction is permitted"
+          ],
+          "model_decided": true
+        }
+      ],
+      "rule_rows": [
+        {
+          "rule": "10",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b611",
+          "reads": [
+            "fico",
+            "loan_purpose",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "LFC-FICO-MTX",
+            "LFC-CLTV-FINAL"
+          ],
+          "note": "Checks the FICO/purpose matrix cap for the specific case of FICO 720 and cash-out (CLTV \u2264 55%). It does not implement the broader tier mapping or combine all governing caps.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "LFC-CORR-CAP",
+              0.172
+            ],
+            [
+              "LFC-CASHHAND",
+              0.163
+            ]
+          ]
+        },
+        {
+          "rule": "11",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b612",
+          "reads": [
+            "occupancy_subtype"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "DSCR-STR-EXCL"
+          ],
+          "note": "The rule rejects short-term rentals but does not check nightly rentals or how rental income is used in the DSCR.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "DSCR-ACTRENT-DOC",
+              0.268
+            ],
+            [
+              "DSCR-QUALRENT",
+              0.226
+            ]
+          ]
+        },
+        {
+          "rule": "12",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b613",
+          "reads": [
+            "channel",
+            "gross_rental_income",
+            "pitia"
+          ],
+          "relation": "duplicate",
+          "jobs": [
+            "DSCR-CALC",
+            "DSCR-MINRATIO",
+            "LPE-MIN-DSCR"
+          ],
+          "note": "The rule calculates gross rental income divided by PITIA and applies the channel-specific minimum; jobs 58 and 86 state the same minimum-ratio check.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "DSCR-IO-DENOM",
+              0.221
+            ],
+            [
+              "DSCR-CALC",
+              0.202
+            ]
+          ]
+        },
+        {
+          "rule": "13",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b614",
+          "reads": [
+            "citizenship_type",
+            "first_time_homebuyer",
+            "loan_purpose",
+            "current_lease_in_place"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "LPE-CO-LEASE"
+          ],
+          "note": "Checks that a current lease is in place for cash-out refinance, but not that it is unexpired and matches the subject property.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "DSCR-RENT-XCESS",
+              0.202
+            ],
+            [
+              "DSCR-FORB-OVL",
+              0.157
+            ]
+          ]
+        },
+        {
+          "rule": "14",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b615",
+          "reads": [
+            "first_time_homebuyer"
+          ],
+          "relation": "duplicate",
+          "jobs": [
+            "BOR-FTHB",
+            "CRD-FTHB-XREF"
+          ],
+          "note": "The rule rejects first-time-homebuyer applicants, matching the BOR-FTHB check and its cross-reference duplicate.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "BOR-GUAR-ATTEST",
+              0.209
+            ],
+            [
+              "BOR-FTHB",
+              0.204
+            ]
+          ]
+        },
+        {
+          "rule": "15",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b61",
+          "reads": [
+            "borrower_entity_type",
+            "loan_purpose",
+            "property_type"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "BET-SPE-DEF"
+          ],
+          "note": "The rule requires entity borrowers to be labeled SPE and rejects series LLCs, but it does not check that the entity has only residential investment or rental properties and operates in that business.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "BET-SPE-DEF",
+              0.207
+            ],
+            [
+              "BET-GUAR-20PCT",
+              0.2
+            ]
+          ]
+        },
+        {
+          "rule": "16",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b62",
+          "reads": [
+            "borrower_entity_type",
+            "entity_documents_complete",
+            "first_time_homebuyer"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "BET-ENTITY-TYPES",
+            "BET-PROHIB-TYPES",
+            "BET-SPE-DEF",
+            "BOR-GUAR-ATTEST",
+            "BET-FTHB-ATTEST"
+          ],
+          "note": "The rule checks an allowed-type list, which also excludes prohibited types and series LLCs by omission, and checks that the first-time-homebuyer flag is false. It does not verify US formation/basis or foreign ownership, ownership nesting, single-purpose property qualifications, prior homeownership, or the required entity documents. The first-time-homebuyer check is only part of jobs 72 and 25.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "BET-ENTITY-TYPES",
+              0.27
+            ],
+            [
+              "BET-SPE-DEF",
+              0.145
+            ]
+          ]
+        },
+        {
+          "rule": "17",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b63",
+          "reads": [
+            "entity_documents_complete"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "BET-OPAGREEMENT",
+            "BET-OWN-EVID",
+            "BET-NAME-MATCH",
+            "BET-GOODSTAND"
+          ],
+          "note": "The rule checks completeness of the listed entity-document package, covering operating agreements/bylaws, ownership evidence, name matching, and Good Standing documentation. It does not establish all details or timing requirements described by each job.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "BET-OWN-EVID",
+              0.395
+            ],
+            [
+              "BET-OPAGREEMENT",
+              0.221
+            ]
+          ]
+        },
+        {
+          "rule": "18",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b64",
+          "reads": [
+            "entity_documents_complete"
+          ],
+          "relation": "implements",
+          "jobs": [
+            "BET-AUTH-POA",
+            "BET-EIN-TAXID"
+          ],
+          "note": "The entity-document completeness check covers the authorization/Power of Attorney requirements and the EIN documentation or exception request.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "BET-AUTH-POA",
+              0.255
+            ],
+            [
+              "BET-EIN-TAXID",
+              0.203
+            ]
+          ]
+        },
+        {
+          "rule": "21",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b67",
+          "reads": [
+            "first_time_homebuyer"
+          ],
+          "relation": "duplicate",
+          "jobs": [
+            "CRD-FTHB-XREF"
+          ],
+          "note": "Checks that the applicant is not a first-time homebuyer, matching CRD-FTHB-XREF.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "CRD-FTHB-XREF",
+              0.175
+            ],
+            [
+              "CRD-MTG-RATING",
+              0.167
+            ]
+          ]
+        },
+        {
+          "rule": "22",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b68",
+          "reads": [
+            "property_type",
+            "rural_property",
+            "occupancy_subtype",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "PRE-TYPES",
+            "PRE-INELIG-TYP",
+            "PRE-UNADDRESSED"
+          ],
+          "note": "Implements the eligible and ineligible property-type checks in jobs 6 and 2. It also routes unrecognized property types to unknown, partially matching job 8. The additional 75% CLTV limit is not stated in these jobs.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "PRE-TYPES",
+              0.143
+            ],
+            [
+              "CRD-HIST-SCOPE",
+              0.13
+            ]
+          ]
+        },
+        {
+          "rule": "23",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b69",
+          "reads": [
+            "property_type",
+            "rural_property",
+            "property_state",
+            "vacant_property",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "PRE-INELIG-TYP",
+            "PRE-TYPES",
+            "PRE-UNADDRESSED",
+            "LFC-CLTV-FINAL"
+          ],
+          "note": "Fully checks the expressly ineligible and eligible property types (jobs 2 and 6). Unknown property types and the Warrantable Condo/Two-Unit 75% CLTV cap cover parts of jobs 8 and 105, respectively; the rule does not implement their full checks.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "PRE-UNADDRESSED",
+              0.178
+            ],
+            [
+              "PRE-TYPES",
+              0.126
+            ]
+          ]
+        },
+        {
+          "rule": "24",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b610",
+          "reads": [
+            "cltv_pct"
+          ],
+          "relation": "duplicate",
+          "jobs": [
+            "RLI-CLTV-EXEMPT"
+          ],
+          "note": "Checks the CLTV-at-or-below-70% exemption threshold.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "RLI-LTV-TRIGGER",
+              0.243
+            ],
+            [
+              "PRE-LISTCOND",
+              0.229
+            ]
+          ]
+        },
+        {
+          "rule": "26",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b612",
+          "reads": [
+            "cltv_pct",
+            "listed_for_sale_last_6_months",
+            "reserves_months"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "AFC-RESERVE-CLTV",
+            "AFC-RESERVE-OTHER",
+            "AFC-RESERVE-TOTAL"
+          ],
+          "note": "Implements the 6-month CLTV reserve check and the 24-month listed-property check. It does not implement the other reserve triggers or resolve overlapping triggers.",
+          "numbers_not_in_clause": [
+            "75"
+          ],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "AFC-RESERVE-TOTAL",
+              0.234
+            ],
+            [
+              "AFC-RESERVE-OTHER",
+              0.219
+            ]
+          ]
+        },
+        {
+          "rule": "27",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b613",
+          "reads": [
+            "product_is_interest_only",
+            "cltv_pct",
+            "property_currently_listed_for_sale"
+          ],
+          "relation": "no_job",
+          "jobs": [],
+          "note": "The rule checks the interest-only CLTV cap and sale-listing restriction; none of the listed jobs states either check.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "PPT-PPP-STRUCT",
+              0.184
+            ],
+            [
+              "PPT-IO-PMTCALC",
+              0.164
+            ]
+          ]
+        },
+        {
+          "rule": "28",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b614",
+          "reads": [
+            "listed_for_sale_last_6_months"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "PPT-PPP-LISTEDSALE"
+          ],
+          "note": "Checks whether the six-month listed-for-sale condition applies, but returns unknown rather than verifying the required penalty term or state exception.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "PPT-PPP-STATE",
+              0.32
+            ],
+            [
+              "PPT-PPP-LISTEDSALE",
+              0.189
+            ]
+          ]
+        },
+        {
+          "rule": "29",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b615",
+          "reads": [
+            "listed_for_sale_last_6_months",
+            "cltv_pct"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "LFC-CLTV-FINAL"
+          ],
+          "note": "Checks the listed-for-sale 65% CLTV cap, which is one component of job 105\u2019s governing-maximum calculation.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "LFC-CLTV-FINAL",
+              0.208
+            ],
+            [
+              "LFC-FICO-MTX",
+              0.147
+            ]
+          ]
+        },
+        {
+          "rule": "31",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b617",
+          "reads": [
+            "property_state"
+          ],
+          "relation": "no_job",
+          "jobs": [],
+          "note": "The rule excludes property_state SD, and no candidate job checks ineligible locations.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "LFC-CLTV-FINAL",
+              0.143
+            ],
+            [
+              "LFC-FICO-MTX",
+              0.141
+            ]
+          ]
+        },
+        {
+          "rule": "32",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b618",
+          "reads": [
+            "delayed_financing",
+            "loan_amount"
+          ],
+          "relation": "duplicate",
+          "jobs": [
+            "LFC-DELAY-FIN"
+          ],
+          "note": "Checks the $1,500,000 delayed-financing cap, duplicating job 77.",
+          "numbers_not_in_clause": [
+            "1500000"
+          ],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "PPT-PRODUCTS",
+              0.136
+            ],
+            [
+              "PPT-PPP-STRUCT",
+              0.127
+            ]
+          ]
+        },
+        {
+          "rule": "35",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b621",
+          "reads": [
+            "delayed_financing",
+            "loan_amount",
+            "channel",
+            "fico",
+            "cltv_pct"
+          ],
+          "relation": "duplicate",
+          "jobs": [
+            "LFC-CORR-CAP",
+            "CRD-MINSCORE"
+          ],
+          "note": "The rule applies the Correspondent 700\u2013719 FICO 60% CLTV cap, matching job 76 and implementing the cap portion of job 44. It does not check job 44\u2019s 700 minimum score. The delayed-financing $1.5MM cap has no matching listed job.",
+          "numbers_not_in_clause": [
+            "1500000"
+          ],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "LFC-CORR-CAP",
+              0.182
+            ],
+            [
+              "DSCR-ACTRENT-DOC",
+              0.168
+            ]
+          ]
+        },
+        {
+          "rule": "36",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b622",
+          "reads": [
+            "cltv_pct",
+            "reserves_months"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "AFC-RESERVE-TOTAL"
+          ],
+          "note": "Implements the CLTV-based reserve trigger: loans above 75% CLTV require at least 6 months of reserves. It does not aggregate the other reserve triggers in job 17.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "AFC-RESERVE-TOTAL",
+              0.17
+            ],
+            [
+              "AFC-RESERVE-OTHER",
+              0.156
+            ]
+          ]
+        },
+        {
+          "rule": "38",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#Section 3.12 \u00b624",
+          "reads": [
+            "escrow_waiver_requested"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "CRD-ESCROW-WVR"
+          ],
+          "note": "Handles the escrow-waiver request and identifies Section 35 status as a required input, but does not check the loan-amount cap or mortgage-payment history.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "CRD-ESCROW-WVR",
+              0.155
+            ],
+            [
+              "AFC-RESERVE-OTHER",
+              0.133
+            ]
+          ]
+        },
+        {
+          "rule": "5",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b66",
+          "reads": [
+            "loan_amount"
+          ],
+          "relation": "no_job",
+          "jobs": [],
+          "note": "The rule checks the loan amount range and $50 increments; none of the listed jobs checks loan amount.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "CMP-SRC-VERSION",
+              0.148
+            ],
+            [
+              "LFC-FICO-MTX",
+              0.132
+            ]
+          ]
+        },
+        {
+          "rule": "6",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b67",
+          "reads": [
+            "occupancy_subtype"
+          ],
+          "relation": "duplicate",
+          "jobs": [
+            "LPE-OCCUPANCY"
+          ],
+          "note": "The rule checks that occupancy is Non-Owner Occupied, matching job 89.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "LPE-BIZ-CONSUMER",
+              0.116
+            ],
+            [
+              "CMP-SRC-VERSION",
+              0.096
+            ]
+          ]
+        },
+        {
+          "rule": "7",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b68",
+          "reads": [
+            "loan_purpose",
+            "vacant_property",
+            "channel",
+            "gross_rental_income",
+            "pitia",
+            "current_lease_in_place"
+          ],
+          "relation": "partial",
+          "jobs": [
+            "LPE-PURPOSE",
+            "DSCR-CO-LEASE"
+          ],
+          "note": "Checks eligible loan purposes and requires a current lease for Cash-Out Refinance, but does not match a supporting transaction document. The vacancy and DSCR/channel thresholds do not match any listed job.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "LPE-PURPOSE",
+              0.152
+            ],
+            [
+              "LFC-CORR-CAP",
+              0.136
+            ]
+          ]
+        },
+        {
+          "rule": "8",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b69",
+          "reads": [
+            "loan_amount",
+            "cltv_pct"
+          ],
+          "relation": "no_job",
+          "jobs": [],
+          "note": "The rule checks loan amount limits and increments, plus a conditional CLTV cap. None of the listed jobs states these checks.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "RLI-LTV-TRIGGER",
+              0.136
+            ],
+            [
+              "LPE-NO-DTI",
+              0.128
+            ]
+          ]
+        },
+        {
+          "rule": "9",
+          "citation": "Acra_DSCR_Platinum_Select_Consolidated_Guidelines_v1_0 1.docx#segment \u00b610",
+          "reads": [
+            "loan_amount",
+            "fico",
+            "loan_purpose",
+            "cltv_pct"
+          ],
+          "relation": "implements",
+          "jobs": [
+            "LFC-FICO-MTX",
+            "LFC-CLTV-FINAL"
+          ],
+          "note": "Implements job 78's FICO/purpose matrix cap. It also partially implements job 105 by checking the matrix cap and loan amount, but does not combine the other listed caps or apply the declining-market reduction.",
+          "numbers_not_in_clause": [],
+          "model_decided": true,
+          "top_lexical": [
+            [
+              "LFC-FICO-MTX",
+              0.242
+            ],
+            [
+              "LFC-CLTV-FINAL",
+              0.168
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "cost": {
+    "calls": 213,
+    "input_tokens": 240279,
+    "output_tokens": 15959,
+    "cost_usd": 0.059,
+    "cost_is_upper_bound": false,
+    "budget_usd": 5.0,
+    "stopped_on_budget": false
+  },
+  "failed_segments": []
+}

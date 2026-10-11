@@ -1,0 +1,810 @@
+{
+ "python_programs": {
+  "left_items": 26,
+  "right_items": 27,
+  "left_best": {
+   "differs": 7,
+   "none": 8,
+   "partial": 5,
+   "same": 6
+  },
+  "right_unmatched": 8,
+  "rows": [
+   {
+    "id": "10",
+    "section": "2.1 Matrix as printed \u2014 Investment Property: Loan Amount, FICO, CLTV",
+    "title": "The provided text includes the table for loan amounts up to $1,500,000, but only the heading\u2014not the rows\u2014for the $1,500,001\u2013$2,000,000 tier",
+    "best": "differs",
+    "matches": [
+     {
+      "right": "10",
+      "relation": "differs",
+      "note": "For FICO 720 cash-out, the left limit is 80% CLTV; the right limit is 55%."
+     },
+     {
+      "right": "9",
+      "relation": "differs",
+      "note": "For the overlapping matrix scope up to $1,500,000, the left gives 85% purchase CLTV at FICO 720+ versus 80% on the right, and 80% cash-out CLTV at FICO 720+ versus 55% at 720 and 75% at 730+ on the right. The left cannot determine limits above $1,500,000; the right extends its matrix through $2,000,000."
+     }
+    ]
+   },
+   {
+    "id": "11",
+    "section": "Loan amount \\$2,000,001 \u2013 \\$3,000,000 \u00b2 (marker as printed)",
+    "title": "The excerpt gives an explicit loan-amount scope only for the $2,000,001\u2013$3,000,000 matrix",
+    "best": "differs",
+    "matches": [
+     {
+      "right": "9",
+      "relation": "differs",
+      "note": "The loan-amount scope is $2,000,001\u2013$3,000,000 on the left versus up to $2,000,000 on the right. For Purchase and Rate & Term, the maximum is 70% on the left versus 80% on the right. For Cash-Out, the left allows 65% at FICO 700 and above (and is NA below 700); the right uses 75% at FICO 730 and above, 65% at 721\u2013729, and 55% below 721."
+     },
+     {
+      "right": "10",
+      "relation": "differs",
+      "note": "At FICO 720 for Cash-Out, the left limit is 65% (within its stated loan-amount range), versus 55% on the right. The left applies its Cash-Out limit at FICO 700 and above; the right condition is specifically FICO 720."
+     },
+     {
+      "right": "8",
+      "relation": "differs",
+      "note": "For loan amounts above $1,500,000, the right applies a 75% CLTV cap; within the left's $2,000,001\u2013$3,000,000 scope, its limits are 70% for Purchase and Rate & Term and 65% for Cash-Out at FICO 700 and above."
+     }
+    ]
+   },
+   {
+    "id": "12",
+    "section": "2.3 Loan-amount conditions",
+    "title": "Encodes the delayed-financing $1,500,000 cap, the under-$200,000 CLTV limits for purchase and the stated refinance purposes, and interest-only loan amount and FICO limits",
+    "best": "differs",
+    "matches": [
+     {
+      "right": "35",
+      "relation": "partial",
+      "note": "The delayed-financing cap matches at $1,500,000; the left item also covers under-$200,000 CLTV and interest-only limits. The separate Correspondent 60% CLTV restriction for FICO 700\u2013719 is not stated in the left item."
+     },
+     {
+      "right": "8",
+      "relation": "differs",
+      "note": "Both address CLTV limits tied to loan amount, but the left trigger is below $200,000, while the right applies a 75% cap below $350,000 or above $1,500,000."
+     },
+     {
+      "right": "32",
+      "relation": "partial",
+      "note": "The delayed-financing cap matches at $1,500,000, but the left item also covers under-$200,000 CLTV and interest-only limits."
+     }
+    ]
+   },
+   {
+    "id": "14",
+    "section": "3.3 Rent schedules and rent evidence",
+    "title": "For a vacant-property purchase, the specific accompanying statement requires a 1007 survey, so a 1007 documentation type satisfies the requirement and another stated type does not",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "15",
+    "section": "3.4 Ratio-dependent conditions",
+    "title": "Encodes STD-3.14 using the stated summary CLTV caps and minimum FICO: purchase is capped at 75%, refinance at 70%, and FICO must be at least 640",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "16",
+    "section": "3.5 No Ratio DSCR",
+    "title": "The table provides minimums for multiple situations, but the permitted fields contain CLTV rather than LTV, so the LTV-above-80.00% trigger cannot be evaluated",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "17",
+    "section": "",
+    "title": "Implements the stated ITIN loan-amount, minimum-FICO, and CLTV tiers, plus the stated foreign-national FICO and CLTV terms",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "18",
+    "section": "4.2 Foreign nationals \u2014 restrictions stated in other panels",
+    "title": "The available tradelines_meet_requirement field is used as the case-level indicator for whether the credit reporting requirement is met",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "19",
+    "section": "5.1 Eligibility",
+    "title": "Encodes the stated business-purpose-only eligibility condition and its investment-property clarification",
+    "best": "partial",
+    "matches": [
+     {
+      "right": "6",
+      "relation": "partial",
+      "note": "Covers only the occupancy part; it requires Non-Owner Occupied, while the left also requires business-purpose loan purpose and specifies investment occupancy."
+     },
+     {
+      "right": "15",
+      "relation": "partial",
+      "note": "Includes business-purpose and investment-property conditions for entity financing, but the left applies those conditions generally; this candidate has an entity-specific scope, an individual-borrower exception, and additional SPE/series-LLC rules."
+     }
+    ]
+   },
+   {
+    "id": "22",
+    "section": "6.1 Entity eligibility and guarantees",
+    "title": "Encodes the stated restriction that business entities are eligible only for business-purpose transactions involving investment properties, using entity_is_borrower_1 to identify the entity-borrower case",
+    "best": "partial",
+    "matches": [
+     {
+      "right": "15",
+      "relation": "partial",
+      "note": "Both cover the business-purpose and investment-property restriction for entity financing. Candidate 5 additionally requires SPE status and prohibits series LLCs; the left item does not encode those requirements."
+     }
+    ]
+   },
+   {
+    "id": "23",
+    "section": "6.2 Entity documentation",
+    "title": "Checks the allowed entity-type categories, complete entity documentation, and the attestation that at least one borrower/guarantor is not a first-time homebuyer",
+    "best": "same",
+    "matches": [
+     {
+      "right": "16",
+      "relation": "same",
+      "note": "Covers the permitted entity types, complete entity documentation, and the requirement that at least one borrower or guarantor is not a first-time homebuyer."
+     },
+     {
+      "right": "14",
+      "relation": "partial",
+      "note": "Covers only the first-time-homebuyer eligibility condition; it does not cover permitted entity types or entity documentation."
+     },
+     {
+      "right": "18",
+      "relation": "partial",
+      "note": "Covers only the entity-document completeness component; it does not cover permitted entity types or the homebuyer attestation."
+     },
+     {
+      "right": "17",
+      "relation": "partial",
+      "note": "Covers only the entity-document requirements component; it does not cover permitted entity types or the homebuyer attestation."
+     }
+    ]
+   },
+   {
+    "id": "24",
+    "section": "",
+    "title": "The permitted case fields provide only entity_documents_complete as a representation of the required entity-document package",
+    "best": "same",
+    "matches": [
+     {
+      "right": "17",
+      "relation": "same",
+      "note": "Both use entity_documents_complete as the representation of entity-document completeness and treat missing or unrecognizable values as undecided."
+     },
+     {
+      "right": "18",
+      "relation": "same",
+      "note": "Both use entity_documents_complete for the entity-document requirement. The candidate\u2019s separate due-diligence date condition is not the left item\u2019s subject."
+     },
+     {
+      "right": "16",
+      "relation": "partial",
+      "note": "The candidate includes entity-document completeness, which overlaps the left item, but also covers entity type and first-time-homebuyer requirements."
+     }
+    ]
+   },
+   {
+    "id": "25",
+    "section": "6.3 Due diligence and background checks",
+    "title": "Uses the available aggregate entity-document field for the entity-document requirements",
+    "best": "same",
+    "matches": [
+     {
+      "right": "18",
+      "relation": "same",
+      "note": "Both use entity_documents_complete for entity-document requirements and cannot independently verify whether due diligence is current as of approval or draw."
+     },
+     {
+      "right": "17",
+      "relation": "partial",
+      "note": "The entity-document completeness field overlaps, but the candidate also refers to 90-day validity and a 20% ownership threshold, which the left item does not state."
+     },
+     {
+      "right": "16",
+      "relation": "partial",
+      "note": "Both use entity_documents_complete, but the candidate also covers permitted entity types and a non-first-time-homebuyer attestation, which are outside the left item."
+     }
+    ]
+   },
+   {
+    "id": "28",
+    "section": "7.3 Housing history and previous credit events, as printed",
+    "title": "Encodes the printed STD-7.9 housing-history Max CLTV table, treating the stated maximum as inclusive",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "29",
+    "section": "7.4 Escrow waiver",
+    "title": "Implements the two seasoning tables as bankruptcy/foreclosure seasoning and short-sale, deed-in-lieu, or modification seasoning, plus the stated escrow-waiver criteria and the listed property-type CLTV caps",
+    "best": "partial",
+    "matches": [
+     {
+      "right": "22",
+      "relation": "partial",
+      "note": "Covers part of the escrow-waiver property eligibility and CLTV-cap provisions, but not the seasoning tables or the other escrow-waiver criteria in the left item."
+     }
+    ]
+   },
+   {
+    "id": "30",
+    "section": "8.2 Vacant properties",
+    "title": "Encodes the determinable high-LTV property eligibility and rural-property CLTV, FICO, and DSCR limits, plus the stated measurable vacant-refinance limits",
+    "best": "differs",
+    "matches": [
+     {
+      "right": "23",
+      "relation": "differs",
+      "note": "The left sets rural-property CLTV, FICO, and DSCR limits and measurable limits for vacant refinances; the right makes rural and vacant properties ineligible outright."
+     },
+     {
+      "right": "7",
+      "relation": "differs",
+      "note": "The right bars vacant properties, while the left addresses vacant refinances through stated, purpose-specific limits rather than that blanket bar."
+     }
+    ]
+   },
+   {
+    "id": "31",
+    "section": "8.3 Properties listed for sale (\u00a711.5)",
+    "title": "This encodes STD-8.8: the supplied field states whether the property was listed during the six-month lookback",
+    "best": "partial",
+    "matches": [
+     {
+      "right": "28",
+      "relation": "partial",
+      "note": "It uses the same six-month listed-for-sale trigger, but addresses an additional prepayment-penalty and state-restriction condition that the left item does not assess."
+     },
+     {
+      "right": "29",
+      "relation": "partial",
+      "note": "It uses the same listed-for-sale trigger but adds a 65% LTV/CLTV cap; the left item only encodes whether the property was listed."
+     }
+    ]
+   },
+   {
+    "id": "32",
+    "section": "9. Assets, funds to close and reserves",
+    "title": "This checks the stated CLTV exemption at 70%: at or below the threshold, rent loss insurance is not required; above it, the loan does not meet this exemption",
+    "best": "same",
+    "matches": [
+     {
+      "right": "24",
+      "relation": "same",
+      "note": "Both state that CLTV at or below 70% qualifies for the rent-loss-insurance exemption."
+     }
+    ]
+   },
+   {
+    "id": "34",
+    "section": "10. Products, interest-only and ARM terms",
+    "title": "Encodes the stated interest-only eligibility limits and exclusions: both interest-only terms require a loan of at least $250K and a FICO score of at least 640; the 10 Yr / 40 Year Term additionally has a maximum 80% CLTV and $3M loan amount",
+    "best": "differs",
+    "matches": [
+     {
+      "right": "27",
+      "relation": "differs",
+      "note": "For interest-only CLTV, the left sets an 80% maximum for the 10 Yr / 40 Year Term; the right sets a 75% maximum for interest-only loans generally. Both prohibit properties currently listed for sale."
+     }
+    ]
+   },
+   {
+    "id": "36",
+    "section": "12. Consolidated reference tables (collation only)",
+    "title": "A requested prepayment penalty fails the check when the listed state-specific BUY-OUT condition applies; otherwise it passes",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "37",
+    "section": "",
+    "title": "Encodes the Matrix amount/FICO tiers and the stated under-$200,000 cap, selecting the cap for the stated loan purpose and comparing it to cltv_pct, which is supplied in percent units",
+    "best": "differs",
+    "matches": [
+     {
+      "right": "9",
+      "relation": "differs",
+      "note": "Both set CLTV limits using FICO, loan purpose, and loan amount, but the values and tiers differ. The left has amount-dependent FICO tiers (including 60\u201385% up to $1.5MM and 65\u201375% from $1.5MM to $2MM); the right uses 80% for purchase/rate & term and 55\u201375% for cash-out, with a 700 minimum FICO."
+     },
+     {
+      "right": "10",
+      "relation": "differs",
+      "note": "For cash-out at FICO 720, the left matrix gives 80% at loan amounts up to $1.5MM and 75% from $1.5MM to $2MM; the right sets a 55% maximum."
+     },
+     {
+      "right": "8",
+      "relation": "differs",
+      "note": "The amount-based CLTV limits differ: the left has a purpose-selected cap below $200,000, while the right applies a fixed 75% cap below $350,000 and above $1.5MM. The right also checks the $100,000\u2013$2,000,000 range and $50 increments, which the left does not."
+     },
+     {
+      "right": "35",
+      "relation": "differs",
+      "note": "Both address CLTV limits for FICO scores 700\u2013719, but the left matrix varies by loan amount, purpose, and score, while the right imposes a 60% limit for Correspondent loans in that score band. The right's separate $1.5MM delayed-financing cap is not in the left item."
+     }
+    ]
+   },
+   {
+    "id": "38",
+    "section": "12.2 Minimum FICO by feature, as published",
+    "title": "Encodes the published minimum FICO of 700 for an escrow waiver when one is requested",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "42",
+    "section": "",
+    "title": "Encodes only the explicit delayed-financing cap of $1.5MM (1,500,000)",
+    "best": "same",
+    "matches": [
+     {
+      "right": "32",
+      "relation": "same",
+      "note": "Both encode the delayed-financing loan-amount cap of $1,500,000."
+     },
+     {
+      "right": "35",
+      "relation": "partial",
+      "note": "The delayed-financing cap matches at $1,500,000, but the candidate also encodes a separate Correspondent CLTV limit for FICO scores 700\u2013719."
+     }
+    ]
+   },
+   {
+    "id": "44",
+    "section": "",
+    "title": "This encodes only the printed matrix floor: for loans of $1,500,000 or less, no matrix row is printed below 600",
+    "best": "differs",
+    "matches": [
+     {
+      "right": "9",
+      "relation": "differs",
+      "note": "Both concern a FICO floor in a matrix, but the left states only that no row is printed below 600 for loans up to $1,500,000; the right enforces a 700 minimum for its matrix up to $2,000,000 and adds purpose- and CLTV-based limits."
+     }
+    ]
+   },
+   {
+    "id": "6",
+    "section": "How to read this document",
+    "title": "Encodes the stated loan amount range, $50 increments, and minimum FICO matrix",
+    "best": "partial",
+    "matches": [
+     {
+      "right": "8",
+      "relation": "partial",
+      "note": "Covers the loan-amount limits and increments, but not the minimum-FICO matrix. The maximum is $3,000,000 on the left and $2,000,000 on the right; the right also adds a CLTV condition."
+     },
+     {
+      "right": "5",
+      "relation": "partial",
+      "note": "Covers the loan-amount range and increments, but not the minimum-FICO matrix. The maximum is $3,000,000 on the left and $2,000,000 on the right."
+     }
+    ]
+   },
+   {
+    "id": "8",
+    "section": "",
+    "title": "Encodes the stated $1.5MM delayed-financing cap, including its inclusive boundary",
+    "best": "same",
+    "matches": [
+     {
+      "right": "32",
+      "relation": "same",
+      "note": "Both cap delayed-financing loans at $1,500,000 inclusive."
+     },
+     {
+      "right": "35",
+      "relation": "same",
+      "note": "The delayed-financing cap is $1,500,000 inclusive in both; the candidate also encodes a separate CLTV limit."
+     }
+    ]
+   }
+  ],
+  "only_right": [
+   {
+    "id": "11",
+    "section": "3.1 Qualifying rent, as printed in the Platinum Summary",
+    "title": "The text explicitly makes short-term rentals ineligible, so that case can be rejected"
+   },
+   {
+    "id": "12",
+    "section": "3.3 Minimum ratio",
+    "title": "Checks gross rental income divided by PITIA against the stated channel minimums, including the \u2265 threshold"
+   },
+   {
+    "id": "13",
+    "section": "3.5 Applicants with recent forbearance or mortgage lates",
+    "title": "Encodes the stated eligible citizenship types, first-time-homebuyer exclusion, and current-lease requirement for cash-out refinances"
+   },
+   {
+    "id": "21",
+    "section": "6.2 Housing history and previous credit events",
+    "title": "Encodes only PLAT-6.9's explicit first-time-homebuyer ineligibility"
+   },
+   {
+    "id": "26",
+    "section": "8.2 Reserves by trigger, as stated",
+    "title": "Checks only the two reserve triggers whose conditions and reserve amounts can be represented by the allowed fields"
+   },
+   {
+    "id": "31",
+    "section": "",
+    "title": "This checks only the location restriction shared by both summaries: South Dakota is ineligible"
+   },
+   {
+    "id": "36",
+    "section": "",
+    "title": "Encodes only the stated reserve trigger: six months of reserves are required when CLTV is greater than 75.00%"
+   },
+   {
+    "id": "38",
+    "section": "",
+    "title": "The text only says that Section 35 loans are ineligible for an escrow waiver"
+   }
+  ],
+  "left": "ours python standard",
+  "right": "ours python platinum",
+  "number_deltas": [
+   {
+    "left": "10",
+    "right": "10",
+    "relation": "differs",
+    "only_left": [
+     "0.60",
+     "0.65",
+     "0.70",
+     "0.75",
+     "0.80",
+     "0.85",
+     "1500000",
+     "600",
+     "620",
+     "640",
+     "660",
+     "680",
+     "700",
+     "740",
+     "760",
+     "780"
+    ],
+    "only_right": [
+     "55"
+    ]
+   },
+   {
+    "left": "10",
+    "right": "9",
+    "relation": "differs",
+    "only_left": [
+     "0.60",
+     "0.65",
+     "0.70",
+     "0.75",
+     "0.80",
+     "0.85",
+     "1500000",
+     "600",
+     "620",
+     "640",
+     "660",
+     "680",
+     "720",
+     "740",
+     "760",
+     "780"
+    ],
+    "only_right": [
+     "2000000",
+     "55",
+     "65",
+     "721",
+     "730",
+     "75",
+     "80"
+    ]
+   },
+   {
+    "left": "11",
+    "right": "9",
+    "relation": "differs",
+    "only_left": [
+     "2000001",
+     "3000000",
+     "70"
+    ],
+    "only_right": [
+     "2000000",
+     "55",
+     "721",
+     "730",
+     "75",
+     "80"
+    ]
+   },
+   {
+    "left": "11",
+    "right": "10",
+    "relation": "differs",
+    "only_left": [
+     "2000001",
+     "3000000",
+     "65",
+     "70",
+     "700"
+    ],
+    "only_right": [
+     "55",
+     "720"
+    ]
+   },
+   {
+    "left": "11",
+    "right": "8",
+    "relation": "differs",
+    "only_left": [
+     "2000001",
+     "3000000",
+     "65",
+     "70",
+     "700"
+    ],
+    "only_right": [
+     "100000",
+     "1500000",
+     "2000000",
+     "350000",
+     "50",
+     "75.00"
+    ]
+   },
+   {
+    "left": "12",
+    "right": "8",
+    "relation": "differs",
+    "only_left": [
+     "200000",
+     "250000",
+     "3.1",
+     "3000000",
+     "640",
+     "75",
+     "80"
+    ],
+    "only_right": [
+     "100000",
+     "350000",
+     "50",
+     "75.00"
+    ]
+   },
+   {
+    "left": "30",
+    "right": "23",
+    "relation": "differs",
+    "only_left": [
+     "1.00",
+     "1.000",
+     "1.15",
+     "1000000",
+     "15",
+     "1500000",
+     "2000000",
+     "40.0",
+     "60",
+     "65",
+     "70",
+     "700",
+     "75",
+     "80",
+     "80.00"
+    ],
+    "only_right": [
+     "75.00"
+    ]
+   },
+   {
+    "left": "30",
+    "right": "7",
+    "relation": "differs",
+    "only_left": [
+     "1.00",
+     "1.000",
+     "1.15",
+     "1000000",
+     "15",
+     "1500000",
+     "2000000",
+     "40.0",
+     "60",
+     "65",
+     "70",
+     "700",
+     "75",
+     "80",
+     "80.00"
+    ],
+    "only_right": [
+     "1.0",
+     "1.2"
+    ]
+   },
+   {
+    "left": "34",
+    "right": "27",
+    "relation": "differs",
+    "only_left": [
+     "1040",
+     "250000",
+     "3000000",
+     "640",
+     "80"
+    ],
+    "only_right": [
+     "75.00"
+    ]
+   },
+   {
+    "left": "37",
+    "right": "9",
+    "relation": "differs",
+    "only_left": [
+     "1500000",
+     "1500001",
+     "200000",
+     "2000001",
+     "3000000",
+     "60",
+     "600",
+     "619",
+     "620",
+     "639",
+     "659",
+     "679",
+     "699",
+     "70",
+     "719",
+     "85"
+    ],
+    "only_right": [
+     "55",
+     "721",
+     "730"
+    ]
+   },
+   {
+    "left": "37",
+    "right": "10",
+    "relation": "differs",
+    "only_left": [
+     "1500000",
+     "1500001",
+     "200000",
+     "2000000",
+     "2000001",
+     "3000000",
+     "60",
+     "600",
+     "619",
+     "620",
+     "639",
+     "65",
+     "659",
+     "679",
+     "699",
+     "70",
+     "700",
+     "719",
+     "75",
+     "80",
+     "85"
+    ],
+    "only_right": [
+     "55",
+     "720"
+    ]
+   },
+   {
+    "left": "37",
+    "right": "8",
+    "relation": "differs",
+    "only_left": [
+     "1500001",
+     "200000",
+     "2000001",
+     "3000000",
+     "60",
+     "600",
+     "619",
+     "620",
+     "639",
+     "65",
+     "659",
+     "679",
+     "699",
+     "70",
+     "700",
+     "719",
+     "75",
+     "80",
+     "85"
+    ],
+    "only_right": [
+     "100000",
+     "350000",
+     "50",
+     "75.00"
+    ]
+   },
+   {
+    "left": "37",
+    "right": "35",
+    "relation": "differs",
+    "only_left": [
+     "1500001",
+     "200000",
+     "2000000",
+     "2000001",
+     "3000000",
+     "600",
+     "619",
+     "620",
+     "639",
+     "65",
+     "659",
+     "679",
+     "699",
+     "70",
+     "75",
+     "80",
+     "85"
+    ],
+    "only_right": []
+   },
+   {
+    "left": "44",
+    "right": "9",
+    "relation": "differs",
+    "only_left": [
+     "1500000",
+     "600"
+    ],
+    "only_right": [
+     "2000000",
+     "55",
+     "65",
+     "700",
+     "721",
+     "730",
+     "75",
+     "80"
+    ]
+   },
+   {
+    "left": "8",
+    "right": "35",
+    "relation": "same",
+    "only_left": [],
+    "only_right": [
+     "60",
+     "700",
+     "719"
+    ]
+   }
+  ]
+ },
+ "cost": {
+  "calls": 26,
+  "input_tokens": 62887,
+  "output_tokens": 6049,
+  "cost_usd": 0.0211,
+  "cost_is_upper_bound": false,
+  "budget_usd": 5.0,
+  "stopped_on_budget": false
+ }
+}
