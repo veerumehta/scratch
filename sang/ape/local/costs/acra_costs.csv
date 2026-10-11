@@ -1,0 +1,32 @@
+date,category,activity,source_id,model,calls,input_tokens,output_tokens,cached_tokens,reasoning_tokens,cost_usd,cost_is_upper_bound,minutes,work_units,unit,outputs,output_kind,doc_words,status,notes
+2026-10-07,extraction,extract catalog,60349ce3b6fa4db1890a01f91d78d73b,flex_gpt-6-luna,30,90,43281,0,48771,0.02770212499999999,False,3.8,30,parts,471,proposals,22021,succeeded,acra-dscr-policy catalog; 0 parts failed
+2026-10-08,extraction,extract jtbd,6bd4c96b67714ceaa3e6497df2015348,flex_gpt-6-luna,11,33,21406,0,22424,0.014045462500000001,False,49.9,11,parts,52,proposals,10220,succeeded,acra-dscr-policy acra-platinum; 1 parts failed
+2026-10-09,analysis,review coverage,coverage/coverage_report.json,,98,100950,6625,,,0.0283,False,,159,items,,,,done,
+2026-10-09,evaluation,eval case_run,4e78730b32174b24912c896a007a32e4,,26,153928,12059,19712,0,0.2853165,False,1.0,5,cases,5,passed,,completed,dscr 0.2.11 pack models 20261009_220210; pass rate 1.0
+2026-10-09,evaluation,eval case_run,f348038ac01e4f74acbfa4a01b8b0f65,,25,147937,13024,17920,0,0.28484125,False,1.0,5,cases,5,passed,,completed,dscr 0.2.11 pack models 20261009_220058; pass rate 1.0
+2026-10-09,evaluation,eval case_run,bc427e179204438a86a00ef7622d2d85,,29,182612,16208,17920,0,0.352065,False,1.1,5,cases,5,passed,,completed,dscr 0.2.11 pack models 20261009_215813; pass rate 1.0
+2026-10-09,evaluation,eval case_run,ef8895e45bde4740b34c41c27808192b,,25,152860,13301,17920,0,0.2930725,False,1.0,5,cases,5,passed,,completed,dscr 0.2.11 pack models 20261009_215712; pass rate 1.0
+2026-10-09,evaluation,eval case_run,37c6bccd49764b618d1f507bdfe1ceea,,25,159479,14854,8960,0,0.31187375,False,1.3,5,cases,5,passed,,completed,dscr 0.2.10 pack models 20261009_215238; pass rate 1.0
+2026-10-09,extraction,extract jtbd,230d154279954989a45fa50d487f4413,flex_gpt-6-luna,11,33,26552,19460,22723,0.014755512499999998,False,178.9,13,parts,56,proposals,11801,succeeded,acra-dscr-policy acra-standard; 3 parts failed
+2026-10-09,extraction,extract python,fa8c83748a0f4cf4a5019c956badf224,flex_gpt-6-luna,39,11211,17711,5391,51442,0.01940163,False,199.4,42,parts,25,proposals,10220,succeeded,acra-dscr-policy acra-platinum; 3 parts failed
+2026-10-09,extraction,extract python,53ed2625f6564984a0c3ea93e751dd9f,flex_gpt-6-luna,48,15034,31473,0,65254,0.0271902,False,28.0,48,parts,26,proposals,11801,succeeded,acra-dscr-policy acra-standard; 0 parts failed
+2026-10-10,evaluation,eval case_run,babe3a7db2ed4075a90dc0fb63e7cf86,,28,84,13639,14072,10241,0.0175411225,False,1.5,5,cases,5,passed,,completed,dscr 0.2.14 pack models 20261010_012411; pass rate 1.0
+2026-10-10,evaluation,eval case_run,581504b89e0c42cdb9f36e1b29adbf00,,28,84,13622,52373,9315,0.0154090025,False,32.8,5,cases,5,passed,,completed,dscr 0.2.14 pack models 20261010_005119; pass rate 1.0
+2026-10-10,evaluation,eval case_run,a69386bedc1b41b08b96e7c0da73a0da,,38,114,20283,0,17285,0.0251028875,False,1.8,5,cases,5,passed,,completed,dscr 0.2.13 pack models 20261010_004702; pass rate 1.0
+2026-10-10,evaluation,eval case_run,de49a4e16ce340bf944f41c4a86d5736,,34,102,16828,13345,14924,0.0217102625,False,2.0,5,cases,5,passed,,completed,dscr 0.2.13 pack models 20261010_004501; pass rate 1.0
+2026-10-10,evaluation,eval case_run,4d4d0a4884514d39b93ad4097f65713a,,40,120,23092,13807,20086,0.0269248475,False,2.2,5,cases,5,passed,,completed,dscr 0.2.12 pack models 20261010_003729; pass rate 1.0
+2026-10-10,evaluation,eval case_run,49bb6f48c31a4a6e852bb39e6bc25cb4,,39,117,20431,13185,16963,0.0251254625,False,2.2,5,cases,5,passed,,completed,dscr 0.2.12 pack models 20261010_003507; pass rate 1.0
+2026-10-11,analysis,review comparison,coverage/review_20261011/compare/compare_sets.json,,448,1094126,100982,,,0.2958,False,,448,items,,,,done,
+2026-10-11,analysis,review comparison,coverage/review_20261011/compare_python_v2/compare_sets.json,,26,62887,6049,,,0.0211,False,,26,items,,,,done,
+2026-10-11,analysis,review coverage,coverage/review_20261011/acra/coverage_report.json,,213,240279,15959,,,0.059,False,,284,items,,,,done,
+2026-10-11,analysis,review coverage,coverage/review_20261011/ours/coverage_report.json,,103,117875,6947,,,0.0304,False,,170,items,,,,done,
+2026-10-11,extraction,extract jtbd,633a72d5d9ee438faeee6cc4d2531ccf,flex_gpt-6-luna,17,51,35526,2407,32442,0.0215955225,False,39.2,16,parts,68,proposals,11801,succeeded,acra-dscr-policy acra-standard; 0 parts failed
+2026-10-11,extraction,extract jtbd,92c879283dd14cb9b137d6bd44e9f45e,flex_gpt-6-luna,13,39,23159,0,27992,0.0164271375,False,31.0,12,parts,49,proposals,10220,succeeded,acra-dscr-policy acra-platinum; 0 parts failed
+2026-10-11,extraction,extract jtbd,b281ca4c19b04c1ebd7824a647801633,,0,0,0,0,0,0,False,11.1,0,parts,0,proposals,11801,failed,acra-dscr-policy acra-standard; 0 parts failed; no progress since 2026-10-11T16:35:45.521297+00:00; its process stopped. Submit 
+2026-10-11,extraction,extract jtbd,619604a2263042b28e0450cb4af078f4,,0,0,0,0,0,0,False,11.1,0,parts,0,proposals,10220,failed,acra-dscr-policy acra-platinum; 0 parts failed; no progress since 2026-10-11T16:35:45.467365+00:00; its process stopped. Submit 
+2026-10-11,extraction,extract jtbd,17364e502f8f42b8b26d2ea82acdb233,,0,0,0,0,0,0,False,5.0,0,parts,0,proposals,11801,failed,acra-dscr-policy acra-standard; 0 parts failed; no progress since 2026-10-11T16:30:44.563331+00:00; its process stopped. Submit 
+2026-10-11,extraction,extract jtbd,764d94864f3e40e29bd00e52fa59fdff,,0,0,0,0,0,0,False,5.0,0,parts,0,proposals,10220,failed,acra-dscr-policy acra-platinum; 0 parts failed; no progress since 2026-10-11T16:30:44.500485+00:00; its process stopped. Submit 
+2026-10-11,extraction,extract python,bedb0ad98d4f4db5beb318948150e187,flex_gpt-6-luna,48,144,26003,4529,74984,0.0315589075,False,74.5,48,parts,25,proposals,11801,succeeded,acra-dscr-policy acra-standard; 1 parts failed
+2026-10-11,extraction,extract python,86577f56ecf643d09d192405462ea959,flex_gpt-6-luna,42,126,14322,2068,54217,0.022708390000000002,False,55.3,42,parts,25,proposals,10220,succeeded,acra-dscr-policy acra-platinum; 1 parts failed
+2026-10-11,extraction,extract python,6b4bd3745887438280887d32f5671e70,flex_gpt-6-luna,42,126,15130,0,57183,0.023770799999999998,False,32.7,42,parts,23,proposals,10220,succeeded,acra-dscr-policy acra-platinum; 2 parts failed
+2026-10-11,extraction,extract python,66449c2d0afe433785a75bc04c35fdc8,flex_gpt-6-luna,48,144,29703,0,71777,0.031942575,False,42.4,48,parts,22,proposals,11801,succeeded,acra-dscr-policy acra-standard; 1 parts failed

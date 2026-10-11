@@ -1,0 +1,1 @@
+date,category,activity,source_id,model,calls,input_tokens,output_tokens,cached_tokens,reasoning_tokens,cost_usd,cost_is_upper_bound,minutes,work_units,unit,outputs,output_kind,doc_words,status,notes
