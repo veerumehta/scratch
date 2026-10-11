@@ -88,3 +88,52 @@ Acra rule 10 shape (percent field against 0.80) is refused. L4: a fixture where 
 a requirement no job states proposes that job; a fixture where the two paths disagree on a threshold
 reports it. L5: dispositions computed on a fixture ledger match a hand count, and the route agrees
 with the SDK function. Pages: the existing static-page guards (scripts parse, no placeholder left).
+
+## Built on branch `jtbd-ledger` (2026-10-11, opus-xrepo), worktree `/Users/sangit/src/japes-ledger`
+
+Cut from `v2.6.2` at `0960b851`; seven commits `a91d2f18..5138f374`, local and unpushed. Each is
+in `docs/status/CHANGELOG.md` under 2.6.2 with its line count.
+
+| Step | Commit | What |
+|---|---|---|
+| L1 | `a91d2f18` | `ProcedureCondition.computable_checks` (None: not assessed) and `missing_reads`; JTBD prompt 1.2.0; a job keeps its cited clause (`domain_extensions.ledger.clause`) |
+| L2 | `891945e7` | `python_jobs` run: `POST .../job-runs`, `JobSegmenter` + `JobCodeExtractor`, `policy_code/job_prompt`; rule `<job>.python`, `derived_from` the job, proposed as `python` |
+| L3 | `d1a3a39c` | `unprinted_figures` recorded on each generated rule (a finding, not a refusal) |
+| L4 | `b86c5fea` | `pack.ledger`: alignment run (`POST .../alignment-runs`), `ledger.yaml`, jobs proposed for orphans |
+| L5 | `0bb87690` | `coverage` + routes (draft, version) + xlsx; `util.xlsx_safe` (also guards the comparison workbook and the finance export) |
+| L6 | `80d3b27b` | `pack.jtbd_align`: aligned comparison, `POST /packs/compare` with `aligned`, CLI `--aligned`; `pack.text_similarity` |
+| L7 | `5138f374` | Coverage, Compare, Extraction pages; draft coverage `?proposals=true` |
+
+### Choices made while building (to review; each can be undone alone)
+
+1. **Link field.** Job-written code links back through the existing `PythonCondition.derived_from`, not
+   a new `implements` list; segment-written code links through `ledger.yaml`. Per-check links were not
+   built: a rule links to a job, not to one of its checks.
+2. **Computable as positions.** `computable_checks` is a list of positions into `checks`, not per-check
+   objects with their own reads; `None` means not assessed, `[]` means none computable.
+3. **A job keeps its clause in the rule** (`domain_extensions.ledger.clause`). Draft files grow by the
+   cited text per job. Undo: store it on the proposal only (the excerpt), at the cost of code-from-job
+   losing table detail once a job is merged.
+4. **Alignment is an extraction run** (`representation: alignment`), like the `catalog` run, to reuse
+   progress, cost, health and the stale-run reclaim; the match lives in a draft file `ledger.yaml`, not a
+   table. Undo: a table of matches.
+5. **Job runs are scoped to one policy**; code rules merge back into that policy.
+6. **Unprinted figures are a finding, not a refusal** (code derives figures like 1500001); the scale
+   check sonnet-runtime built is what refuses a wrong unit.
+7. **Aligned comparison answers synchronously** on `POST /packs/compare` (one model call per left job,
+   minutes for Acra-sized sets). Undo: make it a background run.
+8. **Program scope (core or overlay) is not decided automatically** from the comparison; it is a
+   column a person reads.
+9. **Coverage counts proposals** only on request (`?proposals=true`, on by default on the page) and
+   marks them `pending`; code can be written only from merged jobs.
+10. **The Extraction page is added beside the Packs page's extraction panel**, which stays; removing that
+    panel is a separate change.
+11. **Shared helpers moved**: the finance export's formula guard is now `util.xlsx_safe` (also applied
+    to the JTBD comparison workbook, which had no guard); lexical similarity is `pack.text_similarity`.
+
+### Owed
+
+- The adversarial review over `0960b851..jtbd-ledger` (the user runs it), then merging the branch into
+  `v2.6.2` (fast-forward: `v2.6.2` has not moved).
+- A live run on Acra once merged: extract with prompt 1.2.0 so jobs state computable checks, run an
+  alignment, write code from jobs, and read the counts on the Coverage page.
