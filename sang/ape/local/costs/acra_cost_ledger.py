@@ -132,6 +132,26 @@ def analysis_rows() -> list[dict]:
     return rows
 
 
+AGENT_SESSIONS = HERE / "agent_sessions.csv"
+
+
+def agent_rows() -> list[dict]:
+    """`agent_session_costs.py`'s estimate: the Acra turns' cost per session (API list prices)."""
+    if not AGENT_SESSIONS.exists():
+        return []
+    rows = []
+    with AGENT_SESSIONS.open() as f:
+        for s in csv.DictReader(f):
+            rows.append({
+                "date": s["first"][:10], "category": "agent session", "activity": f"agent {s['kind']}",
+                "source_id": f"{s['project']}/{s['session']}", "model": s["models"],
+                "cost_usd": float(s["acra_cost_usd"]), "work_units": int(s["acra_turns"]),
+                "unit": "turns", "status": "done",
+                "notes": f"whole session ${s['session_cost_usd']} over {s['turns']} turns (ceiling); "
+                         f"{s['first']} to {s['last']}"})
+    return rows
+
+
 def manual_rows() -> list[dict]:
     if not MANUAL.exists():
         MANUAL.write_text(",".join(COLUMNS) + "\n")
@@ -239,17 +259,26 @@ def workbook(rows: list[dict], rate_rows: list[dict], words: dict[str, int], pat
                f"=$B$7*AVERAGE({ref('review coverage', 'cost_per_unit')},{ref('review comparison', 'cost_per_unit')})",
                ""])
     last = fc.max_row
-    fc.append(["total model cost", f"=SUM(B10:B{last})", f"=SUM(C10:C{last})"])
+    fc.append(["total model cost (pipeline)", f"=SUM(B10:B{last})", f"=SUM(C10:C{last})"])
+    agent = [r for r in rows if r["category"] == "agent session"]
+    if agent:
+        est = round(sum(_num(r["cost_usd"]) or 0 for r in agent), 2)
+        ceiling = round(sum(float(re.search(r"\$([\d.]+)", r["notes"]).group(1)) for r in agent), 2)
+        fc.append([])
+        fc.append(["agent sessions as observed for Acra (estimate, Acra turns only)", est,
+                   "API list prices; building the platform and the pack together, not a pack alone"])
+        fc.append(["agent sessions as observed for Acra (ceiling, whole sessions)", ceiling, ""])
     fc.append([])
-    fc.append(["Not in this forecast: agent sessions (Claude Code) and people's hours; add them to "
-               "acra_costs_manual.csv to bring them into Rates."])
+    fc.append(["Not in this forecast: people's hours; add them to acra_costs_manual.csv."])
     wb.save(path)
 
 
 def main() -> None:
     words = {name: _words(name) for docs in POLICY_DOCS.values() for name in docs}
     with httpx.Client(timeout=30, headers={"x-tenant-id": TENANT}) as http:
-        rows = extraction_rows(http, words) + eval_rows(http) + analysis_rows() + manual_rows()
+        rows = (extraction_rows(http, words) + eval_rows(http) + analysis_rows() + agent_rows()
+                + manual_rows())
+    rows = [{c: r.get(c) for c in COLUMNS} for r in rows]
     rows.sort(key=lambda r: (r["date"] or "", r["category"], r["activity"]))
     with (HERE / "acra_costs.csv").open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=COLUMNS, extrasaction="ignore")
