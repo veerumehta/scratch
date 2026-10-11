@@ -91,7 +91,7 @@ with the SDK function. Pages: the existing static-page guards (scripts parse, no
 
 ## Built on branch `jtbd-ledger` (2026-10-11, opus-xrepo), worktree `/Users/sangit/src/japes-ledger`
 
-Cut from `v2.6.2` at `0960b851`; eight commits `a91d2f18..8a411501` (the last records the new prompts' digests), local and unpushed. Full suite: 8573 pass once the worktree has the main checkout's `.env` linked (the boot tests read it from the working directory). Each is
+Cut from `v2.6.2` at `0960b851`; eight commits `a91d2f18..8a411501` (the last records the new prompts' digests), local and unpushed. Full suite: 8566 passed, 7 failed; the 2 that were the branch's are fixed in `8a411501` and the 5 boot tests pass once the worktree has the main checkout's `.env` linked (they read it from the working directory); those 7 were re-run alone, not the whole suite again. Each is
 in `docs/status/CHANGELOG.md` under 2.6.2 with its line count.
 
 | Step | Commit | What |
