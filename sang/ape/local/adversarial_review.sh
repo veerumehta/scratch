@@ -385,6 +385,65 @@ if [[ -n "$prior_transcript" ]]; then
     } >> "$prompt_file"
 fi
 
+# ── sessions ──────────────────────────────────────────────────────────────────────────────────────
+# A fix round on a range this loop already reviewed resumes that range's Claude session instead of
+# paying for the whole prompt and the rules again, and the reviewer then still holds what it said.
+# What bounds it, so a long loop cannot anchor on its own first pass:
+#   * a new range, a full pass (`REVIEW_FULL`) or a range whose baseline is not what the session saw
+#     starts a fresh session;
+#   * after `REVIEW_MAX_RESUMES` resumed rounds (default 3) the next one starts fresh;
+#   * a delta larger than `REVIEW_RESUME_MAX_PERCENT` (default 50) of the whole range is a
+#     different review, and starts fresh.
+# One line per `upstream<TAB>label<TAB>session<TAB>resumes<TAB>head`: the tree the session last saw.
+# Only a round that reached a verdict is recorded, as with `.state`.
+sessions_file="$state_dir/.sessions"
+MAX_RESUMES="${REVIEW_MAX_RESUMES:-3}"
+RESUME_MAX_PERCENT="${REVIEW_RESUME_MAX_PERCENT:-50}"
+
+# `resumable_session <label>`: prints `<session> <resumes so far>` when this round may resume it.
+resumable_session() {
+    [[ "$REVIEW_ENGINE" == claude && -n "$prior_head" && -r "$sessions_file" ]] || return 1
+    local up lbl sid n head
+    while IFS=$'\t' read -r up lbl sid n head; do
+        [[ "$up" == "$upstream" && "$lbl" == "$1" ]] || continue
+        [[ "$head" == "$prior_head" ]] || return 1
+        [[ "$n" -lt "$MAX_RESUMES" ]] || return 1
+        [[ $(( ${narrow_lines:-0} * 100 )) -le $(( ${full_lines:-0} * RESUME_MAX_PERCENT )) ]] || return 1
+        echo "$sid $n"
+        return 0
+    done < "$sessions_file"
+    return 1
+}
+
+# `remember_session <label> <session> <resumes>`: the session this range's next fix round resumes.
+remember_session() {
+    local keep="$sessions_file.$$"
+    { [[ -r "$sessions_file" ]] && awk -F'\t' -v u="$upstream" -v l="$1" '!($1==u && $2==l)' "$sessions_file"
+      printf '%s\t%s\t%s\t%s\t%s\n' "$upstream" "$1" "$2" "$3" "$reviewed_head"
+    } > "$keep" && mv "$keep" "$sessions_file"
+}
+
+# The prompt of a resumed round: the session already holds the rules, the accepted findings and
+# what it reported, so this says what is being asked of it now, and the diff follows.
+write_resume_prompt() {
+    cat > "$1" <<'RESUME'
+This is a fix round on the review you gave earlier in this session. The diff below is only what
+changed since that round. Keep every rule, the reporting shape and the final VERDICT line from your
+first message. Do two things, in this order:
+
+1. For each finding you reported before, one line: `WAS: <path :: slug> -- FIXED | STILL OPEN |
+   REGRESSED`, and for anything but FIXED say in a clause what still holds. Judge it against the
+   tree, not against the diff: a finding can be fixed by a change this diff does not contain, and a
+   change that looks like a fix may not be one. A finding the author declined with a `TODO` whose
+   claim checks out is CHECKED, not open.
+2. Then review the delta for defects it introduces. A finding you mark STILL OPEN is not reported
+   twice: the line from step 1 is the whole report for it.
+
+You are not re-reviewing the branch; the part this diff does not touch was covered earlier and is
+covered again in full before the push.
+RESUME
+}
+
 # The reviewer CLI: prompt and diff on stdin, the final message into "$1", diagnostics into "$2".
 # Read-only either way: Codex by its sandbox; Claude by `dontAsk`, which denies every tool not
 # named in `--allowedTools`, with the writing tools also disallowed outright.
@@ -400,13 +459,33 @@ run_reviewer() {
                 --output-last-message "$out" - > "$log" 2>&1
             ;;
         claude)
-            # `-p` prints only the final message, so stdout is the verdict text.
-            claude -p --model "$REVIEW_MODEL" --effort "$REVIEW_EFFORT" \
-                --permission-mode dontAsk --no-session-persistence \
+            # `--output-format json` so the session id and the token usage come back with the
+            # verdict; `$out` is then the verdict text and `$out.meta` the session and usage. The
+            # session is kept (no `--no-session-persistence`) so a fix round can resume it.
+            # `$3`, when given, is the session to resume.
+            local resume=()
+            [[ -n "${3:-}" ]] && resume=(--resume "$3")
+            claude -p ${resume[@]+"${resume[@]}"} --model "$REVIEW_MODEL" --effort "$REVIEW_EFFORT" \
+                --output-format json --permission-mode dontAsk \
                 --allowedTools Read Grep Glob "Bash(git diff:*)" "Bash(git log:*)" \
                     "Bash(git show:*)" "Bash(git grep:*)" \
                 --disallowedTools Edit Write NotebookEdit \
-                > "$out" 2> "$log"
+                > "$out.json" 2> "$log" || return 1
+            python3 - "$out.json" "$out" "$out.meta" <<'PY' || return 1
+import json, sys
+src, text, meta = sys.argv[1:4]
+data = json.load(open(src))
+if data.get("is_error") or not isinstance(data.get("result"), str):
+    sys.exit(1)
+open(text, "w").write(data["result"])
+use = data.get("usage") or {}
+open(meta, "w").write(" ".join([
+    f"session={data.get('session_id', '')}",
+    f"in={use.get('input_tokens', 0)}", f"out={use.get('output_tokens', 0)}",
+    f"cache_read={use.get('cache_read_input_tokens', 0)}",
+    f"cache_create={use.get('cache_creation_input_tokens', 0)}",
+    f"cost_usd={data.get('total_cost_usd', 0)}"]) + "\n")
+PY
             ;;
     esac
 }
@@ -422,11 +501,26 @@ review_one() {
     # is the one task that is paid for by what it does *not* miss, so it takes the top tier and
     # the high effort whatever the interactive default is set to. Codex runs on its configured
     # default unless `REVIEW_MODEL`/`REVIEW_EFFORT` say otherwise.
-    if ! { cat "$prompt_file"; printf '\n\n── DIFF TO REVIEW ──\n'; cat "$slice_diff"; } \
-        | run_reviewer "$out" "$log"; then
-        echo "  ! $REVIEW_ENGINE review did not complete"
-        tail -n 20 "$log"
-        return 2
+    local resume_sid="" resumes=0 mode="fresh" found
+    if found="$(resumable_session "$label")"; then
+        resume_sid="${found%% *}"; resumes="${found##* }"
+        resume_prompt="$run.resume-prompt"
+        write_resume_prompt "$resume_prompt"
+        mode="resumed $((resumes + 1))"
+        echo "  --  resuming the $label session (round $((resumes + 1)) of $MAX_RESUMES)"
+        if ! { cat "$resume_prompt"; printf '\n\n── DIFF TO REVIEW ──\n'; cat "$slice_diff"; } \
+            | run_reviewer "$out" "$log" "$resume_sid"; then
+            echo "  --  the session could not be resumed; starting a fresh one"
+            resume_sid=""; resumes=0; mode="fresh"
+        fi
+    fi
+    if [[ -z "$resume_sid" ]]; then
+        if ! { cat "$prompt_file"; printf '\n\n── DIFF TO REVIEW ──\n'; cat "$slice_diff"; } \
+            | run_reviewer "$out" "$log"; then
+            echo "  ! $REVIEW_ENGINE review did not complete"
+            tail -n 20 "$log"
+            return 2
+        fi
     fi
     if [[ ! -s "$out" ]]; then
         echo "  ! $REVIEW_ENGINE returned no review"
@@ -437,10 +531,20 @@ review_one() {
     # `<<<` rather than `## $label`: the reviewer emits its own `##` headings, so the slice
     # boundary and the slice content were the same shape and no round could be read back
     # mechanically -- not by the next round, and not by anything counting findings.
-    { echo; echo "<<<REVIEW $label>>>"; echo; cat "$out"; } >> "$transcript"
-    grep -q "^VERDICT: BLOCK" "$out" && return 1
-    grep -q "^VERDICT: PASS" "$out" && return 0
-    return 2
+    {
+        echo; echo "<<<REVIEW $label>>>"; echo
+        [[ -s "$out.meta" ]] && echo "USAGE: $(tr -d '\n' < "$out.meta") ($mode)" && echo
+        cat "$out"
+    } >> "$transcript"
+    local verdict=2
+    grep -q "^VERDICT: BLOCK" "$out" && verdict=1
+    grep -q "^VERDICT: PASS" "$out" && verdict=0
+    # A verdict is what makes the session worth resuming; the id comes back with the usage.
+    if [[ "$verdict" -ne 2 && -s "$out.meta" ]]; then
+        local sid; sid="$(sed -n 's/.*session=\([^ ]*\).*/\1/p' "$out.meta" | head -1)"
+        [[ -n "$sid" ]] && remember_session "$label" "$sid" "$([[ "$mode" == fresh ]] && echo 0 || echo $((resumes + 1)))"
+    fi
+    return "$verdict"
 }
 
 # A diff that fits goes in one pass. One that does not is reviewed in slices rather than skipped:

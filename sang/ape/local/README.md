@@ -90,3 +90,33 @@ After a plato -> dev squash-merge: one merge commit on local `plato` (parents pl
 `record_squash_on_main.sh`. Checks only by default; `--apply` records it. Refuses unless dev's tree
 equals `origin/plato`'s (nothing on dev to discard) and plato is built on `origin/plato`. Keeps
 unpushed plato work, unlike `plato_take_release.sh`, which takes the release's tree. Never pushes.
+
+## `adversarial_review.sh` - The second pass over a diff, resuming its own session on fix rounds
+
+Drives `claude -p` (or `REVIEW_ENGINE=codex`), read-only, model and effort pinned (`claude-opus-5-5`,
+high), and writes a transcript per run under `.reviews/` (`.last-review.md` points at the newest).
+
+**Sessions (claude engine only).** A fix round, meaning an incremental round on the range the last
+round reviewed, resumes that range's session (`claude -p --resume <id>`) instead of sending the
+whole prompt again. The resumed prompt asks it to account for each earlier finding (`WAS: ... FIXED |
+STILL OPEN | REGRESSED`, judged against the tree) and to review only the delta. The session id is
+kept per `upstream` and slice label in `.reviews/.sessions` (`upstream label session resumes head`),
+written only when a round reaches a verdict. A session starts **fresh** when:
+
+- it is a new range or a full pass (`REVIEW_FULL=1` always starts fresh, so a loop that sets it never
+  resumes);
+- the session's last tree is not this round's baseline;
+- it has already been resumed `REVIEW_MAX_RESUMES` times (default 3), so the reviewer cannot anchor
+  on its own first pass;
+- the delta is more than `REVIEW_RESUME_MAX_PERCENT` (default 50) of the whole range;
+- the resume itself fails (the session is gone): it starts fresh and says so.
+
+Sessions are kept in Claude's own session store (`--no-session-persistence` is gone, because a
+session that is not kept cannot be resumed). The read-only allow-list, model and effort pins are
+unchanged.
+
+**Usage.** Each review's block in the transcript starts with a `USAGE:` line: session id, input and
+output tokens, cache read and cache creation tokens, cost in USD, and `(fresh)` or `(resumed N)`, so
+what a resume saves is readable from the files. The other knobs are `REVIEW_UPSTREAM` (the range's
+base), `REVIEW_MAX_LINES` (slice size), `REVIEW_MAX_SLICES`, `REVIEW_KEEP` (transcripts kept) and
+`REVIEW_PRIOR_LINES` (how much of the previous transcript a fresh incremental round carries).
