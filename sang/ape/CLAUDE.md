@@ -4,6 +4,17 @@
 
 ## Where things stand
 
+**Cost display, model check and Ontology build (runtime session, 2026-10-07, `v2.6.1`, uncommitted
+until the user runs `/tmp/japes_commit_cost_and_model_check.sh`)**: cost on the run, extraction and
+evaluation pages (`plato/static/cost.js`, `ModeUsage.cost_is_upper_bound`, `usage` on assess and the
+JTBD routes); `scripts/check_new_models.py` as step 2d of `pre_push_check.sh`; the Ontology plan
+phases A-E (JSON Schema catalog, reference library migration 0023, `catalog` extraction and
+proposals, `merge-catalog`, fact cap scoped in the formal compiler, the packs page panel). Suite
+8420 green. Open: the user runs the commit script and `/tmp/japes_migrate_local.sh` (now to 0023),
+`scripts/local/upload_mortgage_references.py`; naming (`-policy`/`-assistant`, customer-first) per
+the blueprint plan section 9; one review at the end (the user runs it).
+
+
 **Conductor pipeline (policy session, 2026-10-02)**: all five phases of
 `status/done_conductor_pipeline.md` built on `v2.6.0`, `000ff187..cab3f9b8`, local and unpushed;
 full-range adversarial review over `fab0793e..1730b190` clean (rounds 33 and 35, after page
@@ -21,6 +32,16 @@ runtime half (`POST/GET {prefix}/documents`, `BlobDocumentStore`, `PlatoWiring.d
 pinning in `CaseRunService`) was built here by the user's direction; the runtime session was told.
 ci-spread-core's seed is a `conductor_pipeline` and publishes. jaci session told what to adopt.
 Open: jaci adoption; the seed manifest's three TODOs. Suite 7716 green.
+
+**Survey-driven build (2026-10-04, cross-repo session, on `v2.6.1`, unpushed)**: ideas from imdoc and
+macer built as evolutions of DocumentAgent / AdjudicationAgent (vote split and scorers, rejected evidence,
+open conditions kept on reruns, short document aliases, `ValidatedOutput` retry feedback; split review pages,
+taxonomy levels `classify_path`, attach-short-runs, `split_scorers`, case-run `document_ingest split: true`),
+then `plans/plan_case_rerun.md` P1-P4 (`rerun` in the submit body, `RerunBasis`, unchanged documents reused,
+`DocumentFocus`) and `plans/plan_plato_ui.md` U1-U3 (runs page `/cases/ui`, spend and queue, per-metric
+experiment view). Open: the review owed over the range, U4-U8, macer's condition dedup and imdoc's page
+budget (deferred on merit, see the plans), `human_review_required` for unsure splits (untestable with the
+current test modes: they state no confidence).
 
 **Working branch is `v2.6.1`** (cut 2026-10-03 from `dev` `b316b5d3`, after PR #88 squashed
 v2.6.0 to `dev` as `ec16ee93`; `main`'s `ae974845` recorded on `dev`, `dev` merged back into
@@ -82,11 +103,23 @@ and `plato` merge-back of `ec16ee93` (`3218ce12`), both tree-unchanged, push via
 `34582819`), push via `/tmp/japes_plato_ci_key_fix.sh`. Held for 2.6.1 on local branch
 `plato-held-2.6.1`: `7ec392af` (export
 docstring, also `v2.6.0` `b1ea1165`) (`db20cab7` dropped: the dev record replaces it).
-**Pending for the cross-repo session:**
+**Cross-repo session state (opus-xrepo, 2026-10-10).** Routes work to `sonnet-runtime` (holds runtime and
+policy paths; no policy session runs) and `sonnet-jaci`. Scenario priority: DSCR, then CRE; elsewhere TODO.
+- In flight with sonnet-runtime: `plans/plan_sibling_ideas_oct.md` (all three tiers of the 2026-10-10 sibling
+  survey plus guideline versioning), then the review script's per-range resume and usage logging.
+- Done: rule trials R0-R7 (`status/done_rule_trials_and_library.md`, design in
+  `status/design_rule_trials_and_library.md`); DSCR Plato eval 100% (jaci 0.2.14); AML 91-100% (jaci 0.2.13);
+  coverage report (scratch `ape/local/coverage/`); DocIntel engines (vision wins on the Acra appraisal).
+- Waiting on the user: qualifying_rent (confirm with Acra); the base-prompt sectioned replace
+  (`plans/note_base_prompt_assumptions.md`); Docker for `/tmp/japes_executor_linux_check.sh` (gates deployed
+  python rules); a sanitized Acra loan package for gold; PR #91 replies (`scripts/local/resolve_pr91_threads.py
+  --apply`); the review, then `/tmp/japes_push_plato_262f.sh`, then relock and push jaci; forward the two
+  jazzx-assistant notes in /tmp (they pin japes 2.5.7, not 2.5.0).
+
+**Pending for the cross-repo session (older):**
 1. (done) The user runs
    `/tmp/japes_release_260_to_plato.sh` (it squashes the `v2.6.0` tip).
-2. The executor's Linux layers (netns, `RLIMIT_NPROC`) are untested: `/tmp/japes_executor_linux_check.sh`
-   once Docker is up.
+2. (now R7) The executor's Linux layers: `/tmp/japes_executor_linux_check.sh` needs Docker running.
 3. `plans/plan_plato_phases_3_4.md`: all done but D3 (BPMN process-start, deferred until a consumer
    and the runtime's URL/auth exist); move it to `status/` when D3 is settled or dropped.
 4. Not built, asked by jaci: `GET /decisions/{id}` (its Plato APIs note, line 216); per-call
