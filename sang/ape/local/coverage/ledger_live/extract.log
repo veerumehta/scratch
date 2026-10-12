@@ -1,0 +1,9 @@
+jtbd:platinum attempt 1: run 430e5722025341dcbc7ed39d3060a8aa
+jtbd:standard attempt 1: run 787fd55b9985498a95e0e9685a0798a6
+jtbd:platinum run 430e5722 succeeded: 45 proposals, 0 of 10 parts failed, $0.0175
+python:standard attempt 1: run 73e3d17a3007450a88ce61c511b85b65
+jtbd:standard run 787fd55b succeeded: 65 proposals, 0 of 13 parts failed, $0.0223
+python:platinum attempt 1: run 0f47f378706a41289d35878fb60dcddf
+python:platinum run 0f47f378 succeeded: 26 proposals, 0 of 42 parts failed, $0.0245
+python:standard run 73e3d17a succeeded: 29 proposals, 0 of 48 parts failed, $0.0344
+wrote coverage/ledger_live/runs.json

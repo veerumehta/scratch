@@ -1,0 +1,74 @@
+[
+ {
+  "representation": "jtbd",
+  "document": "standard",
+  "policy_id": "acra-standard",
+  "attempts": [
+   {
+    "run_id": "787fd55b9985498a95e0e9685a0798a6",
+    "status": "succeeded",
+    "segments": 13,
+    "failed_segments": [],
+    "proposals": 65,
+    "cost_usd": 0.0223,
+    "started_at": "2026-10-12T03:18:03.935364Z",
+    "finished_at": "2026-10-12T03:44:03.568815Z",
+    "error": ""
+   }
+  ]
+ },
+ {
+  "representation": "jtbd",
+  "document": "platinum",
+  "policy_id": "acra-platinum",
+  "attempts": [
+   {
+    "run_id": "430e5722025341dcbc7ed39d3060a8aa",
+    "status": "succeeded",
+    "segments": 10,
+    "failed_segments": [],
+    "proposals": 45,
+    "cost_usd": 0.0175,
+    "started_at": "2026-10-12T03:18:03.839956Z",
+    "finished_at": "2026-10-12T03:38:35.212148Z",
+    "error": ""
+   }
+  ]
+ },
+ {
+  "representation": "python",
+  "document": "standard",
+  "policy_id": "acra-standard",
+  "attempts": [
+   {
+    "run_id": "73e3d17a3007450a88ce61c511b85b65",
+    "status": "succeeded",
+    "segments": 48,
+    "failed_segments": [],
+    "proposals": 29,
+    "cost_usd": 0.0344,
+    "started_at": "2026-10-12T03:39:05.465784Z",
+    "finished_at": "2026-10-12T04:37:56.829545Z",
+    "error": ""
+   }
+  ]
+ },
+ {
+  "representation": "python",
+  "document": "platinum",
+  "policy_id": "acra-platinum",
+  "attempts": [
+   {
+    "run_id": "0f47f378706a41289d35878fb60dcddf",
+    "status": "succeeded",
+    "segments": 42,
+    "failed_segments": [],
+    "proposals": 26,
+    "cost_usd": 0.0245,
+    "started_at": "2026-10-12T03:44:05.705932Z",
+    "finished_at": "2026-10-12T04:31:57.483415Z",
+    "error": ""
+   }
+  ]
+ }
+]

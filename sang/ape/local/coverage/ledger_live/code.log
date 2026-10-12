@@ -1,0 +1,8 @@
+job run 6dc26e6a226642e89c6c0334272b2308 for acra-standard
+job run fbb74a559ad349c5bd247c3e13415d2a for acra-platinum
+  run 6dc26e6a python_jobs acra-standard: succeeded, 23 parts, 0 failed, 23 proposed, $0.0221
+  run fbb74a55 python_jobs acra-platinum: succeeded, 21 parts, 0 failed, 21 proposed, $0.0129
+  acra-standard run 6dc26e6a: {"trigger": "approve", "decided": ["acra-standard:acra-standard.borrower_citizenship_and_foreign_national_requirements.review_foreign_national_program_eligibility_and_restrictions.python", "acra-stand
+  merged into acra-standard: {"rel_path": "policies/acra-standard.yaml", "policy_id": "acra-standard", "added": ["acra-standard.borrower_citizenship_and_foreign_national_requirements.review_foreign_national_program_eligibility_and_restrictions.python", "acra-standard.borrower_citizenship_and_foreign_national_requirements.verify
+  acra-platinum run fbb74a55: {"trigger": "approve", "decided": ["acra-platinum:acra-platinum.borrower_eligibility_and_credit_history.borrower_citizenship_and_homeownership_eligibility.python", "acra-platinum:acra-platinum.borrowe
+  merged into acra-platinum: {"rel_path": "policies/acra-platinum.yaml", "policy_id": "acra-platinum", "added": ["acra-platinum.borrower_eligibility_and_credit_history.borrower_citizenship_and_homeownership_eligibility.python", "acra-platinum.borrower_eligibility_and_credit_history.decisioning_score_and_tradelines.python", "acr
