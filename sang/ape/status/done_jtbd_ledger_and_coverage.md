@@ -1,7 +1,7 @@
 # Plan: a JTBD ledger, JTBD to code, coverage as a count, and list-first authoring pages
 
-Status: approved 2026-10-11 (opus-xrepo, from the user's direction); decisions taken (below), routed
-to sonnet-runtime. Not started. Evidence: `plans/note_acra_jtbd_rules_review.md` (the Acra review) and
+Status: built and merged 2026-10-11: `jtbd-ledger` fast-forwarded into `v2.6.2` at `f4734f1a`,
+adversarial review PASS (round 2). Owed: the live Acra run (end of this file). Evidence: `plans/note_acra_jtbd_rules_review.md` (the Acra review) and
 `ape/local/coverage/review_20261011/`. Prior art: `plan_policy_jtbd_extraction.md`,
 `plan_dscr_programs_compare.md` (JTBDSet import, `jtbd_match`, `jtbd_compare`), `plan_plato_ui.md`
 (static pages, U1-U7), `plan_plato_authoring_review.md` (reviews, comments, lint triage).
@@ -133,7 +133,5 @@ in `docs/status/CHANGELOG.md` under 2.6.2 with its line count.
 
 ### Owed
 
-- The adversarial review over `0960b851..jtbd-ledger` (the user runs it), then merging the branch into
-  `v2.6.2` (fast-forward: `v2.6.2` has not moved).
 - A live run on Acra once merged: extract with prompt 1.2.0 so jobs state computable checks, run an
   alignment, write code from jobs, and read the counts on the Coverage page.
