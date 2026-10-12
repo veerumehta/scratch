@@ -51,6 +51,19 @@ correction (rule level) -> gold case -> diagnosis (which layer) -> proposed fix 
     plus one feedback record when corrections are present.
   - `ResumeRequest` gains the same field at the checkpoint.
   - Plato's run page gets a per-rule "correct this" control.
+- **Bulk mode** (both modes are supported):
+  - `GET .../runs/corrections-sheet?run_ids=...&format=xlsx` writes one row per rule outcome of the
+    named runs: run id, pack version, rule id, rule title, given verdict and status, blank
+    `expected`, `fact_corrections` (as `fact=value; ...`), `evidence`, `disputed`, `note`;
+  - `POST .../runs/corrections-import` (xlsx or CSV) reads rows with `expected` filled and writes
+    one feedback record per run, the same records the page writes;
+  - the import is all or nothing: every row is checked first (unknown run or rule, a run not in
+    this tenant, a status outside the pack's vocabulary), and a bad file is refused with a per-row
+    report;
+  - a row re-imported for a run and rule that already has a correction updates that record
+    (revision bump), so one sheet can be edited and re-imported;
+  - cells pass through `util.xlsx_safe`;
+  - client methods and a CLI command for both.
 - Status words come from the pack (`AdjudicationAgentSpec.status_vocabulary` precedent), so a pack
   with other statuses works unchanged.
 - Verify:
@@ -135,13 +148,9 @@ because writing fixes before seeing a diagnosis distribution is guessing. C5 can
   `plans/note_parity_eval_20261012.md`.
 - The chat feedback loop, and the curator tag vocabulary questions in the learning assessment.
 
-## 7. Decisions for the user
+## 7. Decisions (the user, 2026-10-12)
 
-1. Who builds it. The paths are policy plus runtime (`fabric/canonical`, `pack/`, `server/`, Plato
-   runs), which sonnet-runtime holds, but the plan was written here.
-2. Should a correction need review approval before it becomes a gold case (proposed: yes, using the
-   existing `review_status`), or should it count immediately?
-3. One corrections dataset per pack, or per pack version (proposed: per pack; each case pins the
-   version it corrected).
-4. Whether Acra reviewers will use Plato's run page to correct, or whether corrections arrive in
-   bulk (a sheet). If in bulk, C1 also needs an import route.
+1. sonnet-runtime builds it.
+2. A correction becomes a gold case only after review approval (the existing `review_status`).
+3. One corrections dataset per pack; each case pins the version it corrected.
+4. Both modes: the per-rule control on the run page, and the sheet export and import (C1).
