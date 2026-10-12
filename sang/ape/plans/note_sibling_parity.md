@@ -9,10 +9,24 @@ limits as pack data).
 
 Prior art: `status/superseded_macer_juno_japes_alignment.md` (to 2026-10-01), the 2026-10-04 survey
 build (vote split, rejected evidence, open conditions kept on reruns, `ValidatedOutput` feedback).
-Not yet compared function by function.
+Compared function by function 2026-10-12: `plans/note_parity_adjudication_20261012.md`. Verdict:
+ahead on verdicts and citations, behind on conditions. The sibling uses japes only as its queue
+runtime, not `AdjudicationAgent`.
 
 | Seen | Sibling has | japes | Where it went |
 |---|---|---|---|
+| 10-12 | Typed conditions (type, timing, party, one subject, stable ids across runs) | plain strings | to discuss: canonical `OutcomeCondition`, vocabularies as pack data |
+| 10-12 | Evidence scoped per rule, tools, read cap | one segment holding every rule and every document's full text; workspace, read cap, grounding and browse gate exist but are unwired | to discuss |
+| 10-12 | Validation retry sends only the feedback | `run_kit.run_agent` resends the whole prompt and retries 400/401/404 (defect, every caller) | to route: sonnet-runtime |
+| 10-12 | Case-level condition dedup across sections and runs, reason gate | none | to discuss |
+| 10-12 | Rerun resolution with a cited message, incl. underwriter-made conditions and new documents | restate/resolve only for re-judged rules, no cite | to discuss |
+| 10-12 | Output validation retries (pages, CONDITIONAL without conditions, metric keys, subject ids) | bad cites dropped silently | to discuss |
+| 10-12 | n/a | vote collapses PASS and CONDITIONAL (both SATISFIED); winner order-dependent, conditions can be lost (defect) | to route |
+| 10-12 | Extracted values per rule with provenance and calculation steps | deterministic derived metrics only | to discuss |
+| 10-12 | Prior status and rationale in the rerun prompt; per-run document history | omitted; `resolve_run_mode` unused | to discuss |
+| 10-12 | LLM applicability triage; program detection | `SegmentPlanner` unwired; program supplied | low |
+| 10-12 | n/a | spec fields never read (`persona`, `regime_values`, `status_vocabulary`, `mounts`, `segments`); `segment_concurrency=6` literal | to route |
+| 10-12 | ahead: deterministic rules without a model, id-matched drops become INDETERMINATE, closed `Verdict`, page-precise hashed cites, rejected-evidence demotion, field-level rerun impact, vote tallies and stability scorers | | |
 | 10-12 | One retry rule: transient = 408/429/5xx and network, `Retry-After` honoured, jitter | `concurrency.is_transient_error` + `retry_async`; `modes.utils.run_agent_with_retry` diverges | routed to sonnet-runtime |
 | 10-12 | A validation retry whose remedy is a tool call keeps tools callable | `run_kit.ValidatedOutput` lacks it | routed (low) |
 | 10-12 | `calculation_context` on a job's metrics, cap raised | missing from the JTBD writer and export | routed with the readiness checks |
@@ -43,8 +57,20 @@ Prior art: `local/mining/r_kernel_lab_mortgage_report.md` (rules_lib helpers, 10
 ## eval-service: does our eval and feedback keep pace?
 
 Prior art: `status/done_eval_service_contract_convergence.md` (2026-08), the eval control plane and
-feedback service moved into the SDK (2026-09-25/26). Not checked since.
+feedback service moved into the SDK (2026-09-25/26). Compared 2026-10-12:
+`plans/note_parity_eval_20261012.md`. Verdict: ahead on the evaluation core, behind on running live
+external entities and on runtime feedback. The sibling never imported the shared contracts package,
+so convergence is one-sided. Plan step 7 has no branch anywhere.
 
 | Seen | Sibling has | japes | Where it went |
 |---|---|---|---|
-| | | | |
+| 10-12 | Async long-running cases (webhooks, polling, deadlines, timeout/cancel/human-task states) | each case awaited inline | to discuss (blocks retiring it) |
+| 10-12 | External agent/process invokers, per-experiment overrides (prompt, model, temperature, tools) | invoker passes scope only | to discuss (blocks retiring it) |
+| 10-12 | Run isolation: knowledge snapshots per dataset version, clone per run, fail-closed hooks | none | to discuss |
+| 10-12 | Trace scorers registered, named judge presets | classes exist, not registered; no trace attached | to discuss (cheap) |
+| 10-12 | Comparison depth: key pairing across datasets, cohorts, config diff, flip-rate noise floor | pairs by case id | to discuss |
+| 10-12 | Feedback injected at runtime, pinned feedback, combined retrieval | `render_feedback_block` has no caller | to discuss |
+| 10-12 | Attribution job with callback; eval auto-emits feedback | protocol only; `FeedbackSource.JUDGE` never written | to discuss |
+| 10-12 | Pagination/OData, dataset delete, xlsx export, MCP scorer mount, legacy routes | missing | depends on which callers exist (unknown) |
+| 10-12 | Scorer composition, NL scorers with tools, per-scorer timeout; MLflow mirroring; optimize timeout/progress | narrower | low |
+| 10-12 | ahead: regression gates, judge cache and spend cap, resumable experiments, digested datasets, noise floor, silver panels, domain scorers, fix ledger, feedback-to-guidance, tenancy, UI | | |
