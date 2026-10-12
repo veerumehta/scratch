@@ -116,10 +116,17 @@ Everything here is optional and advisory at first:
 - **Entity names are the code vocabulary** (the user, 2026-10-12). Rules, generated code, jobs'
   metric keys and the export all use `Entity.field`, as the hand-built set does (`LoanCore.cltv_percent`,
   `CreditReport.representative_score`), so comparison and export match key for key.
-- **Migrate in one pass, no flat aliases kept.** We are in the dev phase, so there is no compatibility
-  layer. The DSCR seed's rules, metrics, profiles, input schema, fixtures and gold cases, and the
-  trial pack, move from flat facts (`cltv_pct`, `fico`) to entity fields with their units, using a
-  one-off mapping table (a script, not SDK code).
+- **Migrate the hand-built seed only; regenerate everything generated** (the user, 2026-10-12). We are
+  in the dev phase, so there is no compatibility layer.
+  - **Migrated** with a one-off mapping table (a script, not SDK code), moving flat facts (`cltv_pct`,
+    `fico`) to entity fields with their units: the hand-built DSCR seed's rules, metrics, profiles,
+    input schema, fixtures and gold cases.
+  - **Discarded, not migrated:** generated data, meaning the trial pack `acra-ledger-trial`,
+    extraction runs and proposals, drafts made from them, and coverage and comparison outputs.
+  - **Regenerated** from the Acra guidelines once D1-D3 land.
+  - **Kept:** today's numbers, as the baseline the regenerated set is measured against (68/49 jobs,
+    97% matched, partial 41/123 Standard, code 40%, 50% with segment code, lacks data 60%; in
+    `note_acra_jtbd_rules_review.md` and `ape/local/coverage/`).
 - **The skew of the hand-built ontology stays in the catalog.** Rules name fields; the catalog says
   which entity a field lives in. Re-cutting an entity later is a catalog change plus D1's stable-id
   alias rule, not a code rewrite.
