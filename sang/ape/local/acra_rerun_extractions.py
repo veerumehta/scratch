@@ -35,11 +35,11 @@ TERMINAL = {"succeeded", "failed", "cancelled"}
 DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 
-async def _one(http: httpx.AsyncClient, rep: str, doc: str, attempts: int) -> dict:
+async def _one(http: httpx.AsyncClient, rep: str, doc: str, attempts: int, pack: str = PACK) -> dict:
     tries = []
     for attempt in range(1, attempts + 1):
         path = DOCUMENTS[doc]
-        resp = await http.post(f"{API}/authoring/extract/{PACK}/runs",
+        resp = await http.post(f"{API}/authoring/extract/{pack}/runs",
                                data={"policy_id": POLICIES[doc], "representation": rep},
                                files={"documents": (path.name, path.read_bytes(), DOCX)})
         resp.raise_for_status()
@@ -67,6 +67,7 @@ async def main() -> None:
     parser.add_argument("--only", default="")
     parser.add_argument("--parallel", type=int, default=2)
     parser.add_argument("--attempts", type=int, default=2)
+    parser.add_argument("--pack", default=PACK)
     parser.add_argument("--out", default=str(Path(__file__).parent / "coverage" /
                                              f"runs_{time.strftime('%Y%m%d')}.json"))
     args = parser.parse_args()
@@ -76,7 +77,7 @@ async def main() -> None:
     async with httpx.AsyncClient(timeout=120, headers=HEAD) as http:
         async def gated(rep, doc):
             async with gate:
-                return await _one(http, rep, doc, args.attempts)
+                return await _one(http, rep, doc, args.attempts, args.pack)
         results = await asyncio.gather(*(gated(r, d) for r, d in JOBS if (r, d) in wanted))
     Path(args.out).write_text(json.dumps(results, indent=1))
     print(f"wrote {args.out}")
