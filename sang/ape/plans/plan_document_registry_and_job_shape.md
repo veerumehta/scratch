@@ -79,8 +79,19 @@ nothing names a client or a repo.
   - each candidate is matched to a reference taxonomy (uploaded into the tenant reference library,
     which the Ontology work built) and proposed `reuse`, `new` or `alias of`;
   - a person reviews in the existing proposal store and merge path.
+- **Ids are stable across versions.** These rules apply to registry ids, and to catalog field ids
+  and job mnemonics, which D2 and D3 hold to the same:
+  - an id is never reused for a different document;
+  - a renamed id keeps the old one in `aliases`;
+  - a retired id is marked `retired: true` with an optional `replaced_by`, never deleted.
+  - Lint across two pack versions (the draft against the last published) flags an id that vanished
+    without a successor. References elsewhere (rules, jobs, gold cases, corrections) resolve through
+    aliases.
+- **Provenance.** An entry adopted from a reference records `x-source: <reference>@<version>#<id>`,
+  as catalog fields do.
 - **Verify:**
   - the seed with a registry classifies the Acra appraisal as before;
+  - deleting an id in a draft is a lint finding, while renaming one with an alias is not;
   - a job written with the registry names only ids;
   - lint flags a stray id;
   - coverage shows the two new gaps on the trial pack.

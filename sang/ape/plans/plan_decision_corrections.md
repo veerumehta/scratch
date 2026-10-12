@@ -81,6 +81,14 @@ correction (rule level) -> gold case -> diagnosis (which layer) -> proposed fix 
   adjudication and path scorers already treat a missing rule as "not scored"; fix them if not.
 - An `answer_disputed` correction makes a case tagged `disputed`, kept out of pass bars until
   resolved.
+- **Expected answers are versioned.**
+  - Each case records the guideline version its expected answer comes from: the guideline the
+    corrected pack version is certified against (`guidelines_db`), or none.
+  - When a later pack version, certified against a newer guideline, legitimately changes that rule's
+    answer, the case is marked `superseded` with the new guideline version. It is then excluded from
+    pass bars for packs on that guideline and later, and still scored for packs on the older one.
+  - Superseding is a reviewer action (or follows from the release report in the guideline release
+    plan), never automatic on a failing score.
 - Verify:
   - an approved correction yields one case;
   - rerunning the old version fails it;
