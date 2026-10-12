@@ -57,9 +57,13 @@ correction (rule level) -> gold case -> diagnosis (which layer) -> proposed fix 
     `expected`, `fact_corrections` (as `fact=value; ...`), `evidence`, `disputed`, `note`;
   - `POST .../runs/corrections-import` (xlsx or CSV) reads rows with `expected` filled and writes
     one feedback record per run, the same records the page writes;
-  - the import is all or nothing: every row is checked first (unknown run or rule, a run not in
-    this tenant, a status outside the pack's vocabulary), and a bad file is refused with a per-row
-    report;
+  - the import is tolerant (the user, 2026-10-12, quick uptake):
+    - good rows are written;
+    - rows naming an unknown run, or a run outside this tenant, are skipped;
+    - a rule id the run's pack version lacks, or a status outside the pack's vocabulary, is kept
+      as an unmatched correction (visible, not made into a gold case until fixed);
+    - the answer is a per-row report of written, unmatched and skipped rows;
+    - a pack can set `strict:` to refuse the whole file on any bad row;
   - a row re-imported for a run and rule that already has a correction updates that record
     (revision bump), so one sheet can be edited and re-imported;
   - cells pass through `util.xlsx_safe`;
@@ -68,7 +72,7 @@ correction (rule level) -> gold case -> diagnosis (which layer) -> proposed fix 
   with other statuses works unchanged.
 - Verify:
   - a correction round-trips through the API, the store and the client;
-  - an unknown `rule_id` for the run's pack version is refused (422).
+  - an unknown `rule_id` for the run's pack version is kept as unmatched rather than refused.
 
 ### C2. A correction becomes a gold case in the pack's dataset
 

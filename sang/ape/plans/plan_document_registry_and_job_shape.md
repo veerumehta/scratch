@@ -50,6 +50,18 @@ nothing names a client or a repo.
 | Job set readiness checks, contract as pack data | `plans/plan_jtbdset_readiness.md` | routed, not built |
 | Job ledger: jobs, `computable_checks`, `missing_reads`, coverage | `pack/ledger.py` | built |
 
+## 2a. Posture: tolerant first (the user, 2026-10-12)
+
+Everything here is optional and advisory at first:
+
+- A pack without a registry, catalog, kinds or families works exactly as today.
+- Findings are warnings, never publish blockers: stray ids, vanished ids, a job without a kind, and
+  grain.
+- Where the writer meets a document or field the pack does not declare, it keeps the name, marks it
+  undeclared, and proposes it as a new registry or catalog entry, rather than dropping it or
+  failing.
+- A pack can raise any finding to an error later with `strict:` in its template.
+
 ## 3. D1. Document registry (the anchor)
 
 - **The registry.** A pack declares one registry, `document_types.yaml`, named in the manifest. Each
@@ -65,9 +77,10 @@ nothing names a client or a repo.
   - **Classifier:** `DocumentAgentSpec.taxonomy` comes from the registry when the pack declares one.
     `document_agent.yaml` keeps only its thresholds; a pack without a registry works as today.
   - **Evidence types:** `Pack.evidence_types` and the job template's `evidence_types` are registry
-    ids. Lint flags an id a rule or job names that the registry lacks.
-  - **Job writer:** the writer is given the registry's ids, labels and kinds, and a job's documents
-    are a list of ids. "Reference Documents" in the requirement text is rendered from labels, grouped
+    ids. Lint warns about an id a rule or job names that the registry lacks.
+  - **Job writer:** the writer is given the registry's ids, labels and kinds. A job's documents are a
+    list of ids where they match; otherwise the name is kept, marked undeclared, and proposed for
+    the registry. "Reference Documents" in the requirement text is rendered from labels, grouped
     by `parent`. A `system_record` is shown under its own heading, not as a document to request.
   - **Ledger:** each job lists its documents. Coverage adds two gaps: a document no classifier class
     can recognise, and a fact no document `yields`. These sit alongside `missing_reads`.
@@ -84,14 +97,14 @@ nothing names a client or a repo.
   - an id is never reused for a different document;
   - a renamed id keeps the old one in `aliases`;
   - a retired id is marked `retired: true` with an optional `replaced_by`, never deleted.
-  - Lint across two pack versions (the draft against the last published) flags an id that vanished
-    without a successor. References elsewhere (rules, jobs, gold cases, corrections) resolve through
+  - Lint across two pack versions (the draft against the last published) warns about an id that
+    vanished without a successor. References elsewhere (rules, jobs, gold cases, corrections) resolve through
     aliases.
 - **Provenance.** An entry adopted from a reference records `x-source: <reference>@<version>#<id>`,
   as catalog fields do.
 - **Verify:**
   - the seed with a registry classifies the Acra appraisal as before;
-  - deleting an id in a draft is a lint finding, while renaming one with an alias is not;
+  - deleting an id in a draft is a lint warning, while renaming one with an alias is not;
   - a job written with the registry names only ids;
   - lint flags a stray id;
   - coverage shows the two new gaps on the trial pack.
