@@ -113,15 +113,28 @@ Everything here is optional and advisory at first:
 
 - Run the Ontology tab's catalog extraction on the two Acra guidelines, with the mortgage reference
   copies as references, to build `catalog.schema.json` holding only what the documents need.
-- The flat facts the rules read today become derived or aliased fields (`cltv_pct` from
-  `LoanCore.cltv_percent`, with the unit), so no rule changes.
+- **Entity names are the code vocabulary** (the user, 2026-10-12). Rules, generated code, jobs'
+  metric keys and the export all use `Entity.field`, as the hand-built set does (`LoanCore.cltv_percent`,
+  `CreditReport.representative_score`), so comparison and export match key for key.
+- **Migrate in one pass, no flat aliases kept.** We are in the dev phase, so there is no compatibility
+  layer. The DSCR seed's rules, metrics, profiles, input schema, fixtures and gold cases, and the
+  trial pack, move from flat facts (`cltv_pct`, `fico`) to entity fields with their units, using a
+  one-off mapping table (a script, not SDK code).
+- **The skew of the hand-built ontology stays in the catalog.** Rules name fields; the catalog says
+  which entity a field lives in. Re-cutting an entity later is a catalog change plus D1's stable-id
+  alias rule, not a code rewrite.
 - `bound_to_catalog` then gives the writer `entities` and `metric_keys`.
-- Check: a pack catalog can declare an alias or derivation from an entity field to a flat fact. If it
-  cannot, that is the one SDK change in this phase.
-- The jaci session commits the seed change; japes changes only for the alias gap.
+- **SDK check:** assessment, the fact catalog, lint, the Z3 compiler, the python executor and derived
+  metrics all accept dotted `Entity.field` reads (the Ontology work moved the catalog to JSON
+  Schema; this checks every reader of a fact name). Whatever does not accept them is the SDK change
+  in this phase.
+- **Ownership:** the jaci session commits the seed (it is `SYNCED_FROM` jaci); japes changes only
+  where a reader refuses dotted names.
 - **Verify:**
-  - the DSCR seed's assessments are unchanged byte for byte (the Ontology plan's risk rule);
-  - a rewritten job names `Entity.field` metric keys.
+  - the DSCR seed's assessments give the same verdicts, reasons and derived values on every fixture
+    and gold case, before and after, compared through the mapping table;
+  - a rewritten job names `Entity.field` metric keys;
+  - the aligned comparison against the hand-built set matches metric keys directly.
 
 ## 5. D3. Job kind and grain
 
