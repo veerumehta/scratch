@@ -99,6 +99,45 @@ lands in the SDK, so the production assistant gets it when it updates its japes 
 - Email drafting from outstanding borrower conditions, once typed conditions exist (the parity
   item). Until then it drafts from free-text conditions.
 
+### A4. Interaction features adopted from a sibling copilot (scan: `note_juno_scan_20261013.md`)
+
+All in-process and service-free. Ranked:
+
+1. **Questions as tools, as cards, remembered.**
+   - Tools `ask_choice(options)` and `ask_text` end the turn on an open question. The page
+     renders a card. The answer is checked against the offered options, stored by key in the
+     session, and never asked twice.
+   - The card is stored on the message that asked, so it survives a reload. A newer question
+     supersedes a stale one, and the card is drawn from normalized arguments.
+   - japes already declares `InteractiveResponse.needs_decision` / `Decision`
+     (`agents/interactive/response.py`), but nothing sets it. This wires it end to end.
+   - Size: medium.
+2. **Prose-question repair.** A task turn that ends with a question in prose is told to ask it as a
+   card instead. Small.
+3. **Propose, then approve, before expensive work.**
+   - A generic SDK approval tool: the assistant proposes an action with its estimated cost, and the
+     approval is fingerprinted, so a later edit against a changed proposal is refused as outdated.
+   - The first user is the authoring assistant: `start_extraction` today runs as soon as it is
+     called. Under this, it proposes the documents, pack, representations and estimated cost, and
+     runs only after approval.
+   - Built on item 1. Medium.
+4. **Page context.** The page sends its state (route, selected pack, draft, proposal, form
+   values); a tool exposes it, so the user need not name what is on screen. Small.
+5. **Navigation.** A Plato tool emits a one-way `navigate` event ("open the DSCR pack's review
+   queue"), matching names against Plato's own lists. Plato-only. Small.
+6. **Browser-answered tools.** The tool emits an event and waits, with a timeout, for the page to
+   answer (e.g. unsaved edits in a rule editor). It needs a resolve route and a status-event
+   kind. Small; after 4, only if a use appears.
+7. **Eval authoring skills** for the test half of the page, bound to the SDK's datasets, custom
+   scorers and experiments (not a service). Prompts are rewritten, not copied.
+   - generate test cases from an assistant spec, previewed, saved only on request;
+   - turn a plain-language check into a scorer draft;
+   - diagnose failing cases, citing them, with a revised prompt.
+   - Medium. These also serve the corrections plan's diagnosis.
+
+Order: items 1-4 with A1 or straight after it, since they make the authoring assistant usable;
+5 with A2; 6 and 7 with A3.
+
 ## 4. Not brought over
 
 - The Socket.IO transport (SSE is enough for the page).
