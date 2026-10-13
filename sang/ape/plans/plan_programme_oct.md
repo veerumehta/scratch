@@ -8,7 +8,7 @@ Decisions are the user's, dated.
 | Plan | State |
 |---|---|
 | `plan_decision_corrections.md` | C1-C3 and C5 built (`b43087f9`, `867f10a8`, `90c373c1`); C4 waits for real corrections |
-| `plan_document_registry_and_job_shape.md` | D1 and D2 (SDK half) built 2026-10-13, uncommitted at the time; open D1 items: the registry proposal passes, and the cross-version lint against the last published pack (after D3); D3 in progress; seed migration with sonnet-jaci |
+| `plan_document_registry_and_job_shape.md` | SDK side done: D1 `633a3fb8`, D2 `f9f39fc6`, D3 `b6b14fb1`, D4 `078f9aef` + `cb270c9a`; open D1 items (proposal passes, cross-version lint) in progress. Seed (sonnet-jaci): kinds in 0.2.15 (`89515531`); registry, families, variants, extraction block, export profile next; entity names after the user approves the mapping |
 | `plan_solution_view.md` | approved; V1-V4 to build |
 | `plan_plato_assistant_chat.md` | approved; A1-A6 to build |
 | `plan_guideline_release.md` | approved 2026-10-13; date selection is a per-release option (`applies`: immediately, by_case_date, from_date); after D4 |
