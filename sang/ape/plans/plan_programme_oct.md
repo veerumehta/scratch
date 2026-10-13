@@ -8,10 +8,10 @@ Decisions are the user's, dated.
 | Plan | State |
 |---|---|
 | `plan_decision_corrections.md` | C1-C3 and C5 built (`b43087f9`, `867f10a8`, `90c373c1`); C4 waits for real corrections |
-| `plan_document_registry_and_job_shape.md` | SDK side done: D1 `633a3fb8`, D2 `f9f39fc6`, D3 `b6b14fb1`, D4 `078f9aef` + `cb270c9a`; open D1 items (proposal passes, cross-version lint) in progress. Seed (sonnet-jaci): kinds in 0.2.15 (`89515531`); registry, families, variants, extraction block, export profile next; entity names after the user approves the mapping |
+| `plan_document_registry_and_job_shape.md` | SDK side done: D1 `633a3fb8`, D2 `f9f39fc6`, D3 `b6b14fb1`, D4 `078f9aef` + `cb270c9a`; D1 cross-version lint `5e990869`, registry proposals from a job set `5bd901fa`; open: document proposal kind, merge route and taxonomy reference library. Seed (sonnet-jaci): kinds in 0.2.15 (`89515531`); registry, families, variants, extraction block, export profile next; entity names after the user approves the mapping |
 | `plan_solution_view.md` | approved; V1-V4 to build |
 | `plan_plato_assistant_chat.md` | approved; A1-A6 to build |
-| `plan_guideline_release.md` | approved 2026-10-13; date selection is a per-release option (`applies`: immediately, by_case_date, from_date); after D4 |
+| `plan_guideline_release.md` | R1 `ee065b67` + `734aa462` (migration 0030), R2 `9cdbc767`; open: guideline effective date as default window start, release report CLI and coverage column, selection on the runs page (sonnet-ui); Acra's `case_date_field` unset |
 | `plan_jtbdset_readiness.md` | routed; small |
 
 ## Who builds
