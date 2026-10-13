@@ -122,6 +122,8 @@ are shared. Size: A1 one pass, A2 one pass, A3 small.
 
 ## 7. Decisions
 
-None needed now. The user's constraint (SDK only, no other services) is the design. Review after A1
-whether the page should also host the authoring chat assistant's tools (extraction, proposals) in the
-same UI.
+- SDK only, no other services (the user, 2026-10-13).
+- The page also hosts the policy-authoring assistant with its tools (extraction runs, proposals,
+  wording checks), so authoring and testing share one chat surface (the user, 2026-10-13). A1
+  verifies it against `policy-authoring`, including a tool that starts an extraction and the
+  progress showing in the status lane.
