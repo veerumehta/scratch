@@ -8,7 +8,7 @@ Decisions are the user's, dated.
 | Plan | State |
 |---|---|
 | `plan_decision_corrections.md` | C1-C3 and C5 built (`b43087f9`, `867f10a8`, `90c373c1`); C4 waits for real corrections |
-| `plan_document_registry_and_job_shape.md` | approved; D1-D4 to build |
+| `plan_document_registry_and_job_shape.md` | D1 and D2 (SDK half) built 2026-10-13, uncommitted at the time; open D1 items: the registry proposal passes, and the cross-version lint against the last published pack (after D3); D3 in progress; seed migration with sonnet-jaci |
 | `plan_solution_view.md` | approved; V1-V4 to build |
 | `plan_plato_assistant_chat.md` | approved; A1-A6 to build |
 | `plan_guideline_release.md` | to approve (section "Decisions owed") |
