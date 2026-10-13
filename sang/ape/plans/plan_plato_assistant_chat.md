@@ -189,6 +189,46 @@ Order: items 1-4 with A1 or straight after it, since they make the authoring ass
     sequence the module expects (fixture);
   - the default format is unchanged.
 
+### A6. Engineering UI, built like the copilot host (the user, 2026-10-13)
+
+The user: this is an engineering UI, not for external consumption. Build something similar; embed
+nothing. The copilot's chat itself is a private micro-frontend package not in our checkouts. Its host
+app (`builder-studio-ui/src/juno/`, about 70 files) shows the integration patterns worth copying:
+
+1. **A docked assistant on every page,** not only a separate page.
+   - `/assistants/ui` stays as the full view.
+   - Each Plato page (packs, coverage, solution view, extraction, runs) gets a dockable chat panel
+     from `shared.js`.
+   - The page registers its context in a small registry: the pack, draft, version, selected job,
+     rule, proposal or case. The panel sends it with each turn (A4 item 4).
+   - Host: `contextRegistry.ts`, `usePublishJunoContext.ts`.
+2. **Intents from the page to the assistant.** An "ask about this" action on a job, rule, proposal
+   or coverage row opens the panel with a prefilled question and that object as context. Host:
+   `JUNO_HOST_INTENT_EVENT`.
+3. **Artifacts with review, then apply.**
+   - When the assistant produces something appliable, such as a rule edit, a job rewrite, a test
+     case set or a scorer, it arrives as a card showing a diff against the current draft, with
+     Apply and Discard.
+   - Apply goes through the existing draft write path, or creates proposals. A partial or
+     conflicting apply opens a warning dialog rather than a toast.
+   - Host: `xmlReviewStore.ts`, `xmlReviewMerger.ts`, `xmlDiffLineMapper.ts`,
+     `JunoApplyWarningDialog.tsx`, `EvalTestcasesGeneratedCard.tsx`, `EvalScorerGeneratedCard.tsx`.
+   - SDK side: the assistant returns typed artifacts (kind, target, content, base digest). The
+     page renders them by kind; the base digest makes a stale apply a conflict.
+4. **Message actions the page answers.** `can_apply` and `apply` actions are checked by the page
+   before the button is enabled. This is A4 item 6 (browser-answered tools) in its first concrete
+   use. Host: `actionType: 'process.can_apply_xml'` / `'process.apply_xml'`.
+5. **Edit lock while applying.** The page locks the edited object while an apply runs, so the user
+   and the assistant do not both write it. Host: `processValidationLock.ts`.
+6. **Widgets by message type.** A message can carry widgets the page renders after its body: a job
+   card, a rule's code, a coverage row, a dependency graph. In markdown, code blocks get actions
+   (copy, open in the draft viewer, apply). Host: `uiExtensions.tsx`, `getMessageWidgets`,
+   `codeBlockWrapper`.
+
+Order: item 1 with A1 (the panel is the same component as the page). Items 2-6 with A2 and A3, as
+the authoring assistant's tools produce appliable artifacts. Size: medium overall; most of it is
+page JS plus a typed-artifact field on the response.
+
 ## 4. Not brought over
 
 - The Socket.IO transport (SSE is enough for the page).
