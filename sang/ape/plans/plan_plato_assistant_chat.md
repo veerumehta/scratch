@@ -138,6 +138,57 @@ All in-process and service-free. Ranked:
 Order: items 1-4 with A1 or straight after it, since they make the authoring assistant usable;
 5 with A2; 6 and 7 with A3.
 
+### A5. Speak the production chat UI's event vocabulary
+
+- **The production chat UI.** It is the `ChatModule` in the sibling front-end repo
+  (`src/modules/ChatModule`, about 65 files, React, MUI and Redux, plus private
+  `@JazzX-LLC/jaxi-*` packages). It renders a turn from the platform vocabulary:
+  - `status`;
+  - `reasoning`;
+  - `llm_chunk`;
+  - `tool_call_request` and `tool_call_result`;
+  - `agent_invocation`, with `agent_invocation_id`;
+  - `citations`;
+  - `email_draft`;
+  - `final_result`;
+  - `done`.
+
+  Its views include agent invocation steps, a thought process, citation and email-draft actions,
+  a feedback dialog, and interrupted, error and execution-time notes.
+- **The SDK's stream** today is `InteractiveStreamEvent` (`delta`, `done`, `response`) plus the
+  status events with lanes.
+- **Do not embed the React module in Plato.** It needs the private packages, a Redux store and the
+  host app's context. Plato's pages stay plain HTML and JS.
+- **Do add a platform codec to the SDK.** One serializer maps the SDK's stream events to the
+  platform vocabulary (`?format=platform` on the stream routes):
+  - deltas become `llm_chunk`;
+  - skill or specialist calls become `agent_invocation`, with their tool calls as
+    `tool_call_request` and `tool_call_result`;
+  - status events become `status`;
+  - the reasoning stream becomes `reasoning`;
+  - compose's citations become `citations`;
+  - a drafted email from the email specialist becomes `email_draft`;
+  - the reply becomes `final_result`, then `done`.
+
+  The vocabulary's names and payload shapes are pack-free constants in one module, checked against
+  a recorded fixture of the UI's expected frames.
+- **Payoff:**
+  - the production chat UI can point at any SDK-backed assistant, Plato's included, unchanged;
+  - the production assistant can retire its own frame mapping when it updates its japes pin;
+  - Plato's own page renders the same vocabulary, so both UIs mean the same thing by each frame.
+- **Plato's page borrows the module's views,** written in plain JS:
+  - an agent-invocation accordion, with the thought process folded;
+  - citations and email-draft actions;
+  - copy;
+  - a feedback dialog, whose fields map onto SDK feedback records;
+  - interrupted and error notes;
+  - execution time.
+- **Size:** the codec is small to medium; the views fold into A1 and A3.
+- **Verify:**
+  - a scripted turn with two specialist calls, a citation and an email draft produces the frame
+    sequence the module expects (fixture);
+  - the default format is unchanged.
+
 ## 4. Not brought over
 
 - The Socket.IO transport (SSE is enough for the page).
