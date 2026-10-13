@@ -11,7 +11,7 @@ Decisions are the user's, dated.
 | `plan_document_registry_and_job_shape.md` | D1 and D2 (SDK half) built 2026-10-13, uncommitted at the time; open D1 items: the registry proposal passes, and the cross-version lint against the last published pack (after D3); D3 in progress; seed migration with sonnet-jaci |
 | `plan_solution_view.md` | approved; V1-V4 to build |
 | `plan_plato_assistant_chat.md` | approved; A1-A6 to build |
-| `plan_guideline_release.md` | to approve (section "Decisions owed") |
+| `plan_guideline_release.md` | approved 2026-10-13; date selection is a per-release option (`applies`: immediately, by_case_date, from_date); after D4 |
 | `plan_jtbdset_readiness.md` | routed; small |
 
 ## Who builds

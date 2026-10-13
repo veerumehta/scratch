@@ -1,6 +1,6 @@
 # Guideline release: date-selected pack versions and a release report
 
-Plan, opus-xrepo, 2026-10-12. Status: written, not started. Owner: sonnet-runtime. Decisions owed are in
+Plan, opus-xrepo, 2026-10-12. Status: approved 2026-10-13 with date selection as a per-release option (2b); queued after the registry plan's D4. Owner: sonnet-runtime. Decisions owed are in
 section 6. Companion plans: `plan_document_registry_and_job_shape.md` (stable ids),
 `plan_decision_corrections.md` (versioned expected answers).
 
@@ -35,6 +35,27 @@ The user wants quick uptake over restriction. Every check below proceeds and rec
 refuses: the run carries a `selection_notes` list saying what was assumed, the runs page shows it, and
 the coverage page counts it. A pack can later tighten any of them to a refusal with a per-pack
 `strict:` switch. The only refusals are ones where proceeding would write something wrong.
+
+## 2b. Date selection is an option per release (the user, 2026-10-13)
+
+Changes differ in nature. A new guideline edition may apply only to loans dated after it takes
+effect, while a correction or clarification may apply to every case at once. So how a version
+applies is chosen per activated version, not fixed per pack:
+
+| `applies` | Meaning | When |
+|---|---|---|
+| `immediately` (default) | every case from activation on, whatever its date; today's behaviour | clarifications, fixes, a pack with no case date |
+| `by_case_date` | cases whose case date falls in the version's window (R1 below) | a new edition that is not retroactive |
+| `from_date` | cases dated from a given date, which may be in the past | a retroactive change (open runs it affects are listed for rerun, never rerun automatically) |
+
+- The mode is set at activation, defaulting to `immediately`.
+- A pack's `case_date_field` is needed only by the two date modes. Activating one without it is
+  allowed with a warning, and those cases fall back to today's version with a note (tolerant first).
+- Activation can mix modes over time: for example, edition 4.9 `by_case_date`, then a 4.9.1 fix
+  `immediately` over it. Selection takes the newest `immediately` version activated after the
+  dated version a case resolves to, so fixes apply on top of the right edition.
+- The release report (R2) states the mode, and for `immediately` lists the open runs whose answer
+  would change.
 
 ## 3. R1. Date-selected versions
 
