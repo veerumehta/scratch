@@ -6,6 +6,8 @@ Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 Phases, each its own command so a long one can run in the background and the next resume after it:
 
     python acra_ledger_live.py copy          # open TRIAL from the acra-dscr-policy draft
+    python acra_ledger_live.py seed          # or: open TRIAL from the japes seed folder
+    (ACRA_TRIAL and ACRA_DIR choose the trial pack id and the output directory)
     python acra_rerun_extractions.py --pack acra-ledger-trial --out <DIR>/runs.json   # 4 extractions
     python acra_ledger_live.py merge-jobs    # approve and merge the runs' jobs into each policy
     python acra_ledger_live.py code          # job runs per policy, then approve and merge their code
@@ -19,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -27,9 +30,11 @@ import httpx
 
 API = "http://localhost:8000/api/v1"
 HEAD = {"x-tenant-id": "acra-lending"}
-SOURCE, TRIAL = "acra-dscr-policy", "acra-ledger-trial"
+SOURCE = "acra-dscr-policy"
+TRIAL = os.environ.get("ACRA_TRIAL", "acra-ledger-trial")
+SEED = Path("/Users/sangit/src/japes/plato/data/seed_packs/acra_dscr_policy")
 POLICIES = {"acra-standard": "Acra Standard DSCR (jobs)", "acra-platinum": "Acra Platinum Select DSCR (jobs)"}
-DIR = Path(__file__).parent / "coverage" / "ledger_live"
+DIR = Path(os.environ.get("ACRA_DIR", Path(__file__).parent / "coverage" / "ledger_live"))
 POLL_SECONDS = 30
 TERMINAL = {"succeeded", "failed", "cancelled"}
 TIMEOUT_SECONDS = 120
@@ -73,6 +78,21 @@ def copy(http: httpx.Client) -> None:
         _check(http.put(f"{API}/packs/drafts/{TRIAL}",
                         json={"rel_path": path, "content": content.replace(SOURCE, TRIAL)}))
     print(f"copied {len(files)} files from {SOURCE} into {TRIAL}")
+
+
+def seed(http: httpx.Client) -> None:
+    """TRIAL opened empty, then every text file of the japes seed folder written into it with the pack
+    id swapped: a fresh start from the synced seed rather than from the tenant's draft."""
+    _check(http.post(f"{API}/packs/drafts/{TRIAL}", json={}))
+    written = 0
+    for path in sorted(SEED.rglob("*")):
+        rel = path.relative_to(SEED).as_posix()
+        if not path.is_file() or rel == "SYNCED_FROM" or path.suffix not in {".yaml", ".yml", ".json", ".md"}:
+            continue
+        _check(http.put(f"{API}/packs/drafts/{TRIAL}",
+                        json={"rel_path": rel, "content": path.read_text().replace(SOURCE, TRIAL)}))
+        written += 1
+    print(f"wrote {written} seed files into {TRIAL}")
 
 
 def _approve_and_merge(http: httpx.Client, representation: str, run_ids: dict[str, list[str]]) -> dict:
@@ -147,10 +167,10 @@ def coverage(http: httpx.Client) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("phase", choices=("copy", "merge-jobs", "code", "align", "coverage"))
+    parser.add_argument("phase", choices=("copy", "seed", "merge-jobs", "code", "align", "coverage"))
     args = parser.parse_args()
     with httpx.Client(timeout=TIMEOUT_SECONDS, headers=HEAD) as http:
-        {"copy": copy, "merge-jobs": merge_jobs, "code": code, "align": align,
+        {"copy": copy, "seed": seed, "merge-jobs": merge_jobs, "code": code, "align": align,
          "coverage": coverage}[args.phase](http)
 
 
