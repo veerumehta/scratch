@@ -237,13 +237,18 @@ Everything here is optional and advisory at first:
   measures are matched share, the partial share, computable share and coverage. A run costs about
   $0.2.
 
-## 8. Decisions for the user
+## 8. Decisions (the user, 2026-10-12)
 
-1. **The reference document taxonomy.** Settled 2026-10-12: the production document classification
-   ontology is primary, and the 485-type Acra list fills the investor and entity gaps (section 2b).
-2. **Registry vs classifier file.** Should the registry replace `document_agent.yaml`'s taxonomy
-   when present (recommended), or should both stay with a link?
-3. **Variant dimension for Acra.** Program only, with the investor blocks filled at export
-   (recommended)? Or should investors stay a dimension too?
-4. **Grain target.** Should the writer aim at one decision per job even where that roughly doubles
-   the count (recommended, as it is what code needs)? Or keep a coarser job with fine checks inside?
+1. **Reference documents:** the production document classification ontology is primary; the 485-type
+   Acra list fills the investor and entity gaps (section 2b).
+2. **Registry vs classifier file:** the registry replaces `document_agent.yaml`'s taxonomy when a
+   pack declares one; the file keeps its thresholds.
+3. **Variant dimension for Acra:** program only; investor blocks are filled at export from the
+   consumer profile.
+4. **Grain:** one decision per job.
+5. **Code vocabulary:** entity names (`Entity.field`), with a one-pass migration of the hand-built
+   seed and no flat aliases.
+6. **Generated data:** discarded and regenerated, not migrated.
+7. **Posture:** tolerant first (section 2a).
+
+Status: approved for building, sonnet-runtime (SDK and Plato), the jaci session (seed data).
