@@ -46,9 +46,51 @@ nothing names a client or a repo.
 | `JtbdTemplate` (`sections`, `section_types`, `mnemonics`, `roles`, `entities`, `metric_keys`, `evidence_types`, `units`, `requirement_template`), `bound_to_catalog` | `pipelines/policy/jtbd.py` | built; `evidence_types` is a bare id list |
 | `MnemonicRules` | `pipelines/policy/jtbd_shape.py` | one prefix per section |
 | Classifier taxonomy with levels, `classify_path`, `class_fields` | `agents/document/spec.py`, `agent.py` | built |
-| An external Acra document taxonomy: 485 types, 16 categories, cues, aliases, condition codes, PII markers | `status/IMDOC_ACRA_TAXONOMY_FOR_DSCR.md`; removed from that repo's tree in `ffa034a` (now read from Knowledge Hub), recoverable from `ffa034a^` | assessment only |
+| **The production mortgage ontology family (primary reference)** | `mortgage-app-ontology` `main` `11361c9` (2026-09-15, has a production deploy workflow), `common/resources/ontologies/` | see section 2b |
+| An external Acra document taxonomy: 485 types, 16 categories, cues, aliases, condition codes, PII markers | `status/IMDOC_ACRA_TAXONOMY_FOR_DSCR.md`; removed from that repo's tree in `ffa034a` (now read from Knowledge Hub), recoverable from `ffa034a^` | secondary reference, for gaps |
 | Job set readiness checks, contract as pack data | `plans/plan_jtbdset_readiness.md` | routed, not built |
 | Job ledger: jobs, `computable_checks`, `missing_reads`, coverage | `pack/ledger.py` | built |
+
+## 2b. The production ontology as the reference (checked 2026-10-12)
+
+The production family is the right source; ci-spread-core was never the DSCR basis (the Acra seed has
+no catalog, and the Ontology work referenced the mortgage copies).
+
+**Entities.** `mortgage_ontology_v2.json` has 45 entities and 631 fields. The copies elsewhere
+diverge: macer has 39/424, mortgage-app 49/693 (the extras are user and invitation entities, not
+needed) and policy-workbench 49/690.
+
+The hand-built Acra set resolves against production:
+- all 15 of its entities exist;
+- 44 of its 47 metric keys resolve;
+- the other 3 use filtered or nested paths (`Liability[is_subject_property_lien=True].monthly_payment_usd`,
+  `RealEstateOwned[is_subject_property=True].gross_rental_income_usd`,
+  `LoanCore.down_payment.percent_of_purchase_price`). D2 must say whether a catalog read may
+  carry a filter, or whether those become derived fields (recommended: derived fields, keeping
+  reads plain).
+
+**Documents.** `document_classification_ontology.json` has 23 types, 406 subtypes and 224
+sub-subtypes. It covers most of what Acra's jobs cite: 1003, ClosingDisclosure, 1007, 1025,
+Passport, PowerOfAttorney, TitleCommitment, BankStatement, CreditReport, the appraisal family,
+LockConfirmation, RentalAgreement, UnderwritingTransmittal (the 1008),
+HomeownersAssociationCertification, PropertyInsuranceBinder and ArticlesOfIncorporation.
+
+It lacks the investor and entity documents DSCR needs: operating agreement, certificate of good
+standing or formation, EIN letter, MLS or listing history, business-purpose attestation, rent roll
+and rent-loss insurance. The secondary Acra list (its borrowing-entity category) fills those, as
+`new` registry entries with their source recorded.
+
+**The rest of the family** maps onto planned work:
+
+| File | Use |
+|---|---|
+| `condition_ontology.json` 2.1.0 | timing, responsible party and resolution vocabularies for typed conditions (pack data), the `AdjudicationAgent` condition gap |
+| `finding_ontology.json` 1.4.0 | outcome statuses already match ours (PASS, FAIL, CONDITIONAL, NOT_APPLICABLE); facts and observations to compare with `Decision` |
+| `mortgage_jtbd_ontology_v1.json` 1.0.0 | field names for D3/D4: program requirements, entity and document types, condition mapping, timing rules |
+| `reverse_document_mapping_ontology.json` | which document sections feed which fields: a source for the registry's `yields` |
+| `mortgage_guideline_ontology_v1.json` | guideline, program and file roles: compare in the guideline release plan |
+
+`upload_mortgage_references.py` adds the production copy (`mortgage-prod`) as the first reference.
 
 ## 2a. Posture: tolerant first (the user, 2026-10-12)
 
@@ -197,9 +239,8 @@ Everything here is optional and advisory at first:
 
 ## 8. Decisions for the user
 
-1. **The reference document taxonomy.** Recover the 485-type taxonomy from history and upload it to
-   the tenant reference library as the first reference (recommended), or build the registry from the
-   policies and Acra's set alone?
+1. **The reference document taxonomy.** Settled 2026-10-12: the production document classification
+   ontology is primary, and the 485-type Acra list fills the investor and entity gaps (section 2b).
 2. **Registry vs classifier file.** Should the registry replace `document_agent.yaml`'s taxonomy
    when present (recommended), or should both stay with a link?
 3. **Variant dimension for Acra.** Program only, with the investor blocks filled at export
