@@ -26,6 +26,10 @@ runtime, not `AdjudicationAgent`.
 | 10-12 | Prior status and rationale in the rerun prompt; per-run document history | omitted; `resolve_run_mode` unused | to discuss |
 | 10-12 | LLM applicability triage; program detection | `SegmentPlanner` unwired; program supplied | low |
 | 10-12 | n/a | spec fields never read (`persona`, `regime_values`, `status_vocabulary`, `mounts`, `segments`); `segment_concurrency=6` literal | to route |
+| 10-13 | Validation retries suppress tool calls with `tool_choice="none"` (keeps tools declared so the cached prefix and earlier tool calls stay valid), except when the remedy is a tool call (`ToolRetryRequiredError`, `ToolRequiredValueError`, those errors reported first); on main (#286) | `run_kit` resends the prompt and keeps tools; `ValidatedOutput` has no tool-required case | routed to sonnet-runtime with the run_kit defect |
+| 10-13 | Disputed values across replicas settled by an agent that checks each candidate against the cited documents and re-runs the math, picking a candidate, never writing one; falls back to the vote (branch `akshG/loan-metric-verifier`, unmerged) | vote by popularity or order; no extracted values yet | to discuss: fits the vote-collapse fix and extracted values |
+| 10-13 | Write provenance on every entity it writes (`created_by_process_id`, `updated_by_process_id`), read by the feedback track (branch `umang/support-ontology-names`) | runs carry ids; written records do not point back | note for the corrections plan (a correction names the run) |
+| 10-13 | Ontology and entity references accepted by name or UUID, resolved once at the start (same branch) | n/a (packs name their catalog) | context |
 | 10-12 | ahead: deterministic rules without a model, id-matched drops become INDETERMINATE, closed `Verdict`, page-precise hashed cites, rejected-evidence demotion, field-level rerun impact, vote tallies and stability scorers | | |
 | 10-12 | One retry rule: transient = 408/429/5xx and network, `Retry-After` honoured, jitter | `concurrency.is_transient_error` + `retry_async`; `modes.utils.run_agent_with_retry` diverges | routed to sonnet-runtime |
 | 10-12 | A validation retry whose remedy is a tool call keeps tools callable | `run_kit.ValidatedOutput` lacks it | routed (low) |
@@ -39,6 +43,7 @@ Prior art: `plans/note_plato_vs_policy_workbench.md` (2026-10-03), `plan_plato_a
 |---|---|---|---|
 | 10-12 | Readiness audit of a job set against what a downstream engine accepts (11 checks, three priorities), with fix guidance and an auto-fix for some | nothing on export | routed: structural checks in code, consumer contract as pack data |
 | 10-12 | Ontology refresh on demand | catalog read per draft (no cache to refresh) | nothing to do |
+| 10-13 | Ontology refresh resets first and falls back to the saved id; workspace document identity by stored path reverted from staging (#198/#203); reasoner panel cost hint removed | n/a | context |
 | 10-11 | ahead: job ledger with dispositions, coverage count, code from jobs, cross-check | (sibling has none) | built, `v2.6.2` |
 
 ## kernel-lab: do policy -> JTBD, policy -> code and JTBD -> code keep pace?
