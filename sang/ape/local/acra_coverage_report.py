@@ -19,6 +19,7 @@ import argparse
 import asyncio
 import json
 import math
+import os
 import re
 import sys
 from collections import Counter
@@ -30,7 +31,8 @@ ROOT = Path("/Users/sangit/src/japes")
 sys.path.insert(0, str(ROOT))
 
 API = "http://localhost:8000/api/v1"
-TENANT, PACK = "acra-lending", "acra-dscr-policy"
+TENANT = "acra-lending"
+PACK = os.environ.get("ACRA_PACK", "acra-dscr-policy")
 SCHEMA = ROOT / "plato" / "data" / "seed_packs" / "acra_dscr_policy" / "schemas" / "loan_application.json"
 CANDIDATES = 5
 EXCERPT_CHARS = 1800
