@@ -31,7 +31,7 @@ HERE = Path(__file__).parent
 LOCAL = HERE.parent
 API = "http://localhost:8000/api/v1"
 TENANT = "acra-lending"
-PACKS = ("acra-dscr-policy", "dscr-core", "acra-ledger-trial")
+PACKS = ("acra-dscr-policy", "dscr-core", "acra-ledger-trial", "acra-regen-1", "acra-regen-2")
 DOCS = Path("/Users/sangit/src/japes/documents/Acra")
 #: Which guideline document each extraction policy reads.
 POLICY_DOCS = {
