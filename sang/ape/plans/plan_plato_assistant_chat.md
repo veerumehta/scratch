@@ -229,6 +229,29 @@ Order: item 1 with A1 (the panel is the same component as the page). Items 2-6 w
 the authoring assistant's tools produce appliable artifacts. Size: medium overall; most of it is
 page JS plus a typed-artifact field on the response.
 
+### A7. The assistant in the rest of the UI (the user, 2026-10-13)
+
+The assistant shows today in the dock, its own page, spend and feedback. A7 adds it everywhere else
+work is listed:
+
+1. **Runs list.** Assistant turns are listed beside case runs on the runs page:
+   - a type filter: case run, turn;
+   - status, cost, assistant and subject;
+   - a link to the conversation;
+   - stuck turns flagged, with the recover action.
+2. **One trace viewer.** The assistant page's inspector becomes a shared viewer. Every trace id
+   on any page links to it: feedback rows, runs and logs.
+3. **Origin on work the assistant starts.** Extraction runs, proposals and corrections started by a
+   tool call record the conversation and turn they came from (`origin: {conversation_id,
+   turn_id, assistant_id}`).
+   - The extraction, review and runs pages show "from conversation ..." with a link.
+   - The turn's tool activity links to the run or proposals it made.
+   - Provenance, not a gate: work started outside chat has no origin.
+4. **Logs by conversation.** A conversation or turn filter on the logs page.
+
+Order: after A3 and A6. Size: small to medium; item 3 needs one optional field on the run and
+proposal records (no migration where records are JSON).
+
 ## 4. Not brought over
 
 - The Socket.IO transport (SSE is enough for the page).
