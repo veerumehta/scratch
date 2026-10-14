@@ -65,3 +65,18 @@ entries per commit round; commit headlines only.
   - the authoring assistant runs an extraction behind an approval card;
   - the Acra case assistant answers with a finding and a guideline page cited;
   - the production chat UI renders a `?format=platform` stream from Plato (fixture).
+
+## State at 2026-10-14 (handoff)
+
+- Pushed: `origin/plato` = `846d8bde` (v2.6.2, Plato and client 0.2.3). `v2.6.2` tip `05166dc7` (tests only since).
+- sonnet-runtime (fresh session): typed conditions, then per-rule evidence in AdjudicationAgent. Brief sent
+  2026-10-14.
+- sonnet-ui: built A1-A7 and V1-V4; left: navigation tool, eval authoring skills, email drafting, solution xlsx,
+  open-draft toggle, guideline page locators; browser-answered tools and typed widgets wait for a producer.
+- opus-xrepo open:
+  - Acra regen 2 compare (`ape/local/coverage/regen_2/`): job-writer fixes (fold duplicates across sections, map
+    missing data to catalog fields) await the user's go, then a rerun.
+  - Blueprint chain plan, four decisions owed.
+  - Sibling proposals: document precedence (kernel-lab reader v2), per-experiment overrides.
+  - Branch cleanup (plato-squash-262*, plato-kernel-fix and its /tmp worktree, old backup/plato-*) offered.
+  - The user: `/tmp/japes_migrate_local.sh`, then a browser check of the new pages; Acra case date.
