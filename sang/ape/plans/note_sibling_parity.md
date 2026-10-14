@@ -79,3 +79,14 @@ so convergence is one-sided. Plan step 7 has no branch anywhere.
 | 10-12 | Pagination/OData, dataset delete, xlsx export, MCP scorer mount, legacy routes | missing | depends on which callers exist (unknown) |
 | 10-12 | Scorer composition, NL scorers with tools, per-scorer timeout; MLflow mirroring; optimize timeout/progress | narrower | low |
 | 10-12 | ahead: regression gates, judge cache and spend cap, resumable experiments, digested datasets, noise floor, silver panels, domain scorers, fix ledger, feedback-to-guidance, tenancy, UI | | |
+
+## 2026-10-14 review (`note_sibling_review_20261014.md`)
+
+| Seen | Sibling has | japes | Where it went |
+|---|---|---|---|
+| 10-14 | kernel-lab reader v2: which document wins a field (document class order, then date), per-paper routing, merge by key, cell provenance; run-to-run differences 21% to 1.5% | document_ingest: the first read wins, later values go to `conflicts` (steps.py ~1323) | to discuss: precedence as pack data |
+| 10-14 | assistant and eval-service: per-experiment agent overrides validated and forwarded (#266) | `AssistantInvoker` passes scope only | to discuss (cheap) |
+| 10-14 | imdoc: cross-replica admission limiter; transcription as a queue worker with retryable vs permanent failures; outputs tagged so derived files never come back as sources; submitter and condition stamped on documents; largest first | per-process RateGate; inline transcription | to discuss |
+| 10-14 | macer: a rerun ledger of documents considered per section, append-only | `RerunBasis` copies one prior run | to discuss |
+| 10-14 | macer: subjects as B1/B2 tokens in prompts | documents aliased only | with typed conditions (sonnet-runtime) |
+| 10-14 | assistant `JAPES_V2` | equals main, no migration pushed | watch |
