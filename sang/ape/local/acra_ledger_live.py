@@ -116,8 +116,11 @@ def merge_jobs(http: httpx.Client) -> None:
     run_ids: dict[str, list[str]] = {}
     for job in runs:
         if job["representation"] == "jtbd":
-            run_ids.setdefault(job["policy_id"], []).extend(
-                a["run_id"] for a in job["attempts"] if a["status"] == "succeeded")
+            # Each attempt is a whole extraction, and job names vary between runs, so merging two
+            # attempts doubles the jobs: take the last that succeeded.
+            done = [a["run_id"] for a in job["attempts"] if a["status"] == "succeeded"]
+            if done:
+                run_ids.setdefault(job["policy_id"], []).append(done[-1])
     state = _state()
     state["jobs_merged"] = _approve_and_merge(http, "jtbd", run_ids)
     _save(state)
