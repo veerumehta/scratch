@@ -1,0 +1,621 @@
+alignments:
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.10:
+    aligned_at: '2026-10-12T05:01:21+00:00'
+    jobs:
+    - acra-platinum.loan_amount_decisioning_score_and_cltv_limits.apply_cltv_limits
+    - acra-platinum.products_arm_terms_and_interest_only_terms.verify_arm_requirements
+    note: For a score of 720, the rule supplies the literal cash-out cap, says the
+      700–719 Correspondent restriction does not apply, and gives the 3.25 ARM margin,
+      but it does not compare CLTV or actual ARM terms or confirm the Q-01 treatment.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.10
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.11:
+    aligned_at: '2026-10-12T05:01:09+00:00'
+    jobs:
+    - acra-platinum.dscr_calculation_and_rent_evidence.calculate_dscr_and_test_the_channel_minimum
+    note: The rule rejects short-term rentals, implementing that part of the job,
+      but leaves qualifying rent and actual-rent evidence requirements unknown.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.11
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.12:
+    aligned_at: '2026-10-12T05:01:45+00:00'
+    jobs:
+    - acra-platinum.dscr_calculation_and_rent_evidence.calculate_dscr_and_test_the_channel_minimum
+    note: The rule calculates gross rental income divided by PITIA and tests the channel
+      minimum for non-interest-only loans, but it does not decide the job’s rent-selection,
+      evidence, or other requirements.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.12
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.13:
+    aligned_at: '2026-10-12T05:01:39+00:00'
+    jobs:
+    - acra-platinum.dscr_calculation_and_rent_evidence.verify_current_lease_for_cash_out_refinance
+    - acra-platinum.dscr_calculation_and_rent_evidence.verify_required_housing_history
+    - acra-platinum.entity_guarantor_and_trust_requirements.borrower_citizenship_and_first_time_homebuyer_eligibility
+    - acra-platinum.borrower_eligibility_and_credit_history.borrower_citizenship_and_homeownership_eligibility
+    note: The rule fully checks the cash-out refinance lease and 0x30x12 housing-history
+      requirements. It partially checks the citizenship and first-time-homebuyer jobs,
+      but returns unknown rather than verifying the Permanent Resident documents and
+      does not check the additional guarantor requirements.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.13
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.14:
+    aligned_at: '2026-10-12T05:01:19+00:00'
+    jobs:
+    - acra-platinum.entity_guarantor_and_trust_requirements.borrower_citizenship_and_first_time_homebuyer_eligibility
+    - acra-platinum.borrower_eligibility_and_credit_history.borrower_citizenship_and_homeownership_eligibility
+    note: The rule decides whether the application is not a first-time homebuyer,
+      implementing that check in both jobs but not their other eligibility or guarantor
+      requirements.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.14
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.16:
+    aligned_at: '2026-10-12T05:02:22+00:00'
+    jobs:
+    - acra-platinum.entity_guarantor_and_trust_requirements.entity_eligibility_and_guarantees
+    - acra-platinum.entity_guarantor_and_trust_requirements.entity_documentation
+    note: The rule checks that the entity type is allowed, the first-time-homebuyer
+      flag is false, and entity documents are marked complete; it does not establish
+      the jobs’ remaining homeownership, eligibility, or document-specific requirements.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.16
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.17:
+    aligned_at: '2026-10-12T05:01:42+00:00'
+    jobs:
+    - acra-standard.entity_borrowers_guarantors_and_trusts.entity_documentation
+    - acra-platinum.entity_guarantor_and_trust_requirements.entity_documentation
+    note: The rule returns whether the entity documents are complete, covering the
+      listed documentation requirements but not all additional checks in either job.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.17
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.18:
+    aligned_at: '2026-10-12T05:01:59+00:00'
+    jobs:
+    - acra-platinum.entity_guarantor_and_trust_requirements.entity_documentation
+    note: The rule returns whether the required entity documentation is complete,
+      or unknown if its completeness data is missing.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.18
+    relation: implements
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.21:
+    aligned_at: '2026-10-12T05:01:51+00:00'
+    jobs: []
+    note: The rule rejects first-time homebuyers, but none of the listed jobs checks
+      that eligibility requirement.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.21
+    relation: no_job
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.22:
+    aligned_at: '2026-10-12T05:01:55+00:00'
+    jobs:
+    - acra-platinum.property_eligibility_and_property_specific_conditions.property_type_and_location_eligibility
+    note: The rule accepts the listed eligible types, rejects rural properties, and
+      enforces the 75% CLTV cap for Warrantable Condos and Two-Units, but does not
+      decide the other property-type exclusions or location and declining-market requirements.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.22
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.23:
+    aligned_at: '2026-10-12T05:02:15+00:00'
+    jobs:
+    - acra-platinum.property_eligibility_and_property_specific_conditions.property_type_and_location_eligibility
+    - acra-platinum.program_and_transaction_eligibility.occupancy_and_property_eligibility
+    - acra-platinum.loan_amount_decisioning_score_and_cltv_limits.apply_cltv_limits
+    note: The rule checks property-type and location eligibility, rejects vacant properties,
+      and applies the 75% CLTV cap to warrantable condos and two-unit properties,
+      but it omits declining-market adjustments, occupancy, and the other CLTV limits.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.23
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.24:
+    aligned_at: '2026-10-12T05:02:19+00:00'
+    jobs:
+    - acra-platinum.property_eligibility_and_property_specific_conditions.rider_and_rent_loss_insurance
+    - acra-platinum.funds_to_close_seasoning_and_reserves.funds_to_close_seasoning_and_documentation
+    note: The rule determines whether CLTV is at or below 70%, covering the rent-loss-insurance
+      exemption and the CLTV threshold component of the funds-to-close seasoning triggers.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.24
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.25:
+    aligned_at: '2026-10-12T05:02:32+00:00'
+    jobs: []
+    note: The rule only returns unknown for the listed funds and documentation fields;
+      it does not evaluate any of the candidate jobs’ requirements or thresholds.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.25
+    relation: no_job
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.26:
+    aligned_at: '2026-10-12T05:02:26+00:00'
+    jobs:
+    - acra-platinum.funds_to_close_seasoning_and_reserves.reserve_requirements_by_trigger
+    note: The rule checks the six-month reserve threshold for CLTV above 75% and the
+      24-month threshold for a property listed for sale, while leaving the other reserve
+      triggers in the job unchecked.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.26
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.27:
+    aligned_at: '2026-10-12T05:02:31+00:00'
+    jobs:
+    - acra-platinum.products_arm_terms_and_interest_only_terms.verify_interest_only_term_and_restrictions
+    note: The rule checks the 75% CLTV cap and that the property is not listed for
+      sale, but does not verify the 5-year interest-only term.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.27
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.28:
+    aligned_at: '2026-10-12T05:02:33+00:00'
+    jobs:
+    - acra-platinum.prepayment_penalties_and_state_restrictions.review_listed_for_sale_prepayment_minimum
+    note: It checks whether the property was listed for sale within the last six months,
+      but leaves the penalty-term minimum and state-restriction interaction undecided.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.28
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.29:
+    aligned_at: '2026-10-12T05:02:49+00:00'
+    jobs:
+    - acra-platinum.loan_amount_decisioning_score_and_cltv_limits.apply_cltv_limits
+    - acra-platinum.program_and_transaction_eligibility.loan_amount_fico_and_cltv_limits
+    note: The rule checks the matrix CLTV caps and several additional caps, including
+      loan-amount, two-unit, listed-for-sale, and Correspondent limits, but omits
+      other requirements in these jobs, such as the minimum FICO and loan-amount range,
+      interest-only and condo caps, and the declining-market adjustment.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.29
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.31:
+    aligned_at: '2026-10-12T05:02:45+00:00'
+    jobs:
+    - acra-platinum.program_and_transaction_eligibility.loan_amount_fico_and_cltv_limits
+    note: The rule checks FICO of at least 700 and a loan amount no greater than $2,000,000,
+      but omits the job’s minimum loan amount, increment, and CLTV requirements.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.31
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.32:
+    aligned_at: '2026-10-12T05:03:09+00:00'
+    jobs:
+    - acra-standard.loan_amount_fico_and_matrix_leverage.loan_amount_conditions_and_matrix_footnotes
+    - acra-standard.program_scope_occupancy_and_transaction_setup.check_published_program_scope
+    note: The rule checks only the delayed-financing loan-amount cap, which is one
+      requirement within each listed job.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.32
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.36:
+    aligned_at: '2026-10-12T05:02:59+00:00'
+    jobs:
+    - acra-platinum.borrower_eligibility_and_credit_history.housing_history_and_previous_credit_events
+    note: The rule applies the stated 48-month seasoning requirement to the covered
+      previous-credit-event fields; it does not decide the separate housing-history
+      requirement.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.36
+    relation: implements
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.38:
+    aligned_at: '2026-10-12T05:03:03+00:00'
+    jobs:
+    - acra-platinum.borrower_eligibility_and_credit_history.escrow_waiver_eligibility
+    - acra-platinum.funds_to_close_seasoning_and_reserves.escrow_waiver_and_listed_property_impounds
+    note: The rule returns true when no escrow waiver is requested and otherwise leaves
+      the Section 35 loan status unknown; it does not check the loan amount, mortgage
+      history, or listed-property impounds.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.38
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.5:
+    aligned_at: '2026-10-12T05:03:07+00:00'
+    jobs:
+    - acra-platinum.loan_amount_decisioning_score_and_cltv_limits.verify_loan_amount
+    - acra-platinum.program_and_transaction_eligibility.loan_amount_fico_and_cltv_limits
+    - acra-platinum.funds_to_close_seasoning_and_reserves.loan_amount_limits
+    note: The rule enforces the $100,000–$2,000,000 loan amount range and $50 increments,
+      completing the loan-amount-only job and covering the loan-amount portion of
+      the two jobs that also require CLTV and, in one case, FICO checks.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.5
+    relation: implements
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.6:
+    aligned_at: '2026-10-12T05:03:27+00:00'
+    jobs:
+    - acra-platinum.program_and_transaction_eligibility.occupancy_and_property_eligibility
+    note: The rule checks the non-owner-occupied requirement, but not that job’s vacant-property,
+      property-type, or location requirements.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.6
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.7:
+    aligned_at: '2026-10-12T05:03:58+00:00'
+    jobs:
+    - acra-platinum.property_eligibility_and_property_specific_conditions.occupancy_purpose_and_vacancy
+    - acra-platinum.program_and_transaction_eligibility.loan_purpose_eligibility
+    - acra-platinum.program_and_transaction_eligibility.occupancy_and_property_eligibility
+    note: The rule implements the eligible-purpose, delayed-financing cap, and cash-out
+      lease checks in loan_purpose_eligibility; it also checks vacancy and DSCR thresholds,
+      but covers only part of the two broader occupancy and property jobs.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.7
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.8:
+    aligned_at: '2026-10-12T05:03:11+00:00'
+    jobs:
+    - acra-platinum.funds_to_close_seasoning_and_reserves.loan_amount_limits
+    note: The rule enforces the stated loan amount bounds and $50 increments, plus
+      the 75% maximum CLTV for amounts below $350,000 or above $1,500,000.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.8
+    relation: implements
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.9:
+    aligned_at: '2026-10-12T05:04:02+00:00'
+    jobs:
+    - acra-platinum.loan_amount_decisioning_score_and_cltv_limits.apply_cltv_limits
+    - acra-platinum.program_and_transaction_eligibility.loan_amount_fico_and_cltv_limits
+    note: The rule applies the stated matrix CLTV caps and the ineligible-location
+      check, but it omits other applicable limits in these jobs, including loan-amount
+      and FICO requirements and the additional CLTV adjustments.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.9
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.1:
+    aligned_at: '2026-10-12T05:04:01+00:00'
+    jobs:
+    - acra-standard.loan_amount_fico_and_matrix_leverage.loan_amount_and_seller_concessions
+    note: The rule enforces the $3,000,000 maximum loan amount, but does not check
+      the minimum, $50 increments, or seller-concession limit.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.1
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.10:
+    aligned_at: '2026-10-12T05:03:52+00:00'
+    jobs:
+    - acra-standard.loan_amount_fico_and_matrix_leverage.investment_property_matrix_leverage
+    note: The rule selects the FICO- and transaction-specific CLTV cap and checks
+      CLTV for loans up to $1,500,000, but does not decide the matrix limits for higher
+      loan amounts.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.10
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.11:
+    aligned_at: '2026-10-12T05:04:03+00:00'
+    jobs:
+    - acra-standard.loan_amount_fico_and_matrix_leverage.investment_property_matrix_leverage
+    note: The rule checks the published CLTV cap for the $2,000,001–$3,000,000 tier
+      by FICO and transaction type, but does not cover the other loan-amount tiers.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.11
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.12:
+    aligned_at: '2026-10-12T05:04:14+00:00'
+    jobs:
+    - acra-standard.loan_amount_fico_and_matrix_leverage.loan_amount_conditions_and_matrix_footnotes
+    note: The rule enforces the delayed-financing cap, the under-$200,000 CLTV limits,
+      and the interest-only amount and FICO limits, but does not decide the cash-in-hand
+      limits or the DSCR requirement.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.12
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.14:
+    aligned_at: '2026-10-12T05:04:32+00:00'
+    jobs: []
+    note: The rule requires a 1007 for a vacant-property purchase, a trigger not stated
+      in any listed job’s checks.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.14
+    relation: no_job
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.15:
+    aligned_at: '2026-10-12T05:04:12+00:00'
+    jobs:
+    - acra-standard.dscr_qualification_rental_income_and_rent_evidence.review_short_term_rental_requirements
+    note: For short-term rentals, the rule checks the purchase/refinance CLTV cap
+      and minimum FICO, but not the job’s appraisal-form or rental-ledger requirements.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.15
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.16:
+    aligned_at: '2026-10-12T05:04:23+00:00'
+    jobs:
+    - acra-standard.dscr_qualification_rental_income_and_rent_evidence.apply_ratio_dependent_qualification_conditions
+    note: It computes DSCR and checks the listed scenario-specific minimums, but does
+      not decide the LTV-based reserve or property restrictions, and the LTV-based
+      DSCR condition is unresolved.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.16
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.17:
+    aligned_at: '2026-10-12T05:04:48+00:00'
+    jobs:
+    - acra-standard.borrower_citizenship_and_foreign_national_requirements.verify_citizenship_type_and_citizenship_specific_requirements
+    - acra-standard.program_scope_occupancy_and_transaction_setup.check_published_program_scope
+    note: The rule checks eligible citizenship types and some citizenship-specific
+      limits, including ITIN loan amount, FICO and CLTV, but leaves documentation
+      and confirmation requirements unresolved and does not cover the other program-scope
+      checks.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.17
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.18:
+    aligned_at: '2026-10-12T05:04:19+00:00'
+    jobs: []
+    note: The rule checks whether tradelines meet their reporting requirement, which
+      is not stated in any listed job.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.18
+    relation: no_job
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.19:
+    aligned_at: '2026-10-12T05:04:33+00:00'
+    jobs:
+    - acra-standard.borrower_citizenship_and_foreign_national_requirements.review_foreign_national_program_eligibility_and_restrictions
+    note: The rule checks whether loan_purpose is business purpose or investment property,
+      covering the transaction-type portion of the foreign-national eligibility job
+      but not its other requirements.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.19
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.22:
+    aligned_at: '2026-10-12T05:04:37+00:00'
+    jobs:
+    - acra-standard.entity_borrowers_guarantors_and_trusts.entity_eligibility_and_guarantees
+    - acra-platinum.entity_guarantor_and_trust_requirements.entity_eligibility_and_guarantees
+    note: The rule rejects series LLCs and requires non-individual borrowers to have
+      a business-purpose loan, but leaves investment-property status and the other
+      eligibility and guarantee checks unresolved.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.22
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.23:
+    aligned_at: '2026-10-12T05:04:54+00:00'
+    jobs:
+    - acra-standard.entity_borrowers_guarantors_and_trusts.entity_eligibility_and_guarantees
+    - acra-standard.first_time_homebuyer_eligibility.review_entity_guarantor_homeownership_requirement
+    - acra-standard.entity_borrowers_guarantors_and_trusts.entity_documentation
+    note: The rule checks that the entity type is allowed, the first-time-homebuyer
+      flag is false, and entity documentation is marked complete; it does not decide
+      the other eligibility, homeownership, or documentation requirements in those
+      jobs.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.23
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.24:
+    aligned_at: '2026-10-12T05:05:02+00:00'
+    jobs:
+    - acra-standard.entity_borrowers_guarantors_and_trusts.entity_documentation
+    note: The rule returns whether the entity-documentation completeness flag is satisfied,
+      or unknown when its value is missing or indeterminate.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.24
+    relation: implements
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.25:
+    aligned_at: '2026-10-12T05:05:15+00:00'
+    jobs:
+    - acra-standard.entity_borrowers_guarantors_and_trusts.entity_documentation
+    note: The rule returns whether the required entity documentation is complete,
+      covering the documentation review in the standard job.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.25
+    relation: implements
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.28:
+    aligned_at: '2026-10-12T05:04:55+00:00'
+    jobs:
+    - acra-standard.credit_housing_history_and_escrow_waiver.apply_mortgage_history_restrictions
+    note: The rule applies the printed mortgage-history label and loan-purpose CLTV
+      limit, treating 0x120x12 as ineligible.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.28
+    relation: implements
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.29:
+    aligned_at: '2026-10-12T05:05:27+00:00'
+    jobs:
+    - acra-standard.property_eligibility_and_property_specific_overlays.check_property_type_eligibility_and_caps
+    - acra-standard.credit_housing_history_and_escrow_waiver.review_escrow_waiver_eligibility
+    - acra-standard.credit_housing_history_and_escrow_waiver.review_short_sale_deed_in_lieu_and_modification_restrictions
+    - acra-standard.credit_housing_history_and_escrow_waiver.review_bankruptcy_and_foreclosure_restrictions
+    note: The rule checks the listed property-type caps and overlays, escrow-waiver
+      eligibility, and the printed seasoning and CLTV restrictions for short sales/deeds-in-lieu/modifications
+      and bankruptcies/foreclosures.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.29
+    relation: implements
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.30:
+    aligned_at: '2026-10-12T05:05:22+00:00'
+    jobs:
+    - acra-standard.property_eligibility_and_property_specific_overlays.review_vacant_property_cash_out_refinance
+    - acra-standard.property_eligibility_and_property_specific_overlays.review_vacant_property_rate_and_term_refinance
+    - acra-standard.property_eligibility_and_property_specific_overlays.apply_rural_or_unique_property_overlay
+    - acra-standard.dscr_qualification_rental_income_and_rent_evidence.apply_ratio_dependent_qualification_conditions
+    note: The rule checks some vacant-refinance conditions, rural-property FICO and
+      CLTV limits, and the above-80% property-type restriction, but leaves other stated
+      conditions unresolved or unchecked.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.30
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.31:
+    aligned_at: '2026-10-12T05:05:20+00:00'
+    jobs:
+    - acra-platinum.prepayment_penalties_and_state_restrictions.review_listed_for_sale_prepayment_minimum
+    - acra-standard.property_eligibility_and_property_specific_overlays.review_property_listed_for_sale
+    - acra-platinum.property_eligibility_and_property_specific_conditions.properties_listed_for_sale
+    - acra-standard.dscr_qualification_rental_income_and_rent_evidence.apply_ratio_dependent_qualification_conditions
+    note: The rule determines whether the property was listed for sale within six
+      months, supplying the applicability trigger for those jobs, but does not check
+      the other conditions they require.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.31
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.32:
+    aligned_at: '2026-10-12T05:05:58+00:00'
+    jobs:
+    - acra-standard.funds_to_close_seasoning_and_reserves.funds_to_close_and_seasoning_documentation
+    note: The rule determines whether CLTV is at or below 70%, covering the CLTV threshold
+      component of the seasoning trigger, but not the transaction-type, funds-amount,
+      or documentation checks.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.32
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.33:
+    aligned_at: '2026-10-12T05:05:56+00:00'
+    jobs:
+    - acra-platinum.funds_to_close_seasoning_and_reserves.funds_held_in_a_foreign_bank_or_currency
+    note: The rule flags the foreign-funds applicability, repatriation timing, and
+      seasoning details as unknown for Acra confirmation, but does not determine whether
+      funds are held abroad or verify the stated timing.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.33
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.34:
+    aligned_at: '2026-10-12T05:05:30+00:00'
+    jobs:
+    - acra-standard.products_interest_only_terms_and_subordinate_financing.verify_interest_only_eligibility
+    note: The rule checks the applicable interest-only loan amount, FICO and 10/40
+      CLTV limits, plus the first-time-homebuyer, vacant-property-refinance and for-sale
+      restrictions.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.34
+    relation: implements
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.35:
+    aligned_at: '2026-10-12T05:05:40+00:00'
+    jobs:
+    - acra-standard.products_interest_only_terms_and_subordinate_financing.review_subordinate_financing_and_heloc_cltv
+    note: The rule flags subordinate financing as prohibited when the property is
+      listed for sale, but leaves allowability and the HELOC CLTV calculation unresolved.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.35
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.36:
+    aligned_at: '2026-10-12T05:06:00+00:00'
+    jobs:
+    - acra-standard.prepayment_penalty_structures_and_state_restrictions.screen_state_prepayment_restrictions
+    note: The rule checks the printed state-specific restriction conditions, but does
+      not check whether a prepayment penalty was requested, route applicable BUY-OUT
+      cases for Acra confirmation, or review Mississippi’s selected structure.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.36
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.37:
+    aligned_at: '2026-10-12T05:06:56+00:00'
+    jobs:
+    - acra-standard.cross_cutting_published_caps_and_score_thresholds.apply_published_cltv_caps
+    - acra-standard.program_scope_occupancy_and_transaction_setup.check_published_program_scope
+    - acra-standard.borrower_citizenship_and_foreign_national_requirements.verify_citizenship_type_and_citizenship_specific_requirements
+    note: The rule compares CLTV against many published caps, including matrix, program-scope,
+      and citizenship-specific caps, but it does not cover every cap or every requirement
+      in those jobs.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.37
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.38:
+    aligned_at: '2026-10-12T05:06:07+00:00'
+    jobs:
+    - acra-standard.cross_cutting_published_caps_and_score_thresholds.apply_published_minimum_fico_thresholds
+    note: The rule enforces matrix FICO thresholds and the interest-only, first-time-homebuyer,
+      vacant-property, escrow-waiver, and rural-property minimums, but omits other
+      published minimum-FICO features such as DSCR/no ratio, short-term rental, and
+      ITIN.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.38
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.42:
+    aligned_at: '2026-10-12T05:06:15+00:00'
+    jobs:
+    - acra-standard.loan_amount_fico_and_matrix_leverage.loan_amount_conditions_and_matrix_footnotes
+    note: For delayed financing, the rule checks that the loan amount is no more than
+      $1.5MM; it does not decide the job’s other loan-amount limits or cash-in-hand
+      and matrix-footnote questions.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.42
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.43:
+    aligned_at: '2026-10-12T05:06:27+00:00'
+    jobs: []
+    note: The rule checks whether FICO is below 600; the No Ratio job requires FICO
+      of at least 640, a different threshold, and no listed job states the below-600
+      check.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.43
+    relation: no_job
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.6:
+    aligned_at: '2026-10-12T05:06:21+00:00'
+    jobs:
+    - acra-standard.program_scope_occupancy_and_transaction_setup.check_published_program_scope
+    - acra-standard.borrower_citizenship_and_foreign_national_requirements.verify_citizenship_type_and_citizenship_specific_requirements
+    - acra-standard.program_scope_occupancy_and_transaction_setup.set_rent_based_qualification
+    note: The rule checks several published program-scope limits, eligible citizenship
+      categories, and DSCR method and threshold requirements, but omits other checks
+      in each job.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.6
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.8:
+    aligned_at: '2026-10-12T05:06:57+00:00'
+    jobs:
+    - acra-standard.program_scope_occupancy_and_transaction_setup.complete_dscr_transaction_setup
+    - acra-standard.property_eligibility_and_property_specific_overlays.confirm_dscr_rent_documentation
+    note: The rule checks that the DSCR documentation type is 1007, covering the Form
+      1007 requirement but not the jobs’ other requirements or the Form 1025 confirmation
+      condition.
+    prompt: ledger/align_prompt@1.0.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.8
+    relation: partial
+    source: proposal
