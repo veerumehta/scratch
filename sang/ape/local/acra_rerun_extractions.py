@@ -31,6 +31,8 @@ DOCUMENTS = {
 POLICIES = {"standard": "acra-standard", "platinum": "acra-platinum"}
 JOBS = [("jtbd", "standard"), ("jtbd", "platinum"), ("python", "standard"), ("python", "platinum")]
 POLL_SECONDS = 30
+#: A line per run this often while it is not finished, so a quiet terminal is not mistaken for a hang.
+HEARTBEAT_SECONDS = 120
 TERMINAL = {"succeeded", "failed", "cancelled"}
 DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
@@ -45,11 +47,17 @@ async def _one(http: httpx.AsyncClient, rep: str, doc: str, attempts: int, pack:
         resp.raise_for_status()
         run_id = resp.json()["run_id"]
         print(f"{rep}:{doc} attempt {attempt}: run {run_id}", flush=True)
+        began = last = time.monotonic()
         while True:
             await asyncio.sleep(POLL_SECONDS)
             run = (await http.get(f"{API}/authoring/extract/runs/{run_id}")).json()
             if run["status"] in TERMINAL:
                 break
+            if time.monotonic() - last >= HEARTBEAT_SECONDS:
+                last = time.monotonic()
+                spent = round(sum(u.get("cost_usd", 0) for u in (run.get("usage") or {}).values()), 2)
+                print(f"{rep}:{doc} still {run['status']} after {int(last - began)}s: "
+                      f"{run['proposals']} proposals so far, ${spent} spent", flush=True)
         cost = round(sum(u.get("cost_usd", 0) for u in (run.get("usage") or {}).values()), 4)
         tries.append({"run_id": run_id, "status": run["status"], "segments": run["segments"],
                       "failed_segments": run["failed_segments"], "proposals": run["proposals"],

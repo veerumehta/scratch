@@ -89,4 +89,5 @@ so convergence is one-sided. Plan step 7 has no branch anywhere.
 | 10-14 | imdoc: cross-replica admission limiter; transcription as a queue worker with retryable vs permanent failures; outputs tagged so derived files never come back as sources; submitter and condition stamped on documents; largest first | per-process RateGate; inline transcription | to discuss |
 | 10-14 | macer: a rerun ledger of documents considered per section, append-only | `RerunBasis` copies one prior run | to discuss |
 | 10-14 | macer: subjects as B1/B2 tokens in prompts | documents aliased only | with typed conditions (sonnet-runtime) |
-| 10-14 | assistant `JAPES_V2` | equals main, no migration pushed | watch |
+| 10-14 | assistant `JAPES_V2` | equals main (`74d90ad`), no migration pushed; their poetry install of japes from `plato` fails on the path dependencies (see jazzx_plato_client question) | watch |
+| 10-14 | jazzx-assistant `JAPES-V2` (hyphen) | PR #31 open: chat pipeline migration, reviewed, comments sent | review |

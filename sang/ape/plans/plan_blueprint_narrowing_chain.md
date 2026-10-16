@@ -137,3 +137,28 @@ The four gate families, named onto what exists:
 4. **Surface types for case runs:** is the case-run endpoint an API/Service surface, or Automation
    when triggered by an event or a schedule? Proposed: API/Service, plus Automation when a schedule or
    trigger is declared.
+
+### Answers (user, 2026-10-14; recorded 2026-10-15)
+
+1. The Execution Profile is written by the blueprint's activation (a record in the `pack_activation` history), not a pack file.
+2. N2 warns, naming the layer that widened; a pack-data `strict:` flag refuses.
+3. Acra's first matrix is a proposed default (N5, sonnet-jaci), which the user reviews before it is used.
+4. A case run is an API/Service surface, plus Automation when a schedule or trigger is declared.
+
+## 8. Built: N1 and N2 (sonnet-runtime, 2026-10-15, `v2.6.3`)
+
+`jazzx_sdk/pack/blueprint_chain.py`; routes in `plato/api/blueprints.py`; contracts `BlueprintChain`, `ChainLayer`,
+`ChainFinding` in the client; tests `tests/test_blueprint_chain.py`.
+
+- Manifest keys: `authority_matrix:`, `surface_bindings:` (existing) and new `client_overlay:`, `execution_profile:`
+  (YAML paths; loader methods added). Strict flag: manifest `chain: {strict: true}` on any member.
+- `GET /blueprints/{id}` gains `chain`; publish and activation return `chain_findings`; strict refuses (422 / 409)
+  before anything is stored or activated.
+- Deviations: (1) the profile layer reads a pack-declared `execution_profile:` (optional posture); the Execution
+  Profile the activation writes (N4) is separate and will be checked the same way. (2) Findings are surfaced in the
+  responses and the chain view (computed live from the resolved versions) and logged; the durable record is N4's
+  activation attestation. (3) A surface's ceilings are compared per surface to the matrix, but the overlay and profile
+  to the most permissive surface naming that action, so a stricter assistant beside a wider API is not a widened
+  overlay. (4) Ceilings and overlay keys naming an unknown action class are findings too (same family as in-scope).
+  (5) `plato/seed.py` validates seeded blueprints without the chain check (seeds declare none). (6) N1 and N2 are one
+  commit: the module and tests are one unit.

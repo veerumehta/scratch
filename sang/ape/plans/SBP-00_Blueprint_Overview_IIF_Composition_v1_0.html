@@ -1,0 +1,204 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SBP-00 | Solution Blueprint — Overview and IIF composition</title><link rel="stylesheet" href="../reading/style.css"></head><body><nav aria-label="Document navigation"><a class="home" href="../START_HERE.html">D1 v1.0 · Release home</a><p>Use Ctrl+F to find a requirement or business term.</p><a class="h1" href="#sbp-00-solution-blueprint-overview-and-iif-composition">SBP-00 | Solution Blueprint — Overview and IIF composition</a><a class="h2" href="#executive-summary">Executive Summary</a><a class="h2" href="#0a-strategic-rationale-why-composition-on-iif-is-the-moat">0a. Strategic rationale — why composition on IIF is the moat</a><a class="h2" href="#1-the-framework-in-one-page">1. The framework in one page</a><a class="h2" href="#2-the-narrowing-chain-where-the-suite-plugs-in">2. The narrowing chain — where the Suite plugs in</a><a class="h2" href="#3-how-the-functional-corpus-maps-onto-the-framework">3. How the functional corpus maps onto the framework</a><a class="h2" href="#4-why-this-composition-design-rationale">4. Why this composition (design rationale)</a><a class="h2" href="#5-blueprint-document-map">5. Blueprint document map</a></nav><main><div class="eyebrow">JAZZX · COMMERCIAL LENDING · SPECIFICATION RELEASE 1.0</div><h1 id="sbp-00-solution-blueprint-overview-and-iif-composition">SBP-00 | Solution Blueprint — Overview and IIF composition</h1>
+<p><strong>Commercial Lending Corpus · Version 1.0 · Product and Engineering specification</strong><br />
+Audience: Product, Engineering, UX, credit/operations SMEs and reviewers.</p>
+<p><strong>Provenance.</strong> Restored in v1.3 from the unchanged v1.2 engineering baseline (<code>90_Source_Baselines/Claude_input_v1_2.zip</code>, path <code>blueprint/SBP-00_Blueprint_Overview_IIF_Composition.docx</code>); the original Word reference is preserved at <code>90_Source_Baselines/Legacy_Word_References/SBP-00_Blueprint_Overview_IIF_Composition_v1_2_baseline.docx</code>. Register and folder references inside the text use the baseline layout — see the layer README path map. Version/count statements describe the baseline as delivered; the active machine layer of this release is 04_Engineering (runtime contracts) with the baseline contracts retained under 04_Engineering/legacy_contracts. Status labels in the text are baseline authoring status, not institutional ratification.</p>
+<h2 id="executive-summary">Executive Summary</h2>
+<p><em>Solution Blueprint: How the Commercial Lending Suite Composes on IIF v1.5</em></p>
+<p>JazzX Commercial Lending Suite · Engineering Corpus v1.2 · July 2026 · Proprietary &amp; Confidential</p>
+<blockquote>
+<p><strong>WHAT THIS CORPUS IS</strong></p>
+<p>The Functional Requirements corpus (FRD-00…07) says what the Suite does. This Solution Blueprint corpus says how the Suite is constructed on the Institutional Intelligence Framework (IIF) v1.5 — how the functional capabilities are realized as cognitive-mode compositions, skills, execution profiles, domain packs, and surface bindings, sitting on the IIF substrate. It is the bridge between the functional backlog and the platform architecture. It is written for engineers and architects who will build the Suite on the framework, and it assumes the FRDs as its functional input.</p>
+</blockquote>
+<h2 id="0a-strategic-rationale-why-composition-on-iif-is-the-moat">0a. Strategic rationale — why composition on IIF is the moat</h2>
+<p>The Suite is not an application with AI features; it is a composition of governed capabilities on a reusable institutional-intelligence substrate. That distinction is the strategy. Every hard problem a regulated institution has with AI — who is accountable, what evidence is required, when autonomy is permitted, how behavior is audited, how improvement is governed — is solved once in the framework and inherited by every capability, every surface, and every domain pack, rather than re-solved per feature.</p>
+<p>The narrowing chain — Charter → Domain Pack Specification → Surface Binding Annex → Certified Client Overlay → Execution Profile — is what lets an institution adopt autonomy incrementally and provably. A bank does not buy a black box; it ratifies, cell by cell, what the machine may do, under which evidence floors, with which accountable humans — and it can demonstrate all of it to a regulator from the artifacts themselves.</p>
+<p>The composition is also the commercial moat. New domains (agency multifamily ships in this corpus as exactly such an overlay), new institutions (client overlays and execution profiles), and new surfaces reuse the same governed substrate — so the marginal cost of the next capability falls, while accumulated outcome data, calibration telemetry, and the judgment ledger make the installed base progressively harder to displace.</p>
+<h2 id="1-the-framework-in-one-page">1. The framework in one page</h2>
+<p>IIF v1.5 is an architecture for turning domain judgment into governed, self-improving, scalable autonomous operations. Its foundations, all of which the Suite inherits rather than re-invents:</p>
+<p>The three pillars.</p>
+<ul>
+<li>
+<p>1. Governed — autonomy operates inside explicit boundaries of policy, evidence, identity, permissions, data visibility, safety, privacy, and human accountability; auditable by construction.</p>
+</li>
+<li>
+<p>2. Self-improving — outcomes, overrides, defects, drift signals, and human corrections improve future behavior, but only through a versioned, tested, traceable, governed process; improvement is earned and gated, never silently declared.</p>
+</li>
+<li>
+<p>3. Scalable beyond individual expertise — expert judgment becomes an institutional asset; capacity grows without growing senior-expert headcount one-for-one.</p>
+</li>
+</ul>
+<p>The nine non-negotiable design principles (architectural invariants every Pack, surface, overlay, and profile must satisfy — a violation is not certifiable):</p>
+<ul>
+<li>1. Evidence-First Outputs · 2. Policy-as-Runtime · 3. Trace Is a Product Artifact · 4. Evaluation Before Promotion · 5. Data Sovereignty by Default · 6. Human Accountability Remains · 7. Composability Through Canonical Contracts · 8. Outcome-Linked Learning Loops · 9. Versioned Behavior; No Silent Changes.</li>
+</ul>
+<p>The five canonical objects (the closed chain every consequential action produces, consumes, or links to): Policy (what is allowed/required/prohibited, as a constraint that runs) → Evidence (what is true/supported/fresh/sufficient, with a confidence verdict) → Decision (what was judged/recommended/selected and why, with the named accountable human) → Trace (what happened: steps, tools, approvals, handoffs, overrides, side effects, versions) → Outcome (what resulted, linked back to the decision and trace). The chain is closed.</p>
+<p>The thirteen cognitive modes in five families (the institutional division of labor):</p>
+<ul>
+<li>
+<p>THINK (the brain): Reasoner, Investigator, Simulator</p>
+</li>
+<li>
+<p>TRUST (the immune system): Governor, Verifier, Sentinel</p>
+</li>
+<li>
+<p>EXECUTE (the hands): Conductor, Optimizer</p>
+</li>
+<li>
+<p>INTERACT (the voice): Narrator, Influencer, Negotiator</p>
+</li>
+<li>
+<p>EVOLVE (the memory): Curator, Evaluator</p>
+</li>
+</ul>
+<p>They compose into a loop — THINK → TRUST → EXECUTE → INTERACT → EVOLVE — whose outcomes feed back through EVOLVE to sharpen the next cycle.</p>
+<p>The four surface types (the minimum set of distinct governance shapes): Assistant (persona-centered foreground for one human role), Workspace (case-centered, persistent, collaborative, multi-person), API/Service (programmatic surface consumed by other systems — the Expert-style interface), Automation (background execution triggered by event/schedule/threshold; defining concern is side effect and irreversibility).</p>
+<p>Governed autonomy is a ladder earned at the decision cell, not the product average: L0 Assist · L1 Recommend · L2 Execute-with-approval · L3 Policy-bounded autonomy · L4 Self-improvement-within-bounds — earned through four gate families (Conformance, Launch, Promotion, Recertification), narrow, observable, reversible, revocable on signal.</p>
+<h2 id="2-the-narrowing-chain-where-the-suite-plugs-in">2. The narrowing chain — where the Suite plugs in</h2>
+<p>Institutional Intelligence Charter (strategy, pillars, principles, canonical chain, modes, surfaces)</p>
+<p>│</p>
+<p>Architecture Decision Memo (D1–D63: the settled decisions every doc cites)</p>
+<p>│</p>
+<p>Substrate specifications (Skill Architecture · Cognitive-Mode contracts · Canonical Object Schema · Minimum Interoperability Spec · Shared Entity Ontology · Governed Knowledge Assets · IPDV · Observability · Versioning)</p>
+<p>│</p>
+<p>DOMAIN PACK ── the unit of the moat: the commercial-lending domain intelligence</p>
+<p>cl_of (Origination &amp; Fulfillment: VP-1…VP-4) cl_sp (Servicing &amp; Portfolio: VP-5…VP-6)</p>
+<p>│</p>
+<p>SURFACE BINDING ANNEX (SBA) ── binds a Pack's capabilities to one operational surface</p>
+<p>(per surface or role-pattern: object rights, action classes, mode composition, autonomy ceiling)</p>
+<p>│</p>
+<p>CERTIFIED CLIENT OVERLAY ── narrows the Pack + SBA envelope to one institution (e.g., a specific bank)</p>
+<p>(jurisdictions, role mappings, thresholds, approved evidence sources &amp; connectors, configured posture)</p>
+<p>│</p>
+<p>│</p>
+<p>EXECUTION PROFILE (EP) ── the final narrowing: what is actually live in one deployment</p>
+<p>(activated modes, capability catalog, skill bundle, autonomy postures, version bundle, non-widening attestation)</p>
+<p>│</p>
+<p>Runbooks / Ops — the EP records live posture beneath the SBA + Overlay intersection; each layer only narrows</p>
+<p>IIF v1.5 is organized as a narrowing chain: each layer only narrows the one above it (adds constraints, never widens authority). The Suite is a set of artifacts placed on this chain.</p>
+<p>The Suite is therefore not a monolithic application; it is: two domain packs (cl_of, cl_sp) built on the substrate, exposed through surface binding annexes for each surface or role-pattern, deployed via execution profiles, optionally narrowed by a client overlay. Each FRD's functional content becomes capabilities in a pack; each capability binds to modes; each surface binds a subset of capabilities with an autonomy ceiling.</p>
+<h2 id="3-how-the-functional-corpus-maps-onto-the-framework">3. How the functional corpus maps onto the framework</h2>
+<table>
+<thead>
+<tr>
+<th><strong>Functional artifact (FRD)</strong></th>
+<th><strong>IIF construct (Blueprint)</strong></th>
+<th><strong>Where specified</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The 8 co-workers</td>
+<td>Persona map + surface set; a co-worker is a persona activating one or more surfaces</td>
+<td>SBP-01</td>
+</tr>
+<tr>
+<td>The 4 products</td>
+<td>Packaging of surfaces; commercial bundling of pack capabilities</td>
+<td>SBP-01</td>
+</tr>
+<tr>
+<td>The 234-capability chassis</td>
+<td>The Pack Capability Catalog; each capability = a mode composition + skill bundle + object participation</td>
+<td>SBP-01, SBP-02</td>
+</tr>
+<tr>
+<td>The L4 activities</td>
+<td>The concrete steps a capability performs; each resolves to a mode invocation with an object contract</td>
+<td>SBP-02</td>
+</tr>
+<tr>
+<td>The 13 decision classes</td>
+<td>Decision object classes with authority gates; human-only classes flagged in the SBA</td>
+<td>SBP-02, SBP-04</td>
+</tr>
+<tr>
+<td>The metric/stress/sizing engines</td>
+<td>Skills (deterministic-code and model-orchestration tiers) invoked by Reasoner/Simulator</td>
+<td>SBP-02, SBP-03</td>
+</tr>
+<tr>
+<td>The evidence catalog</td>
+<td>The Pack Evidence supply chain + admissibility rules; the Evidence object</td>
+<td>SBP-03</td>
+</tr>
+<tr>
+<td>The object dictionaries (spread, rent roll, covenant, etc.)</td>
+<td>The Pack ontology / knowledge fabric + Shared Entity Ontology binding</td>
+<td>SBP-03</td>
+</tr>
+<tr>
+<td>The cross-cutting requirements (XF-1…9)</td>
+<td>The design-principle operationalization (evidence-first, policy-as-runtime, trace-as-artifact, versioning)</td>
+<td>SBP-04</td>
+</tr>
+<tr>
+<td>The hard gates &amp; autonomy postures</td>
+<td>The autonomy ladder bound at the decision cell; the four gate families</td>
+<td>SBP-04</td>
+</tr>
+<tr>
+<td>The handoffs (CPEC-1 boarding relay W1→W2; CPEC-2 renewal/modification return lane W2→W1)</td>
+<td>Cross-Pack Engagement Contracts and governed relays across cl_of ↔ cl_sp</td>
+<td>SBP-03, SBP-04</td>
+</tr>
+</tbody>
+</table>
+<h2 id="4-why-this-composition-design-rationale">4. Why this composition (design rationale)</h2>
+<ul>
+<li>
+<p>Modes make judgment governable. By expressing each capability as a composition of a small, fixed set of modes — each with a defined input/output contract, evidence standard, governance posture, and trace behavior — the Suite avoids becoming an &quot;undifferentiated agent blob.&quot; Authority is constrained at the right boundary (e.g., Governor enforces the human-only gate on CI-DC-11 rating), and each mode is tuned once and reused across every workflow that needs it (e.g., the Verifier tie-out logic serves VP-2 spreading and VP-6 covenant testing).</p>
+</li>
+<li>
+<p>Packs are the moat. The commercial-lending domain intelligence — the metric definitions, the decision classes, the covenant library, the evidence admissibility rules, the archetype/property analytics — lives in the domain pack, not in generic model prompts. That is what makes the Suite defensible and what lets it compound: overrides and outcomes improve the pack's assets through the EVOLVE loop.</p>
+</li>
+<li>
+<p>The canonical chain makes it examinable. Because every decision produces Policy/Evidence/Decision/Trace/Outcome, the audit trail the FRDs rely on (XF-6, exam readiness in FRD-06) is a structural byproduct, not a separate build.</p>
+</li>
+<li>
+<p>The narrowing chain makes it safe to deploy per client. A specific bank's policy, authority model, and risk appetite are applied through a Certified Client Overlay and Execution Profile that only narrow the pack — the same pack serves many banks without forks (data sovereignty by abstraction, principle 5).</p>
+</li>
+</ul>
+<h2 id="5-blueprint-document-map">5. Blueprint document map</h2>
+<table>
+<thead>
+<tr>
+<th><strong>Doc</strong></th>
+<th><strong>Title</strong></th>
+<th><strong>Contains</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SBP-00</td>
+<td>Blueprint Overview — IIF Composition</td>
+<td>This document</td>
+</tr>
+<tr>
+<td>SBP-01</td>
+<td>Co-worker Capability Architecture</td>
+<td>The 8 co-workers, the 234-capability chassis, capability groups, product packaging, archetype-overlay model, human-accountability boundaries</td>
+</tr>
+<tr>
+<td>SBP-02</td>
+<td>Cognitive-Mode &amp; Execution-Profile Composition</td>
+<td>Mapping capabilities/surfaces/decision-classes to the 13 modes; skills; execution profiles; the composition loop</td>
+</tr>
+<tr>
+<td>SBP-03</td>
+<td>Domain-Pack &amp; Surface-Binding Construction</td>
+<td>How cl_of and cl_sp are built (canonical-chain design, ontology, policy/authority/evidence); the SBAs; the object spine; cross-pack engagement</td>
+</tr>
+<tr>
+<td>SBP-04</td>
+<td>Governance &amp; Autonomy Binding</td>
+<td>How the authority matrix, decision classes, evidence floors, autonomy ladder, and compounding loop bind to the functional capabilities</td>
+</tr>
+<tr>
+<td>SBP-05</td>
+<td>Surface Model &amp; Authority Reconciliation (authoritative)</td>
+<td>The 8-co-worker → 13-surface mapping (2 Workspaces, 5 Assistants, 3 API/Service, 3 Automations); the matrix-cell keying; governs on conflict</td>
+</tr>
+</tbody>
+</table>
+<p>Authoritative sources for the framework itself are the IIF v1.5 corpus in this project (Charter, Architecture Decision Memo, Skill Architecture &amp; Governance, Execution Profile Template, Domain Pack Specification Template, Surface Binding Annex Template, and the cognitive-mode deep-dives). Where this Blueprint and an owning framework specification appear to conflict, the framework specification controls.</p>
+<footer>Specification release · Supplied-source coverage and offline checks are not production certification.</footer></main></body></html>

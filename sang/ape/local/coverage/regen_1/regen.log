@@ -1,0 +1,18 @@
+wrote 24 seed files into acra-regen-1
+jtbd:platinum attempt 1: run cdf8405c0fe3451bbacab0ce090d8251
+jtbd:standard attempt 1: run c6d6dfa17ba14e9690e1343cc643c7c7
+jtbd:platinum run cdf8405c succeeded: 13 proposals, 0 of 1 parts failed, $0.0049
+python:standard attempt 1: run 99bb6b11ae774b5ca2239060dc2be2c2
+jtbd:standard run c6d6dfa1 succeeded: 110 proposals, 3 of 11 parts failed, $0.0219
+jtbd:standard attempt 2: run b8f1bdae7b5d49e794264a8443f86fdc
+jtbd:standard run b8f1bdae succeeded: 159 proposals, 0 of 12 parts failed, $0.028
+python:platinum attempt 1: run 274cdd3b222b4955b368e436b54fbf1f
+python:standard run 99bb6b11 succeeded: 22 proposals, 4 of 48 parts failed, $0.0309
+python:standard attempt 2: run fa7edfac0b4742909797c400c2801d2c
+python:platinum run 274cdd3b succeeded: 26 proposals, 0 of 42 parts failed, $0.0265
+python:standard run fa7edfac succeeded: 23 proposals, 0 of 48 parts failed, $0.0342
+wrote /Users/sangit/src/.scratch/sang/ape/local/coverage/regen_1/runs.json
+  acra-standard run c6d6dfa1: {"trigger": "approve", "decided": ["acra-standard:acra-standard.appraisal_review.dscr_form_1007", "acra-standard:acra-standard.appraisal_review.excessive_rent_support", "acra-standard:acra-standard.ap
+  merged into acra-standard: {"rel_path": "policies/acra-standard.yaml", "policy_id": "acra-standard", "added": ["acra-standard.appraisal_review.dscr_form_1007", "acra-standard.appraisal_review.excessive_rent_support", "acra-standard.appraisal_review.short_term_rental_appraisal_form", "acra-standard.appraisal_review.vacant_prop
+  acra-standard run b8f1bdae: {"trigger": "approve", "decided": ["acra-standard:acra-standard.appraisal_review.actual_rent_evidence", "acra-standard:acra-standard.appraisal_review.dscr_1007_requirement", "acra-standard:acra-standa
+POST http://localhost:8000/api/v1/authoring/review/acra-regen-1/merge-rules: 409 {"detail":"ValueError: policies/acra-standard.yaml is over the 1048576-byte draft file limit"}

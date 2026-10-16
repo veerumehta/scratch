@@ -11,6 +11,7 @@ Phases, each its own command so a long one can run in the background and the nex
     python acra_rerun_extractions.py --pack acra-ledger-trial --out <DIR>/runs.json   # 4 extractions
     python acra_ledger_live.py merge-jobs    # approve and merge the runs' jobs into each policy
     python acra_ledger_live.py code          # job runs per policy, then approve and merge their code
+    python acra_ledger_live.py retry-failed  # re-run only the jobs whose code run failed, merge, log
     python acra_ledger_live.py align         # alignment over every policy, proposing orphan jobs
     python acra_ledger_live.py coverage      # coverage (with proposals) as JSON and xlsx, summarised
 
@@ -35,7 +36,14 @@ TRIAL = os.environ.get("ACRA_TRIAL", "acra-ledger-trial")
 SEED = Path("/Users/sangit/src/japes/plato/data/seed_packs/acra_dscr_policy")
 POLICIES = {"acra-standard": "Acra Standard DSCR (jobs)", "acra-platinum": "Acra Platinum Select DSCR (jobs)"}
 DIR = Path(os.environ.get("ACRA_DIR", Path(__file__).parent / "coverage" / "ledger_live"))
+TEMPLATE = "jtbd_template.yaml"
+#: A yaml file appended to the trial's jtbd_template.yaml by `seed` (the synced seed is not edited).
+TEMPLATE_EXTRA = Path(os.environ["ACRA_TEMPLATE_EXTRA"]) if os.environ.get("ACRA_TEMPLATE_EXTRA") else None
+#: One JSON line per phase result (run ids, counts, failed segments, cost), kept across regens to mine later.
+LOG = Path(os.environ.get("ACRA_REGEN_LOG", Path(__file__).parent / "coverage" / "regen_log.jsonl"))
 POLL_SECONDS = 30
+#: A line per run this often while it is not finished, so a quiet terminal is not mistaken for a hang.
+HEARTBEAT_SECONDS = 120
 TERMINAL = {"succeeded", "failed", "cancelled"}
 TIMEOUT_SECONDS = 120
 
@@ -50,6 +58,13 @@ def _save(state: dict) -> None:
     (DIR / "state.json").write_text(json.dumps(state, indent=1))
 
 
+def _log(phase: str, **fields) -> None:
+    LOG.parent.mkdir(parents=True, exist_ok=True)
+    entry = {"at": time.strftime("%Y-%m-%dT%H:%M:%S"), "trial": TRIAL, "phase": phase, **fields}
+    with LOG.open("a") as handle:
+        handle.write(json.dumps(entry) + "\n")
+
+
 def _check(response: httpx.Response) -> dict:
     if response.status_code >= 400:
         sys.exit(f"{response.request.method} {response.request.url}: {response.status_code} {response.text[:500]}")
@@ -57,6 +72,7 @@ def _check(response: httpx.Response) -> dict:
 
 
 def _wait(http: httpx.Client, run_id: str) -> dict:
+    began = last = time.monotonic()
     while True:
         run = _check(http.get(f"{API}/authoring/extract/runs/{run_id}"))
         if run["status"] in TERMINAL:
@@ -65,6 +81,11 @@ def _wait(http: httpx.Client, run_id: str) -> dict:
                   f"{run['segments']} parts, {len(run['failed_segments'])} failed, {run['proposals']} "
                   f"proposed, ${cost}{'; ' + run['error'] if run.get('error') else ''}", flush=True)
             return run
+        if time.monotonic() - last >= HEARTBEAT_SECONDS:
+            last = time.monotonic()
+            spent = round(sum(u.get("cost_usd", 0) for u in (run.get("usage") or {}).values()), 2)
+            print(f"  run {run_id[:8]} still {run['status']} after {int(last - began)}s: "
+                  f"{run['proposals']} proposed so far, ${spent} spent", flush=True)
         time.sleep(POLL_SECONDS)
 
 
@@ -89,10 +110,13 @@ def seed(http: httpx.Client) -> None:
         rel = path.relative_to(SEED).as_posix()
         if not path.is_file() or rel == "SYNCED_FROM" or path.suffix not in {".yaml", ".yml", ".json", ".md"}:
             continue
-        _check(http.put(f"{API}/packs/drafts/{TRIAL}",
-                        json={"rel_path": rel, "content": path.read_text().replace(SOURCE, TRIAL)}))
+        content = path.read_text().replace(SOURCE, TRIAL)
+        if rel == TEMPLATE and TEMPLATE_EXTRA is not None:
+            content = content.rstrip("\n") + "\n\n" + TEMPLATE_EXTRA.read_text()
+        _check(http.put(f"{API}/packs/drafts/{TRIAL}", json={"rel_path": rel, "content": content}))
         written += 1
-    print(f"wrote {written} seed files into {TRIAL}")
+    print(f"wrote {written} seed files into {TRIAL}"
+          + (f", {TEMPLATE} extended with {TEMPLATE_EXTRA.name}" if TEMPLATE_EXTRA else ""))
 
 
 def _approve_and_merge(http: httpx.Client, representation: str, run_ids: dict[str, list[str]]) -> dict:
@@ -140,6 +164,30 @@ def code(http: httpx.Client) -> None:
     state["code_merged"] = _approve_and_merge(
         http, "python", {p: [r["run_id"]] for p, r in finished.items() if r["status"] == "succeeded"})
     _save(state)
+    _log("code", job_runs=state["job_runs"])
+
+
+def retry_failed(http: httpx.Client) -> None:
+    """Re-run the code writer on only the jobs whose first run failed, merge what succeeds, and log it."""
+    state = _state()
+    failed = {p: r["failed_segments"] for p, r in state["job_runs"].items() if r["failed_segments"]}
+    state.setdefault("retries", [])
+    run_ids = {}
+    for policy_id, jobs in failed.items():
+        run = _check(http.post(f"{API}/authoring/extract/{TRIAL}/job-runs",
+                               json={"policy_id": policy_id, "jobs": jobs}))
+        run_ids[policy_id] = run["run_id"]
+        print(f"retry run {run['run_id']} for {policy_id}: {len(jobs)} jobs", flush=True)
+    finished = {p: _wait(http, r) for p, r in run_ids.items()}
+    merged = _approve_and_merge(
+        http, "python", {p: [r["run_id"]] for p, r in finished.items() if r["status"] == "succeeded"})
+    result = {p: {k: run[k] for k in ("run_id", "status", "segments", "proposals", "failed_segments", "error")}
+              for p, run in finished.items()}
+    state["retries"].append({"asked": failed, "result": result})
+    state["code_merged_retry"] = merged
+    _save(state)
+    _log("retry-failed", asked=failed, result=result)
+    print("next: acra_ledger_live.py align, then coverage (the merged code needs aligning)")
 
 
 def align(http: httpx.Client) -> None:
@@ -151,6 +199,7 @@ def align(http: httpx.Client) -> None:
     state["alignment"] = {k: done[k] for k in ("run_id", "status", "segments", "proposals",
                                                "failed_segments", "error")}
     _save(state)
+    _log("align", **state["alignment"])
 
 
 def coverage(http: httpx.Client) -> None:
@@ -159,6 +208,10 @@ def coverage(http: httpx.Client) -> None:
     workbook = http.get(f"{API}/packs/drafts/{TRIAL}/coverage", params={"proposals": "true", "format": "xlsx"})
     (DIR / "coverage.xlsx").write_bytes(workbook.content)
     merged = [j for j in report["jobs"] if not j["pending"]]
+    _log("coverage", counts=report["counts"], coded_share=report["coded_share"], by_policy=report["by_policy"],
+         jobs=len(report["jobs"]), folded=sum(1 for j in report["jobs"] if j["folded"]),
+         mapped=sum(1 for j in report["jobs"] if j["mapped"]), orphans=len(report["orphans"]),
+         backlog=[(g["data"], g["jobs"]) for g in report["schema_backlog"][:15]])
     print("all jobs:", report["counts"], "coded share", report["coded_share"])
     print("merged jobs only:", {d: sum(1 for j in merged if j["disposition"] == d) for d in report["counts"]})
     print("by policy:", report["by_policy"])
@@ -170,10 +223,10 @@ def coverage(http: httpx.Client) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("phase", choices=("copy", "seed", "merge-jobs", "code", "align", "coverage"))
+    parser.add_argument("phase", choices=("copy", "seed", "merge-jobs", "code", "retry-failed", "align", "coverage"))
     args = parser.parse_args()
     with httpx.Client(timeout=TIMEOUT_SECONDS, headers=HEAD) as http:
-        {"copy": copy, "seed": seed, "merge-jobs": merge_jobs, "code": code, "align": align,
+        {"copy": copy, "seed": seed, "merge-jobs": merge_jobs, "code": code, "retry-failed": retry_failed, "align": align,
          "coverage": coverage}[args.phase](http)
 
 

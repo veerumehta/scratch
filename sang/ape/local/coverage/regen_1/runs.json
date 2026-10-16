@@ -1,0 +1,105 @@
+[
+ {
+  "representation": "jtbd",
+  "document": "standard",
+  "policy_id": "acra-standard",
+  "attempts": [
+   {
+    "run_id": "c6d6dfa17ba14e9690e1343cc643c7c7",
+    "status": "succeeded",
+    "segments": 11,
+    "failed_segments": [
+     "Liabilities Assessment",
+     "Title Review",
+     "Unassigned provisions"
+    ],
+    "proposals": 110,
+    "cost_usd": 0.0219,
+    "started_at": "2026-10-13T22:51:58.167012Z",
+    "finished_at": "2026-10-14T00:31:32.305625Z",
+    "error": ""
+   },
+   {
+    "run_id": "b8f1bdae7b5d49e794264a8443f86fdc",
+    "status": "succeeded",
+    "segments": 12,
+    "failed_segments": [],
+    "proposals": 159,
+    "cost_usd": 0.028,
+    "started_at": "2026-10-14T00:32:55.269775Z",
+    "finished_at": "2026-10-14T01:02:07.717172Z",
+    "error": ""
+   }
+  ]
+ },
+ {
+  "representation": "jtbd",
+  "document": "platinum",
+  "policy_id": "acra-platinum",
+  "attempts": [
+   {
+    "run_id": "cdf8405c0fe3451bbacab0ce090d8251",
+    "status": "succeeded",
+    "segments": 1,
+    "failed_segments": [],
+    "proposals": 13,
+    "cost_usd": 0.0049,
+    "started_at": "2026-10-13T22:51:58.037306Z",
+    "finished_at": "2026-10-13T22:55:23.143506Z",
+    "error": ""
+   }
+  ]
+ },
+ {
+  "representation": "python",
+  "document": "standard",
+  "policy_id": "acra-standard",
+  "attempts": [
+   {
+    "run_id": "99bb6b11ae774b5ca2239060dc2be2c2",
+    "status": "succeeded",
+    "segments": 48,
+    "failed_segments": [
+     "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b618",
+     "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#segment \u00b619",
+     "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.10 \u00b61",
+     "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.10 \u00b62"
+    ],
+    "proposals": 22,
+    "cost_usd": 0.0309,
+    "started_at": "2026-10-13T22:55:28.846388Z",
+    "finished_at": "2026-10-14T01:05:51.526707Z",
+    "error": ""
+   },
+   {
+    "run_id": "fa7edfac0b4742909797c400c2801d2c",
+    "status": "succeeded",
+    "segments": 48,
+    "failed_segments": [],
+    "proposals": 23,
+    "cost_usd": 0.0342,
+    "started_at": "2026-10-14T01:06:10.499510Z",
+    "finished_at": "2026-10-14T01:54:09.328839Z",
+    "error": ""
+   }
+  ]
+ },
+ {
+  "representation": "python",
+  "document": "platinum",
+  "policy_id": "acra-platinum",
+  "attempts": [
+   {
+    "run_id": "274cdd3b222b4955b368e436b54fbf1f",
+    "status": "succeeded",
+    "segments": 42,
+    "failed_segments": [],
+    "proposals": 26,
+    "cost_usd": 0.0265,
+    "started_at": "2026-10-14T01:02:15.046214Z",
+    "finished_at": "2026-10-14T01:44:26.876715Z",
+    "error": ""
+   }
+  ]
+ }
+]

@@ -120,7 +120,7 @@ if [[ -z "${REVIEW_FULL:-}" ]]; then
         # an interrupted round leaves a header-only file, and taking that as the baseline would
         # skip the round it was supposed to seed.
         saved_transcript="$(grep -l '^VERDICT:' $(ls -t "$state_dir"/*.md 2>/dev/null) \
-                            2>/dev/null | head -1)"
+                            </dev/null 2>/dev/null | head -1)"
         if [[ -r "${saved_transcript:-}" ]]; then
             header="$(sed -n 's/^- range: \(.*\) (\([0-9a-f][0-9a-f]*\))$/\1\t\2/p' \
                       "$saved_transcript" | head -1)"

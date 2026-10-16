@@ -2,7 +2,7 @@
 
 Note on method: `git log --since=YYYY-MM-DD` keeps the current time of day, which drops early commits. These windows use `"YYYY-MM-DD 00:00"`.
 
-Quiet lenses: policy-workbench has nothing new since 10-13 beyond what is already recorded (ontology refresh reset, cost hint removed). assistant `origin/JAPES_V2` has **not moved**: it still equals `origin/main` (`74d90ad`), so there are no adoptions, workarounds or SDK bugs to report. assistant main does not depend on the japes package. `app/japes/` talks to a hosted japes over queue and HTTP.
+Quiet lenses: policy-workbench has nothing new since 10-13 beyond what is already recorded (ontology refresh reset, cost hint removed). assistant `origin/JAPES_V2` has **not moved**: it still equals `origin/main` (`74d90ad`). (jazzx-assistant is a different repo; its `origin/JAPES-V2`, hyphen, is PR #31, the chat pipeline migration, reviewed.) assistant main does not depend on the japes package. `app/japes/` talks to a hosted japes over queue and HTTP.
 
 ## Ranked gaps
 

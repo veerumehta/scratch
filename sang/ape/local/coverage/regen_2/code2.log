@@ -1,0 +1,16 @@
+job run 6fb3048efc4f445e936205d6ca42eaef for acra-standard
+job run 5383d031afd34af893417f042bc13aa5 for acra-platinum
+  run 6fb3048e python_jobs acra-standard: succeeded, 65 parts, 0 failed, 53 proposed, $0.0408
+  run 5383d031 python_jobs acra-platinum: succeeded, 85 parts, 0 failed, 77 proposed, $0.0457
+  acra-standard run 6fb3048e: {"trigger": "approve", "decided": ["acra-standard:acra-standard.asset_assessment.first_time_homebuyer_reserves.python", "acra-standard:acra-standard.asset_assessment.foreign_national_funds_seasoning_a
+  merged into acra-standard: {"rel_path": "policies/acra-standard.yaml", "policy_id": "acra-standard", "added": ["acra-standard.asset_assessment.first_time_homebuyer_reserves.python", "acra-standard.asset_assessment.foreign_national_funds_seasoning_and_repatriation.python", "acra-standard.asset_assessment.listed_property_reserv
+  acra-platinum run 5383d031: {"trigger": "approve", "decided": ["acra-platinum:acra-platinum.appraisal_review.eligible_state.python", "acra-platinum:acra-platinum.appraisal_review.listed_property_amortization.python", "acra-plati
+  merged into acra-platinum: {"rel_path": "policies/acra-platinum.yaml", "policy_id": "acra-platinum", "added": ["acra-platinum.appraisal_review.eligible_state.python", "acra-platinum.appraisal_review.listed_property_amortization.python", "acra-platinum.appraisal_review.listed_property_impounds.python", "acra-platinum.appraisal
+alignment run 48d2662a75b440359b4a3d98c718304e
+  run 48d2662a alignment *: succeeded, 47 parts, 0 failed, 7 proposed, $0.0267
+all jobs: {'code': 47, 'code_and_procedure': 103, 'computable_no_code': 9, 'procedure': 0, 'not_computable': 91, 'unassessed': 20} coded share 0.556
+merged jobs only: {'code': 47, 'code_and_procedure': 103, 'computable_no_code': 0, 'procedure': 0, 'not_computable': 88, 'unassessed': 20}
+by policy: {'acra-platinum': {'code': 33, 'code_and_procedure': 55, 'computable_no_code': 4, 'procedure': 0, 'not_computable': 33, 'unassessed': 8}, 'acra-standard': {'code': 14, 'code_and_procedure': 48, 'computable_no_code': 5, 'procedure': 0, 'not_computable': 58, 'unassessed': 12}}
+orphans 7 unaligned 0
+schema backlog: [('calculated DSCR', 11), ('DSCR', 8), ('LTV', 8), ('Lowest recent listing price', 6), ('FICO', 5), ('Verified reserves amount', 5), ('Whether impounds are required', 5), ('Acra confirmation of the reserve payment basis, including on an interest-only loan (Q-08)', 3), ('Application Date', 3), ('Calculated DSCR', 3)]
+disagreements: 7 jobs with unprinted figures: 20

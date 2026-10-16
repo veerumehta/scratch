@@ -9,6 +9,18 @@ Entries are intentionally terse; `git log`/`git diff` carries the full detail.
 
 ## [Unreleased]
 
+### Changed: DSCR facts are the mortgage ontology's `Entity.field` (acra-dscr-policy 0.2.17)
+- Rules, metrics, schemas, job template, registry yields and gold cases rename in one pass, no
+  aliases (`fico` → `CreditReport.representative_score`, `cltv_pct` → `LoanCore.cltv_percent`).
+  `LoanApplication` keeps short Python names via `ENTITY_NAMES`. 28 names are provisional. Same
+  verdicts, reasons and derived values on all 93 recorded loans. Table and open questions:
+  `docs/status/done_DSCR_ENTITY_NAMES.md`.
+
+### Added: DSCR document registry, job kinds, prefix families, variants (acra-dscr-policy 0.2.15-0.2.16)
+- `document_types.yaml` mirrors the classifier (document_agent.yaml keeps its thresholds); the
+  Domain tab edits it. `jtbd_template.yaml` gains `kinds`, `mnemonics.families`, `variants`,
+  `extraction`; `export_profiles/agency_blocks.yaml`.
+
 ### Changed: pin japes 2.6.0 (`plato`)
 - `japes[server,documents]` (2.6.0 moved uvicorn and the document libraries out of core) plus
   `jazzx-plato-client` from the same branch; `uv.lock` at `3218ce12`. `_without_nulls` in

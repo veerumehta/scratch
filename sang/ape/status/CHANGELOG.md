@@ -2,7 +2,1009 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+## [2.6.3] - unreleased
+
+- **Folding keeps a distinct requirement and what a folded job knew.** Four review fixes to the fold. A single-digit
+  figure now counts when two jobs are compared (`figures(text, single_digits=True)`, used by the fold only: "at least
+  2 open tradelines" no longer folds with "at least 3"); the helper's default still leaves single digits out for the
+  alignment and ledger matching that share it. A survivor that had no reads and gains some from a folded job is
+  marked not assessed (`computable_checks` None) rather than "none computable". Two jobs of one section never end up
+  folded together through a job of another section: the blocked link is listed as a possible duplicate. A folded
+  job's data mapping (`mapped_reads`) is carried onto the survivor beside its reads (+92 / -6 lines, 3 files).
+
+- **`KernelClient` works without a token.** `token` is optional: with one it builds `kernel_client.AuthenticatedClient`
+  as before, with none (`None` or empty) it builds `kernel_client.Client` and sends no `Authorization` header,
+  the way `KnowledgeHubClient` does; the request-headers hook and pool limits are unchanged. `ClientLayer.kernel`
+  passes its bearer token through as is, so an unauthenticated caller no longer sends `Authorization: Bearer `
+  with an empty value. `MockKernelClient` already takes an optional token and the process-client block is
+  commented out, so neither changed (+56 / -10 lines, 3 files).
+
+- **The extraction page refreshes while a run is going.** While any listed run is queued or running the page reads
+  its runs again every `POLL_MS` (5s), keeping the filters, the open rows and the scroll position, with a line giving
+  the last-updated time (and a failed refresh, retried), and stops once every run has ended. A running row shows the
+  parts read of the total, and its detail the progress so far; the Cost column is whatever the route returns
+  (+60 / -9 lines, 2 files).
+
+- **The solution page draws the narrowing chain.** A strip above the members shows the blueprint's layers in order
+  (domain pack, surface binding, client overlay, execution profile) with the member and version filling each and its
+  summary, marks a layer a finding names as widened, lists the findings, and says whether a widening warns or
+  refuses. Nothing is drawn for a blueprint that declares no chain, or when its read fails. A card's summary reads as lines
+  of text, and a card is marked only by a widening finding (`widened` or `human_only`) that names its own member
+  and artifact, not every card of its layer (+95 / -2 lines, 2 files).
+
+- **A blueprint carries its narrowing chain, and the chain is checked for widening.** A member's manifest names the
+  governance artifacts it declares: `authority_matrix:`, `surface_bindings:`, and the new `client_overlay:` and
+  `execution_profile:` (each a path in the pack; `PackManifestLoader.client_overlay()` and `.execution_profile()`
+  read them). `GET /blueprints/{id}` returns a `chain` (`jazzx_sdk.pack.blueprint_chain`): one entry per layer
+  (domain pack, surface binding, client overlay, execution profile) with its member, artifact and a summary
+  (decision and action classes, launch levels, ceilings, narrowings, activations), read from the resolved
+  versions with no copies; a blueprint whose members declare none has `declared: false` and nothing else, and a
+  member naming no artifact is not unpacked. `check_non_widening` runs the resolver's rule over the whole table:
+  per decision cell and action class, profile <= overlay <= surface binding <= matrix launch autonomy, a
+  human-only cell (its own flag or its decision class's) is L0 at every layer and not in scope of an automation
+  surface, and an action class a surface, overlay or profile names must exist in the matrix. A layer with no matrix
+  above it, and an artifact that does not read, are findings too. A finding names the layer that widened and is
+  a warning: publish and activation return `chain_findings`, and the chain view lists them. A member's manifest
+  `chain: {strict: true}` makes them a refusal (422 at publish, 409 at activation, before any member is
+  activated or stored). The client gains the `BlueprintChain`, `ChainLayer` and `ChainFinding` contracts (+629 / -6 lines, 6 files).
+
+- **The job writer folds duplicate jobs across sections and reads missing data as the catalog field it names.** A
+  template's optional `data_mapping:` block (`accept` 0.8, `ask` 0.4, `qualifiers`, `judge`, `strict`) moves a job's
+  `missing_reads` text to `reads` when it names a catalog field: the same words ("calculated DSCR" is `dscr`) or a
+  clear best overlap is taken, a close call goes to a model judge when `judge` is on and otherwise stays missing
+  data with the candidate named in the job's reasoning; each mapping is kept in the job's `mapped_reads`. A
+  template's optional `fold:` block (`accept` 0.8, `ask` 0.6, `judge`, `strict`) folds, once every section has been
+  written, a job a different section of the same policy states again: same kind, same figures (65% never folds
+  with 75%), description overlap at `accept` or a judge's yes between `ask` and `accept`. The survivor is the job in
+  the section `section_types` ranks first, else the first written; it cites both clauses, reads what either read
+  and lists the folded jobs under `folded_from`; the other is not proposed. A close call with no judge is listed as
+  a possible duplicate. `strict` never applies a judge's answer. The run records `folds` and `possible_duplicates`
+  (and the client's run model carries them), the coverage rows and workbook gain "folded" and "data mapped", and
+  the coverage page lists them (+784 / -6 lines, 12 files).
+
+- **A condition is open once, or resolved, never both.** After the replica vote an outcome's conditions are read once
+  (`_one_home`): one a replica resolved is not also left open by another that restated it, and an id appears
+  once; two answered conditions cannot restate the same prior one (the model is asked again, and the second is a
+  new condition if one gets through). A prior condition the answer neither restates nor resolves stays open on
+  whatever status it reaches, and an answer that rejected evidence set aside counts for nothing: its stated
+  conditions are ignored and every prior one stays open. A blank condition title is refused as
+  retry feedback. The step's `open_conditions` is `open_condition_rows`, the one function the case-run ground
+  source also calls, and a strict grounding refusal on a rerun keeps the verdicts of rules the rerun would not
+  have judged (+210 / -20 lines, 7 files).
+
+- **Plato 0.2.4 and `jazzx-plato-client` 0.2.4.** Both move together; the SDK is 2.6.3. The client gains methods for the
+  solution workbook, the draft option and a draft's rules (+4 / -4 lines, 4 files).
+
+- **Guideline citations name their page.** The `guidelines` ground kind writes a converted file whose text carries
+  `**[Page N]**` markers a page to a file (`g.pdf-p0002.md`, `ground_kinds.split_pages`), each cited with a
+  `PageLocator`, so an answer cites page 2 rather than the whole file; a file with no markers, or one that would
+  pass the file cap, stays whole; a page number that comes round again (two documents joined) has its text joined to
+  the first, so none is dropped. The chat page's citation viewer opens just that page (+105 / -12 lines, 4 files).
+
+- **The solution page reads the open draft and downloads as a workbook.** `GET /blueprints/{id}/solution?draft=true`
+  puts the policy pack's open draft in the table as the newest set (`solution_material(draft=)`, version label
+  `draft`), the published newest becoming its first earlier version and the reference unaligned; a missing
+  or unloadable draft is a 404. `GET /blueprints/{id}/solution.xlsx` (also `?draft=true`) is the job table and the
+  reference jobs (`solution_workbook`), and `GET /packs/drafts/{id}/rules/{rule_id}` serves the rule viewer for a
+  draft. The page gains the draft box and an xlsx button, and its downloads work: `guarded` dropped the route and
+  name `fetchDownload` was given. The bundle is published-only: with the draft ticked its links say so and name the
+  newest published version (+220 / -44 lines, 6 files).
+
+- **Plato's pages send `X-Trace-Id`.** A governed route refuses a request without one (400), and the page scripts
+  sent none, so every page built on the shared script (assistants, runs, coverage, extraction, reviews, ontology,
+  scorers, trace, compare, solution) failed its first read. The three header builders (shared script, packs,
+  evaluation) add a fresh id per request, and the dashboard, logs and info pages' own requests carry one too; a
+  test reads every `fetch(` in `plato/static` for it, and a header literal without it fails. The id comes from one
+  helper, `newId`, that falls back to a time and a counter where `crypto.randomUUID` is missing (a plain-HTTP
+  origin), also for idempotency keys (+120 / -40 lines, 12 files).
+
+- **The authoring assistant opens Plato pages.** `open_page(page, subject)` puts a `navigate` artifact on the turn
+  (`questions.propose_navigation`) for one of twelve named pages, `solution` taking its blueprint id and
+  `extraction` its pack; an unknown page or a solution without a blueprint is refused. The chat page draws it as
+  a link and nothing opens until the user follows it (+82 / -6 lines, 5 files).
+
+- **Client methods for the solution workbook and a draft's rules.** `PlatoClient.blueprint_solution(draft=)`,
+  `blueprint_solution_xlsx(blueprint_id, version=, draft=)` (the workbook's bytes) and `draft_rule(pack_id, rule_id,
+  policy=)`, one per route the route-coverage test found without a method; a test checks each request and the
+  bytes (+50 / -4 lines, 3 files).
+
+- **Browser-answered questions and rule cards.** `ask_page(key, action)` is a text question the page answers by
+  itself: it ends the turn on a card marked `detail.page_action`, the chat page runs the named action (`selection`,
+  or any on `window.platoPageActions`; the page declares them as `actions` in its context, and an undeclared one is
+  refused) and sends the result as the answer, so it is remembered like any answer and needs no waiting route.
+  `show_rule(pack_id, rule_id, version)` puts a `rule_view` artifact on the turn, drawn as the rule's code and facts
+  read from the pack or its draft. Code blocks in replies get a Copy button (+130 / -8 lines, 8 files).
+
+- **Adjudication evidence is scoped per segment.** The adjudication step makes one segment per policy
+  (`<step>:<policy>`), so a failed call leaves only that policy's rules INDETERMINATE and the calls run
+  concurrently; a long field (over `evidence.inline_min_chars`, 2000) that two or more rules of a segment read
+  is rendered once under EVIDENCE and the rules point to it. `adjudication.yaml` gains an `evidence:` block:
+  `mode: tools` writes the run's documents to a scratch directory as `D<n>.md` and hands the model list, read
+  and search tools bound to that directory alone (`read_cap_kb` 10: a read over it errors and the model pages;
+  `max_turns`; search output cut at 200 lines), inside `EvidenceWorkspace.open()` over the spec's `mounts`
+  (default `documents`); `grounding: {source, top_k}` injects the best-matching sections of the pack
+  directory `source` (`.md`/`.txt`, no model call, cached by corpus fingerprint) into each segment's prompt;
+  `warn_prompt_chars` records an oversized prompt. A missing grounding source or an oversized prompt is
+  recorded and the run goes on; `strict: true` refuses the segments instead. The step's output carries
+  `adjudication.evidence: {segments: [{key, rules, failed, calls, tokens, cost_usd}], warnings}`, each
+  segment's usage also counted in `trace.usage["adjudication"]`. Defaults are `mode: inline` and no grounding;
+  the saving of tool mode is not yet measured (+550 / -34 lines, 8 files).
+
+- **Email drafts from a case's open conditions.** The `case_run` ground kind writes `open_conditions.json`
+  (`ground_kinds.open_conditions`: the conditions the run's adjudication left unresolved, each with its rule), the
+  Acra assistant pack's `borrower_email` skill drafts from it and puts the draft under `propose_artifact` as an
+  `email_draft` (subject, body, condition ids), the platform codec carries it as the `email_draft` frame, and the
+  chat page shows it as a card with Copy and a mail-client link. Nothing is sent (+85 / -8 lines, 8 files).
+
+- **Typed conditions are visible: step output, runs page, scorer, quickstart.** The adjudication step's output lists
+  `open_conditions` (each with its rule id and typed fields) beside `condition_watermark`; the runs page's outcomes
+  table shows a condition's id, kind, timing, party and subject beside its title; `ConditionTypingScorer`
+  (`adjudication_condition_typing`, not in the default set) scores the share of open conditions carrying an id and
+  the declared fields and names the bare ones; the pack quickstart describes the condition fields, the
+  `conditions:` vocabulary block, `carries_conditions` and the `subjects:` template block (+77 / -2 lines, 8 files).
+
+- **A condition can name one subject of the case, shown to the model as a token.** A pack's `jtbd_template.yaml`
+  `subjects:` block (`collection`, `id_field`, `name_field`) says where the case record lists them (borrowers,
+  properties); the run tokenizes them `S1`, `S2` in order, the prompt shows token and name and never the id, and a
+  condition's `subject` is mapped back to the id on `OutcomeCondition.subject_id`. A token the run did not offer
+  goes back as retry feedback, a restated condition keeps its prior subject when the answer names none, and a pack
+  with no block is not checked (+172 / -17 lines, 8 files).
+
+- **Conditions have stable ids, and a tied vote keeps every vote's conditions.** The adjudication step numbers each
+  condition without an id `C<n>`, continuing from a watermark (`adjudication.condition_watermark`, carried by
+  `RerunBasis.condition_watermark`, so a full rerun on a new pack version continues too); a condition keeps its id
+  across reruns when the answer `restates` it, and one stored as text is numbered on its first run. Replicas that
+  reach the same status have their conditions united (by id, then by title) rather than the winner's alone (+138 / -3
+  lines, 5 files).
+
+- **A batched answer's conditions are validated and the model is asked again.** While the call is in flight the answer
+  is held to the rule's outcomes (`carries_conditions` true needs a condition, false takes none), the pack's
+  vocabulary for kind, timing and party, and the prior condition ids it may restate or resolve. A failure goes back
+  as the usual retry feedback naming the rule and field, never the model's values; a rule whose outcomes leave
+  `carries_conditions` unset is not checked. Once the retries are spent the call fails, so every rule in that
+  segment is INDETERMINATE (+152 / -9 lines, 3 files).
+
 ## [2.6.2] - unreleased
+
+- **The document upload cap defaults to 100 MB.** `PLATO_DOCUMENT_UPLOAD_MAX_BYTES` was 32 MB, below a funded loan
+  file's single PDF (about 54 MB); the deployment table now says an upload is read into memory, so each concurrent
+  upload can hold up to the cap. A test uploads 33 MB with no cap set (+17 / -2 lines, 3 files).
+
+- **Adjudication conditions are typed end to end in the batch.** A batched answer's conditions carry title,
+  description, kind, timing and party (plain text still reads as a title), and the prompt names the pack's
+  vocabulary values. A rerun's prior conditions are listed by id (`P<n>` for one stored as text); the answer sets
+  `restates` to carry one on, which keeps its id, and lists the ids it `resolved`; an unknown id resolves nothing.
+  The outcome records typed conditions under `narrative.conditions`, `carried_conditions` and
+  `resolved_conditions`, and `outcome_conditions` returns `OutcomeCondition`s. `batch_outcome` takes typed
+  conditions, and the runs page reads both forms (+205 / -49 lines, 7 files).
+
+- **The runs page starts a case.** A "Start a case" panel takes a pack (with optional version, model and
+  reading engine), loan documents and a case record as JSON (either may be left out), uploads each file to
+  `POST /documents` showing the server's refusal sentence, submits `POST /packs/{id}/runs` with the record and the
+  documents' ids, and opens the new run, whose steps and polling show how far it is (+75 / -12 lines, 2 files).
+
+- **An evaluation authoring assistant (`eval-authoring`).** Every tenant has it beside `policy-authoring`
+  (`evaluation.authoring_chat`, `server.eval_authoring_assistant`; Plato's `eval_authoring_chat_assistant`). Its tools
+  read an assistant's persona and skills, draft test cases from them (an `eval_cases` artifact: a dataset of
+  `{"query"}` cases with criteria, tagged synthetic control, capped at 20), draft a natural-language scorer from a
+  check in plain words (an `eval_scorer` artifact, validated as a `CustomScorerDefinition`), and diagnose an
+  experiment's failures grouped by cause (assistant, case or scorer) with a revised persona. Nothing is saved by the
+  assistant: the chat page shows each draft and saves it through `eval/datasets` or `eval/custom-scorers` on Save
+  (+420 / -2 lines, 8 files).
+
+- **Typed conditions, the model and the vocabulary.** `OutcomeCondition` (id, kind, title, description, timing,
+  party, resolution, subject, documents) and `ProcedureOutcome.carries_conditions` (true needs a condition, false
+  takes none, unset unchecked; the default CONDITIONAL outcome sets it). The SDK ships a condition vocabulary as
+  `condition_vocabulary.yaml` (no kinds, a pack declares its own; timings, parties and resolutions from the production
+  condition ontology) and `AdjudicationAgentSpec.conditions` replaces any field per pack; `as_conditions` reads conditions
+  stored as text. Nothing reads them yet: the batch contract, validator and ids follow (+160 / -4 lines, 7 files).
+
+- **Pricing: Sonnet 5.5 cache reads, Sonnet 4.5 deprecated, `gemini-4-argon` priced.** The vendor page
+  lists Claude Sonnet 5.5 cache hits at $0.10 per MTok (0.05x input, a footnoted exception), where the row
+  had $0.20; Claude Sonnet 4.5 is marked deprecated. `gemini-4-argon` is a priced-only row at the current
+  paid rates ($2 / $10 / $0.10, doubling on 2026-12-01 as the page says, noted in its provenance); its context
+  window and status need a human before a card. `gemini-3-flash-preview` stays undeprecated: the page calls it
+  legacy, not deprecated. The anthropic and gemini verified dates move to 2026-10-14; openai stays at 2026-09-30, since four gpt-6-sol rows the script flagged were not checked by hand (+23 / -8 lines, 1 file).
+
+- **Pack logic Plato held moves into the SDK.** Activation windows and their warnings
+  (`pack.activation_window`: `activation_window`, `guideline_start`, `record_activation`, `ValueError` for a
+  refusal), one ISO day parser (`version_windows.parse_iso_day`), the corrections dataset's cases
+  (`correction_cases.corrections_cases`, also what `CorrectionCaseSync` reads), the draft's document registry
+  (`document_registry.draft_registry` and `registry_records`, one YAML reading for the registry file, the
+  merge and the draft), the guideline sections changed between two packs (`guidelines.guideline_changes`), the
+  release report over two stored versions (`release_report.release_report_between`) and the export's
+  readiness report and strict refusal (`jtbdset_export.readiness_report`, `require_ready`,
+  `ExportNotReady`), the solution view's material, the blueprint description and the bundle's guideline
+  files (`pack.solution_material`: `solution_material`, `describe_blueprint`, `bundle_guideline_files`,
+  `SolutionUnavailable`), the answer to a conversation's open card (`runs.conversations_db.answer_turn`,
+  `AnswerRefused`) and the runs page's rows (`runs.activity.recent_activity`). Plato's routes keep only the
+  422/404/409 mapping; no route changes, and a blank-but-present date stays a refusal and a strict export's 422 still lists every error (`release_report_between` takes the pack id and a keyword-only `records`) (+791 / -388 lines, 17 files).
+
+- **Plato 0.2.3 and `jazzx-plato-client` 0.2.3.** Both move together; the SDK stays 2.6.2 (+4 / -4 lines, 4 files).
+
+- **A follow-up that asks no card adds nothing, on either transport.** The blocking path kept the
+  artifacts and `made` links a follow-up produced when it asked no card; the streamed path dropped
+  them. Both drop them (the follow-up exists only to ask); its cost is still added (+10 / -4 lines, 2 files).
+
+- **The ask-as-a-card follow-up keeps what the first run made.** A turn whose reply ended on a prose
+  question and was run again as a card dropped the artifacts and `made` links the first run had
+  recorded, on both the blocking and the streamed path; the two runs' are now merged, a repeat once. A
+  blueprint with no member to wait on (every one optional and unresolved) no longer reads "pinned"
+  (+40 / -5 lines, 4 files).
+
+- **Review fixes to the assistant pages and their routes (slices 3-5).** Blocking `/chat` refuses an `answer`
+  (422: an answer is recorded on a streamed turn's run, which the blocking route has none of; it was
+  accepted and dropped, so the card stayed open and "approve" could be repeated); a completed turn with
+  no value is a success in the platform vocabulary; `bind_log_context(replace=True)` gives each turn its
+  own context so a turn without a trace id does not keep the last one's (`turn_origin` read it); a
+  `draft_file` artifact's target must be `<pack id>/<path>` (refused to the model, and the page
+  declines to apply a bad one); citations with no followable link open in the viewer; the widget makes
+  ids where the browser has no `crypto.randomUUID`. On the pages: the archive, bundle and guideline-file
+  downloads are fetched with the tenant and identity headers and saved as blobs (an anchor sent
+  neither); the logs page's turn label narrows the list to that turn; the ontology page names the
+  extraction run that proposed a proposal as the packs page does; a blueprint's "not activated" no
+  longer waits on an optional member that does not resolve (+110 / -40 lines, 11 files).
+
+- **Review fixes: the coverage page.** The page draws the loaded coverage before it reads the release
+  report, and a failing report is shown beside its section instead of aborting the page; the fixes list shows
+  an error other than "no feedback store" instead of reading it as "No approved corrections yet"
+  (+40 / -8 lines, 2 files).
+
+- **Review fixes: feedback routes, outcome and resume writes.** `POST /feedback/{id}/supersede` answers to
+  the router's `auth` dependency like the SDK feedback routes. `on_change` of the SDK feedback router runs
+  after a review, edit or delete has committed, so its failure is logged, not raised (the change happened and
+  the docstring no longer promises a retry runs it again); Plato's case sync no longer answers 409 for it.
+  A run outcome sent with corrections validates them (a feedback store, rule answers) before the Outcome is
+  written, and a resume that carries corrections checks what the resume can refuse
+  (`CaseRunService.check_resume`) before writing them. A draft's malformed `document_types.yaml` of any
+  shape (not only invalid records) is read as no registry (+120 / -30 lines, 9 files).
+
+- **Review fixes: version windows, the registry, the job set lint and registry proposals.** A fix activated
+  `immediately` lands on the edition it follows only until the next dated version's activation (a fix over a
+  later edition no longer reaches an earlier edition's cases); a `from_date` activation with no
+  `effective_from` is allowed and warns, in the activation answer and as a selection note (a refusal in
+  `strict`); a case date given as an ISO string with an offset is the same UTC day a datetime is. A document
+  registry whose records do not read is an empty registry and a `document_registry_invalid` lint finding
+  (`Pack.document_registry_error`), not an exception in lint, coverage, the export or the classifier. Coverage
+  resolves each document name through the registry (an alias or label is its document; one spelling of an
+  unknown name counts once). A computed metric is known by its `Entity.field` in the job set lint, whatever
+  selector its key carries, and a text ending in a capital letter (`Schedule A`) is not a cut sentence. Two
+  names for one registry entry are two `add_alias` proposals (their ids carry the alias) and two reference
+  adoptions of one entry merge their aliases. A parent loop in the registry keeps every class (the
+  first-declared of the loop is a root) and is a `document_type_parent_cycle` finding (+260 / -40 lines,
+  12 files).
+
+- **Third review fixes: document lookups, undated starts and review-path sync.** The `DocumentSource`
+  protocol, its test stubs and the three callers that resolve a document (the case-run pin and the two
+  document routes) name `DocumentNotFound`, not `LookupError`. An undated `from_date` activation is no longer
+  noted per selection (its start is its recorded activation; the activation answer already warns once), so
+  it cannot refuse a case under `strict`. A failed `on_change` after a feedback edit, review or delete
+  (the review that approves a correction is what creates its gold case) is still logged and the change
+  stands, and the response carries the header `X-On-Change-Failed: 1` (the reason stays in the log). The
+  run page's corrections field takes the same JSON object as the sheet (one fact syntax), a deeply nested
+  cell skips its row like any unreadable one, and a failed read of the correction record in the corrections
+  write is `case_sync: failed`, not a 500 (+45 / -40 lines, 11 files).
+
+- **Second review fixes: the sheet's fact cell, the registry, case sync, selection and cited text.** The
+  corrections sheet's `fact_corrections` cell is one JSON object (blank for none), read with `json.loads`; a
+  row whose cell is not an object is skipped with the reason and the good rows still import (the `fact=value;`
+  form and its quote-aware splitter are gone); `evidence_page` is read with `int()`, so a digit like `²` stays
+  text. A registry file that is malformed YAML, escapes the pack, or sits behind a dependency cycle is the
+  `document_registry_invalid` finding like any unreadable registry. A gold-case sync that fails after a run's
+  corrections are committed, for any reason (`DatasetConflict`, a name clash, the database), is logged and
+  named in the answer as `case_sync: {status: failed, reason}` (the record itself carries no mark: the
+  repository has no metadata edit). An undated `from_date` activation adds its "starts at its activation"
+  note only when it is the version used or one whose window holds the case, so under `strict` it no longer
+  refuses every case. Cited text catches `DocumentNotFound` (new, a `LookupError`) from the document store, so
+  a `KeyError` from a bug is not taken for a deleted document (+126 / -71 lines, 10 files).
+
+- **Review fixes: corrections, the judges and the corrections sheet.** A correction written by any route
+  (the run's corrections, a resume or outcome that carries them, a sheet import) resets its review, so it now
+  syncs its gold case through `CorrectionCaseSync` (`create_runs_router(correction_cases=)`): an edit takes
+  the case away until it is approved again. A case is removed on a record no longer approved or deleted even
+  when its run has been purged (the pack comes from the record). A judge's outright `passed` decides, either
+  way, and its score only when it gave none (`JudgeVerdict.passed` and `JudgeStep.passed` are optional;
+  `verdict_passed`): the contract judge scorer and policy, the pair-match scorer, the agent judge and
+  `citation_support` read a verdict alike (before, a score of 0.7 or more overrode an explicit fail). A
+  corrections sheet read back after an unchanged export changes nothing: `evidence_page` returns a number and
+  a whole float cell an integer (the fact cell is a JSON object, see the next entry). A cited document since deleted leaves its rule not judged
+  (`cited_context` catches `LookupError` too) (+240 / -30 lines, 12 files).
+
+- **Review fixes to interaction and the bundle.** The follow-up that asks a prose question as a card sends
+  the note alone when the conversation's session already holds the turn and its reply (it resent both, so
+  the session held them twice), and a streamed reply that ends on a prose question is now asked again as a
+  card after it streams (the streamed text stays as the answer, the card rides the final response, the
+  usage is added). The question desk is bound only for an agent whose spec sets `interaction`, so another
+  agent's gated tool runs instead of being refused for want of a desk. Bundle entries carry the regular
+  file mode the pack archive gives its own (`ARCHIVE_ENTRY_MODE`) (+120 / -25 lines, 6 files).
+
+- **Provenance from chat tools: where an extraction run or a proposal started, and what a turn made (A7.3).**
+  `ExtractionRun.origin` and `Proposal.origin` (`conversation_id`, `turn_id`, `assistant_id`; optional,
+  inside the stored JSON, so no migration) are set by the authoring chat's `start_extraction` and
+  `propose_rule_edit` from the turn running (`log_context.turn_origin`), and by nothing else; nothing reads
+  them as a condition. The review view carries a proposal's `origin`. A turn's tools say what they made
+  (`record_made`: `InteractiveResponse.made`, the reply, the journaled value, the conversation read, the
+  platform `final_result`), and the chat shows it as links. The extraction page shows "Started from" with a link
+  to the conversation and opens for the pack a link names; the packs page's proposal queue and the ontology
+  page show "Filed from" the chat turn, or the extraction run that proposed it. An extraction run's own
+  proposals are traced through the run's origin; no chat tool starts a correction, so none carries one
+  (+250 / -10 lines, 14 files).
+
+- **A shared trace viewer and a conversation or turn filter on the logs page (A7.2, A7.4).**
+  `{prefix}/trace/ui?id=` opens one canonical trace: its steps in order with status, time and tools,
+  each opening to its inputs and outputs, with links to the logs of that trace and to the conversation or
+  case it belongs to. Its renderer (`renderTrace`) is the chat inspector's, so the drawer and the page show the
+  same thing, and the drawer links to the page. A trace id on the runs page (a case run's detail, a turn's row),
+  the evaluation page's feedback detail and the logs page now links to it. `jazzx_sdk.observability.log_context`
+  binds the turn, conversation, assistant and trace a task is working under; the log buffer stamps each record
+  with it (`context`), Plato binds it for a streamed turn (and logs its start and end) and a blocking one,
+  and `GET {prefix}/logs` filters on `conversation`, `run`, `trace` and `assistant`; the logs page has the inputs,
+  shows each record's context as links, and reads them from the query string (+390 / -30 lines, 12 files).
+
+- **Assistant turns on the runs page beside case runs (A7.1).** `TurnRunStore.recent(limit, kinds,
+  input_equals)` (both stores): runs of any status, newest first. `GET {prefix}/activity?type=all|assistant|case
+  &status=&subject=&assistant=` lists them for the tenant: an assistant turn with its question, assistant,
+  subject, conversation and cost (summed from the turn's cost records), a case run with its pack, version
+  and case, and `stuck` on a turn that never finished and has not moved; a turn of a conversation the
+  caller cannot read is left out. The runs page gains "Recent runs" with the type, status, subject and
+  assistant filters, a link from a turn to its conversation (the assistants page opens the conversation a
+  link names), the case finder for a case run, and Recover on a stuck turn. The client gains `activity`,
+  `export_conversation` and `document_content` (the last two were missing from the previous round)
+  (+330 / -5 lines, 11 files).
+
+- **Artifacts to review then apply, a citation viewer, conversation export, and "ask about this" (A3, A6).**
+  `propose_artifact` (an interaction tool) records something appliable for the user to review and does not
+  end the turn: `Artifact` (`kind`, `target`, `content`, `title`, `base_digest`) rides
+  `InteractiveResponse.artifacts`, the reply, the journaled value, the conversation read and the platform
+  `final_result`; at most five a turn and 200,000 characters each. The authoring assistant gains
+  `read_draft_file` (text and its sha-256 digest) and is told to propose a whole new file as a `draft_file`
+  artifact with that digest, never to say it applied it. The chat widget renders each artifact as a card
+  with a line diff against the draft as it is now, Apply and Discard: apply writes the draft file; a draft
+  that moved since the digest asks first (a confirm dialog); the target locks while an apply runs; what the user
+  chose is kept in the browser. A citation without a link opens a viewer over the guideline file or
+  document text (new `GET {prefix}/documents/{id}/content[?text=true]`). `GET .../conversations/{id}/export`
+  returns the conversation, its turns and each readable trace as one JSON document, and the widget
+  downloads it. A solution-page job's popup asks the docked assistant about that job with its context. Not
+  built: browser-answered tools and typed widgets by message kind (no producer yet) (+620 / -20 lines,
+  14 files).
+
+- **A stream in the platform chat UI's vocabulary, `?format=platform` (A5).** `jazzx_sdk.streaming.platform_codec`
+  maps a run's journal to the named SSE events the UI's stream component listens for, with the fields it
+  reads: `status` (`phase`, `label`, `state` start/progress/end, `lanes`), `reasoning`, `llm_chunk`
+  (`text`), `tool_start`, `tool_end`, `final_result` (`text`, `citations` in its `type`, `entity_id`,
+  `doc_entity_id`, `page_number`, `short_desc`, `anchor`, `link` shape, `email_draft` when the reply's
+  structured output carries one, and a pending `needs_decision`), `error` and `done`, each with the
+  `id: <ms>-<seq>` the UI reads its time from, and `invocation_start` naming the run first. A failed turn
+  is `error` then `done`, a stopped one `done` marked interrupted. The chat stream and the run replay
+  route take the parameter; the default format is unchanged, and the client keeps its own. The frame
+  sequence is held to a fixture written from the UI's handlers (two specialist calls, a citation with a
+  page and an email draft). Tool and reasoning frames appear when the journal carries them: the SDK's own
+  tool and reasoning events travel a side channel today and are not journaled (+330 / -10 lines, 6 files).
+
+- **The draft file limit is a setting, the release report is gated like the other reads, and the activation
+  table keys on its tenant.** `PLATO_DRAFT_FILE_MAX_BYTES` (default 1 MB, read per write, on `/config`) is the
+  most a draft file may hold, and a write within a tenth of it is logged, so a policy file of a guideline's
+  jobs meets the cap as a warning first. `GET /packs/{id}/release-report` takes `from` and `to` after the
+  strict-posture gate instead of before it (a missing one is a 422 once past the gate). `pack_activation` has
+  a unique `(tenant_id, id)` like the other tenant tables (+60 / -12 lines, 7 files).
+
+- **KernelClient builds its chat request from names the pinned kernel-client has, and says plainly what it cannot
+  do.** `create_chat_completion` imported `LLMUserMessage`, `LLMMessageContent` and `LLMMessageContentType`, which
+  the generated client no longer has: it now builds `LLMUserMessageInput` or `LLMAssistantMessageInput` by each
+  message's role (a system message joins the request's system text; a `tool` message is refused), and sends
+  `temperature` and `max_tokens` as the open invocation parameters they are (set as attributes they were never
+  serialised). The pinned client has no tools API, so `call_tool`, `list_tools` and `get_tool` raise
+  `KernelToolsUnavailable` (they imported modules that do not exist, and `list_tools` and `get_tool` hid that by
+  returning nothing). `tests/test_kernel_client_imports.py` resolves every `from kernel_client... import X` under
+  `jazzx_sdk` against the installed package, and builds a chat request through the real models, so a regenerated
+  client cannot break the SDK unseen (+150 / -140 lines, 2 files).
+
+- **Plato's own data as ground sources, approved feedback in the prompt, and the Acra case assistant (A2).**
+  Four ground kinds (`jazzx_sdk.pack.ground_kinds`), each writing what it reads as files so the agent
+  reaches it through the capped list, read and search tools every file-writing source gets: `guidelines`
+  (a set's published version, one file per document with text, cited by set, version and path),
+  `pack_policy` (a pack version's rules, one file each, Python as `.py`), `case_run` (the run's findings
+  and raw output) and `case_documents` (the documents the run was pinned to, as text). They read the
+  turn's tenant from `scope["tenant_id"]`, which Plato sets and a caller cannot; a foreign run, a missing
+  set or an unwired store leaves that source degraded and the turn running. They are known by name
+  wherever the SDK is, so a pack naming them checks and publishes anywhere, and
+  `register_hosted_ground_kinds` wires them in Plato. `InteractiveAgentSpec.feedback`
+  (`entity_type`, `entity_id` defaulting to the agent's id, `top_n`, `template`) puts the entity's
+  approved, non-duplicate feedback most like the question into the persona prompt through
+  `render_feedback_block`; no spec, no source, no items or a failing source leave the prompt alone, and the
+  span records which (`db_feedback_source` reads the store for the scope's tenant; `AssistantRuntime.set_agent_extra`
+  hands it to the agents). The sample `acra-dscr-assistant` pack (1.2.0) is now an orchestrator with
+  `loan_case`, `policy_guidance` and `borrower_email` specialists, each reading only its own sources, and
+  enables the feedback. Not built: page locators in guideline citations (text has no pages) and typed
+  conditions in `case_run` (+700 / -30 lines, 17 files).
+
+- **The release report from the command line and the coverage page; the publish check compares across
+  versions.** `python -m jazzx_plato_client activate --pack --version --applies --effective-from
+  --effective-to` and `release-report --pack --from --to [--format xlsx -o file] [--no-gold]`. The coverage
+  page takes a "changed since" version beside a published version: it marks each job the version adds, removes,
+  renames or changes, lists every change (jobs, rules, documents, catalog) and downloads the release report
+  workbook. `POST /packs/check` and publishing hold the archive's document registry against the pack's newest
+  published version (`check_pack_archive(previous=)`, `lint.previous_pack`, also what the draft lint run
+  uses): an id deleted without a successor is a `document_type_vanished` warning, never a block
+  (+150 / -30 lines, 9 files).
+
+- **The solution bundle, `GET {prefix}/blueprints/{id}/bundle.zip` (solution view V3).** One zip
+  (`jazzx_sdk.pack.bundle`): the guideline files of the newest published version, the newest job set as
+  the export (`jobs/*.json`) and readable (`.md`), the reference set as `jobs/version_0/`, one file per
+  Python rule under `code/<policy>/` (its header naming the job it implements), `ledger.yaml`, the
+  coverage workbook and, with a stored alignment, the alignment workbook, and a README that names
+  whatever was left out (a pack that cannot export, no ledger, an unaligned reference) instead of
+  refusing. `?versions=all` adds the earlier job sets and every published guideline version. Member
+  paths are made safe, and the zip is deterministic. The page links both downloads; the client gains
+  `blueprint_bundle`. Not built: code from segments still proposed (+250 / -50 lines, 7 files).
+
+- **A dotted path reaches a key that holds dots.** With derived metrics and facts named `Entity.field`, a
+  path such as `assessment.derived.LoanCore.cltv_percent` read as missing in every reader that split it on
+  each dot. One walk (`jazzx_sdk.util.paths.dotted_get`, and a copy in `jazzx_eval_contracts` which cannot
+  import the SDK) tries the longest key the remaining parts spell, then shorter ones and the nested form:
+  the eval contracts' path scorers and expected-answer reads, the judge cache's list path, the conductor's
+  record and decision paths, an evidence tool's input source, a gold case's required fields, and a policy
+  assessment's case date field (+170 / -30 lines, 12 files).
+
+- **The solution page, `{prefix}/blueprints/{id}/ui` (solution view V2).** One page per blueprint over the
+  solution route: the members at their resolved and pinned versions with archive downloads, the guideline
+  set's newest version with each file as a download and the earlier labels, the coverage summary and
+  the aligned reference's state; then one row per job of the newest job set (job and kind, requirement,
+  disposition, the code rules each opening that rule's source and facts, reads and missing data) with a
+  filter by text, disposition and kind, and a CSV of the filtered table. A job's history popup shows
+  each earlier version's text and checks (marked where they differ), its code then, and version 0: the
+  reference jobs aligned to it with their relation, text and note, or "no match" / "not aligned yet";
+  its JSON downloads from the popup. A toggle lists the reference set's jobs with the newest jobs each
+  maps to, or "none: we missed this". The packs page links each blueprint to its page and no longer
+  counts a reference member as unpinned. Not built: the xlsx of the table (the bundle will carry the
+  workbooks) and an open-draft toggle (+300 / -3 lines, 5 files).
+
+- **The solution view's data, `GET {prefix}/blueprints/{id}/solution`.** The blueprint as described, with
+  the newest job set of its policy member as rows (`jazzx_sdk.pack.solution_view`): kind, requirement
+  text, checks, disposition, the code rules deciding it, reads and missing reads, documents; per job
+  its history, one entry per earlier published version (up to eight, newest first: present or new,
+  the text and checks then, `changed`, the code then, found by the same rule id or an id the newer rule
+  `replaces`); and, with a `reference` member and a stored alignment, the reference jobs mapped to it with
+  their relation and text, plus every reference job with the newest jobs it maps to (the "we missed
+  this" view). A missing reference, alignment or earlier version leaves that part empty. The client
+  gains `blueprint_solution` and `guideline_set` on `put_blueprint` (+330 / -5 lines, 6 files).
+
+- **A blueprint carries a reference job set and its guideline set (solution view V1).** A fourth member
+  role, `reference`, names a domain pack holding a job set imported from outside (a hand-built set): it
+  is resolved and listed beside the others, never activated or pinned, and one that does not resolve
+  does not block the blueprint. `Blueprint.guideline_set` (column `guideline_set`, migration 0031) names the
+  guideline set the solution is written from; the blueprint read describes it (`guidelines`: the set's
+  versions newest first with their labels and digests, and the latest published one), and answers `null`
+  for a blueprint naming none and the bare set id when the store cannot be read (+190 / -10 lines, 8 files).
+
+- **A docked assistant on the pages that share the helpers.** The shared page script now carries the chat
+  widget and `assistant_dock.js`: an "Assistant" button opens the same chat in a side panel on the coverage,
+  compare, extraction, ontology, runs, reviews and scorers pages (the full chat page sets
+  `PLATO_FULL_CHAT` and does not dock). A page registers what is on screen with `platoContext({...})`,
+  and the panel sends it with each turn as `scope.page` beside the route, which `page_context` reads; the
+  coverage, extraction and runs pages register their pack, version, run and case. `platoState.dock.ask(text)`
+  opens the panel and sends a question. The widget injects its own styles; the dock remembers the chosen
+  assistant. The packs, dashboard, evaluation, logs and details pages do not use the shared script and have
+  no dock (+190 / -50 lines, 9 files).
+
+- **Plato answers a question card, and the authoring assistant asks before it extracts.** `/chat` and
+  `/chat/stream` take `answer: {key, value}`: it must answer the card the conversation's latest turn
+  stopped on (`needs_decision` now rides the reply and the journaled final value), is validated against
+  the options it offered, is kept on the run, and reaches the agent as `scope["answers"]` (every answer
+  the conversation holds) and, for an approval, `scope["approved"]` for that card's fingerprint only. A
+  caller's own `answers` and `approved` scope keys are dropped. The conversation read carries each turn's
+  card and the answer that followed. `policy-authoring` runs with `interaction`: `start_extraction` answers
+  `NEEDS_APPROVAL` until the user approved that exact document, pack, policy and representation, and its
+  persona asks decisions as cards and reads `page_context`; the card names the action and its size (no
+  price is claimed: there is no extraction estimator). The page renders the card, its options or text
+  box, an approval's action and arguments, and marks an earlier card answered or superseded. The client's
+  `chat` and `stream_chat` take `subject`, `answer_key` and `answer_value`; the answer route has a
+  scripted-model test through the real runner (+410 / -20 lines, 11 files).
+
+- **A guideline version says the day it takes effect, and a dated window starts there.**
+  `GuidelineVersion.effective_from` (optional; column and migration 0031): given at publish
+  (`effective_from` on `POST /guidelines/{set}/versions`, client `publish_guideline`) or said or unsaid later
+  with `PATCH /guidelines/{set}/versions/{n}` (client `set_guideline_effective_from`); it is not content, so
+  the version's digest is unchanged. A `by_case_date` activation with no `effective_from` takes the
+  effective date of the guideline version its pack is certified against, and the answer's
+  `effective_from_source` names it (`acra@G2`); with none, the window starts at activation with a warning, as
+  before (+110 / -4 lines, 9 files).
+
+- **Document registry proposals read by a model, reviewed and merged like catalog proposals.** A new
+  `documents` extraction representation (`POST /authoring/extract/{pack}/runs`, `representation=documents`,
+  `references=` naming reference taxonomies) reads policy documents in parts, asks a model for the documents
+  each part names (name, category, kind, cues, a quoted excerpt; a candidate whose excerpt is not in the text is
+  dropped), merges candidates for one document, and files each against the draft's registry and the references
+  as a `Proposal(kind="document")`: `matched`, `reusable` (adopted with its `x-source`), `alias` (the name added
+  to a near-identical entry) or `new`. A taxonomy reference is a document classification ontology stored in the
+  catalog reference library (or a pack's registry). `POST /authoring/review/{pack}/merge-documents` writes the
+  accepted proposals into the draft's `document_types.yaml` (validated as a registry or nothing is written) and
+  names it in the manifest when the manifest names no registry; client `merge_documents`. `Proposal` gains
+  `document` and the `alias` category. Not built: a page for these proposals (the ontology page lists them by
+  kind), and a guideline's effective date as a window's default start (guideline versions carry none)
+  (+520 / -20 lines, 14 files).
+
+- **Interaction tools: questions as cards, approvals pinned to an action, page context.** An agent whose
+  spec sets `interaction` runs the agentic path (with or without skills) and gets `ask_choice`, `ask_text`,
+  `propose_action` and `page_context` (`agents.interactive.questions`). A turn that asks ends on a
+  `Decision` in `InteractiveResponse.needs_decision` (now with `key`, `kind` of choice, text or approval,
+  `fingerprint` and `detail`), the question as its answer text, on the blocking and the streamed path alike.
+  Choices are normalized (key slug, trimmed labels, repeats dropped, two to eight options); a key the caller
+  already answered (`scope["answers"]`) comes back as an answer, not a question; one question per turn. A
+  tool gates an expensive action with `require_approval(action, arguments, ...)`: until
+  `scope["approved"]` holds the fingerprint of that exact action it answers `NEEDS_APPROVAL`, and the model
+  turns the fingerprint into an approval card with `propose_action`, so an edit after the card was shown is
+  not approved. A reply that ends on a question in prose is run once more with a note to ask it as a card
+  (blocking path only: streamed text cannot be taken back), its usage added. `validate_answer` checks a
+  caller's answer against the card it was offered. `page_context` returns `scope["page"]`. The client gains
+  `list_conversations`, `get_conversation`, `rename_conversation`, `archive_conversation`,
+  `recover_conversation`, `pack_rule`, `pack_alignment` and `guideline_file`; the tests gain a scripted
+  tool-calling model for the real runner (+720 / -20 lines, 13 files).
+
+- **A release report: what a new pack version changes.** `GET /packs/{id}/release-report?from=&to=`
+  (`?format=xlsx` a workbook, `?gold=false` without the gold cases; client `release_report` and
+  `release_report_xlsx`) compares two published versions: jobs added, removed, renamed (by mnemonic) and
+  changed (requirement text, skill, kind, documents, reads); rules added, removed and changed, with the
+  scalar differences (`condition.value: 10 -> 12`, or `code changed`) and the job a code rule implements;
+  documents added, renamed through an alias, retired and removed without a successor; catalog fields added
+  and removed; coverage by disposition before and after with the schema backlog's change; and the guideline
+  sections changed between the two certified guideline versions. Each case of the pack's corrections
+  dataset is assessed on both versions without a model and listed as unchanged, newly passing, newly
+  failing, answer changed, or answer changed with the rule it asks about changed (the candidates for
+  marking a case superseded); a case a version cannot assess is noted, a disputed rule is not checked. The
+  report states its cost (no model calls). `activate_pack` takes `applies`, `effective_from` and
+  `effective_to`, and `ActivePack` carries `activations`. Not built: the CLI command and the coverage page
+  column; the release report's open runs a retroactive version would change
+  (+640 / -5 lines, 9 files).
+
+- **Date-selected pack versions.** A version is activated with a mode: `immediately` (the default, every
+  case from then on, as before), `by_case_date` (cases dated in `effective_from`..`effective_to`) or
+  `from_date` (cases dated from a date, which may be in the past): `POST /packs/{id}/{version}/activate`
+  takes `?applies=`, `?effective_from=` and `?effective_to=` (422 for a bad mode or date, a `from_date`
+  with no date, a window that ends before it starts; warnings in the answer for a dated version with no
+  start or a pack with no case date field). Every activation is kept (`DbPackActivationStore`, table
+  `pack_activation`, migration 0030) and listed under `activations` on `GET /packs/{id}/active`. A pack's
+  `policy_assessment` step names the case date (`case_date_field`, a dotted input path); a case run or
+  assess call with no named version is judged by the version `select_version` picks: the dated version whose
+  window holds the date (the newest published of several), else the nearest earlier window, else the
+  version in force before the first dated one; then the newest `immediately` version activated after a dated
+  choice, so a fix lands on top of the edition. A case with no date takes the newest activation. Each
+  assumed choice is a note on the run's and the assessment's `selection` (with the reason); the step's
+  `strict_selection: true` refuses instead. A named `?version=`, a rerun and a pack with no dated
+  activation are judged as before. Inside a version, an assessment of a dated case drops the policies
+  outside their own effective and expiry window, and takes the case date as its evidence freshness date.
+  Not built: the certified guideline's effective date as a window's default start, the runs page showing
+  the selection, and the open runs a retroactive version would change (R2)
+  (+590 / -10 lines, 12 files).
+
+- **The assistants page, `{prefix}/assistants/ui`.** Plain HTML and JS in the other pages' shell: an
+  assistant picker, a subject filter, the conversation list (archived on request), and a chat widget
+  (`assistant_chat.js`, inlined after `shared.js` so the docked panel can reuse it) with the transcript
+  as markdown, the streamed answer, the status lane, a stop button, citations as links, an inspector
+  drawer over the turn's trace, a thumbs reaction written to the feedback routes with the turn's ids,
+  rename, archive and recover. The page sends its route and subject as `scope.page` with each turn. It is
+  declared before `/assistants/{assistant_id}`, which would take `ui` as an id, and linked from the nav
+  (+330 / -0 lines, 5 files).
+
+- **Assistant conversations: list, read, rename, archive, recover.** `DbConversationStore` (table
+  `assistant_conversation`, migration 0029) keeps a conversation's subject, title, owner and archived
+  flag; a turn through `/chat` or `/chat/stream` records it (`subject` on the request, the caller's id as
+  owner). The turns are the run store's: `GET {prefix}/assistants/{id}/conversations[?subject=&archived=]`,
+  `GET .../conversations/{cid}?limit=` (the last turns oldest first, question, answer, sources, status,
+  trace id; `older` says whether more exist), `PATCH` to rename, `POST .../archive[?archived=false]`, and
+  `POST .../recover[?stale_seconds=]`, which ends turns that never finished and have not moved as
+  interrupted, keeping what they streamed. A foreign owner's, another tenant's, an archived and a missing
+  conversation answer 404 alike, and a turn into a foreign one is refused. The routes mount with a
+  database (`conversation_store_for`) (+470 / -2 lines, 7 files).
+
+- **Propose registry entries from a hand-built job set's reference documents.**
+  `jazzx_sdk.pack.document_proposals`: `candidates_from_jobset` reads each job's "Reference Documents"
+  (category headings, `- Name: what it proves` bullets, `A / B` alternatives split) into candidates with
+  their category, cues, the jobs naming them and a count; `classify_document` sets each against the registry
+  and reference taxonomies (`matched`, `reusable` with the reference's `x-source`, `alias` of a
+  near-identical entry by word overlap with plurals folded, `new`); `reference_registry` reads a document
+  classification ontology (type, sub type and sub-sub type) or a registry-shaped file as a reference;
+  `apply_changes` writes accepted changes into registry records and refuses a result that is not a registry.
+  `scripts/local/build_document_registry.py` prints the proposals and, with `--out`, writes the registry.
+  On the Acra DSCR set it reads 188 distinct names: 23 reusable from the production ontology, the rest new,
+  many of them variants of one document (a parenthesised form number, a qualifier) a reviewer folds. Not
+  built: the model reading policies for documents, filing these as proposals in the proposal store (a
+  `document` kind, its migration and merge route) and a reference library for taxonomies
+  (+330 / -2 lines, 5 files).
+
+- **Solution view routes: a guideline file's bytes, one rule's code view, the stored alignment, an archive
+  link.** `GET /guidelines/{set}/versions/{n}/files/{path}` serves a file as published (`?text=true`: the
+  markdown it was read as; the path is matched against the version's files); `GET /packs/{id}/{version}/rules/{rule_id}`
+  (`jazzx_sdk.pack.rule_view`) returns a rule's policy, kind, clause, reads and, for a Python rule, its source,
+  entrypoint and case count, with `?policy=` when more than one policy holds the id (409 names them). An
+  aligned comparison of two published versions is stored per pair (`DbAlignmentStore`, table `pack_alignment`,
+  migration 0028) and read back with `GET /packs/{id}/{version}/alignment[?reference=pack@version]`, so
+  the page does not rerun a model; other sides (a draft, an uploaded set) are not stored and the answer
+  says `stored: false`. The packs page links each version's archive (+383 / -3 lines, 8 files).
+
+- **Variant blocks, a consumer's fixed blocks and per-job extraction targets in the exported job set.**
+  `JtbdTemplate.variants` (`name`, `values`) makes each value a block of every job, "no change" where no
+  program overlay fills it; an `ExportProfile`'s `fixed_blocks` do the same for the blocks a consumer
+  needs, chosen with `profile` on `export_pack_jtbdset` and on the draft and version export routes. A block
+  already present (without case) is not repeated. With an `extraction` block in the template (operations,
+  default and auto modes, `auto_approve_kinds` of registry document kinds, `exclude_fields`: all pack data),
+  each exported job carries `extraction_targets` (`entity_type`, `supported_operations`,
+  `default_extraction_mode`, `exclude_fields`, `description`), one per entity its documents `yield` as
+  `Entity.field`, narrowed to the entities the job reads, `AUTO_APPROVE`-style mode only when every
+  contributing document's kind is auto-approved; a job that already carries them keeps its own
+  (`pack.extraction_targets`) (+330 / -10 lines, 9 files).
+
+- **A registry document states "reads nothing" with `yields: []`, and a section can have several mnemonic
+  prefix families.** The classifier taxonomy now gives a document that states `yields` (even empty) a
+  `fields` list, so `yields: []` classifies without reading any field; one that omits it is read for every
+  field, as before. `MnemonicRules.families` (`{section: {prefix: description}}`) lets a section file jobs
+  under one of several prefixes: the writer is given the families and names one, an unnamed or unknown
+  family falls back to the section's first, and `prefixes` stays the one-family case; uniqueness is
+  still the readiness `duplicate-id` check's (+60 / -10 lines, 5 files).
+
+- **Job kinds and grain.** `JtbdTemplate.kinds` (pack data, empty by default) names the kinds a job may be,
+  each a `JobKind` with a description, `maps_to` (what it becomes in code; `derived_field` marks a
+  determination) and `expects_code`. With kinds declared the writer is asked for each job's kind, told to
+  write one decision per job, to name a determination instead of restating it, and its determinations are
+  written first within a section. The kind (matched without case) is kept in the job's metadata as
+  `job_kind`, an undeclared one as written with a note in the reasoning, and it is left out of the exported
+  job set. Lint warns on `job_without_kind` and `job_kind_undeclared`. Coverage adds each job's kind and
+  `kind_gap` (a kind that expects code, with no code written), `kind_gaps` per kind and `derivation_backlog`
+  (determinations not yet coded, the field-derivation backlog), with workbook columns and a Derivations
+  sheet. A pack without kinds behaves as before. Not built: a grain finding for a job that decides several
+  things (+330 / -10 lines, 8 files).
+
+- **A formula reads a dotted `Entity.field` name.** The expression DSL tokenised `LoanCore.cltv_percent`
+  as an error at the `.`; an identifier may now be a dotted path, read as one name, so a derived metric's
+  formula, a ratio rule and a threshold can use entity fields. A test renames six fact names of the DSCR seed
+  (inputs and the derived `cltv_pct` and `dscr`) to entity fields across its policies, metrics, profiles and
+  schemas, and checks that assessment on every gold case gives the same verdicts, binding cap, violated rules,
+  attestations and derived values, that lint reports the same findings, and that a python rule and the Z3
+  compiler read a dotted fact. Those were already accepted; only the formula tokenizer was not (+110 / -2
+  lines, 3 files).
+
+- **A document registry a pack's rules, jobs and classifier share.** A pack declares `document_types:` in
+  its manifest (`document_types.yaml`, merged across `depends_on` like evidence types): each document has an
+  `id`, `label`, `aliases`, a category `parent`, a `kind` (`borrower_supplied`, `third_party`, `closing`,
+  `system_record`, `other`), classifier `cues`, the catalog fields it `yields`, `valid_for_days`,
+  `sensitive`, and `retired` / `replaced_by` / `x-source`. `Pack.document_registry` resolves an id, alias or
+  label without case or punctuation (a retired id to its successor). When a pack has one, the classifier's
+  taxonomy comes from it (`document_agent.yaml` keeps its thresholds, and may be absent), the job writer is
+  given ids, labels and kinds and keeps a document the registry lacks as written under `undeclared_documents`
+  (the reasoning says so), the exported requirement's "Reference Documents" is rendered from labels grouped by
+  category with system records under their own heading, and coverage lists each job's documents with two gaps
+  (documents no classifier class recognises, fields no document yields). Lint findings are warnings:
+  `unknown_document_type`, `retired_document_type`, duplicate or ambiguous names, a missing or cyclic
+  successor, and `document_type_vanished` (`lint_pack(previous=)`: an id the last version held, neither kept,
+  retired nor aliased). Plato's authoring binds the template to the draft's `document_types.yaml`. A pack
+  without a registry behaves as before. The draft lint run holds the registry's ids against the version the draft
+  was opened from (`run_lint(previous=)`, the review router supplies it; a base that does not load is not
+  compared, and the lint memo is keyed by it); the publish check does not compare. Not built: the
+  extraction and import passes that propose registry entries from references (+796 / -22 lines, 13 files).
+
+- **A product policy no program claims no longer refuses the whole export.** `export_jtbdset`
+  left out a `scope: product` policy with no program instead of raising (exporting it as base would write
+  its rules as requirements for every program); the readiness findings name each one
+  (`product-policy-skipped`, a warning) and `strict` on the export restores the refusal
+  (`unclaimed_product_policies` lists them). A seed whose hand-built program policies declare no program now
+  exports its base jobs (+61 / -24 lines, 6 files).
+
+- **Does the evidence a verdict cites support it.** `citation_support`
+  (`jazzx_sdk.evaluation.citation_scorer.CitationSupportScorer`, registered when a judge model is given)
+  judges each satisfied or violated adjudicated rule from the rule, the verdict and its cited text only,
+  never the model's own reasoning, through the remembered, spend-capped judge the other judge scorers use
+  (scope `citation_support:v1`). Passes only if every judged verdict is supported; a rule citing nothing or
+  with no readable cited text is named in the result's `not_judged`, and a run with nothing to judge is
+  skipped. `CaseRunInvoker` now fills the scorer context (`rule_texts`, `cited_texts`) through
+  `pack.cited_text.cited_context`, converting each cited document once, checked against the pinned bytes
+  (`pipelines.steps.converted_document`, factored out of the document text step). The trajectory and
+  operational trace scorers are now in `standard_scorers`; no stock invoker attaches a trace, so on a case
+  without one they fail it with their existing message (+296 / -20 lines, 6 files).
+
+- **Which layer an approved correction says to fix, and the ranked fix list.**
+  `jazzx_sdk.pack.diagnosis.diagnose` checks in order: a disputed answer is `answer_key`; a rule whose
+  reads the run lacked is `schema_fact`; facts the reviewer says were read wrong, with the rule recomputed
+  on them (the rule's own condition evaluator, no model) giving the expected answer, is `document_reading`;
+  a code rule that still answers differently, on right or on corrected facts, is `rule_code`; a procedure
+  rule is `procedure_text` with a `target` of `job_text` or `prompt`, chosen by `model_chooser` (prompts
+  `corrections/diagnose_*`) from the job, the model's reasoning and the reviewer's note, else `undetermined`;
+  a rule not in the pack, or one that cannot be recomputed on the corrected facts, is `unclassified`.
+  Each `Diagnosis` names its ledger job; `fix_list` counts by layer and ranks by corrections per rule.
+  `CorrectionDiagnoser.diagnose_pack` reads the pack's approved, matched corrections (a record whose run
+  or pack version is gone is logged and left out). `GET /packs/{id}/corrections/fixes[?reason=true]`;
+  `?fixes=true` on both coverage routes adds the list to the report and a "Fixes" sheet to its workbook
+  (it adds nothing where no run or feedback store is wired); the coverage page shows it beside the ledger.
+  Client `correction_fixes` and CLI `correction-fixes` (+531 / -15 lines, 15 files).
+
+- **A reviewer's correction of a rule's answer, kept as a record and made a gold case on approval.**
+  `RuleCorrection` (rule id, `given` and `expected` as verdict plus the pack's status word,
+  `fact_corrections`, `evidence`, `answer_disputed`, `note`, `unmatched`) rides on
+  `Feedback.corrections`; one record per run (`fb_correction_<run id>`, category `rule_correction`, source
+  `user`, since the shared wire contract has no reviewer source), edited by sending a rule again
+  (`FeedbackRepository.edit(corrections=)`, a revision bump that re-opens review). Capture points:
+  `corrections` on `POST /runs/{id}/outcome` and on `.../resume` (written before the run continues),
+  `POST /runs/{id}/corrections` (a run finished or waiting at a checkpoint), a per-rule "Correct a rule's
+  answer" section on the run page, and a sheet: `GET /runs/corrections-sheet?run_ids=` (an .xlsx, one row
+  per rule answer, existing corrections filled in, cells through `xlsx_safe`) and `POST
+  /runs/corrections-import` (.xlsx or .csv). Tolerant: a row for an unknown run is skipped, a rule the
+  pack lacks or a word outside its vocabulary (verdicts, assessment outcomes, the adjudication agent's
+  `status_vocabulary`, statuses the run produced) is kept `unmatched` with the reason and makes no case; the
+  answer reports written, unmatched and skipped; `?strict=true` refuses the whole file (422) before
+  writing anything. The pack's `strict:` setting from the plan is a request flag instead. The evidence
+  column is three (`evidence_document`, `evidence_page`, `evidence_quote`). C2: on approval of a
+  correction record (`on_change` on the SDK feedback router, after a review, edit or delete) a case lands
+  in the pack's `corrections:<pack_id>` dataset (created on first use): input the run's inputs, expected
+  only the corrected rules (`{"rules": {id: {verdict, status}}, "disputed": [...]}`), metadata the run, the
+  pack version, the pack's guideline pin and the fact corrections kept apart. A disputed rule is tagged
+  and not scored. `POST /feedback/{id}/supersede {set_id, version}` (blank clears) marks the case
+  superseded; a re-approval keeps the mark; any other review state removes the case. The new
+  `rule_correction_agreement` scorer (registered by Plato, in `jazzx_sdk.pack.correction_scorer`) scores
+  the corrected rules only (an assessed rule by its outcome, a judged one by verdict or status), and
+  skips a disputed rule and a case superseded at or below the guideline the run's pack is certified
+  against (`CaseRunInvoker` now returns that pin as `guideline`; `PackManifestLoader.guideline_pin()`).
+  Client: `correct_case_run`, `corrections=` on `case_run_outcome`, `corrections_sheet`,
+  `import_corrections`, `supersede_correction`; CLI `corrections-sheet` and `corrections-import`
+  (+1427 / -29 lines, 23 files).
+
+- **Readiness checks on a job set's export.** `jazzx_sdk.pack.jtbdset_lint.lint_jtbdset` reports what a
+  downstream engine would reject at load or load wrongly. Structural checks hold for any consumer:
+  `duplicate-id` (job and metric mnemonics share one id space), `metric-key-owned-twice`,
+  `metric-key-format` (`Entity`, `Entity.field`, `Entity.field.sub`, `Entity[f=v].field`),
+  `metric-key-not-in-ontology` (only when the pack has a catalog), `cross-section-dependency` and
+  `dependency-cycle` (a job's text naming another job's mnemonic, or a declared `depends_on`; nothing
+  named, nothing said) and `text-lost` (empty or stopping mid-sentence an error, a list flattened to one
+  line a warning). Contract checks read an `ExportProfile` the pack declares per consumer in
+  `export_profiles/<name>.yaml`: `schema-invalid` (field caps), `output-contract` (the outcome status
+  vocabulary) and `calc-context-wrong` (a computed metric carries its formula). Severity is the check's
+  own unless the profile overrides it. `GET .../jtbdset/lint?profile=` (draft and published version)
+  answers `{profile, errors, findings}`; `GET .../jtbdset` takes `profile` and `strict` and refuses
+  (422, the findings named) only under `strict`, so findings never withhold a set. The export fills a
+  computed metric's `calculation_context` from its declared formula where the job gave none, and the
+  JTBD writer may state one. Client: `lint_jtbdset`, `lint_draft_jtbdset`, `profile`/`strict` on both
+  exports, CLI `lint-jtbdset` and `--profile`/`--strict`. Not built: the profile's condition-type and
+  one-subject-per-condition rules (conditions a decision carries at run time, which the export does
+  not contain; `TODO(profile-condition-rules)`), a coverage-page column for the findings, and a reader
+  for `AdjudicationAgentSpec.status_vocabulary` (it has no ordering to give a vote)
+  (+688 / -24 lines, 10 files).
+
+- **A pack's adjudication `persona` reaches the model.** `AdjudicationAgentSpec.persona` was
+  parsed from a pack's `adjudication.yaml` and read by nothing, so guidance a pack wrote there was
+  silently dropped. `run_segment` takes it and adds it after the evaluator instructions (the
+  evaluator's own rules stay first), and it is recorded as one of the call's prompts with its own
+  digest. `regime_values`, `status_vocabulary`, `mounts` and `segments` are still unread, now marked
+  `TODO(adjudication-spec-fields-unread)` (+31 / -5 lines, 4 files).
+
+- **Retries that match the failure, and a vote that does not depend on who answered first.** A
+  validation or truncation retry in `run_agent` sent the feedback and then the whole prompt again, so
+  the model saw the prompt twice (measured against the real SDK runner); the feedback is now the
+  retry's input and the session's own copy of the prompt is the only one. `run_agent` and
+  `run_with_recovery` retried every `APIStatusError`, a 400, 401 or 404 included, and read only a
+  seconds `retry-after`: they retry what `is_transient_error` calls transient and wait for the longest
+  ask `server_wait` reads (`retry-after-ms` and HTTP dates too), one rule for both. `modes.utils.
+  run_agent_with_retry` decided transience by looking for "503" or "connection" in the message, so a
+  503 whose text lacked them was not retried and a 400 whose text had them was; it now goes through
+  `retry_async` with the same rule and the provider's ask. `DeterministicVote` takes a `tie_break`, and
+  `pipelines.steps.adjudication_vote()` (both adjudication call sites) uses it, so of replicas that
+  agree on a verdict the one with the most conditions left open wins whichever answered first: a
+  conditional pass no longer loses its conditions to a clean one. The segment concurrency of an
+  adjudication is the named `DEFAULT_SEGMENT_CONCURRENCY`
+  (+287 / -87 lines, 10 files).
+
+- **Plato serves before its prompts are registered, and boot tests cannot block on output.** The
+  startup prompt sync now runs as a background task, cancelled at shutdown: registering prompt texts is
+  best effort, and a slow or absent database held the replica back from serving. The boot tests
+  (`test_plato_boot_contract`, `test_plato_boundary`) write the started Plato's output to a temporary
+  file instead of a pipe read only at the end, so no amount of startup output can fill the pipe and
+  block it; they pass against the old 94 KB flood too. Not added: skipping the sync when no connection
+  string is set, since the environment check can disagree with what `common`'s settings read from
+  `.env` and would then skip a working database; the sync already stops at its first failure
+  (+64 / -13 lines, 4 files).
+
+- **Prompt sync stops at the first registry failure.** A Plato started with no database (the boot
+  tests start one as `dev-daily`, where Postgres is expected and sqlite is not substituted) had its
+  registry refuse each of the 36 prompt files, each with a full traceback: about 94 KB of startup
+  output, which filled the 64 KB pipe the boot tests read only at the end, so the process blocked on
+  a log write and never served; five boot tests failed in CI. `sync_prompts` now stops at the first
+  refusal and says how many were not tried; `register_best_effort` returns whether it registered
+  (+32 / -6 lines, 3 files).
+
+- **A repeating rule disagrees only by a figure the job's rules do not write.** A rule matched as
+  `duplicate` states one check of a job again, so comparing its figures with the whole job's rule
+  flagged a repeat that agreed (the job's rule writing 80 and 700, the repeat 80). Rules implementing a
+  job are still compared pairwise; a repeat is flagged only for a figure none of them writes
+  (+45 / -19 lines, 2 files).
+
+- **Ledger fixes from the incremental review.** The alignment asks for its note as the requirement
+  the rule decides, stated as the policy states it (prompt `ledger/align_prompt` 1.1.0), since that
+  note is what a job for an orphan rule is written for; with no note the writer works from the text
+  alone, and `ORPHAN_JOB_FOCUS` reads right either way. A rule matched as `duplicate` counts among a
+  job's derivations of its requirement again, so it can disagree with the rule it repeats; a partial
+  match still cannot. A job that reads no declared field has nothing computable even when the writer
+  did not say so (+60 / -17 lines, 6 files).
+
+- **Two ledger fixes from the live Acra run** (branch `jtbd-ledger`). Disagreements are now looked for
+  only among the rules that each implement a job: all 20 flagged on the live run were a partial rule
+  writing figures for another part of its job, not the same requirement written differently. A job
+  proposed for an orphan rule is written for the requirement that rule decides (the alignment's note on
+  it, named first, and `ORPHAN_JOB_FOCUS` telling the writer to write that one), and one job is kept per
+  orphan: the live run's 5 orphans had made 23 jobs, several restating jobs already merged
+  (+76 / -19 lines, 3 files).
+
+- **Ledger fixes from the full-range review** (branch `jtbd-ledger`). A job is `code` only when a rule
+  implements it (written from it, or matched `implements`); a `partial` or repeating match leaves it
+  `code_and_procedure`. An alignment run hands back only the matches it made, and Plato writes them
+  over `ledger.yaml` as it stands at write time (`Ledger.merged`), so a change made during the run's
+  model calls is kept. The authoring pages bind their renderer in a closure, not a defaulted parameter a
+  query could override. Notes closed: `util.xlsx_safe.as_text` caps text at a cell's 32767 characters
+  (the comparison workbook's own cap is gone); the aligned comparison's summary has its own header, and
+  a right job only a failed label could have matched is not listed as unmatched; a `computable_checks`
+  position past the checks (a check since deleted) is dropped rather than making the draft unloadable;
+  a writer that does not say which checks are computable leaves the job unassessed (`None`), not
+  "none computable"; alignment runs take `flex_fallback_after` like job runs (+135 / -39 lines,
+  14 files).
+
+- **Review fixes for the rules library and the scale check.** `norm` kept no separators, so `2-4 unit`
+  was `24 unit` and `1.5` was `15`: a separator between two digits is now kept. A date helper raised
+  at December 9999 (`months_between_fraction` there now answers None, and the month length no longer
+  builds the next month). A `Decimal` a rule reports (`months_between_fraction`, `ratio` on Decimals)
+  stopped the child's JSON encoding and so the rule: the child writes a Decimal as a number. The
+  scale check refused a percent field compared with another field plus a sub-1 offset (`a <= b + 0.5`):
+  a comparison whose other side uses a value not written in the source is no longer judged by its
+  figures. The one repair of a job's rule repeats the job's "decide only the listed checks" line, which
+  the fix prompt does not carry (+102 / -15 lines, 6 files).
+
+- **Ledger review fixes** (branch `jtbd-ledger`). A job proposed for a code rule matching no job is now
+  written by the extractor a `jtbd` run of the rule's own policy would use (`AlignmentContext
+  .job_extractor_for`, Plato's `job_writers`): the draft's prompt overrides and the mnemonics its
+  files hold, so it neither ignores a pack's writer prompt nor repeats a mnemonic; and it is proposed
+  under the rule's policy (`CodeRuleRef.policy_id`, a proposal's from its id), not a `ledger` fallback
+  that made a phantom policy in coverage. An alignment run whose rules share nothing with any job makes
+  no model call by design and is no longer flagged `no_model_calls`. The Compare page's workbook
+  download repeats a model comparison, so it now asks first and names what the last one cost
+  (+129 / -39 lines, 6 files).
+
+- **List-first authoring pages: Coverage, Compare, Extraction** (branch `jtbd-ledger`). Three static
+  pages in the nav, each one table with counts as filter chips, a text filter, and rows that open in
+  place and close again, rather than panels that expand into each other. **Coverage** (`/coverage/ui`):
+  a pack's jobs (the draft's, a version's, or the draft's with its proposals not yet merged, marked
+  proposed) with what decides each, the code rules matching no job, the data no field holds, an xlsx
+  download, and, where authoring writes are admitted, the two runs that grow the code: tick merged jobs
+  of one policy and write code from them, or match segment-written code to jobs (optionally proposing
+  jobs for rules matching none). **Compare** (`/compare/ui`): two sides (a version, a draft, or a
+  JTBDSet file) as pairs, pairs with a model settling close calls, or aligned, filtered by how each row
+  stands. **Extraction** (`/extraction/ui`): a pack's runs of every kind with status, parts, failures,
+  proposals, cost and minutes, a row opening to its health, failed parts and lint; starting a document
+  extraction stays on the Packs page. Draft coverage takes `?proposals=true` (client
+  `coverage(proposals=)`): `pack.ledger.pending_policies` groups proposals still proposed, not superseded
+  and not merged under the policy their id names, and each such job is `pending`. On the local Acra draft
+  that lists 219 jobs waiting on review and 58 code rules not yet matched (+1016 / -19 lines, 11 files).
+
+- **Job sets of different grain compare aligned** (branch `jtbd-ledger`). `jtbd_compare` pairs one to
+  one, so where one set bundles several of the other's jobs (ours 68 against Acra's 123) few pairs clear
+  its threshold. `pack.jtbd_align.align_items` sets each left job against its likeliest right jobs
+  (tf-idf over section, skill and text, shared metric keys and figures, a shared id first) and a model
+  labels each `same`, `differs` (what differs, left value then right value), `partial` or `none`
+  (`model_labeler`, prompts `jtbd_align/label_*` 1.0.0); a left job may hold for several right ones, the
+  right jobs none holds for are listed, and a label that fails marks that job `error` and costs nothing
+  else. `POST /packs/compare` takes `aligned: true` (client `compare_jtbds(aligned=)`,
+  `compare_jtbds_xlsx(aligned=)`, CLI `compare --aligned`), comparing only jobs on a policy side; it
+  answers synchronously, one model call per left job. The lexical helpers it shares with the ledger's
+  aligner are `pack.text_similarity` (+443 / -47 lines, 10 files).
+
+- **Coverage as a count over the ledger** (branch `jtbd-ledger`). `pack.ledger.coverage(policies,
+  ledger)` gives each job a disposition from what is recorded, with no model: `code` (every check
+  computable, code written for it), `code_and_procedure` (code decides part; a reviewer the rest, or
+  nobody said which checks are computable), `computable_no_code` (the gap code can close), `procedure`,
+  `not_computable` (nothing computable and the job names the data it lacks) and `unassessed`. A job's
+  rules are those written from it and those the ledger matched to it; two of them writing different
+  figures are reported as a disagreement, and each rule's unprinted figures are carried. The report
+  counts dispositions overall and per policy, the share of jobs code decides part of, the schema backlog
+  (data no field holds, by how many jobs name it) and the segment rules matching no job or not aligned.
+  `GET /packs/drafts/{pack_id}/coverage` and `GET /packs/{pack_id}/{version}/coverage` (client
+  `coverage`, `coverage_xlsx`; `?format=xlsx`) serve it, the version's read from the `ledger.yaml`
+  published with it. Workbooks keep text that starts with `=` as text: the finance export's guard is now
+  `util.xlsx_safe` and the JTBD comparison workbook, which had none, uses it too
+  (+428 / -22 lines, 9 files).
+
+- **The ledger's cross-check: an `alignment` run matches segment-written code to jobs** (branch
+  `jtbd-ledger`). `jazzx_sdk.pack.ledger` holds the pack's ledger: the jobs, the Python rules, and how
+  rules written from document segments match the jobs. `run_alignment` takes each such rule's candidate
+  jobs lexically (tf-idf over its text and code, shared reads, shared figures; code boilerplate and the
+  rule's generated description left out), asks the model which it implements (`model_aligner`, prompts
+  `ledger/align_*` 1.0.0; a job id it was not shown is dropped) and records `implements`, `partial`,
+  `duplicate` or `no_job` with a note and the prompt version in the draft file `ledger.yaml`, so the match
+  is versioned with the pack and a reviewer can correct it. A rule with no candidate is `no_job` without a
+  call; one the model fails on keeps its old match and is listed failed. `propose_jobs_for` writes a job
+  from the text of each rule matching none (a requirement the jobs missed, as the Acra review's rules 18
+  and 38 were) and proposes it as a `jtbd` proposal citing what the rule cited. It runs as an extraction
+  run, `POST /authoring/extract/{pack_id}/alignment-runs` (client `start_alignment_run`; `policy_id`
+  empty for every policy, `propose_jobs`), with the runs' progress, cost and health: Plato aligns the
+  draft's Python rules not written from a job and the Python proposals not yet merged, superseded or
+  decided. Health: an alignment run is not linted and proposes nothing by default, so neither warns; the
+  `catalog` exemption from linting is the same list (+724 / -16 lines, 10 files).
+
+- **A generated Python rule lists the figures its code writes that its text does not print** (branch
+  `jtbd-ledger`). `conditions.unprinted_figures` reads the numbers written in the entrypoint and looks
+  for each among the text's, in any spelling: thousands commas, scaled amounts ($1.5MM is 1500000, 500K
+  is 500000) and a percent as a fraction (80% is 0.80); 0, 1 and 100 are structure, not policy. Both
+  document and job runs record the list under `domain_extensions.ledger.unprinted_figures` and in the
+  proposal's reasoning. It is a finding, not a refusal: code legitimately derives figures (1500001 for
+  "above $1.5MM", 719 for the top of "700-719"), where the conditions extractor, which keeps a single
+  printed threshold, refuses one it cannot find. A percent written as a fraction counts as printed,
+  so a wrong scale is `scale_problems`'s to refuse, not this list's (+80 / -8 lines, 4 files).
+
+- **Code written from jobs: a `python_jobs` run** (branch `jtbd-ledger`). `POST
+  /authoring/extract/{pack_id}/job-runs` (client `start_job_run`) takes a policy of the pack's draft and,
+  optionally, some of its jobs, and writes one Python rule per job through the extraction pipeline the
+  document runs use (progress, cost, failed parts, health, lint): `JobSegmenter` yields a segment per job
+  in place of a document's clauses and `JobCodeExtractor` writes each through
+  `PythonExtractor.formalize`, which for a job now uses `policy_code/job_prompt` 1.0.0: the checks to
+  encode apart from those left to a reviewer ("never fail a case for them"), and the clause the job keeps,
+  so the figures come from the text as printed rather than the job's summary. The rule is
+  `<job id>.python` with `derived_from` the job, and is proposed as a `python` proposal, so review,
+  fixing and trials treat it as any Python rule. A job whose computable checks are `[]` is skipped; one
+  nobody assessed (an imported JTBDSet's) is written from its clause; a rule reading no declared field is
+  not proposed. The upload route refuses `python_jobs`, the service refuses documents on one, and an empty
+  job run's health says no job had anything to encode (+367 / -17 lines, 8 files).
+
+- **A job says which of its checks are computable, what data it lacks, and keeps its clause** (branch
+  `jtbd-ledger`). `ProcedureCondition` gains `computable_checks` (positions in `checks` that comparisons
+  over `reads` alone decide; `None` when nobody assessed it, as on an imported JTBDSet) and
+  `missing_reads` (data a check needs that no declared field holds: the schema backlog). The JTBD
+  writer states both (prompt `policy_jtbd/write_prompt` 1.2.0); a position naming no check, or any
+  position on a job that reads no declared field, is dropped and said so. A job keeps the text of the
+  units it cites under `domain_extensions.ledger.clause`, so code can later be written from the job with
+  the table detail and exact figures a summary loses; `pipelines.policy.ledger.job_clause` reads it, or
+  an imported job's requirement text (+96 / -4 lines, 5 files).
+
+- **A generated Python rule is checked for the reads it makes and the scale it compares on, and repaired
+  once.** A rule that read a declared field the model had not listed (`reads 'fico', which is not in
+  reads`) failed the static check and the whole part was lost, about 2 of 42 parts per run:
+  `context_keys` now reads the `ctx[key]` and `ctx.get(key)` keys from the source, and the rule's
+  `reads` are those that are declared fields, so they match the code by construction. A rule that
+  compared a `percent` field with fractions (`cltv_pct <= limits[column]`, the limits 0.85, 0.80, ...:
+  every loan failed the matrix) passed everything; `scale_problems` reads the figures written in a
+  comparison and in what its names were assigned, and refuses a `percent` field set against numbers
+  all below 1 or a `fraction` field against numbers all above 1 (zeros are no scale, and one figure on
+  the field's scale clears the comparison). Of the 51 Acra rules it flags the one wrong rule and none of
+  the others. Any check failure now costs one repair: the fix prompt gets the rule as written and
+  the problems as feedback, and a rule still failing fails the part with the reasons. A key that is
+  not a declared field still fails the check. Closes `TODO(python-percent-unguarded)`
+  (+302 / -9 lines, 4 files).
+
+- **An extraction run fails at once when a module it needs cannot load.** The run's lazy imports sat
+  before its `try`, so an import error escaped the background task: the run stayed `running` with no
+  stage until the stall watchdog failed it, and the reason never reached the record. They now sit inside
+  the `try`, so the run goes to `failed` with the exception's reason and its usage and health are
+  recorded as for any other failure. The other background run loops (case runs, experiments,
+  optimization jobs, feedback processing) already record a failure from every line that can raise
+  (+23 / -8 lines, 2 files).
+
+- **Rules library 1.1.0 (`rules_lib`): Decimal, dates, and the helpers mortgage evaluators each rewrote.**
+  Three answers change, so every rule pinned to 1.0.0 is re-tested on the bump: `ratio` accepts
+  `Decimal` (it answered "cannot tell"), `norm` and `same` ignore spacing and punctuation
+  (`CashOut` is `Cash-Out`, `Co-op` is `COOP`), and `n/a`, `na` and `null` are unstated. The text
+  `None` stays a stated value, because a schema enum may use it. New: `day`, `days_between`,
+  `months_between`, `months_between_fraction`, `business_days_between` (weekdays, no holidays),
+  `close` (tolerance or relative, edge counts), `flag` (yes/no text to True, False or None; a blank is
+  never "no"), `first` (keeps a 0 an `or` chain drops), `band`, `monthly`. Numbers are int, float or
+  Decimal, and a helper that mixes a Decimal with a float answers a Decimal. `months_between` rounds a
+  part month DOWN, and its prompt line says so; `months_between_fraction` returns the Decimal count
+  for a policy that prorates. No helper reads the clock: "today" is a fact the case states. The library
+  now imports `datetime` and `decimal`, both on the rule allowlist
+  (+305 / -19 lines, 2 files).
+
+- **Pipelines grouped into per-type packages (breaking import paths, no shims).** `jazzx_sdk.pipelines`
+  gains `document`, `financial`, `policy` and `chat` packages; the engine modules (`steps`, `kinds`,
+  `grounding`, `rerun`, `activity`, `titles`, `catalog`) and the cross-type `investigation_loop` stay
+  at the top level. Pipeline ids, step kinds and the catalog registry keys are unchanged. Migration:
+  `pipelines.document_ingest`, `vocabulary_build`, `catalog_extract` -> `pipelines.document.ingest`,
+  `document.vocabulary_build`, `document.catalog_extract`; `financial_spread` ->
+  `financial.spread`; `policy_extract`, `policy_code`, `policy_conditions`, `policy_jtbd` ->
+  `policy.extract`, `policy.code`, `policy.conditions`, `policy.jtbd`; `jtbdset`, `jtbd_shape`,
+  `authoring_chat` -> `policy.jtbdset`, `policy.jtbd_shape`, `policy.authoring_chat`; `chat` ->
+  `chat.engine`; `compose`, `preliminary` -> `chat.compose`, `chat.preliminary`
+  (+186 / -169 lines, 83 files).
 
 - **Reference without gold, and acceptance pinned to a baseline.** `jazzx_sdk.evaluation.silver`
   builds a reference when no one has labelled the cases: where two systems agree the case is

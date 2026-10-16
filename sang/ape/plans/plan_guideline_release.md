@@ -131,4 +131,5 @@ Settled by the posture (the user, 2026-10-12):
 Still open:
 
 1. **Acra's case date.** Lock date, application date, or note date? This is a question for Acra.
-   Until it is answered, the pack declares none and behaves as today.
+   Working assumption (2026-10-14, the user): the lock date, to be confirmed with Acra. Until a field is
+   declared, the pack declares none and behaves as today.

@@ -19,10 +19,14 @@ Plato); analysis in `docs/plans/note_JACI_SDK_USAGE_AND_CARVEOUT.md`, open quest
 **This round: DSCR and clinical intake run on Plato** (japes' hosted SDK). Full record:
 `docs/status/done_JACI_PLATO_PILOTS.md` (plan: `docs/plans/plan_JACI_PLATO_PILOTS.md`; platform
 plan in japes `docs/plans/plan_plato_domain_pack_runtime.md`).
-- Both pages have **"Run on: in-process | Plato"** (`scenarios/shared/plato.py`). DSCR: grid via
-  `POST /packs/dscr-core/assess`, review as a durable streamed case run (`dscr/plato_review.py`).
-  Clinical intake: `clinical_intake/plato_session.py:PlatoIntakeSession` over Plato's recorded
-  sessions. In-process paths unchanged and still the keyless demo path.
+- **DSCR runs only on Plato** (since 2026-10-05, dscr-core 0.2.3): one durable streamed case run of
+  the pack's `conductor_pipeline` (policy_assessment → investigation → human_checkpoint → narrate,
+  `dscr/plato_review.py`); the page's grid is the run's `assessment`. No in-process DSCR path and
+  no keyless demo for it any more; the rule tests assess in-process via
+  `tests/scenarios/dscr/pack_assessment.py`. The Domain tab adds policy authoring on Plato
+  (`scenarios/shared/policy_tab.py`). Clinical intake keeps **"Run on: in-process | Plato"**
+  (`scenarios/shared/plato.py`): `clinical_intake/plato_session.py:PlatoIntakeSession` over
+  Plato's recorded sessions, in-process still its keyless demo path.
 - **Finding Plato:** `JACI_PLATO_URL` (API root, e.g. `http://localhost:8000/api/v1`), else beside
   the page — dev-daily's gateway serves `https://<host>/jaci/` and `https://<host>/plato/` as
   siblings, so `/jaci/` → `/plato/api/v1`; a localhost page → `localhost:8000`. Page calls forward
