@@ -22,8 +22,12 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
   `jazzx_sdk.clients`), which writes the request JSON itself and maps the same inputs onto the generated request;
   tests hold the two equal and compare the generated overrides, webhook and enum fields with the SDK's, so a
   client upgrade that renames one fails there. `session_id` stays a documented no-op. File and tool-call-request
-  message content are not modelled. `MockKernelClient.invoke_agent` takes `messages` and gains `start_agent`
-  (+588 / -36 lines, 6 files).
+  message content are not modelled. A kernel 422 on `start_agent` raises (it was returned as the invocation id); a
+  tool-result message needs its `tool_call_id` and no other message may carry one; an empty `messages` list is
+  refused like a missing one, and `input_text` with any `messages` is refused, by the client and the mock alike
+  (the mock also needs `stream_client`); a mapping's `content` is read when its `text` is `None`; mapping content is read as text or text parts and a file part is
+  refused. `MockKernelClient` follows the same call rules and gains `start_agent` and `stream_agent` (+710 / -59
+  lines, 6 files).
 
 - **Folding keeps a distinct requirement and what a folded job knew.** Four review fixes to the fold. A single-digit
   figure now counts when two jobs are compared (`figures(text, single_digits=True)`, used by the fold only: "at least
@@ -190,6 +194,12 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 ## [2.6.2] - unreleased
 
+- **Three code-scanning alerts closed.** The mnemonic numeric-suffix regex backtracked exponentially (28 digits then a
+  letter took 15 s); it is now `(?<!\d)-?\d+(?:-\d+)*$`, which matches the same suffixes. A rule trial's copy of the
+  pack refuses a path that leaves its directory (`_DirFiles`, `../` or absolute), where a policy id with `../` could
+  have written a `.yaml` outside it. The solution page substitutes the blueprint id last, so an id spelling a later
+  placeholder (`__SHARED_JS__`) no longer breaks the page; the id was already JSON-escaped, so it was not injectable.
+  (+62 / -6 lines, 6 files)
 - **The document upload cap defaults to 100 MB.** `PLATO_DOCUMENT_UPLOAD_MAX_BYTES` was 32 MB, below a funded loan
   file's single PDF (about 54 MB); the deployment table now says an upload is read into memory, so each concurrent
   upload can hold up to the cap. A test uploads 33 MB with no cap set (+17 / -2 lines, 3 files).
