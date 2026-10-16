@@ -4,13 +4,37 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 ## [2.6.3] - unreleased
 
+- **`mcp` floor `>=1.30.0` and `Mako` 1.4.3 in the lock (Dependabot).** The MCP Streamable HTTP session accumulation
+  alert is fixed from 1.30.0 and 2.2.0; the lock resolves `mcp` to 2.3.0 (no ceiling, `jazzx_sdk/mcp/compat.py`
+  covers both majors), which drops `httpx-sse` and adds `mcp-types`. Mako's drive-letter path traversal is fixed from
+  1.4.2 (transitive, lock only). The MCP tests pass on 1.28.1 and 2.3.0 (43); the transport-security test read
+  `_session_manager`, which 2.x names `session_manager`, and now reads either. (+41 / -40 lines, 4 files)
+
+- **`KernelClient` takes SDK types for an agent invocation, and can start one or stream it.** A consumer no longer
+  imports `kernel_client.models`: `invoke_agent` (signature kept) gains `messages` (user, assistant and tool-result
+  turns as `AgentMessage`s or `{"role", "text"}` mappings, in place of `input_text`), `overrides`
+  (`AgentOverrides`: prompt, model, temperature, reasoning effort, verbosity, steps, feedback, output schema, tools,
+  callable agents, MCP servers), `hooks` (`AgentHook`, an `on_complete` webhook), `streaming`
+  (`StreamingConfig`), `parent_notepad_id` and `project_id` (sent as `x-request-project-id`). `start_agent` returns
+  the invocation id without polling; `stream_agent` starts with streaming on and yields the invocation stream's
+  events (dicts) until `done` or `error`, reading from the start so none published before the first read is lost
+  (the caller gives the `RedisStreamClient`). The types live in `jazzx_sdk.clients.kernel_invoke` (re-exported from
+  `jazzx_sdk.clients`), which writes the request JSON itself and maps the same inputs onto the generated request;
+  tests hold the two equal and compare the generated overrides, webhook and enum fields with the SDK's, so a
+  client upgrade that renames one fails there. `session_id` stays a documented no-op. File and tool-call-request
+  message content are not modelled. `MockKernelClient.invoke_agent` takes `messages` and gains `start_agent`
+  (+588 / -36 lines, 6 files).
+
 - **Folding keeps a distinct requirement and what a folded job knew.** Four review fixes to the fold. A single-digit
   figure now counts when two jobs are compared (`figures(text, single_digits=True)`, used by the fold only: "at least
   2 open tradelines" no longer folds with "at least 3"); the helper's default still leaves single digits out for the
   alignment and ledger matching that share it. A survivor that had no reads and gains some from a folded job is
   marked not assessed (`computable_checks` None) rather than "none computable". Two jobs of one section never end up
   folded together through a job of another section: the blocked link is listed as a possible duplicate. A folded
-  job's data mapping (`mapped_reads`) is carried onto the survivor beside its reads (+92 / -6 lines, 3 files).
+  job's data mapping (`mapped_reads`), its undeclared documents and the entity types and metrics (by metric key) the
+  survivor lacks are carried onto it beside its reads (a carried metric is renumbered under the survivor's own
+  stem, so mnemonics stay unique); its filing (source, section type, assistant, mnemonic, kind) stays the
+  survivor's. The entity and metric metadata keys are constants beside the writer (+208 / -8 lines, 4 files).
 
 - **`KernelClient` works without a token.** `token` is optional: with one it builds `kernel_client.AuthenticatedClient`
   as before, with none (`None` or empty) it builds `kernel_client.Client` and sends no `Authorization` header,
