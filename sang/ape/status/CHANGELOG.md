@@ -4,6 +4,12 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 ## [2.6.3] - unreleased
 
+- **Plato closes its grounding sessions at shutdown.** A replica that stopped with a session open left that
+  session's directory (`session-<key>-...`) behind in the temp directory, or in `PLATO_GROUND_DIR`; the app's
+  lifespan now drains the grounding registry, which closes each session and removes its directory
+  (`GroundingSessions.drain`). The grounded-assistant test points `PLATO_GROUND_DIR` at its own temporary
+  directory and asserts it is empty once the app is down (+28 / -2 lines, 5 files).
+
 - **`mcp` floor `>=1.30.0` and `Mako` 1.4.3 in the lock (Dependabot).** The MCP Streamable HTTP session accumulation
   alert is fixed from 1.30.0 and 2.2.0; the lock resolves `mcp` to 2.3.0 (no ceiling, `jazzx_sdk/mcp/compat.py`
   covers both majors), which drops `httpx-sse` and adds `mcp-types`. Mako's drive-letter path traversal is fixed from
@@ -196,10 +202,11 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 - **Three code-scanning alerts closed.** The mnemonic numeric-suffix regex backtracked exponentially (28 digits then a
   letter took 15 s); it is now `(?<!\d)-?\d+(?:-\d+)*$`, which matches the same suffixes. A rule trial's copy of the
-  pack refuses a path that leaves its directory (`_DirFiles`, `../` or absolute), where a policy id with `../` could
-  have written a `.yaml` outside it. The solution page substitutes the blueprint id last, so an id spelling a later
-  placeholder (`__SHARED_JS__`) no longer breaks the page; the id was already JSON-escaped, so it was not injectable.
-  (+62 / -6 lines, 6 files)
+  pack refuses a path that leaves its directory (`_DirFiles`: `../`, absolute or through a symlink, by a normalized
+  path and a prefix check), where a policy id with `../` could have written a `.yaml` outside it. The solution page
+  passes the blueprint id as an HTML-escaped `<meta name="blueprint">` the page script reads, substituted last so an
+  id spelling a later placeholder (`__SHARED_JS__`) no longer breaks the page; the earlier JSON-in-script embedding was
+  already escaped but is not a form CodeQL recognizes. (+78 / -11 lines, 8 files)
 - **The document upload cap defaults to 100 MB.** `PLATO_DOCUMENT_UPLOAD_MAX_BYTES` was 32 MB, below a funded loan
   file's single PDF (about 54 MB); the deployment table now says an upload is read into memory, so each concurrent
   upload can hold up to the cap. A test uploads 33 MB with no cap set (+17 / -2 lines, 3 files).
