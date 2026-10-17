@@ -2,6 +2,11 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+## [2.6.4] - unreleased
+
+- **Version 2.6.4, Plato 0.2.5 and `jazzx-plato-client` 0.2.5.** The 2.6.3 release is on `dev` (#92). (+6 / -6 lines,
+  6 files)
+
 ## [2.6.3] - unreleased
 
 - **Model pricing re-verified on 2026-10-16.** `scripts/update_model_pricing.py` found no price changes: the
