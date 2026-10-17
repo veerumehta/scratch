@@ -5,3 +5,6 @@
 # Acra loan files and customer reference documents: real borrower data and about 600 MB of PDFs. Never
 # tracked: this repo has a GitHub remote. The bundle and the taxonomy sheet beside it are tracked.
 sang/ape/status/Acra/Acra Lending/
+
+# Moved from /tmp: this script names a loan package file in its arguments.
+sang/ape/local/acra/acra_local_ingest_all.sh
