@@ -200,6 +200,11 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 ## [2.6.2] - unreleased
 
+- **The pre-push new-model check runs on a bare interpreter again.** `model_identity` reads `FLEX_ELIGIBLE` from
+  `_model_data` at import, through the package whose `__init__` needs pydantic, so `scripts/check_new_models.py`
+  (loaded by path so no dependency is needed) died with `No module named 'jazzx_sdk'` under a `python` without the
+  SDK installed, and the hook ignored it. The script now loads `_model_data.py` by path under stand-ins for the two
+  package names; a test runs it with `-I -S`. (+32 / -3 lines, 2 files)
 - **Three code-scanning alerts closed.** The mnemonic numeric-suffix regex backtracked exponentially (28 digits then a
   letter took 15 s); it is now `(?<!\d)-?\d+(?:-\d+)*$`, which matches the same suffixes. A rule trial's copy of the
   pack refuses a path that leaves its directory (`_DirFiles`: `../`, absolute or through a symlink, by a normalized
