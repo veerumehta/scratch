@@ -86,3 +86,17 @@ dev->main squash: merge main back into dev with a tree-neutral merge (scripts/lo
 ## Where the moved files are
 On 2026-10-17 the /tmp scripts and notes moved to scripts/local/release (japes_*.sh), acra (acra_*.sh), restart (restart
 and kickoff notes) and notes. CLAUDE.md paths were rewritten. Old /tmp paths in older messages are stale.
+
+## Update after the reboot (2026-10-17, 16:30)
+- Local Plato needs TWO steps after a reboot: first the database, `scripts/local/pg_dev_daily.sh` (cluster under
+  ~/.local/share/japes-pg/16, port 55432, idempotent, migrates to head 0035), then `scripts/local/plato_worktree.sh
+  start` (if /health says not_ready after the database came up, `plato_worktree.sh restart 1dac85f6`). Both done: Plato
+  healthy (0.2.5, worktree 1dac85f6). Docker is not running (the executor Linux check still needs it).
+- All four sessions were restarted with scripts/local/restart_session.sh and reported idle. I sent start messages:
+  sonnet-runtime (verify references and scratch packs survived, no loan documents until the user's own approval and
+  loan-2 ids, continue the 2.6.4 queue, hybrid default to confirm), sonnet-ui (re-run its smoke, hold loan steps,
+  check the catalog adopt flow on a scratch draft pack), sonnet-jaci (plan only: map the 11 coarse evidence types and
+  the 4 unmatched job documents to the Master Taxonomy; no adoption into acra-dscr-policy). Replies pending.
+- Still waiting on the user: which loan/offset each Part is; ingest loan-2 whole (yes recommended); own approvals in the
+  builder sessions for the loan runs (30 USD e2e, 5 USD classification); hybrid default; review of the unpushed v2.6.4
+  range; push local plato (0abeacdd); the pre-push hook fix and test-suite audit kickoff are still mine/open.
