@@ -20,7 +20,9 @@ PORT=8000
 LOG="$MAIN/.plato-local.log"
 HEALTH_WAIT_SECONDS=60
 
-listener() { lsof -nP -iTCP:"$PORT" -sTCP:LISTEN -t 2>/dev/null | head -1; }
+# `|| true`: lsof exits 1 when nothing listens, and under `set -eo pipefail` that ended `stop`, and so
+# `restart`, silently before it could start anything.
+listener() { lsof -nP -iTCP:"$PORT" -sTCP:LISTEN -t 2>/dev/null | head -1 || true; }
 
 pin() {
   local rev="${1:-$(git -C "$MAIN" rev-parse HEAD)}"
