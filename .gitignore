@@ -1,3 +1,7 @@
 
 # Finder litter; appears on any directory browsed in a GUI and belongs to no repo.
 .DS_Store
+
+# Acra loan files and customer reference documents: real borrower data and about 600 MB of PDFs. Never
+# tracked: this repo has a GitHub remote. The bundle and the taxonomy sheet beside it are tracked.
+sang/ape/status/Acra/Acra Lending/

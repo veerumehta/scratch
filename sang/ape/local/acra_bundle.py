@@ -26,7 +26,7 @@ TRIAL_POLICIES = {"standard": "policies/acra-standard.yaml", "platinum": "polici
 RUNS = COVERAGE / "runs_20261011.json"
 TIMEOUT_SECONDS = 60
 ARCHIVE_DIR = "archive"
-BEST = ROOT / "docs" / "status" / "acra_bundle"
+BEST = ROOT / "docs" / "status" / "Acra" / "acra_bundle"
 CANDIDATE = Path("/tmp/acra_bundle_candidate")
 DOCS = ROOT / "documents" / "Acra"
 
