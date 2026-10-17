@@ -4,6 +4,9 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 ## [2.6.3] - unreleased
 
+- **Model pricing re-verified on 2026-10-16.** `scripts/update_model_pricing.py` found no price changes: the
+  anthropic, openai, gemini and Azure Document Intelligence `verified` dates move to 2026-10-16, and
+  `gemini-3-flash-preview` is marked `deprecated`. (+6 / -5 lines, 1 file)
 - **Plato closes its grounding sessions at shutdown.** A replica that stopped with a session open left that
   session's directory (`session-<key>-...`) behind in the temp directory, or in `PLATO_GROUND_DIR`; the app's
   lifespan now drains the grounding registry, which closes each session and removes its directory
