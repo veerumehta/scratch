@@ -1,0 +1,2929 @@
+{
+ "standard": {
+  "left_items": 123,
+  "right_items": 121,
+  "left_best": {
+   "same": 39,
+   "none": 17,
+   "partial": 48,
+   "differs": 19
+  },
+  "right_unmatched": 4,
+  "pairs": [
+   {
+    "kstudio": "PRE-TYPES",
+    "ours": "acra-standard.loan_program_eligibility.eligible_property_type",
+    "relation": "same",
+    "note": ""
+   },
+   {
+    "kstudio": "PRE-TYPES",
+    "ours": "acra-standard.appraisal_review.property_type_appraisal_caps",
+    "relation": "partial",
+    "note": "Covers caps and conditions for restricted property types, but not the full eligible-property-type list and routing requirement."
+   },
+   {
+    "kstudio": "PRE-TYPE-CAPS",
+    "ours": "acra-standard.appraisal_review.property_type_appraisal_caps",
+    "relation": "same",
+    "note": "States the same property-type CLTV caps, Florida \u22125% adjustment, and minimum DSCR 1.0; also includes an additional above-80% LTV eligibility restriction."
+   },
+   {
+    "kstudio": "PRE-TYPE-CAPS",
+    "ours": "acra-standard.loan_program_eligibility.eligible_property_type",
+    "relation": "same",
+    "note": "States the same property-type CLTV caps, Florida \u22125% adjustment, and minimum DSCR 1.0; also includes additional rural/unique-property and eligibility conditions."
+   },
+   {
+    "kstudio": "PRE-RURAL",
+    "ours": "acra-standard.appraisal_review.rural_or_unique_property_limits",
+    "relation": "same",
+    "note": "Same rural/unique property CLTV caps, minimum FICO 700, minimum DSCR 1.00, and potential further LTV reduction for excessive marketing time or unusual functionality."
+   },
+   {
+    "kstudio": "PRE-RURAL",
+    "ours": "acra-standard.loan_program_eligibility.eligible_property_type",
+    "relation": "same",
+    "note": "Includes the same rural/unique property overlay limits and conditions."
+   },
+   {
+    "kstudio": "PRE-LOCATION",
+    "ours": "acra-standard.loan_program_eligibility.eligible_state",
+    "relation": "partial",
+    "note": "Covers the current published SD restriction, but omits the left item's AK/ND conditional determination under the earlier version."
+   },
+   {
+    "kstudio": "PRE-VACANT-ELIG",
+    "ours": "acra-standard.appraisal_review.vacant_purchase_rent_appraisal",
+    "relation": "partial",
+    "note": "Covers the vacant-purchase rent-source portion of the left item; the left also covers vacant refinances and tenant-occupied properties."
+   },
+   {
+    "kstudio": "PRE-VACANT-RT",
+    "ours": "acra-standard.loan_program_eligibility.vacant_property_refinance",
+    "relation": "same",
+    "note": "The rate-and-term refinance conditions match, including the stated FICO, CLTV and loan-amount limits, qualification, prepayment penalty, amortization, impounds, and reserves."
+   },
+   {
+    "kstudio": "PRE-VACANT-RT",
+    "ours": "acra-standard.asset_assessment.vacant_rate_and_term_refinance_reserves",
+    "relation": "partial",
+    "note": "It covers only the six-month reserves requirement for a vacant-property rate-and-term refinance."
+   },
+   {
+    "kstudio": "PRE-VACANT-CO",
+    "ours": "acra-standard.loan_program_eligibility.vacant_property_refinance",
+    "relation": "same",
+    "note": "States the same vacant-property cash-out refinance conditions, including the same thresholds and unresolved items."
+   },
+   {
+    "kstudio": "PRE-VACANT-CO",
+    "ours": "acra-standard.asset_assessment.vacant_cash_out_refinance_reserves",
+    "relation": "partial",
+    "note": "Covers only the six-month reserves condition for a vacant-property cash-out refinance; it does not cover the other conditions in the left item."
+   },
+   {
+    "kstudio": "PRE-LISTDEF",
+    "ours": "acra-standard.compliance_and_closing.listed_property_tenant_occupancy",
+    "relation": "partial",
+    "note": "Includes the six-month listing classification test, but adds the separate tenant-occupancy and non-vacancy requirement for investment properties."
+   },
+   {
+    "kstudio": "PRE-LISTDEF",
+    "ours": "acra-standard.loan_program_eligibility.property_listed_for_sale",
+    "relation": "partial",
+    "note": "Includes the same six-month test measured from the last listing date to the Application Date, but also covers numerous additional listed-property loan conditions."
+   },
+   {
+    "kstudio": "PRE-LISTDEF",
+    "ours": "acra-standard.appraisal_review.listed_property_appraisal_limits",
+    "relation": "partial",
+    "note": "Includes the same six-month test measured from the last listing date to the Application Date, but also covers additional appraisal-based and other loan conditions."
+   },
+   {
+    "kstudio": "PRE-LISTCOND",
+    "ours": "acra-standard.loan_program_eligibility.property_listed_for_sale",
+    "relation": "differs",
+    "note": "Qualification condition: left requires DSCR \u2265 1.0; right allows DSCR \u2265 1.0 or maximum 43% DTI."
+   },
+   {
+    "kstudio": "PRE-LISTCOND",
+    "ours": "acra-standard.appraisal_review.listed_property_appraisal_limits",
+    "relation": "differs",
+    "note": "Qualification condition: left requires DSCR \u2265 1.0; right allows DSCR \u2265 1.0 or maximum 43% DTI."
+   },
+   {
+    "kstudio": "PRE-LISTCOND",
+    "ours": "acra-standard.compliance_and_closing.listed_property_maximum_cltv",
+    "relation": "partial",
+    "note": "Covers only the 65% maximum LTV/CLTV condition within the left item."
+   },
+   {
+    "kstudio": "PRE-LISTCOND",
+    "ours": "acra-standard.asset_assessment.listed_property_reserves",
+    "relation": "partial",
+    "note": "Covers only the 24-month reserves condition within the left item."
+   },
+   {
+    "kstudio": "PRE-LISTCOND",
+    "ours": "acra-standard.compliance_and_closing.listed_property_reserves",
+    "relation": "partial",
+    "note": "Covers only the 24-month reserves condition within the left item."
+   },
+   {
+    "kstudio": "PRE-MIXEDUSE",
+    "ours": "acra-standard.loan_program_eligibility.mixed_use_property",
+    "relation": "partial",
+    "note": "Covers the mixed-use DSCR minimum of 1.2 and references \u00a710.7, but does not clearly apply the requirement to adult care and assisted living properties or require Acra approval on file."
+   },
+   {
+    "kstudio": "PRE-MIXEDUSE",
+    "ours": "acra-standard.income_stability_sufficiency_analysis.apply_minimum_dscr_requirements",
+    "relation": "partial",
+    "note": "Matches the 1.2 DSCR minimum for mixed use, adult care, and assisted living, but does not include the \u00a710.7 approval condition."
+   },
+   {
+    "kstudio": "AFC-GIFT-MIN",
+    "ours": "acra-standard.compliance_and_closing.gift_funds_contribution",
+    "relation": "differs",
+    "note": "The left applies to investment-property purchases with gift funds; the right also applies to second homes with gift funds."
+   },
+   {
+    "kstudio": "AFC-GIFT-MIN",
+    "ours": "acra-standard.asset_assessment.own_funds_contribution",
+    "relation": "differs",
+    "note": "The left requires both an investment-property purchase and gift funds; the right applies when gift funds, an investment property, or a second home is involved."
+   },
+   {
+    "kstudio": "AFC-SEASON-THRESH",
+    "ours": "acra-standard.asset_assessment.funds_seasoning_verification_trigger",
+    "relation": "partial",
+    "note": "Covers the consumer and business-purpose seasoning-verification thresholds, but omits the left item\u2019s separate requirement that Foreign Nationals always document 60 days of seasoning."
+   },
+   {
+    "kstudio": "AFC-SEASON-THRESH",
+    "ours": "acra-standard.asset_assessment.foreign_national_funds_seasoning",
+    "relation": "partial",
+    "note": "Covers the left item\u2019s Foreign National requirement of 60 days of seasoning, but omits the consumer and business-purpose CLTV and funds-to-close thresholds."
+   },
+   {
+    "kstudio": "AFC-VERIF-DOCS",
+    "ours": "acra-standard.asset_assessment.source_account_verification",
+    "relation": "same",
+    "note": "Same acceptable verification documents: recent bank statements or a VOD showing current and average balance for the most recent months."
+   },
+   {
+    "kstudio": "AFC-VERIF-DOCS",
+    "ours": "acra-standard.asset_assessment.foreign_account_statements_and_seasoning",
+    "relation": "partial",
+    "note": "Covers documentation and seasoning for foreign-account funds, including recent statements, but not the full general verification requirement or the VOD option."
+   },
+   {
+    "kstudio": "AFC-VERIF-DOCS",
+    "ours": "acra-standard.compliance_and_closing.foreign_account_funds",
+    "relation": "partial",
+    "note": "Includes statements and seasoning documentation for foreign-account funds, but also addresses other foreign-account requirements and does not state the full general verification rule or VOD option."
+   },
+   {
+    "kstudio": "AFC-30DAY-MIN",
+    "ours": "acra-standard.asset_assessment.funds_documentation_minimum",
+    "relation": "partial",
+    "note": "Covers the universal minimum of 30 days of documentation, but not the left item's additional check for whether domestic seasoning applies beyond that minimum."
+   },
+   {
+    "kstudio": "AFC-FOREIGN-REPAT",
+    "ours": "acra-standard.asset_assessment.foreign_funds_repatriation",
+    "relation": "same",
+    "note": "Both require applicable foreign-held funds to be repatriated at least three business days before Closing and leave the scope subject to confirmation."
+   },
+   {
+    "kstudio": "AFC-FOREIGN-REPAT",
+    "ours": "acra-standard.compliance_and_closing.foreign_account_funds",
+    "relation": "same",
+    "note": "The repatriation condition matches: foreign-bank/currency funds must be repatriated at least three business days before Closing where applicable."
+   },
+   {
+    "kstudio": "AFC-RESERVE-LTV80",
+    "ours": "acra-standard.asset_assessment.reserves_for_ltv_over_80_00",
+    "relation": "differs",
+    "note": "The left trigger is LTV > 80.00%; the right reads CLTV > 80.00%."
+   },
+   {
+    "kstudio": "AFC-RESERVE-FICO",
+    "ours": "acra-standard.asset_assessment.reserves_for_fico_below_620",
+    "relation": "same",
+    "note": "Both require 12 months of reserves when FICO is below 620."
+   },
+   {
+    "kstudio": "AFC-RESERVE-TXN",
+    "ours": "acra-standard.asset_assessment.listed_property_reserves",
+    "relation": "partial",
+    "note": "Matches the listed-for-sale trigger: 24 months of reserves, with cash-in-hand considered if otherwise consistent with the Guide. The left item also includes other reserve triggers."
+   },
+   {
+    "kstudio": "AFC-RESERVE-TXN",
+    "ours": "acra-standard.asset_assessment.tenant_rent_receipt_reserves",
+    "relation": "partial",
+    "note": "Matches the tenant-occupied forbearance or recent mortgage-late trigger and the requirement for 12 months of the subject's payment when the prior two months' rent was not received timely. The left item also includes other reserve triggers."
+   },
+   {
+    "kstudio": "AFC-RESERVE-TXN",
+    "ours": "acra-standard.asset_assessment.first_time_homebuyer_reserves",
+    "relation": "partial",
+    "note": "Matches the first-time-homebuyer trigger and six-month reserve requirement. The left item also includes other reserve triggers."
+   },
+   {
+    "kstudio": "AFC-RESERVE-TXN",
+    "ours": "acra-standard.asset_assessment.vacant_cash_out_refinance_reserves",
+    "relation": "partial",
+    "note": "Matches the vacant-property cash-out refinance trigger and six-month reserve requirement. The left item also includes vacant-property rate-and-term refinance and other reserve triggers."
+   },
+   {
+    "kstudio": "AFC-RESERVE-TOTAL",
+    "ours": "acra-standard.asset_assessment.rent_loss_insurance_reserves",
+    "relation": "partial",
+    "note": "Matches the aggregate's 2-for-1 reserve substitution for unobtainable rent loss insurance, but covers only that trigger."
+   },
+   {
+    "kstudio": "AFC-RESERVE-TOTAL",
+    "ours": "acra-standard.insurance_coverage_sufficiency_policy_assessment.rent_loss_insurance_coverage_sufficiency",
+    "relation": "partial",
+    "note": "Includes the aggregate's 2-for-1 reserve substitution for unobtainable rent loss insurance, but also addresses six-month insurance coverage and covers only part of the aggregate."
+   },
+   {
+    "kstudio": "AFC-RESERVE-TOTAL",
+    "ours": "acra-standard.asset_assessment.reserves_for_fico_below_620",
+    "relation": "partial",
+    "note": "Matches the FICO < 620 trigger and 12-month reserve amount, but covers only that trigger."
+   },
+   {
+    "kstudio": "AFC-RESERVE-TOTAL",
+    "ours": "acra-standard.asset_assessment.reserves_for_ltv_over_80_00",
+    "relation": "partial",
+    "note": "Matches the LTV > 80% trigger and 6 months of PITIA reserves, but covers only that trigger."
+   },
+   {
+    "kstudio": "AFC-RESERVE-TOTAL",
+    "ours": "acra-standard.asset_assessment.listed_property_reserves",
+    "relation": "differs",
+    "note": "The reserve amount matches at 24 months, but the trigger differs: left says listed for sale with no six-month window stated; right requires listing within six months."
+   },
+   {
+    "kstudio": "AFC-RESERVE-TOTAL",
+    "ours": "acra-standard.asset_assessment.first_time_homebuyer_reserves",
+    "relation": "partial",
+    "note": "Matches the first-time homebuyer trigger and six-month reserve amount, but covers only that trigger."
+   },
+   {
+    "kstudio": "BET-ENTITY-ELIG",
+    "ours": "acra-standard.title_review.business_entity_transaction",
+    "relation": "same",
+    "note": "Both require business-entity financing to be for a business-purpose transaction on investment property exclusively."
+   },
+   {
+    "kstudio": "BET-ENTITY-ELIG",
+    "ours": "acra-standard.identification_requirements.foreign_national_program_eligibility",
+    "relation": "partial",
+    "note": "It includes the business-purpose investment-property condition, but applies to Foreign National Program eligibility rather than business-entity borrower eligibility."
+   },
+   {
+    "kstudio": "BET-ENTITY-ELIG",
+    "ours": "acra-standard.loan_program_eligibility.foreign_national_eligibility",
+    "relation": "partial",
+    "note": "It includes the business-purpose investment-property condition, but applies to Foreign National eligibility and adds residence, authorization, CLTV, and FICO requirements."
+   },
+   {
+    "kstudio": "BET-TITLE-HOLD",
+    "ours": "acra-standard.title_review.entity_title_approval",
+    "relation": "partial",
+    "note": "Covers Acra\u2019s acceptance of an entity title holder, but not the full range of acceptable holders in the left item, including individuals and compliant revocable trusts."
+   },
+   {
+    "kstudio": "BET-GUAR-20PCT",
+    "ours": "acra-standard.title_review.entity_owner_guarantees",
+    "relation": "same",
+    "note": "Requires executed recourse guarantees from every individual with at least 20% direct or indirect ownership, using an Acra-approved form or Exhibit 7; multiple guarantees must be joint and several."
+   },
+   {
+    "kstudio": "BET-GUAR-20PCT",
+    "ours": "acra-standard.loan_program_eligibility.entity_guarantees",
+    "relation": "partial",
+    "note": "Includes the same 20%+ owner guarantee requirement, but also covers prior-homeownership, attestation, and ownership-change requirements."
+   },
+   {
+    "kstudio": "BET-SPE-DEF",
+    "ours": "acra-standard.title_review.single_purpose_entity",
+    "relation": "same",
+    "note": "Same SPE requirements: only residential investment or rental properties, owning and operating them, and not a series LLC."
+   },
+   {
+    "kstudio": "BET-SPE-DEF",
+    "ours": "acra-standard.loan_program_eligibility.entity_borrower_eligibility",
+    "relation": "partial",
+    "note": "Includes the same SPE and non-series requirements, but also adds entity-type, US formation/ownership, direct-ownership, prohibited-structure, and nesting requirements."
+   },
+   {
+    "kstudio": "BET-SPE-DEF",
+    "ours": "acra-standard.title_review.permitted_entity_type",
+    "relation": "partial",
+    "note": "Covers the non-series LLC condition, but not the requirement that the entity hold only residential investment or rental properties and own and operate them."
+   },
+   {
+    "kstudio": "BET-BORR-ONTITLE",
+    "ours": "acra-standard.title_review.direct_title_owners",
+    "relation": "same",
+    "note": "Requires every entity holding direct title to be a borrowing entity, matching the left requirement."
+   },
+   {
+    "kstudio": "BET-BORR-ONTITLE",
+    "ours": "acra-standard.loan_program_eligibility.entity_borrower_eligibility",
+    "relation": "partial",
+    "note": "Includes the direct-title-owners-must-be-borrowers requirement, but also covers other entity eligibility and structure requirements."
+   },
+   {
+    "kstudio": "BET-OWNCHG-LOOKBACK",
+    "ours": "acra-standard.title_review.ownership_change_lookback",
+    "relation": "same",
+    "note": "Same 30-day pre-application and application-process lookback for ownership changes intended to circumvent required personal guarantors."
+   },
+   {
+    "kstudio": "BET-OWNCHG-LOOKBACK",
+    "ours": "acra-standard.loan_program_eligibility.entity_guarantees",
+    "relation": "partial",
+    "note": "Includes the ownership-change lookback requirement, but also covers guarantees and prior-homeownership attestation requirements beyond the left item."
+   },
+   {
+    "kstudio": "BET-ENTITY-TYPES",
+    "ours": "acra-standard.title_review.permitted_entity_type",
+    "relation": "partial",
+    "note": "Covers the allowed entity/guarantor types and series-LLC restriction, but not the US-formation, US-based, and no-foreign-ownership requirements."
+   },
+   {
+    "kstudio": "BET-ENTITY-TYPES",
+    "ours": "acra-standard.title_review.us_entity_status",
+    "relation": "partial",
+    "note": "Covers the US-formation, US-based, and no-foreign-ownership requirements, but not the allowed entity/guarantor types."
+   },
+   {
+    "kstudio": "BET-ENTITY-TYPES",
+    "ours": "acra-standard.loan_program_eligibility.entity_borrower_eligibility",
+    "relation": "partial",
+    "note": "Includes the allowed-type and US-status requirements, but also adds SPE, property-asset, direct-title-owner, prohibited-entity, and nesting requirements."
+   },
+   {
+    "kstudio": "BET-PROHIB-TYPES",
+    "ours": "acra-standard.loan_program_eligibility.entity_borrower_eligibility",
+    "relation": "same",
+    "note": "Matches the prohibited entity types and one wholly-owned subsidiary limit owned by individuals."
+   },
+   {
+    "kstudio": "BET-PROHIB-TYPES",
+    "ours": "acra-standard.title_review.permitted_entity_type",
+    "relation": "partial",
+    "note": "Addresses entity-type eligibility, but uses an allowed-type list and a series LLC restriction; it does not address the left item\u2019s nesting limit."
+   },
+   {
+    "kstudio": "BET-FTHB-ATTEST",
+    "ours": "acra-standard.loan_program_eligibility.entity_guarantees",
+    "relation": "same",
+    "note": "Includes the same requirements for at least one guarantor to have prior homeownership and at least one borrower or guarantor to attest they are not a first-time homebuyer, with supporting documentation conditionable when ownership is not evident."
+   },
+   {
+    "kstudio": "BET-FORM-DOCS",
+    "ours": "acra-standard.compliance_and_closing.entity_documentation",
+    "relation": "partial",
+    "note": "Covers entity documentation generally and may include formation documents, but does not specifically require a complete, legible Certificate of Formation or Articles of Organization with all amendments, without exception or borrower-letter waiver."
+   },
+   {
+    "kstudio": "BET-OPAGREEMENT",
+    "ours": "acra-standard.compliance_and_closing.entity_documentation",
+    "relation": "partial",
+    "note": "Covers entity-document completeness and the same management, borrowing/mortgage authority, and signer requirements, but does not specify all amendments and referenced exhibits or checking for conflict with formation documents."
+   },
+   {
+    "kstudio": "BET-OWN-EVID",
+    "ours": "acra-standard.compliance_and_closing.entity_documentation",
+    "relation": "partial",
+    "note": "Covers the general requirement that ownership documentation account for interests by entity type, but does not specify the required evidence listed on the left, including the K-1 and CPA-letter fallback."
+   },
+   {
+    "kstudio": "BET-NAME-MATCH",
+    "ours": "acra-standard.identification_requirements.entity_document_name_match",
+    "relation": "partial",
+    "note": "Covers matching entity-document names to identification and an LOE for discrepancies, but does not specify every owner, officer, and signer, comparison with loan documents, or exact matching to loan-document names."
+   },
+   {
+    "kstudio": "BET-NAME-MATCH",
+    "ours": "acra-standard.compliance_and_closing.entity_documentation",
+    "relation": "partial",
+    "note": "Includes a name-match check against identification or an LOE for discrepancies, but does not specify every owner, officer, and signer or comparison with loan documents."
+   },
+   {
+    "kstudio": "BET-GOODSTAND",
+    "ours": "acra-standard.identification_requirements.entity_certificate_of_good_standing",
+    "relation": "partial",
+    "note": "Covers the 90-day Certificate of Good Standing requirement, but not the foreign-qualification requirement."
+   },
+   {
+    "kstudio": "BET-GOODSTAND",
+    "ours": "acra-standard.compliance_and_closing.entity_documentation",
+    "relation": "partial",
+    "note": "Includes the 90-day Certificate of Good Standing requirement and a general review of applicable foreign qualification, but does not state the foreign-qualification trigger and requirement in full; it also covers many other entity-document requirements."
+   },
+   {
+    "kstudio": "BET-GOODSTAND",
+    "ours": "acra-standard.identification_requirements.entity_foreign_qualification",
+    "relation": "partial",
+    "note": "Covers the foreign-qualification trigger and requirement, but not the 90-day Certificate of Good Standing requirement."
+   },
+   {
+    "kstudio": "BET-EIN-TAXID",
+    "ours": "acra-standard.identification_requirements.entity_tax_identification_document",
+    "relation": "differs",
+    "note": "Both require entity tax-identification documentation or an EIN exception request with a letter of explanation. The left also requires the EIN to match the entity name; the right does not state that condition."
+   },
+   {
+    "kstudio": "BET-EIN-TAXID",
+    "ours": "acra-standard.compliance_and_closing.entity_documentation",
+    "relation": "partial",
+    "note": "The right includes tax-identification and applicable EIN-exception documentation as parts of a broader entity-documentation review, but does not specify the EIN documents or conditions required by the left."
+   },
+   {
+    "kstudio": "BET-AUTH-POA",
+    "ours": "acra-standard.identification_requirements.entity_unanimous_written_consent_or_board_resolution",
+    "relation": "partial",
+    "note": "Covers the Unanimous Written Consent / Board Resolution requirements, but not the separate requirement to use a Power of Attorney to designate an attorney-in-fact for a personal guarantee."
+   },
+   {
+    "kstudio": "BET-AUTH-POA",
+    "ours": "acra-standard.identification_requirements.entity_power_of_attorney_for_personal_guarantee",
+    "relation": "partial",
+    "note": "Covers the Power of Attorney requirement for a personal guarantee, but not the separate consent / resolution requirements."
+   },
+   {
+    "kstudio": "BET-AUTH-POA",
+    "ours": "acra-standard.compliance_and_closing.entity_documentation",
+    "relation": "partial",
+    "note": "Includes the consent / resolution authorization and signer-designation requirement as part of broader entity-documentation requirements, but does not cover the separate Power of Attorney requirement for a personal guarantee."
+   },
+   {
+    "kstudio": "BET-REVTRUST",
+    "ours": "acra-standard.title_review.trust_documentation",
+    "relation": "partial",
+    "note": "Covers the required trust document and its stated details, which are only part of the left item\u2019s broader trust-vesting requirements."
+   },
+   {
+    "kstudio": "BET-REVTRUST",
+    "ours": "acra-standard.title_review.trust_validity_and_structure",
+    "relation": "partial",
+    "note": "Covers the trust validity, revocability, establishment, and primary-beneficiary requirements, which are only part of the left item."
+   },
+   {
+    "kstudio": "BET-REVTRUST",
+    "ours": "acra-standard.title_review.trustor_trustee_exception",
+    "relation": "partial",
+    "note": "Covers the Senior Management exception when Trustor(s) and Trustee(s) differ, which is only part of the left item."
+   },
+   {
+    "kstudio": "BET-REVTRUST",
+    "ours": "acra-standard.title_review.trustee_powers_and_lender_rights",
+    "relation": "partial",
+    "note": "Covers the Trustee powers, beneficiary consent, lender-risk, and creditor-rights terms, which are only part of the left item."
+   },
+   {
+    "kstudio": "BET-REVTRUST",
+    "ours": "acra-standard.title_review.additional_trust_documentation",
+    "relation": "partial",
+    "note": "Covers provision of additional documents when Legal imposes a condition, which is only part of the left item."
+   },
+   {
+    "kstudio": "CMP-SRC-VERSION",
+    "ours": "acra-standard.loan_program_eligibility.loan_amount",
+    "relation": "partial",
+    "note": "Covers the delayed-financing cap, one of the four version differences in the left item; it does not cover the other version-control requirements."
+   },
+   {
+    "kstudio": "CMP-SRC-VERSION",
+    "ours": "acra-standard.loan_program_eligibility.prepayment_penalty_structure",
+    "relation": "partial",
+    "note": "Covers prepayment-penalty structures and state restrictions, which overlap with the left item's Alaska and Mississippi prepayment version differences, but does not state those version differences."
+   },
+   {
+    "kstudio": "CRD-TRADELINE",
+    "ours": "acra-standard.credit_review_analysis.credit_score_count_requirements",
+    "relation": "same",
+    "note": ""
+   },
+   {
+    "kstudio": "CRD-ONENOSCORE",
+    "ours": "acra-standard.credit_review_analysis.one_or_no_score_deficient_tradelines",
+    "relation": "same",
+    "note": "Same 1-or-no-score/deficient-tradelines overlay, including the 65% LTV/CLTV limit, DSCR \u2265 1.1, 24 months 0x30 housing history, and score-pricing rules."
+   },
+   {
+    "kstudio": "CRD-BKFC-SEASON",
+    "ours": "acra-standard.credit_review_analysis.bankruptcy_and_foreclosure_seasoning_limits",
+    "relation": "same",
+    "note": "The bankruptcy/foreclosure seasoning bands and CLTV limits match, including 65% for both purchase and refinance at 12\u201323 months."
+   },
+   {
+    "kstudio": "CRD-SSDIL-SEASON",
+    "ours": "acra-standard.credit_review_analysis.short_sale_dil_and_modification_seasoning_limits",
+    "relation": "same",
+    "note": "Same short sale, deed-in-lieu, and modification seasoning bands and CLTV limits, including the case-by-case FB condition."
+   },
+   {
+    "kstudio": "CRD-ESCROW-WVR",
+    "ours": "acra-standard.credit_review_analysis.escrow_waiver_eligibility",
+    "relation": "same",
+    "note": "The escrow-waiver limits and Foreign National exclusion match; both refer the interaction with mandatory impounds to Q-15."
+   },
+   {
+    "kstudio": "CRD-ESCROW-WVR",
+    "ours": "acra-standard.loan_program_eligibility.vacant_property_refinance",
+    "relation": "partial",
+    "note": "It includes an impound requirement for vacant-property refinances, which is one of the mandatory-impound situations named on the left; its other refinance eligibility requirements are separate."
+   },
+   {
+    "kstudio": "CRD-ESCROW-WVR",
+    "ours": "acra-standard.loan_program_eligibility.first_time_homebuyer_conditions",
+    "relation": "partial",
+    "note": "It includes an impound requirement for first-time homebuyers, which is one of the mandatory-impound situations named on the left; its other program eligibility requirements are separate."
+   },
+   {
+    "kstudio": "CRD-IMPOUNDS-REQ",
+    "ours": "acra-standard.loan_program_eligibility.first_time_homebuyer_conditions",
+    "relation": "partial",
+    "note": "Requires impounds for first-time homebuyers, covering that part of the left requirement but not vacant-property refinances or properties listed for sale."
+   },
+   {
+    "kstudio": "CRD-IMPOUNDS-REQ",
+    "ours": "acra-standard.loan_program_eligibility.vacant_property_refinance",
+    "relation": "partial",
+    "note": "Requires impounds for vacant-property refinances, covering that part of the left requirement but not first-time homebuyers or properties listed for sale."
+   },
+   {
+    "kstudio": "CRD-GUAR-SCOPE",
+    "ours": "acra-standard.title_review.entity_owner_guarantees",
+    "relation": "partial",
+    "note": "Overlaps on identifying 20%+ direct or indirect owners and their guarantees, but requires the guarantees themselves; it does not require evaluating each guarantor's credit."
+   },
+   {
+    "kstudio": "CRD-GUAR-SCOPE",
+    "ours": "acra-standard.loan_program_eligibility.entity_guarantees",
+    "relation": "partial",
+    "note": "Includes the 20%+ owner guarantee requirement, which overlaps with the population in the left item, but does not require evaluating each guarantor's credit; it also adds homeownership and ownership-change requirements."
+   },
+   {
+    "kstudio": "BOR-CITZ",
+    "ours": "acra-standard.credit_review_analysis.citizenship_type_eligibility",
+    "relation": "partial",
+    "note": "Covers citizenship classification for borrowers, but not the left item\u2019s guarantors."
+   },
+   {
+    "kstudio": "BOR-CITZ",
+    "ours": "acra-standard.loan_program_eligibility.citizenship_category",
+    "relation": "partial",
+    "note": "Covers eligible-category identification for borrowers, but not guarantors; it also adds specific documentation requirements for Permanent and Non-Permanent Residents."
+   },
+   {
+    "kstudio": "BOR-PRA-ID",
+    "ours": "acra-standard.credit_review_analysis.permanent_resident_documents",
+    "relation": "differs",
+    "note": "Left requires the PRA card to be unexpired as of closing (expiration >= expected closing date); right requires an unexpired PRA ID but does not specify the closing-date condition."
+   },
+   {
+    "kstudio": "BOR-PRA-ID",
+    "ours": "acra-standard.identification_requirements.permanent_resident_identification",
+    "relation": "differs",
+    "note": "Left requires the PRA card to be unexpired as of closing (expiration >= expected closing date); right requires an unexpired PRA ID but does not specify the closing-date condition."
+   },
+   {
+    "kstudio": "BOR-PRA-ID",
+    "ours": "acra-standard.loan_program_eligibility.citizenship_category",
+    "relation": "differs",
+    "note": "The Permanent Resident documentation branch covers the same documents, but left requires the PRA card to be unexpired as of closing (expiration >= expected closing date); right does not specify the closing-date condition."
+   },
+   {
+    "kstudio": "BOR-NPR-ID",
+    "ours": "acra-standard.credit_review_analysis.non_permanent_resident_proof",
+    "relation": "differs",
+    "note": "Validity timing differs: the left requires the EAD or visa to be valid at expected closing; the right does not specify a closing-date check."
+   },
+   {
+    "kstudio": "BOR-NPR-ID",
+    "ours": "acra-standard.identification_requirements.non_permanent_resident_legal_residency",
+    "relation": "differs",
+    "note": "Validity timing differs: the left requires the EAD or visa to be valid at expected closing; the right does not specify a closing-date check."
+   },
+   {
+    "kstudio": "BOR-NPR-ID",
+    "ours": "acra-standard.loan_program_eligibility.citizenship_category",
+    "relation": "partial",
+    "note": "The right includes the left\u2019s Non-Permanent Resident proof requirement, but also covers other citizenship categories and their documentation requirements."
+   },
+   {
+    "kstudio": "BOR-NPR-LIMITS",
+    "ours": "acra-standard.identification_requirements.non_permanent_resident_limits_clarification",
+    "relation": "partial",
+    "note": "Covers only the clarification of whether the NPR amount and CLTV are independent or conditional; it does not test the $1.5M loan amount and 80% CLTV limits."
+   },
+   {
+    "kstudio": "BOR-FN-DEF",
+    "ours": "acra-standard.identification_requirements.foreign_national_program_eligibility",
+    "relation": "differs",
+    "note": "The left allows limited personal use or investment property; the right requires the Foreign National transaction to be business purpose only (investment property)."
+   },
+   {
+    "kstudio": "BOR-FN-DEF",
+    "ours": "acra-standard.loan_program_eligibility.foreign_national_eligibility",
+    "relation": "differs",
+    "note": "The left allows limited personal use or investment property and sets no CLTV or FICO limits; the right requires business purpose, CLTV no more than 70% for purchase or 65% for refinance, and FICO equal to 700."
+   },
+   {
+    "kstudio": "BOR-FN-CAPS",
+    "ours": "acra-standard.identification_requirements.foreign_national_cltv_and_fico",
+    "relation": "partial",
+    "note": "Matches the Foreign National CLTV caps and FICO 700 pricing requirement, but omits the left item\u2019s note that no maximum loan amount is printed and that the loan-amount question is conditional."
+   },
+   {
+    "kstudio": "BOR-FN-CAPS",
+    "ours": "acra-standard.loan_program_eligibility.foreign_national_eligibility",
+    "relation": "partial",
+    "note": "Includes the same Foreign National CLTV caps and FICO 700 pricing requirement, but omits the left item\u2019s loan-amount note and adds residence, authorization, and business-purpose requirements."
+   },
+   {
+    "kstudio": "BOR-FN-CAPS",
+    "ours": "acra-standard.credit_review_analysis.foreign_national_cltv_limit",
+    "relation": "partial",
+    "note": "Matches the Foreign National CLTV caps, but omits the FICO 700 pricing requirement and the left item\u2019s loan-amount note."
+   },
+   {
+    "kstudio": "BOR-ITIN-DEF",
+    "ours": "acra-standard.identification_requirements.foreign_national_program_eligibility",
+    "relation": "partial",
+    "note": "Overlaps the outside-U.S. residence condition for an ITIN holder relying on the Foreign National Program. It does not determine ITIN-borrower status based on inability to provide NPR documents or address the U.S.-resident ITIN question."
+   },
+   {
+    "kstudio": "BOR-ITIN-DEF",
+    "ours": "acra-standard.identification_requirements.itin_program_eligibility_clarification",
+    "relation": "partial",
+    "note": "Overlaps the unresolved eligibility question for a U.S.-resident ITIN holder. It does not cover the ITIN definition, NPR-document condition, or outside-U.S. residence test, and it also raises a separate FICO-tier question."
+   },
+   {
+    "kstudio": "BOR-ITIN-DEF",
+    "ours": "acra-standard.loan_program_eligibility.citizenship_category",
+    "relation": "partial",
+    "note": "It includes ITIN as a citizenship category and lists EAD or visa as possible NPR documentation, but does not determine ITIN status from inability to provide those documents or address residence-based eligibility."
+   },
+   {
+    "kstudio": "BOR-ITIN-DEF",
+    "ours": "acra-standard.credit_review_analysis.citizenship_type_eligibility",
+    "relation": "partial",
+    "note": "It includes ITIN among eligible citizenship types, but does not cover the left item\u2019s ITIN definition, inability-to-provide-NPR-documents condition, or residence-based eligibility question."
+   },
+   {
+    "kstudio": "BOR-ITIN-CAPS",
+    "ours": "acra-standard.loan_program_eligibility.itin_limits",
+    "relation": "differs",
+    "note": "The loan-amount, minimum-FICO, and CLTV limits match. The right candidate additionally requires Acra confirmation for eligibility of a US-resident ITIN holder; the left item does not state that condition."
+   },
+   {
+    "kstudio": "BOR-ITIN-CAPS",
+    "ours": "acra-standard.identification_requirements.itin_cltv_tier",
+    "relation": "partial",
+    "note": "Covers the ITIN CLTV tiers, which are part of the left item, but omits the $1,000,000 maximum loan amount and 640 minimum FICO."
+   },
+   {
+    "kstudio": "BOR-ITIN-CAPS",
+    "ours": "acra-standard.credit_review_analysis.itin_loan_amount_and_fico_limits",
+    "relation": "partial",
+    "note": "Covers the ITIN $1,000,000 maximum loan amount and 640 minimum FICO, but omits the CLTV tiers."
+   },
+   {
+    "kstudio": "BOR-ITIN-CREDIT",
+    "ours": "acra-standard.identification_requirements.itin_or_ssn_credit_reporting",
+    "relation": "same",
+    "note": "Both require scores and tradelines to be reported under the borrower's correct ITIN or SSN."
+   },
+   {
+    "kstudio": "BOR-FN-RESTRICT",
+    "ours": "acra-standard.credit_review_analysis.escrow_waiver_eligibility",
+    "relation": "partial",
+    "note": "Covers the Foreign National escrow-waiver restriction, but not the separate unresolved scope of the Credit Requirements panel\u2019s Foreign National restriction."
+   },
+   {
+    "kstudio": "BOR-FTHB-DEF",
+    "ours": "acra-standard.credit_review_analysis.first_time_homebuyer_status",
+    "relation": "same",
+    "note": "Both determine FTHB status using the same definition: every Applicant has never previously owned real property."
+   },
+   {
+    "kstudio": "BOR-FTHB-DEF",
+    "ours": "acra-standard.loan_program_eligibility.first_time_homebuyer_conditions",
+    "relation": "partial",
+    "note": "Includes the same FTHB definition, but also requires the stated DSCR program conditions to be met."
+   },
+   {
+    "kstudio": "FN-BIZPURPOSE",
+    "ours": "acra-standard.identification_requirements.foreign_national_program_eligibility",
+    "relation": "partial",
+    "note": "It includes the Foreign National business-purpose investment-property requirement, but also covers residence, authorization, and ITIN eligibility and does not state the required executed Business Purpose Attestation."
+   },
+   {
+    "kstudio": "FN-BIZPURPOSE",
+    "ours": "acra-standard.loan_program_eligibility.foreign_national_eligibility",
+    "relation": "partial",
+    "note": "It includes the Foreign National business-purpose investment-property requirement, but also adds residence, authorization, CLTV, and FICO requirements and does not state the required executed Business Purpose Attestation."
+   },
+   {
+    "kstudio": "FN-FX-REVIEW",
+    "ours": "acra-standard.identification_requirements.foreign_national_financial_position_review",
+    "relation": "same",
+    "note": "Both require scrutiny of a Foreign National applicant\u2019s post-close financial position and ability to mitigate exchange-rate fluctuations; the review conclusion is recorded."
+   },
+   {
+    "kstudio": "FN-OFAC-STATE",
+    "ours": "acra-standard.identification_requirements.foreign_national_ofac_and_state_restrictions",
+    "relation": "partial",
+    "note": "Covers review of the \u00a73.10 OFAC and state restrictions, but omits the explicit OFAC screening of all FN parties and the condition that the file remains conditional until Acra supplies the state exclusions."
+   },
+   {
+    "kstudio": "FN-ASSET-USD",
+    "ours": "acra-standard.asset_assessment.foreign_account_currency_verification",
+    "relation": "same",
+    "note": ""
+   },
+   {
+    "kstudio": "FN-ASSET-USD",
+    "ours": "acra-standard.compliance_and_closing.foreign_account_funds",
+    "relation": "partial",
+    "note": "Includes the same USD-equivalency verification requirement, but also covers additional foreign-account documentation, seasoning, translation, and funds-timing requirements."
+   },
+   {
+    "kstudio": "FN-FUNDS-ESCROW",
+    "ours": "acra-standard.asset_assessment.funds_on_deposit_before_closing",
+    "relation": "same",
+    "note": "Both require sufficient funds to close to be on deposit with the Escrow / Closing Agent at least three business days before closing, counting Saturdays."
+   },
+   {
+    "kstudio": "FN-FUNDS-ESCROW",
+    "ours": "acra-standard.compliance_and_closing.foreign_account_funds",
+    "relation": "partial",
+    "note": "Includes the same three-business-day escrow deposit requirement, but within requirements concerning foreign-account funds; the left applies to a Foreign National\u2019s funds to close generally."
+   },
+   {
+    "kstudio": "FN-SEASON-60",
+    "ours": "acra-standard.asset_assessment.foreign_account_statements_and_seasoning",
+    "relation": "partial",
+    "note": "Covers the two most recent statements and the 60-day seasoning or LOE-and-chain requirements, but not the non-English translation requirement or the regardless-of-LTV/CLTV condition."
+   },
+   {
+    "kstudio": "FN-SEASON-60",
+    "ours": "acra-standard.compliance_and_closing.foreign_account_funds",
+    "relation": "partial",
+    "note": "Covers the statements, seasoning or LOE-and-chain, and translation requirements, but does not state that seasoning applies regardless of LTV/CLTV; it also adds foreign-account conversion and closing-funds requirements."
+   },
+   {
+    "kstudio": "FN-SEASON-60",
+    "ours": "acra-standard.asset_assessment.foreign_national_funds_seasoning",
+    "relation": "differs",
+    "note": "Seasoning exception: left allows funds under 60 days to pass with an LOE and 60-day chain of funds; right requires a minimum of 60 days seasoning to be documented."
+   },
+   {
+    "kstudio": "FN-SEASON-60",
+    "ours": "acra-standard.asset_assessment.foreign_account_statement_translation",
+    "relation": "partial",
+    "note": "Covers only the translation requirement; the left also requires statements and seasoning documentation."
+   },
+   {
+    "kstudio": "FN-CLOSING-DOCS",
+    "ours": "acra-standard.compliance_and_closing.foreign_national_closing_documents",
+    "relation": "differs",
+    "note": "The right item adds a requirement that documents signed outside the U.S. meet applicable acknowledgment and title-company acceptance requirements; the left item does not include this condition."
+   },
+   {
+    "kstudio": "FN-CLOSING-DOCS",
+    "ours": "acra-standard.title_review.approved_title_and_closing_agent",
+    "relation": "partial",
+    "note": "Covers only the Acra-approved-or-vetted title and closing agent requirement, one part of the left item."
+   },
+   {
+    "kstudio": "FN-CLOSING-DOCS",
+    "ours": "acra-standard.identification_requirements.foreign_national_power_of_attorney",
+    "relation": "partial",
+    "note": "Covers only the Power of Attorney requirement, one part of the left item."
+   },
+   {
+    "kstudio": "FN-CLOSING-DOCS",
+    "ours": "acra-standard.identification_requirements.foreign_national_approved_closing_agent",
+    "relation": "partial",
+    "note": "Covers only the Acra-approved-or-vetted title and closing agent requirement, one part of the left item."
+   },
+   {
+    "kstudio": "FN-CLOSING-DOCS",
+    "ours": "acra-standard.title_review.power_of_attorney",
+    "relation": "partial",
+    "note": "Covers only the Power of Attorney requirements, one part of the left item."
+   },
+   {
+    "kstudio": "FN-CLOSING-DOCS",
+    "ours": "acra-standard.title_review.closing_identification",
+    "relation": "partial",
+    "note": "Covers only the current Passport, Visa, or ITIN copy requirement, one part of the left item."
+   },
+   {
+    "kstudio": "FN-NOTARY",
+    "ours": "acra-standard.title_review.foreign_document_notarization",
+    "relation": "same",
+    "note": "Requires the same notarization route for documents signed abroad, including the applicable seal or English apostille and title-company acceptance."
+   },
+   {
+    "kstudio": "FN-NOTARY",
+    "ours": "acra-standard.identification_requirements.foreign_national_documents_signed_outside_u_s",
+    "relation": "same",
+    "note": "Requires the same applicable notarization route, authentication, and title-company acceptance for documents signed outside the U.S."
+   },
+   {
+    "kstudio": "FN-NOTARY",
+    "ours": "acra-standard.compliance_and_closing.foreign_national_closing_documents",
+    "relation": "partial",
+    "note": "References notarization, acknowledgment, seal or apostille, and title-company acceptance for foreign-signed documents, but does not state the specific route conditions in the left item."
+   },
+   {
+    "kstudio": "DSCR-CALC",
+    "ours": "acra-standard.income_stability_sufficiency_analysis.calculate_dscr",
+    "relation": "differs",
+    "note": "The core DSCR formula and first-payment basis match. For interest-only loans, the left directs testing under DSCR-IO-DENOM (Q-26); the right says the guidelines do not resolve which payment enters the denominator. The left also makes qualifying rent subject to the DSCR-QUALRENT higher-of note; the right states only the lesser-of rent rule."
+   },
+   {
+    "kstudio": "DSCR-CALC",
+    "ours": "acra-standard.liabilities_assessment.dscr_calculation",
+    "relation": "differs",
+    "note": "The numerator, denominator, and first-payment basis match. The left requires the qualifying-rent and PITIA figures to be dated consistently and records the ratio to two decimals; the right instead conditions calculation on the required inputs and market-rent method being available, and does not state the two-decimal recording requirement."
+   },
+   {
+    "kstudio": "DSCR-CALC",
+    "ours": "acra-standard.property_tax_calculation.dscr_calculation",
+    "relation": "differs",
+    "note": "The core formula and first-payment basis match. For an interest-only loan, the left refers to DSCR-IO-DENOM (Q-26); the right requires Acra confirmation of which payment enters the denominator. The right also conditions calculation on the applicable market-rent method being available."
+   },
+   {
+    "kstudio": "DSCR-CALC",
+    "ours": "acra-standard.liabilities_assessment.interest_only_dscr_payment_basis_confirmation",
+    "relation": "partial",
+    "note": "This addresses only the interest-only payment-basis question referenced by the left; it does not state the full DSCR calculation."
+   },
+   {
+    "kstudio": "DSCR-PITIA",
+    "ours": "acra-standard.liabilities_assessment.dscr_calculation",
+    "relation": "partial",
+    "note": "Covers inclusion of the listed PITIA components and applicable subordinate financing in the DSCR denominator, but does not require each component to be verified from its source document or converted to a monthly amount."
+   },
+   {
+    "kstudio": "DSCR-PITIA",
+    "ours": "acra-standard.property_tax_calculation.dscr_calculation",
+    "relation": "partial",
+    "note": "Covers inclusion of the listed PITIA components and applicable subordinate financing in the DSCR denominator, but does not require source-document verification or monthly conversion of each component."
+   },
+   {
+    "kstudio": "DSCR-PITIA",
+    "ours": "acra-standard.income_stability_sufficiency_analysis.calculate_dscr",
+    "relation": "partial",
+    "note": "Covers the denominator components and first-payment basis, but not the left item's component-by-component source-document verification and monthly conversion."
+   },
+   {
+    "kstudio": "DSCR-SUBFIN",
+    "ours": "acra-standard.property_tax_calculation.dscr_calculation",
+    "relation": "same",
+    "note": "Both require subordinate financing, if applicable, to be included in the DSCR denominator."
+   },
+   {
+    "kstudio": "DSCR-SUBFIN",
+    "ours": "acra-standard.liabilities_assessment.dscr_calculation",
+    "relation": "same",
+    "note": "Both require subordinate financing, if applicable, to be included in the DSCR denominator."
+   },
+   {
+    "kstudio": "DSCR-SUBFIN",
+    "ours": "acra-standard.income_stability_sufficiency_analysis.calculate_dscr",
+    "relation": "same",
+    "note": "Both require subordinate financing, if applicable, to be included in the DSCR denominator."
+   },
+   {
+    "kstudio": "DSCR-QUALRENT",
+    "ours": "acra-standard.income_stability_sufficiency_analysis.verify_higher_actual_rent_evidence",
+    "relation": "partial",
+    "note": "Covers only the higher-actual-rent evidence portion of the left item. The right additionally requires that security deposits not count as receipts and that rents are not prepaid; those conditions are not stated in the left item."
+   },
+   {
+    "kstudio": "DSCR-QUALRENT",
+    "ours": "acra-standard.appraisal_review.actual_rent_evidence",
+    "relation": "partial",
+    "note": "Covers only the higher-actual-rent evidence portion of the left item. The right additionally requires that security deposits not count as receipts and that rents are not prepaid; those conditions are not stated in the left item."
+   },
+   {
+    "kstudio": "DSCR-QUALRENT",
+    "ours": "acra-standard.appraisal_review.vacant_purchase_rent_appraisal",
+    "relation": "partial",
+    "note": "Covers only the vacant-purchase rent source portion of the left item."
+   },
+   {
+    "kstudio": "DSCR-QUALRENT",
+    "ours": "acra-standard.property_tax_calculation.dscr_calculation",
+    "relation": "partial",
+    "note": "Shares the lesser-of-in-place-or-market numerator rule, but covers the broader DSCR calculation and does not address the left item\u2019s rent-evidence ambiguity or vacant-purchase rule."
+   },
+   {
+    "kstudio": "DSCR-QUALRENT",
+    "ours": "acra-standard.income_stability_sufficiency_analysis.calculate_dscr",
+    "relation": "partial",
+    "note": "Shares the lesser-of-in-place-or-market numerator rule, but covers the broader DSCR calculation and does not address the left item\u2019s rent-evidence ambiguity or vacant-purchase rule."
+   },
+   {
+    "kstudio": "DSCR-QUALRENT",
+    "ours": "acra-standard.liabilities_assessment.dscr_calculation",
+    "relation": "partial",
+    "note": "Shares the lesser-of-in-place-or-market numerator rule, but covers the broader DSCR calculation and does not address the left item\u2019s rent-evidence ambiguity or vacant-purchase rule."
+   },
+   {
+    "kstudio": "DSCR-ACTRENT-DOC",
+    "ours": "acra-standard.appraisal_review.actual_rent_evidence",
+    "relation": "same",
+    "note": "Same requirement: two consecutive months of actual-rent receipts, a lease continuing at least three months after closing, and no security deposit or prepaid rent counted as receipt when actual rent exceeds market rent."
+   },
+   {
+    "kstudio": "DSCR-ACTRENT-DOC",
+    "ours": "acra-standard.income_stability_sufficiency_analysis.verify_higher_actual_rent_evidence",
+    "relation": "same",
+    "note": "Same requirement: two consecutive months of actual-rent receipts, a lease continuing at least three months after closing, and no security deposit or prepaid rent counted as receipt when actual rent exceeds market rent."
+   },
+   {
+    "kstudio": "DSCR-VACANT-RENT",
+    "ours": "acra-standard.appraisal_review.vacant_purchase_rent_appraisal",
+    "relation": "same",
+    "note": "Both require qualifying rent for a vacant purchase to come from the applicable Form 1007 or 1025 appraisal report."
+   },
+   {
+    "kstudio": "DSCR-1007-REQ",
+    "ours": "acra-standard.income_stability_sufficiency_analysis.verify_rent_schedule",
+    "relation": "differs",
+    "note": "Left requires Form 1007 for the stated triggers; right allows an STRpro or similar form to replace it for short-term rentals."
+   },
+   {
+    "kstudio": "DSCR-1007-REQ",
+    "ours": "acra-standard.appraisal_review.required_rent_schedule",
+    "relation": "differs",
+    "note": "Left requires a 1007 from a state-licensed appraiser; right allows the original appraiser or any state-licensed appraiser. Left applies to DSCR qualifying files; right says every DSCR transaction."
+   },
+   {
+    "kstudio": "DSCR-RENT-XCESS",
+    "ours": "acra-standard.appraisal_review.excessive_lease_rent_support",
+    "relation": "same",
+    "note": "Both require support that excessive rent on a single-family investment property\u2019s lease is typical for the area, with the same acceptable evidence."
+   },
+   {
+    "kstudio": "DSCR-STR-FORM",
+    "ours": "acra-standard.appraisal_review.short_term_rental_appraisal_form",
+    "relation": "partial",
+    "note": "Covers the licensed-appraiser STR-form replacement for Form 1007, but not the left item's separate compliant-1007 path."
+   },
+   {
+    "kstudio": "DSCR-STR-FORM",
+    "ours": "acra-standard.income_stability_sufficiency_analysis.verify_rent_schedule",
+    "relation": "partial",
+    "note": "Includes the same STR-form replacement condition, but also covers other rent-schedule triggers and requirements not in the left item."
+   },
+   {
+    "kstudio": "DSCR-STR-LEDGER",
+    "ours": "acra-standard.appraisal_review.actual_rent_evidence",
+    "relation": "partial",
+    "note": "Covers the receipt and lease-condition portion mentioned by the left item, but only when actual rents exceed market; it does not address the required 12-month STR ledger."
+   },
+   {
+    "kstudio": "DSCR-STR-LEDGER",
+    "ours": "acra-standard.income_stability_sufficiency_analysis.verify_higher_actual_rent_evidence",
+    "relation": "partial",
+    "note": "Covers the receipt and lease-condition portion mentioned by the left item, but only when actual rents exceed market; it does not address the required 12-month STR ledger."
+   },
+   {
+    "kstudio": "DSCR-STR-LEDGER",
+    "ours": "acra-standard.income_stability_sufficiency_analysis.calculate_dscr",
+    "relation": "partial",
+    "note": "Addresses how rent is used in calculated DSCR, an aspect of the left item\u2019s unresolved qualifying-rent basis, but does not specify how to derive qualifying rent from an STR ledger."
+   },
+   {
+    "kstudio": "DSCR-FORB-OVL",
+    "ours": "acra-standard.asset_assessment.tenant_rent_receipt_reserves",
+    "relation": "partial",
+    "note": "Covers only the reserve alternative when the prior two months' rent was not received timely; the left item also permits timely receipt of those rent payments as an alternative."
+   },
+   {
+    "kstudio": "DSCR-LTV80",
+    "ours": "acra-standard.appraisal_review.property_type_appraisal_caps",
+    "relation": "partial",
+    "note": "Matches the above-80% LTV property eligibility restriction, but does not include the left item's DSCR or reserve requirements."
+   },
+   {
+    "kstudio": "DSCR-LTV80",
+    "ours": "acra-standard.loan_program_eligibility.eligible_property_type",
+    "relation": "partial",
+    "note": "Matches the above-80% LTV property eligibility restriction, but does not include the left item's DSCR or reserve requirements."
+   },
+   {
+    "kstudio": "DSCR-LTV80",
+    "ours": "acra-standard.asset_assessment.reserves_for_ltv_over_80_00",
+    "relation": "partial",
+    "note": "Matches the requirement for 6 months PITIA reserves when LTV > 80%, but does not include the left item's DSCR or property eligibility requirements."
+   },
+   {
+    "kstudio": "DSCR-LTV80",
+    "ours": "acra-standard.income_stability_sufficiency_analysis.apply_minimum_dscr_requirements",
+    "relation": "partial",
+    "note": "Matches the minimum DSCR of 1.20 when LTV > 80%, but does not include the left item's reserve or property eligibility requirements."
+   },
+   {
+    "kstudio": "DSCR-NORATIO-DOCS",
+    "ours": "acra-standard.insurance_coverage_sufficiency_policy_assessment.rent_loss_insurance_applicability",
+    "relation": "partial",
+    "note": "The left says No Ratio DSCR files remain subject to rent loss insurance. The right addresses that insurance requirement but specifies applicability conditions not stated in the left: one to four units, non-owner-occupied income property, LTV > 70%, rents used to qualify, and the stated CLTV condition."
+   },
+   {
+    "kstudio": "DSCR-NORATIO-DOCS",
+    "ours": "acra-standard.income_stability_sufficiency_analysis.verify_rent_schedule",
+    "relation": "partial",
+    "note": "Both include a Form 1007 requirement. The right covers a single-family DSCR qualifying file (and other triggers), while the left addresses No Ratio files and also notes a Form 1025 option for 2\u20134 units."
+   },
+   {
+    "kstudio": "DSCR-NORATIO-DOCS",
+    "ours": "acra-standard.income_stability_sufficiency_analysis.calculate_dscr",
+    "relation": "partial",
+    "note": "The right explicitly says not to calculate DSCR for a No Ratio file, matching that part of the left. Its principal requirement is calculating DSCR for files using calculated DSCR, which the left does not address."
+   },
+   {
+    "kstudio": "LFC-DSCR-FINAL",
+    "ours": "acra-standard.income_stability_sufficiency_analysis.apply_minimum_dscr_requirements",
+    "relation": "differs",
+    "note": "The listed-for-sale trigger differs: left says the property is listed for sale; right says listed for sale within six months. The left also requires determining the highest governing minimum and flagging No Ratio files; the right does not state those steps."
+   },
+   {
+    "kstudio": "LFC-DSCR-FINAL",
+    "ours": "acra-standard.loan_program_eligibility.eligible_property_type",
+    "relation": "partial",
+    "note": "Covers only the rural/unique and non-warrantable condo/condotel/PUDtel DSCR minimums from the left item, alongside property eligibility requirements."
+   },
+   {
+    "kstudio": "LFC-DSCR-FINAL",
+    "ours": "acra-standard.appraisal_review.property_type_appraisal_caps",
+    "relation": "partial",
+    "note": "Covers only the non-warrantable condo and condotel/PUDtel DSCR minimums from the left item, alongside appraisal caps and eligibility restrictions."
+   },
+   {
+    "kstudio": "LFC-DSCR-FINAL",
+    "ours": "acra-standard.loan_program_eligibility.additional_loan_amount_limits",
+    "relation": "partial",
+    "note": "Covers only the over-$2,000,000 minimum DSCR condition from the left item."
+   },
+   {
+    "kstudio": "LFC-DSCR-FINAL",
+    "ours": "acra-standard.loan_program_eligibility.mixed_use_property",
+    "relation": "partial",
+    "note": "Covers only the mixed-use minimum DSCR condition from the left item."
+   },
+   {
+    "kstudio": "LFC-DSCR-FINAL",
+    "ours": "acra-standard.appraisal_review.rural_or_unique_property_limits",
+    "relation": "partial",
+    "note": "Covers only the rural/unique minimum DSCR condition from the left item, alongside CLTV, FICO, and property-review requirements."
+   },
+   {
+    "kstudio": "DSCR-IO-DENOM",
+    "ours": "acra-standard.property_tax_calculation.dscr_calculation",
+    "relation": "partial",
+    "note": "Covers DSCR denominator components and says the interest-only payment basis requires Acra confirmation, but does not state the left item's IO-payment denominator or its fully amortized alternative."
+   },
+   {
+    "kstudio": "DSCR-IO-DENOM",
+    "ours": "acra-standard.liabilities_assessment.dscr_calculation",
+    "relation": "partial",
+    "note": "Covers the general first-payment DSCR denominator, but does not specify the interest-only payment basis or the fully amortized alternative."
+   },
+   {
+    "kstudio": "DSCR-IO-DENOM",
+    "ours": "acra-standard.income_stability_sufficiency_analysis.calculate_dscr",
+    "relation": "partial",
+    "note": "Addresses calculated DSCR and explicitly leaves the interest-only payment basis unresolved, but does not state the left item's IO-payment denominator or fully amortized alternative."
+   },
+   {
+    "kstudio": "DSCR-IO-DENOM",
+    "ours": "acra-standard.liabilities_assessment.interest_only_dscr_payment_basis_confirmation",
+    "relation": "partial",
+    "note": "Covers obtaining Acra confirmation for the interest-only payment basis, but does not state the payment calculation or the fully amortized alternative."
+   },
+   {
+    "kstudio": "RLI-PURPOSE",
+    "ours": "acra-standard.insurance_coverage_sufficiency_policy_assessment.rent_loss_insurance_coverage_sufficiency",
+    "relation": "differs",
+    "note": "Left: rent loss insurance coverage must last at least six months. Right: six months of coverage is sufficient, but when coverage cannot be obtained, reserves may substitute at two months of reserves for each month of coverage not provided."
+   },
+   {
+    "kstudio": "RLI-LTV-TRIGGER",
+    "ours": "acra-standard.insurance_coverage_sufficiency_policy_assessment.rent_loss_insurance_applicability",
+    "relation": "partial",
+    "note": "Covers the applicability triggers (property type, LTV > 70%, and rents used to qualify, including No Ratio DSCR), but not the six-month coverage assessment. It also flags the LTV \u2264 70% and CLTV > 70% case for confirmation; the left item refers to a CLTV exemption without specifying that unresolved case."
+   },
+   {
+    "kstudio": "RLI-LTV-TRIGGER",
+    "ours": "acra-standard.asset_assessment.rent_loss_insurance_reserves",
+    "relation": "partial",
+    "note": "Covers only the reserve substitution when required rent loss insurance cannot be obtained. It specifies two months of reserves per month of coverage not provided, which the left item refers to but does not quantify."
+   },
+   {
+    "kstudio": "RLI-LTV-TRIGGER",
+    "ours": "acra-standard.insurance_coverage_sufficiency_policy_assessment.rent_loss_insurance_coverage_sufficiency",
+    "relation": "partial",
+    "note": "Covers the six-month rent loss coverage and reserve-substitution portion, but not the left item's specific property, LTV, and rent-qualification triggers. It additionally specifies coverage for rental losses during rehabilitation after a casualty."
+   },
+   {
+    "kstudio": "RLI-CLTV-EXEMPT",
+    "ours": "acra-standard.insurance_coverage_sufficiency_policy_assessment.rent_loss_insurance_applicability",
+    "relation": "same",
+    "note": "Same CLTV \u226470% exemption and unresolved LTV \u226470% with CLTV >70% case."
+   },
+   {
+    "kstudio": "RLI-RESERVE-SUB",
+    "ours": "acra-standard.asset_assessment.rent_loss_insurance_reserves",
+    "relation": "same",
+    "note": "Both require two months of reserves for each month of required rent loss coverage that cannot be obtained; both leave whether substituted reserves are additional to other reserve requirements to confirmation."
+   },
+   {
+    "kstudio": "RLI-RESERVE-SUB",
+    "ours": "acra-standard.insurance_coverage_sufficiency_policy_assessment.rent_loss_insurance_coverage_sufficiency",
+    "relation": "partial",
+    "note": "Includes the left item's reserve-substitution requirement, but also assesses six months of rent loss coverage and coverage during property rehabilitation following a casualty."
+   },
+   {
+    "kstudio": "LPE-OCCUPANCY",
+    "ours": "acra-standard.compliance_and_closing.investment_occupancy",
+    "relation": "differs",
+    "note": "Left requires Investment (non-owner-occupied) status and no borrower or guarantor intent to occupy. Right additionally requires an eligible property type and individual ownership, plus lease and year-round principal-residence occupancy by non-owners."
+   },
+   {
+    "kstudio": "LPE-OCCUPANCY",
+    "ours": "acra-standard.loan_program_eligibility.investment_occupancy",
+    "relation": "differs",
+    "note": "Left requires Investment (non-owner-occupied) status and no borrower or guarantor intent to occupy. Right additionally requires an eligible property type and individual ownership, plus lease and year-round principal-residence occupancy by non-owners."
+   },
+   {
+    "kstudio": "LPE-INV-PROP",
+    "ours": "acra-standard.loan_program_eligibility.investment_occupancy",
+    "relation": "partial",
+    "note": "Covers the standard investment-property definition but omits the left item\u2019s alternative for a documented short-term rental."
+   },
+   {
+    "kstudio": "LPE-INV-PROP",
+    "ours": "acra-standard.compliance_and_closing.investment_occupancy",
+    "relation": "partial",
+    "note": "Covers the standard investment-property definition but omits the left item\u2019s alternative for a documented short-term rental."
+   },
+   {
+    "kstudio": "LPE-BIZ-CONSUMER",
+    "ours": "acra-standard.asset_assessment.funds_seasoning_verification_trigger",
+    "relation": "partial",
+    "note": "Covers the funds-to-close seasoning-trigger portion of the left item, but does not classify the transaction or record the basis for its classification."
+   },
+   {
+    "kstudio": "LPE-BIZ-CONSUMER",
+    "ours": "acra-standard.title_review.business_entity_transaction",
+    "relation": "partial",
+    "note": "Covers business-purpose classification for business-entity financing on investment properties, but not the left item\u2019s broader business-versus-consumer classification or its other classification factors."
+   },
+   {
+    "kstudio": "LPE-PURPOSE",
+    "ours": "acra-standard.loan_program_eligibility.loan_amount",
+    "relation": "partial",
+    "note": "Covers the delayed-financing cap of $1.5MM, but not classification into the purpose columns."
+   },
+   {
+    "kstudio": "LPE-RENTFORM",
+    "ours": "acra-standard.appraisal_review.required_rent_schedule",
+    "relation": "partial",
+    "note": "Matches the requirement for a Form 1007 on every DSCR transaction, including No Ratio by implication, and the appraiser qualification. It does not address the left item's 2\u20134 unit files relying on Form 1025 pending Acra confirmation."
+   },
+   {
+    "kstudio": "LPE-RENTFORM",
+    "ours": "acra-standard.income_stability_sufficiency_analysis.verify_rent_schedule",
+    "relation": "partial",
+    "note": "Covers the Form 1007 requirement for single-family DSCR files, only part of the left item's requirement for every DSCR transaction, including No Ratio and the 2\u20134 unit Form 1025 issue."
+   },
+   {
+    "kstudio": "LPE-RIDER",
+    "ours": "acra-standard.insurance_coverage_sufficiency_policy_assessment.rent_loss_insurance_applicability",
+    "relation": "partial",
+    "note": "This addresses identifying whether the rent loss insurance obligation applies, but not execution of the One- to Four-Family Rider."
+   },
+   {
+    "kstudio": "LPE-LOAN-AMT",
+    "ours": "acra-standard.asset_assessment.loan_amount_limits",
+    "relation": "same",
+    "note": "Same $100,000 minimum, $3,000,000 maximum, and $50 increment."
+   },
+   {
+    "kstudio": "LPE-LOAN-AMT",
+    "ours": "acra-standard.loan_program_eligibility.loan_amount",
+    "relation": "partial",
+    "note": "It includes the same $100,000\u2013$3,000,000 range and $50 increment, plus interest-only and delayed-financing limits not covered by the left item."
+   },
+   {
+    "kstudio": "LPE-SELLER-CONC",
+    "ours": "acra-standard.asset_assessment.seller_concession_cap",
+    "relation": "same",
+    "note": "Both limit seller concessions and other contributions to 3% of the sale price."
+   },
+   {
+    "kstudio": "LPE-SELLER-CONC",
+    "ours": "acra-standard.loan_program_eligibility.seller_contributions",
+    "relation": "same",
+    "note": "Both limit seller concessions and other contributions to 3% of the sale price."
+   },
+   {
+    "kstudio": "LPE-FTHB-COND",
+    "ours": "acra-standard.loan_program_eligibility.first_time_homebuyer_conditions",
+    "relation": "same",
+    "note": "Same FTHB-on-DSCR eligibility conditions, including the same thresholds and requirements."
+   },
+   {
+    "kstudio": "LFC-FICO-MTX",
+    "ours": "acra-standard.loan_program_eligibility.matrix_fico_and_cltv",
+    "relation": "differs",
+    "note": "For FICO below 600 on loans \u2264 $1,500,000, the left routes the score to LFC-FICO-FLOOR; the right requires Acra confirmation before determining eligibility."
+   },
+   {
+    "kstudio": "LFC-FICO-FLOOR",
+    "ours": "acra-standard.loan_program_eligibility.matrix_fico_and_cltv",
+    "relation": "partial",
+    "note": "Covers the \u2264$1,500,000 and FICO-below-600 Acra-confirmation case, but does not specify the left item's additional Tier 2 and Tier 3 below-row thresholds and outcomes."
+   },
+   {
+    "kstudio": "LFC-DELAY-FIN",
+    "ours": "acra-standard.loan_program_eligibility.loan_amount",
+    "relation": "partial",
+    "note": "It includes the same delayed-financing cap ($1.5MM), but does not require evidence of the prior all-cash acquisition or flag the open matrix-column and cash-in-hand questions."
+   },
+   {
+    "kstudio": "LFC-SMALL-LOAN",
+    "ours": "acra-standard.credit_review_analysis.loan_amount_below_200_000_cltv_limit",
+    "relation": "same",
+    "note": "Same below-$200,000 trigger and CLTV caps: 80% for purchase and 75% for rate-and-term or cash-out refinance."
+   },
+   {
+    "kstudio": "LFC-SMALL-LOAN",
+    "ours": "acra-standard.loan_program_eligibility.additional_loan_amount_limits",
+    "relation": "partial",
+    "note": "Includes the same below-$200,000 CLTV caps: left 80% purchase / 75% refinance; right 80% purchase / 75% refinance. It also adds a separate DSCR requirement for loans above $2,000,000."
+   },
+   {
+    "kstudio": "LFC-JUMBO-DSCR",
+    "ours": "acra-standard.credit_review_analysis.loan_amount_over_2_000_000_dscr",
+    "relation": "same",
+    "note": "Both require a DSCR of at least 1.0 when the loan amount is over $2,000,000; a No Ratio file cannot meet that numeric DSCR requirement."
+   },
+   {
+    "kstudio": "LFC-JUMBO-DSCR",
+    "ours": "acra-standard.loan_program_eligibility.additional_loan_amount_limits",
+    "relation": "partial",
+    "note": "It includes the over-$2,000,000 DSCR minimum, but does not explicitly state the left item's exclusion of No Ratio qualification; it also includes separate limits for loans below $200,000."
+   },
+   {
+    "kstudio": "LFC-JUMBO-DSCR",
+    "ours": "acra-standard.income_stability_sufficiency_analysis.apply_minimum_dscr_requirements",
+    "relation": "partial",
+    "note": "It includes a 1.0 calculated-DSCR minimum for loans over $2,000,000, but also covers other DSCR triggers and does not explicitly state the left item's No Ratio exclusion."
+   },
+   {
+    "kstudio": "LFC-CLTV-FINAL",
+    "ours": "acra-standard.appraisal_review.property_type_appraisal_caps",
+    "relation": "partial",
+    "note": "Covers the property-type CLTV caps, a subset of the consolidated caps. The left also requires 1.20 DSCR for LTV above 80%; this candidate states the property-type eligibility restriction but not that DSCR threshold."
+   },
+   {
+    "kstudio": "LFC-CLTV-FINAL",
+    "ours": "acra-standard.loan_program_eligibility.eligible_property_type",
+    "relation": "partial",
+    "note": "Covers property-type and rural/unique CLTV caps, a subset of the consolidated caps. It also omits the left's 1.20 DSCR condition for LTV above 80%."
+   },
+   {
+    "kstudio": "LFC-CLTV-FINAL",
+    "ours": "acra-standard.credit_review_analysis.loan_amount_below_200_000_cltv_limit",
+    "relation": "partial",
+    "note": "Covers only the below-$200,000 loan-amount cap: 80% for purchase and 75% for refinance, matching the left."
+   },
+   {
+    "kstudio": "LFC-CLTV-FINAL",
+    "ours": "acra-standard.compliance_and_closing.listed_property_maximum_cltv",
+    "relation": "partial",
+    "note": "Covers only the listed-property 65% LTV/CLTV cap, a subset of the left's consolidated caps."
+   },
+   {
+    "kstudio": "LFC-CLTV-FINAL",
+    "ours": "acra-standard.loan_program_eligibility.additional_loan_amount_limits",
+    "relation": "partial",
+    "note": "Includes the below-$200,000 CLTV cap, matching the left, but covers only that part of the consolidated CLTV determination; its above-$2,000,000 DSCR condition is not a CLTV cap stated in the left."
+   },
+   {
+    "kstudio": "LFC-CLTV-FINAL",
+    "ours": "acra-standard.credit_review_analysis.bankruptcy_and_foreclosure_seasoning_limits",
+    "relation": "partial",
+    "note": "Covers only bankruptcy/foreclosure seasoning caps, a subset of the left's credit-event caps. The overlapping 24\u201335-month and 12\u201323-month limits match."
+   },
+   {
+    "kstudio": "LFC-FICO-FINAL",
+    "ours": "acra-standard.identification_requirements.itin_minimum_fico",
+    "relation": "partial",
+    "note": "Covers only the left item's ITIN minimum FICO floor (640); the left also determines the highest applicable floor across other features and checks the score against it."
+   },
+   {
+    "kstudio": "LFC-FICO-FINAL",
+    "ours": "acra-standard.credit_review_analysis.itin_loan_amount_and_fico_limits",
+    "relation": "partial",
+    "note": "Covers the left item's ITIN minimum FICO floor (640), but also adds an ITIN maximum loan amount of $1.0M; the left covers other feature-specific floors too."
+   },
+   {
+    "kstudio": "LFC-FICO-FINAL",
+    "ours": "acra-standard.credit_review_analysis.interest_only_loan_amount_and_fico",
+    "relation": "partial",
+    "note": "Covers only the left item's interest-only minimum FICO floor (640), and adds loan-amount limits; the left also determines the highest applicable floor across other features."
+   },
+   {
+    "kstudio": "LFC-FICO-FINAL",
+    "ours": "acra-standard.loan_program_eligibility.itin_limits",
+    "relation": "partial",
+    "note": "Covers the left item's ITIN minimum FICO floor (640), but adds loan-amount and CLTV limits; the left also covers other feature-specific floors."
+   },
+   {
+    "kstudio": "LFC-FICO-FINAL",
+    "ours": "acra-standard.loan_program_eligibility.interest_only_eligibility",
+    "relation": "partial",
+    "note": "Covers the left item's interest-only minimum FICO floor (640), but adds product, loan-amount, CLTV, and property/borrower conditions; the left also covers other feature-specific floors."
+   },
+   {
+    "kstudio": "PPT-PRODUCTS",
+    "ours": "acra-standard.loan_program_eligibility.interest_only_eligibility",
+    "relation": "partial",
+    "note": "Covers the eligible interest-only products, but not the eligible non-interest-only 30 Yr Fixed, 5/1 ARM, and 7/1 ARM products."
+   },
+   {
+    "kstudio": "PPT-IO-PARAMS",
+    "ours": "acra-standard.credit_review_analysis.interest_only_loan_amount_and_fico",
+    "relation": "partial",
+    "note": "Matches the $250,000 minimum, $3,000,000 maximum, and 640 minimum FICO for interest-only loans, but does not specify the left item\u2019s product scope: 5 Yr / 30 fixed and 5/1 or 7/1 ARM."
+   },
+   {
+    "kstudio": "PPT-IO-PARAMS",
+    "ours": "acra-standard.loan_program_eligibility.interest_only_eligibility",
+    "relation": "differs",
+    "note": "The left applies the $3,000,000 maximum to the 5 Yr / 30 fixed and 5/1 or 7/1 ARM products; the right applies that maximum only to the 10 Yr / 40 Year Term. The right also includes the 10 Yr / 40 Year Term as an eligible product."
+   },
+   {
+    "kstudio": "PPT-IO-1040",
+    "ours": "acra-standard.loan_program_eligibility.interest_only_eligibility",
+    "relation": "same",
+    "note": "Includes the same $250,000 minimum, 640 FICO floor, and 10 Yr / 40 Year Term limits of 80% LTV / CLTV and $3M maximum loan amount."
+   },
+   {
+    "kstudio": "PPT-IO-1040",
+    "ours": "acra-standard.credit_review_analysis.interest_only_loan_amount_and_fico",
+    "relation": "partial",
+    "note": "It matches the $250,000 minimum, $3,000,000 maximum, and 640 FICO floor, but does not state the 10/40-specific 80% LTV / CLTV maximum."
+   },
+   {
+    "kstudio": "PPT-IO-EXCL",
+    "ours": "acra-standard.compliance_and_closing.listed_property_amortization",
+    "relation": "partial",
+    "note": "Covers the listed-for-sale exclusion, but not the first-time-homebuyer or vacant-refinance exclusions."
+   },
+   {
+    "kstudio": "PPT-IO-EXCL",
+    "ours": "acra-standard.loan_program_eligibility.interest_only_eligibility",
+    "relation": "differs",
+    "note": "The exclusion categories overlap, but the left limits the listing trigger to properties listed within six months and specifies vacant-property rate-and-term or cash-out refinances; the right says listed for sale without a period and refers generally to vacant-property refinances."
+   },
+   {
+    "kstudio": "PPT-IO-EXCL",
+    "ours": "acra-standard.loan_program_eligibility.property_listed_for_sale",
+    "relation": "partial",
+    "note": "Covers the listed-for-sale exclusion, but not the first-time-homebuyer or vacant-refinance exclusions."
+   },
+   {
+    "kstudio": "PPT-IO-EXCL",
+    "ours": "acra-standard.appraisal_review.listed_property_appraisal_limits",
+    "relation": "partial",
+    "note": "Covers the listed-for-sale exclusion, but not the first-time-homebuyer or vacant-refinance exclusions."
+   },
+   {
+    "kstudio": "PPT-SUBFIN-HELOC",
+    "ours": "acra-standard.liabilities_assessment.heloc_cltv_basis",
+    "relation": "partial",
+    "note": "Covers the HELOC CLTV basis only: use the greater of the credit line limit or current balance when subordinate financing is allowable. It does not cover identifying subordinate financing, the listed-for-sale prohibition, or Acra confirmation."
+   },
+   {
+    "kstudio": "PPT-SUBFIN-HELOC",
+    "ours": "acra-standard.liabilities_assessment.subordinate_financing_eligibility",
+    "relation": "partial",
+    "note": "Covers the listed-for-sale prohibition and the need for Acra confirmation of subordinate-financing eligibility, but not the HELOC CLTV calculation."
+   },
+   {
+    "kstudio": "PPT-SUBFIN-HELOC",
+    "ours": "acra-standard.loan_program_eligibility.property_listed_for_sale",
+    "relation": "partial",
+    "note": "Includes the prohibition on subordinate financing for listed properties, but does not cover the HELOC CLTV calculation or Acra confirmation; it also applies its listed-property conditions to a property listed within the last six months."
+   },
+   {
+    "kstudio": "PPT-SUBFIN-HELOC",
+    "ours": "acra-standard.appraisal_review.listed_property_appraisal_limits",
+    "relation": "partial",
+    "note": "Includes a no-subordinate-financing condition for properties meeting its six-month listing-period test, but does not cover the HELOC CLTV calculation or Acra confirmation."
+   },
+   {
+    "kstudio": "PPT-PPP-STRUCT",
+    "ours": "acra-standard.loan_program_eligibility.prepayment_penalty_structure",
+    "relation": "partial",
+    "note": "The published prepayment structures match, but the right candidate also applies transaction-specific minimum-term requirements not included in the left item."
+   },
+   {
+    "kstudio": "PPT-PPP-MINTERM",
+    "ours": "acra-standard.loan_program_eligibility.prepayment_penalty_structure",
+    "relation": "same",
+    "note": "Includes all three transaction-specific minimums with the same durations and state-allowability conditions; its additional published-structure checks do not change those requirements."
+   },
+   {
+    "kstudio": "PPT-PPP-MINTERM",
+    "ours": "acra-standard.loan_program_eligibility.property_listed_for_sale",
+    "relation": "partial",
+    "note": "Covers only the listed-for-sale portion of the left item: at least three years unless the state does not allow prepayment penalties."
+   },
+   {
+    "kstudio": "PPT-PPP-MINTERM",
+    "ours": "acra-standard.appraisal_review.listed_property_appraisal_limits",
+    "relation": "partial",
+    "note": "Includes the listed-for-sale minimum of at least three years unless the state does not allow prepayment penalties, but not the two vacant-refinance minimums."
+   },
+   {
+    "kstudio": "PPT-PPP-MINTERM",
+    "ours": "acra-standard.loan_program_eligibility.vacant_property_refinance",
+    "relation": "partial",
+    "note": "Includes the vacant rate-and-term minimum of two years and vacant cash-out minimum of three years, each where allowable, but not the listed-for-sale minimum."
+   },
+   {
+    "kstudio": "PPT-PPP-STATE",
+    "ours": "acra-standard.loan_program_eligibility.prepayment_penalty_structure",
+    "relation": "partial",
+    "note": "Includes applying printed state restrictions, but does not state the state-specific borrower, loan-amount, rate, unit-count, and transaction conditions listed in the left item."
+   }
+  ]
+ },
+ "platinum": {
+  "left_items": 108,
+  "right_items": 110,
+  "left_best": {
+   "none": 12,
+   "partial": 48,
+   "same": 37,
+   "differs": 11
+  },
+  "right_unmatched": 10,
+  "pairs": [
+   {
+    "kstudio": "PRE-INELIG-TYP",
+    "ours": "acra-platinum.loan_program_eligibility.property_eligibility_and_location",
+    "relation": "partial",
+    "note": "Includes the left item's exclusions for Rural, Condotel, Non-Warrantable Condo, and Short-Term Rental, but also adds eligible-property-type and location requirements."
+   },
+   {
+    "kstudio": "PRE-INELIG-TYP",
+    "ours": "acra-platinum.appraisal_review.short_term_rental_eligibility",
+    "relation": "partial",
+    "note": "Covers only the Short-Term Rental exclusion; it does not cover the left item's Rural, Condotel, or Non-Warrantable Condo exclusions."
+   },
+   {
+    "kstudio": "PRE-INELIG-TYP",
+    "ours": "acra-platinum.income_stability_sufficiency_analysis.short_term_rental_eligibility",
+    "relation": "partial",
+    "note": "Covers only the Short-Term Rental exclusion; it does not cover the left item's Rural, Condotel, or Non-Warrantable Condo exclusions."
+   },
+   {
+    "kstudio": "PRE-LISTCOND",
+    "ours": "acra-platinum.loan_program_eligibility.listed_for_sale_requirements",
+    "relation": "same",
+    "note": "Matches the listed-for-sale requirements and stated limits; the explicit no-interest-only rule is consistent with the fully amortizing requirement."
+   },
+   {
+    "kstudio": "PRE-LISTCOND",
+    "ours": "acra-platinum.compliance_and_closing.listed_property_requirements",
+    "relation": "partial",
+    "note": "Covers several listed-for-sale requirements but omits the three-year prepayment-penalty requirement; it also adds a DTI alternative to the DSCR qualification."
+   },
+   {
+    "kstudio": "PRE-LISTCOND",
+    "ours": "acra-platinum.credit_review_analysis.property_listed_for_sale",
+    "relation": "differs",
+    "note": "Same listed-for-sale trigger and requirements, but it allows a 43% maximum DTI alternative to the channel-minimum DSCR requirement."
+   },
+   {
+    "kstudio": "PRE-LISTCOND",
+    "ours": "acra-platinum.liabilities_assessment.listed_property_ltv_and_cltv",
+    "relation": "partial",
+    "note": "Covers only the listed-property LTV/CLTV component of the left item."
+   },
+   {
+    "kstudio": "PRE-LISTCOND",
+    "ours": "acra-platinum.title_review.listed_property_maximum_ltv_cltv",
+    "relation": "partial",
+    "note": "Covers only the LTV/CLTV component of the left item."
+   },
+   {
+    "kstudio": "PRE-LISTDEF",
+    "ours": "acra-platinum.asset_assessment.listed_property_status",
+    "relation": "same",
+    "note": "Both determine listed-for-sale status using a six-month period measured from the last listing date to the Application Date."
+   },
+   {
+    "kstudio": "PRE-LISTDEF",
+    "ours": "acra-platinum.liabilities_assessment.property_listed_within_six_months",
+    "relation": "same",
+    "note": "Both determine listed-for-sale status using a six-month period measured from the last listing date to the Application Date."
+   },
+   {
+    "kstudio": "PRE-LISTDEF",
+    "ours": "acra-platinum.loan_program_eligibility.listed_for_sale_requirements",
+    "relation": "partial",
+    "note": "Includes the same six-month listed-for-sale definition, but also covers additional loan eligibility requirements."
+   },
+   {
+    "kstudio": "PRE-LOCATION",
+    "ours": "acra-platinum.loan_program_eligibility.property_eligibility_and_location",
+    "relation": "partial",
+    "note": "The candidate includes the same South Dakota and U.S. territory location exclusions, but also adds property-type and other ineligible-category requirements; it does not explicitly include the left item\u2019s LOS-to-appraisal-and-title state consistency check."
+   },
+   {
+    "kstudio": "PRE-TYPES",
+    "ours": "acra-platinum.loan_program_eligibility.property_eligibility_and_location",
+    "relation": "partial",
+    "note": "The eligible property-type list matches the left item, including warrantable condos and two-unit properties. Candidate 84 also adds exclusions for rural properties, condotels, non-warrantable condos, short-term rentals, and certain locations."
+   },
+   {
+    "kstudio": "PRE-VACANT",
+    "ours": "acra-platinum.compliance_and_closing.vacant_property_eligibility",
+    "relation": "partial",
+    "note": "Matches the vacant-property-ineligibility requirement, but does not require the appraisal review or reconciliation against other property documents described in the left item."
+   },
+   {
+    "kstudio": "PRE-VACANT",
+    "ours": "acra-platinum.loan_program_eligibility.vacant_property_eligibility",
+    "relation": "partial",
+    "note": "Matches the requirement that the property not be vacant, but uses occupancy and tenancy evidence rather than requiring the appraisal finding and checking for contradictory inspection documents."
+   },
+   {
+    "kstudio": "PRE-UNADDRESSED",
+    "ours": "acra-platinum.loan_program_eligibility.property_eligibility_and_location",
+    "relation": "partial",
+    "note": "It covers checking property types against eligible and ineligible categories, but does not address the left item's third state: types on neither list that must be sent to Acra for confirmation."
+   },
+   {
+    "kstudio": "AFC-30DAY-MIN",
+    "ours": "acra-platinum.compliance_and_closing.funds_documentation_minimum",
+    "relation": "same",
+    "note": "Requires at least 30 days of funds-to-close documentation for all transactions."
+   },
+   {
+    "kstudio": "AFC-30DAY-MIN",
+    "ours": "acra-platinum.asset_assessment.funds_to_close_seasoning_verification",
+    "relation": "same",
+    "note": "States that all transactions have a minimum of 30 days of documentation; its additional seasoning-verification triggers do not change that documentation minimum."
+   },
+   {
+    "kstudio": "AFC-GIFT-MIN",
+    "ours": "acra-platinum.compliance_and_closing.investment_gift_funds_contribution",
+    "relation": "same",
+    "note": "Both require at least 10% of the purchase price in the applicants\u2019 own sourced and seasoned funds for an investment-property transaction involving gift funds."
+   },
+   {
+    "kstudio": "AFC-GIFT-MIN",
+    "ours": "acra-platinum.asset_assessment.investment_property_gift_contribution",
+    "relation": "same",
+    "note": "Both require at least 10% of the purchase price in the applicants\u2019 own sourced and seasoned funds for an investment property."
+   },
+   {
+    "kstudio": "AFC-RESERVE-CLTV",
+    "ours": "acra-platinum.asset_assessment.cltv_over_75_reserves",
+    "relation": "same",
+    "note": "Both require six months of reserves when CLTV exceeds 75%."
+   },
+   {
+    "kstudio": "AFC-RESERVE-OTHER",
+    "ours": "acra-platinum.title_review.listed_property_reserves",
+    "relation": "partial",
+    "note": "Covers only the listed-property component of the left item: 24 months of reserves."
+   },
+   {
+    "kstudio": "AFC-RESERVE-OTHER",
+    "ours": "acra-platinum.liabilities_assessment.listed_property_reserves",
+    "relation": "partial",
+    "note": "Covers only the listed-property component; the 24-month requirement and listed-within-six-months trigger match."
+   },
+   {
+    "kstudio": "AFC-RESERVE-OTHER",
+    "ours": "acra-platinum.asset_assessment.listed_property_reserves",
+    "relation": "partial",
+    "note": "Covers only the 24-month listed-property component of the left item."
+   },
+   {
+    "kstudio": "AFC-RESERVE-OTHER",
+    "ours": "acra-platinum.asset_assessment.rent_loss_insurance_reserve_substitute",
+    "relation": "partial",
+    "note": "Covers only the rent-loss component: 2 months of reserves for each month of coverage not obtained."
+   },
+   {
+    "kstudio": "AFC-RESERVE-OTHER",
+    "ours": "acra-platinum.asset_assessment.recent_forbearance_or_mortgage_lates_reserves",
+    "relation": "partial",
+    "note": "Covers only the forbearance/lates component. The right specifies a tenant-occupied subject and no timely receipt of the prior two months' rent."
+   },
+   {
+    "kstudio": "AFC-SEASON-THRESH",
+    "ours": "acra-platinum.asset_assessment.funds_to_close_seasoning_verification",
+    "relation": "partial",
+    "note": "The seasoning triggers match: consumer transactions over 70% CLTV, or business-purpose loans with funds to close over $50,000 and CLTV over 70%. The right candidate also requires a minimum of 30-days documentation, which is not part of the left item."
+   },
+   {
+    "kstudio": "AFC-VERIF-DOCS",
+    "ours": "acra-platinum.asset_assessment.funds_to_close_seasoning_verification",
+    "relation": "partial",
+    "note": "The acceptable-document requirement overlaps: both allow recent bank statements or a VOD reflecting current and average balances. The right item additionally limits when funds-to-close seasoning verification applies and requires at least 30 days of documentation; the left item does not specify those triggers or a 30-day minimum."
+   },
+   {
+    "kstudio": "AFC-RESERVE-TOTAL",
+    "ours": "acra-platinum.title_review.listed_property_reserves",
+    "relation": "partial",
+    "note": "Matches the 24-month listed-property reserve trigger, but covers only that trigger, not the aggregate reserve requirement."
+   },
+   {
+    "kstudio": "AFC-RESERVE-TOTAL",
+    "ours": "acra-platinum.liabilities_assessment.listed_property_reserves",
+    "relation": "partial",
+    "note": "Matches the 24-month reserve trigger when the property was listed for sale in the last six months, but covers only that trigger, not the aggregate requirement."
+   },
+   {
+    "kstudio": "AFC-RESERVE-TOTAL",
+    "ours": "acra-platinum.asset_assessment.cltv_over_75_reserves",
+    "relation": "partial",
+    "note": "Matches the six-month reserve trigger for CLTV above 75.00%, but covers only that trigger, not the aggregate requirement."
+   },
+   {
+    "kstudio": "AFC-RESERVE-TOTAL",
+    "ours": "acra-platinum.asset_assessment.listed_property_reserves",
+    "relation": "partial",
+    "note": "Matches the 24-month listed-property reserve trigger, but covers only that trigger, not the aggregate requirement."
+   },
+   {
+    "kstudio": "AFC-RESERVE-TOTAL",
+    "ours": "acra-platinum.asset_assessment.rent_loss_insurance_reserve_substitute",
+    "relation": "partial",
+    "note": "Matches the 2-for-1 reserve substitution when required rent loss insurance cannot be obtained, but covers only that trigger, not the aggregate requirement."
+   },
+   {
+    "kstudio": "AFC-RESERVE-TOTAL",
+    "ours": "acra-platinum.insurance_coverage_sufficiency_policy_assessment.rent_loss_insurance_sufficiency",
+    "relation": "partial",
+    "note": "Includes the 2-for-1 reserve substitution for unavailable rent loss coverage, but also addresses six months of insurance coverage and covers only part of the aggregate reserve requirement."
+   },
+   {
+    "kstudio": "BET-AUTH-POA",
+    "ours": "acra-platinum.compliance_and_closing.entity_documentation_package",
+    "relation": "partial",
+    "note": "Includes the Unanimous Written Consent / Board Resolution and required authorization/signer information, and refers generally to any required Power of Attorney. It does not specify that all members sign, that the POA separately designates an attorney-in-fact for a personal guarantee, or that the Consent/Resolution cannot serve that purpose."
+   },
+   {
+    "kstudio": "BET-AUTH-POA",
+    "ours": "acra-platinum.identification_requirements.entity_documentation",
+    "relation": "partial",
+    "note": "Covers entity authorization and signer designation through the Operating Agreement or Bylaws, but does not state the transaction-specific Consent/Resolution requirement or the separate POA requirement for a personal guarantee."
+   },
+   {
+    "kstudio": "BET-AUTH-POA",
+    "ours": "acra-platinum.title_review.entity_documentation",
+    "relation": "partial",
+    "note": "Includes the Consent/Resolution, signer information, and any required POA, but does not specify that all members sign or that a separate POA must designate an attorney-in-fact for a personal guarantee rather than using the Consent/Resolution."
+   },
+   {
+    "kstudio": "BET-BGCHECK",
+    "ours": "acra-platinum.compliance_and_closing.entity_due_diligence_currency",
+    "relation": "partial",
+    "note": "Covers due-diligence currency and applicable parties, but does not require the specified OFAC, criminal, litigation, judgment, and lien searches or disposition of unresolved findings."
+   },
+   {
+    "kstudio": "BET-BGCHECK",
+    "ours": "acra-platinum.identification_requirements.key_principals_and_entities_background_review",
+    "relation": "partial",
+    "note": "Covers the applicable parties and specified background-search types, but does not require the review to be current as of loan approval or draw or disposition of unresolved findings."
+   },
+   {
+    "kstudio": "BET-BGCHECK",
+    "ours": "acra-platinum.identification_requirements.borrower_guarantor_due_diligence_currency",
+    "relation": "partial",
+    "note": "Covers currency as of loan approval or draw, but not the required parties, background-search types, or disposition of unresolved findings."
+   },
+   {
+    "kstudio": "BET-BORR-ONTITLE",
+    "ours": "acra-platinum.title_review.direct_owners_as_borrowers",
+    "relation": "same",
+    "note": "Requires every direct entity owner on title to be a borrowing entity."
+   },
+   {
+    "kstudio": "BET-BORR-ONTITLE",
+    "ours": "acra-platinum.compliance_and_closing.entity_spe_and_ownership_structure",
+    "relation": "partial",
+    "note": "Includes the direct-owner-as-borrower requirement, but also covers entity purpose, assets, and ownership structure."
+   },
+   {
+    "kstudio": "BET-BORR-ONTITLE",
+    "ours": "acra-platinum.loan_program_eligibility.entity_borrower_eligibility",
+    "relation": "partial",
+    "note": "Includes the direct-owner-as-borrower requirement, but also covers entity eligibility, formation, and ownership requirements."
+   },
+   {
+    "kstudio": "BET-EIN-TAXID",
+    "ours": "acra-platinum.compliance_and_closing.entity_documentation_package",
+    "relation": "partial",
+    "note": "The package includes EIN documentation and an EIN exception process, but the left item covers only the EIN portion of the broader entity-documentation package."
+   },
+   {
+    "kstudio": "BET-EIN-TAXID",
+    "ours": "acra-platinum.title_review.entity_documentation",
+    "relation": "partial",
+    "note": "It includes IRS Form SS4 or TIN/EIN issuance documentation, but does not state the left item\u2019s exception-request requirement; it also covers broader entity-documentation requirements."
+   },
+   {
+    "kstudio": "BET-ENTITY-ELIG",
+    "ours": "acra-platinum.title_review.business_purpose_entity_use",
+    "relation": "partial",
+    "note": "Covers the business-purpose and investment-property conditions, but not the left item\u2019s requirement to verify that the entity is legally formed and its name matches the application."
+   },
+   {
+    "kstudio": "BET-ENTITY-ELIG",
+    "ours": "acra-platinum.loan_program_eligibility.entity_borrower_eligibility",
+    "relation": "partial",
+    "note": "Overlaps on the investment-property aspect, but does not require that the transaction be business-purpose; it adds separate entity-type, ownership, and structure requirements."
+   },
+   {
+    "kstudio": "BET-ENTITY-TYPES",
+    "ours": "acra-platinum.compliance_and_closing.entity_type_eligibility",
+    "relation": "same",
+    "note": ""
+   },
+   {
+    "kstudio": "BET-ENTITY-TYPES",
+    "ours": "acra-platinum.loan_program_eligibility.entity_borrower_eligibility",
+    "relation": "partial",
+    "note": "Includes the left\u2019s entity-type and US formation/base/ownership requirements, plus single-purpose, property ownership, and nesting requirements not in the left item."
+   },
+   {
+    "kstudio": "BET-ENTITY-TYPES",
+    "ours": "acra-platinum.title_review.us_entity_eligibility",
+    "relation": "partial",
+    "note": "Covers only the left\u2019s US formation, US base, and non-foreign-ownership requirements; it does not cover allowed entity types."
+   },
+   {
+    "kstudio": "BET-ENTITY-TYPES",
+    "ours": "acra-platinum.title_review.entity_form_eligibility",
+    "relation": "partial",
+    "note": "Covers only the left\u2019s allowed entity/guarantor type requirement; it does not cover US formation, US base, or foreign ownership."
+   },
+   {
+    "kstudio": "BET-ENTITY-TYPES",
+    "ours": "acra-platinum.title_review.entity_ownership_structure",
+    "relation": "partial",
+    "note": "Covers some entity-type exclusions relevant to the left\u2019s allowed-type requirement, but focuses on ownership structure and adds nesting requirements; it does not cover the full allowed-type list or US eligibility."
+   },
+   {
+    "kstudio": "BET-FORM-DOCS",
+    "ours": "acra-platinum.title_review.entity_documentation",
+    "relation": "partial",
+    "note": "Includes the formation document and amendments requirement, but also covers other entity documentation requirements beyond the left item."
+   },
+   {
+    "kstudio": "BET-FORM-DOCS",
+    "ours": "acra-platinum.identification_requirements.entity_documentation",
+    "relation": "partial",
+    "note": "Includes the formation document and amendments requirement, but also covers other entity documentation requirements beyond the left item."
+   },
+   {
+    "kstudio": "BET-FORM-DOCS",
+    "ours": "acra-platinum.compliance_and_closing.entity_documentation_package",
+    "relation": "partial",
+    "note": "Includes the formation document and amendments requirement, but also covers other entity documentation requirements and an EIN exception process beyond the left item."
+   },
+   {
+    "kstudio": "BET-FTHB-ATTEST",
+    "ours": "acra-platinum.title_review.prior_homeownership_experience",
+    "relation": "partial",
+    "note": "Covers the conditional review of prior-homeownership evidence, but does not require that at least one guarantor demonstrate prior homeownership."
+   },
+   {
+    "kstudio": "BET-FTHB-ATTEST",
+    "ours": "acra-platinum.identification_requirements.entity_borrower_homeownership_and_attestation",
+    "relation": "same",
+    "note": ""
+   },
+   {
+    "kstudio": "BET-FTHB-ATTEST",
+    "ours": "acra-platinum.credit_review_analysis.fthb_status",
+    "relation": "partial",
+    "note": "Covers borrower first-time-homebuyer status, but not the required prior homeownership experience of at least one guarantor."
+   },
+   {
+    "kstudio": "BET-FTHB-ATTEST",
+    "ours": "acra-platinum.compliance_and_closing.entity_guarantor_requirements",
+    "relation": "same",
+    "note": ""
+   },
+   {
+    "kstudio": "BET-GOODSTAND",
+    "ours": "acra-platinum.compliance_and_closing.entity_documentation_package",
+    "relation": "same",
+    "note": "Requires a Certificate of Good Standing valid within ninety days of closing and applicable foreign qualification."
+   },
+   {
+    "kstudio": "BET-GOODSTAND",
+    "ours": "acra-platinum.title_review.entity_documentation",
+    "relation": "same",
+    "note": "Requires a Certificate of Good Standing valid within ninety days of closing and any required foreign qualification."
+   },
+   {
+    "kstudio": "BET-GUAR-20PCT",
+    "ours": "acra-platinum.title_review.required_entity_guarantees",
+    "relation": "same",
+    "note": "Requires every individual with at least 20% direct or indirect ownership to provide a recourse guarantee, with joint-and-several recourse when there are multiple guarantors."
+   },
+   {
+    "kstudio": "BET-GUAR-20PCT",
+    "ours": "acra-platinum.compliance_and_closing.entity_guarantor_requirements",
+    "relation": "partial",
+    "note": "Includes the same ownership-based guarantee and joint-and-several requirements, but also adds prior-homeownership and application-attestation requirements."
+   },
+   {
+    "kstudio": "BET-GUAR-20PCT",
+    "ours": "acra-platinum.loan_program_eligibility.entity_guarantees_and_attestation",
+    "relation": "partial",
+    "note": "Includes the same ownership-based recourse guarantee and joint-and-several requirement, but also adds prior-homeownership and application-attestation requirements."
+   },
+   {
+    "kstudio": "BET-OPAGREEMENT",
+    "ours": "acra-platinum.title_review.entity_documentation",
+    "relation": "partial",
+    "note": "Includes the Operating Agreement/Bylaws requirements from the left, but also requires numerous other entity documents and checks."
+   },
+   {
+    "kstudio": "BET-OPAGREEMENT",
+    "ours": "acra-platinum.compliance_and_closing.entity_documentation_package",
+    "relation": "partial",
+    "note": "Includes the Operating Agreement/Bylaws requirements from the left, but also requires a broader entity-document package and additional checks."
+   },
+   {
+    "kstudio": "BET-OPAGREEMENT",
+    "ours": "acra-platinum.identification_requirements.entity_documentation",
+    "relation": "partial",
+    "note": "Includes the Operating Agreement/Bylaws requirements from the left, but also requires formation documents and ownership evidence."
+   },
+   {
+    "kstudio": "BET-OWN-EVID",
+    "ours": "acra-platinum.identification_requirements.entity_documentation",
+    "relation": "differs",
+    "note": "For the K-1 and CPA-letter alternative, the left specifies no ownership-percentage threshold; the right requires K-1 statements for members with 20% or more interest."
+   },
+   {
+    "kstudio": "BET-OWN-EVID",
+    "ours": "acra-platinum.compliance_and_closing.entity_documentation_package",
+    "relation": "partial",
+    "note": "Includes the ownership-evidence requirement, but also covers a broader entity-documentation package."
+   },
+   {
+    "kstudio": "BET-OWN-EVID",
+    "ours": "acra-platinum.title_review.entity_documentation",
+    "relation": "partial",
+    "note": "Includes ownership evidence as part of a broader title-review requirement for entity documentation."
+   },
+   {
+    "kstudio": "BET-PROHIB-TYPES",
+    "ours": "acra-platinum.title_review.entity_ownership_structure",
+    "relation": "same",
+    "note": "States the same prohibited entity types and the same one wholly-owned subsidiary limit, owned by individuals."
+   },
+   {
+    "kstudio": "BET-PROHIB-TYPES",
+    "ours": "acra-platinum.compliance_and_closing.entity_type_eligibility",
+    "relation": "partial",
+    "note": "Covers prohibited entity types but not the ownership-nesting limit; it also prohibits Series LLCs, which the left item does not list."
+   },
+   {
+    "kstudio": "BET-PROHIB-TYPES",
+    "ours": "acra-platinum.loan_program_eligibility.entity_borrower_eligibility",
+    "relation": "same",
+    "note": "Includes the prohibited-type and one wholly-owned subsidiary limit requirements; its additional eligibility requirements do not change those requirements."
+   },
+   {
+    "kstudio": "BET-PROHIB-TYPES",
+    "ours": "acra-platinum.compliance_and_closing.entity_spe_and_ownership_structure",
+    "relation": "partial",
+    "note": "Covers the one wholly-owned subsidiary nesting limit but does not address the prohibited entity types."
+   },
+   {
+    "kstudio": "BET-REVTRUST",
+    "ours": "acra-platinum.compliance_and_closing.revocable_trust_vesting",
+    "relation": "same",
+    "note": "Both govern permitted title vesting in an inter vivos revocable trust and require a valid, revocable trust established by natural persons, the establishing individuals as primary beneficiaries, and adequate trustee/mortgage provisions."
+   },
+   {
+    "kstudio": "BET-REVTRUST",
+    "ours": "acra-platinum.title_review.revocable_living_trust_vesting",
+    "relation": "same",
+    "note": "Both govern title vesting in an inter vivos revocable trust and require the trust to meet the stated eligibility, beneficiary, and trustee-power conditions."
+   },
+   {
+    "kstudio": "BET-SPE-DEF",
+    "ours": "acra-platinum.title_review.single_purpose_entity",
+    "relation": "same",
+    "note": "Same SPE requirements: only residential investment or rental property assets and activities, and not a series LLC."
+   },
+   {
+    "kstudio": "BET-SPE-DEF",
+    "ours": "acra-platinum.loan_program_eligibility.entity_borrower_eligibility",
+    "relation": "same",
+    "note": "States the same SPE requirements, including the series LLC prohibition; its additional entity-eligibility requirements do not change those conditions."
+   },
+   {
+    "kstudio": "BET-SPE-DEF",
+    "ours": "acra-platinum.compliance_and_closing.entity_spe_and_ownership_structure",
+    "relation": "partial",
+    "note": "Covers the residential-property purpose and asset requirements, but does not state that series LLCs are prohibited."
+   },
+   {
+    "kstudio": "BET-SPE-DEF",
+    "ours": "acra-platinum.compliance_and_closing.entity_type_eligibility",
+    "relation": "partial",
+    "note": "Covers only the series LLC prohibition, not the SPE purpose and asset requirements."
+   },
+   {
+    "kstudio": "BET-TITLE-HOLD",
+    "ours": "acra-platinum.title_review.entity_title_holder",
+    "relation": "same",
+    "note": "Both permit title to be held directly by individual(s) or by an entity Acra accepts in its sole discretion."
+   },
+   {
+    "kstudio": "BET-NAME-MATCH",
+    "ours": "acra-platinum.compliance_and_closing.entity_documentation_package",
+    "relation": "partial",
+    "note": "Includes matching names or a discrepancy letter, but does not specify the full set of entity, owner, member, officer, and signer names and documents that must match."
+   },
+   {
+    "kstudio": "BET-NAME-MATCH",
+    "ours": "acra-platinum.title_review.entity_documentation",
+    "relation": "partial",
+    "note": "Includes name consistency with identification and a discrepancy letter, but does not specify the full set of names and loan documents covered by the left requirement."
+   },
+   {
+    "kstudio": "CRD-DECSCORE",
+    "ours": "acra-platinum.credit_review_analysis.decisioning_score",
+    "relation": "same",
+    "note": "Selects the Primary Wage Earner\u2019s middle score for individual borrowers; for entity borrowers, selects the highest middle score when ownership is equal or the score of the guarantor with the highest ownership when ownership is unequal."
+   },
+   {
+    "kstudio": "CRD-ESCROW-WVR",
+    "ours": "acra-platinum.credit_review_analysis.escrow_waiver",
+    "relation": "differs",
+    "note": "Left caps the base loan amount at $1,500,000 and defines 0x30x24 as zero 30-day-or-greater mortgage lates in the trailing 24 months; right caps total loan amount at $1.5M and leaves the 0x30x24 interpretation unresolved. Right also adds impounds for properties listed for sale."
+   },
+   {
+    "kstudio": "CRD-ESCROW-WVR",
+    "ours": "acra-platinum.loan_program_eligibility.escrow_waiver",
+    "relation": "partial",
+    "note": "Covers the loan-amount cap and 0x30x24 history, but omits the left item's Section 35 (HPML) exclusion. It uses total loan amount rather than the left item's base loan amount."
+   },
+   {
+    "kstudio": "CRD-ESCROW-WVR",
+    "ours": "acra-platinum.compliance_and_closing.escrow_waiver_eligibility",
+    "relation": "differs",
+    "note": "It covers the same escrow-waiver requirements, but uses total loan amount where the left specifies base loan amount."
+   },
+   {
+    "kstudio": "CRD-FTHB-XREF",
+    "ours": "acra-platinum.credit_review_analysis.fthb_status",
+    "relation": "partial",
+    "note": "Covers a borrower\u2019s status as false, but the left requires that status for every borrower on the loan."
+   },
+   {
+    "kstudio": "CRD-FTHB-XREF",
+    "ours": "acra-platinum.loan_program_eligibility.first_time_homebuyer_eligibility",
+    "relation": "differs",
+    "note": "The left requires every borrower to be non-FTHB; the right treats an application as FTHB only when all applicants have never owned a home."
+   },
+   {
+    "kstudio": "CRD-FTHB-XREF",
+    "ours": "acra-platinum.identification_requirements.first_time_homebuyer_eligibility",
+    "relation": "differs",
+    "note": "The left requires every borrower to be non-FTHB; the right defines FTHB by whether all applicants have never owned a home."
+   },
+   {
+    "kstudio": "CRD-HIST-SCOPE",
+    "ours": "acra-platinum.credit_review_analysis.mortgage_and_rental_history",
+    "relation": "differs",
+    "note": "The scope is the same, but the exception condition differs: left\u2014 a major credit event is reported on another owned property in the Credit Report; right\u2014file documents suggest a major credit event has occurred."
+   },
+   {
+    "kstudio": "CRD-HOUSHIST",
+    "ours": "acra-platinum.credit_review_analysis.housing_history",
+    "relation": "partial",
+    "note": "It applies the same 0x30x12 housing-history standard, but does not define the standard or state the no-payment-30-or-more-days-late criterion."
+   },
+   {
+    "kstudio": "CRD-IMPOUNDS",
+    "ours": "acra-platinum.title_review.listed_property_impounds",
+    "relation": "partial",
+    "note": "Covers the listed-property impound requirement, but does not specify the six-month-before-application trigger."
+   },
+   {
+    "kstudio": "CRD-IMPOUNDS",
+    "ours": "acra-platinum.liabilities_assessment.listed_property_impounds",
+    "relation": "same",
+    "note": "Requires impounds when the property was listed for sale in the last six months and checks whether they are waived."
+   },
+   {
+    "kstudio": "CRD-IMPOUNDS",
+    "ours": "acra-platinum.credit_review_analysis.escrow_waiver",
+    "relation": "partial",
+    "note": "Mentions that a property listed for sale separately requires impounds, but does not specify the six-month trigger or verify that impounds are established."
+   },
+   {
+    "kstudio": "CRD-IMPOUNDS",
+    "ours": "acra-platinum.asset_assessment.listed_property_status",
+    "relation": "partial",
+    "note": "Covers the listed-for-sale status and its six-month measurement, but not the requirement to establish impounds."
+   },
+   {
+    "kstudio": "CRD-MATURED",
+    "ours": "acra-platinum.credit_review_analysis.mortgage_and_rental_history",
+    "relation": "same",
+    "note": "Both require a matured mortgage loan to be rated based on its maturity date and any maturity-date extension to be in writing."
+   },
+   {
+    "kstudio": "CRD-MINSCORE",
+    "ours": "acra-platinum.loan_program_eligibility.matrix_cltv_limit",
+    "relation": "partial",
+    "note": "Both require a decisioning score of at least 700. The candidate\u2019s CLTV limits are matrix-based by score and loan purpose, not the left item\u2019s 60% cap for Correspondent loans scoring 700\u2013719."
+   },
+   {
+    "kstudio": "CRD-MINSCORE",
+    "ours": "acra-platinum.credit_review_analysis.minimum_score_and_matrix_cltv",
+    "relation": "partial",
+    "note": "Both require a decisioning score of at least 700. The candidate\u2019s CLTV limits are matrix-based by score and loan purpose, not the left item\u2019s 60% cap for Correspondent loans scoring 700\u2013719."
+   },
+   {
+    "kstudio": "CRD-MTG-RATING",
+    "ours": "acra-platinum.credit_review_analysis.mortgage_and_rental_history",
+    "relation": "differs",
+    "note": "The history window is 12 months in both. Left evaluates properties the borrower owned or rented within 12 months before the Credit Report date and requires an independent mortgage statement or VOM for unreported mortgages; right requires DSCR documentation for the subject property, primary residence, and applicable second homes, and requires additional properties only if file documents suggest a major credit event. Right also adds a matured-loan and written-extension requirement."
+   },
+   {
+    "kstudio": "CRD-MTG-RATING",
+    "ours": "acra-platinum.credit_review_analysis.housing_history",
+    "relation": "partial",
+    "note": "Right states a specific housing-history standard, \u201c0x30x12,\u201d which can cover part of the broader payment-history evaluation in left; it does not cover left\u2019s evaluation across owned or rented properties or its independent documentation requirement for unreported mortgages."
+   },
+   {
+    "kstudio": "CRD-ONETWOSCR",
+    "ours": "acra-platinum.credit_review_analysis.tradelines",
+    "relation": "partial",
+    "note": "Covers the one-or-two-score tradeline overlay (2 tradelines/24 months or 3 tradelines/12 months), but does not flag the unresolved decisioning-score methodology for underwriter review."
+   },
+   {
+    "kstudio": "CRD-ONETWOSCR",
+    "ours": "acra-platinum.credit_review_analysis.decisioning_score",
+    "relation": "partial",
+    "note": "Covers the unresolved decisioning-score selection issue for borrowers with one or two scores, but does not address the applicable tradeline overlay."
+   },
+   {
+    "kstudio": "CRD-PCE-SEASON",
+    "ours": "acra-platinum.credit_review_analysis.previous_credit_events",
+    "relation": "partial",
+    "note": "Both concern 48-month seasoning for previous credit events, but the candidate leaves the covered event types and date-counting rule unresolved; the left specifies bankruptcy, foreclosure, short sale, or deed-in-lieu, measured from the event date to the application date."
+   },
+   {
+    "kstudio": "CRD-PCESEASON",
+    "ours": "acra-platinum.credit_review_analysis.previous_credit_events",
+    "relation": "partial",
+    "note": "Covers a 48-month seasoning requirement for applicable previous credit events, but does not specify the left item's event list or its event/discharge-to-application date calculation; those interpretations remain unresolved."
+   },
+   {
+    "kstudio": "CRD-TIEOWN",
+    "ours": "acra-platinum.credit_review_analysis.decisioning_score",
+    "relation": "partial",
+    "note": "Addresses the same tied-largest ownership scenario with unequal overall ownership and says not to infer a score rule, but does not require flagging the file for underwriter confirmation; it instead records that the source does not resolve the issue."
+   },
+   {
+    "kstudio": "CRD-TRADELINE",
+    "ours": "acra-platinum.credit_review_analysis.tradelines",
+    "relation": "same",
+    "note": "Same repository-score categories and tradeline thresholds: three-repository applicants have no overlay; applicants with two or fewer scores need 2 tradelines with 24-month history or 3 with 12-month history."
+   },
+   {
+    "kstudio": "CRD-GUAR-SCOPE",
+    "ours": "acra-platinum.credit_review_analysis.housing_history",
+    "relation": "partial",
+    "note": "Covers the 0x30x12 housing-history component, but not the full set of credit requirements or their application to every qualifying guarantor."
+   },
+   {
+    "kstudio": "CRD-GUAR-SCOPE",
+    "ours": "acra-platinum.credit_review_analysis.previous_credit_events",
+    "relation": "partial",
+    "note": "Covers the 48-month previous-credit-event component, but not the full set of credit requirements or their application to every qualifying guarantor."
+   },
+   {
+    "kstudio": "DSCR-1007-REQ",
+    "ours": "acra-platinum.appraisal_review.single_family_rent_schedule",
+    "relation": "same",
+    "note": "Same Form 1007 requirement, triggering conditions, and appraiser qualification."
+   },
+   {
+    "kstudio": "DSCR-1007-REQ",
+    "ours": "acra-platinum.income_stability_sufficiency_analysis.required_1007",
+    "relation": "partial",
+    "note": "Covers the DSCR-triggered Form 1007 requirement, but not the lease-option excess-rent or proposed-rental-income triggers."
+   },
+   {
+    "kstudio": "DSCR-ACTRENT-DOC",
+    "ours": "acra-platinum.income_stability_sufficiency_analysis.actual_rent_evidence",
+    "relation": "partial",
+    "note": "Covers the two-month receipt and three-month post-closing lease requirements, but omits the left item\u2019s receipt timing, matching-amount, and prepaid-rent/security-deposit conditions."
+   },
+   {
+    "kstudio": "DSCR-ACTRENT-DOC",
+    "ours": "acra-platinum.appraisal_review.actual_rent_lease_term",
+    "relation": "partial",
+    "note": "Covers only the lease-duration component; it does not address the two months of rent receipts."
+   },
+   {
+    "kstudio": "DSCR-ACTRENT-DOC",
+    "ours": "acra-platinum.appraisal_review.actual_rent_receipts",
+    "relation": "partial",
+    "note": "Covers only the two-month receipt-evidence component; it does not address the lease-duration requirement."
+   },
+   {
+    "kstudio": "DSCR-CALC",
+    "ours": "acra-platinum.property_tax_calculation.dscr_first_payment_basis",
+    "relation": "partial",
+    "note": "Matches the left item\u2019s first-payment denominator basis, but covers only that part of the full DSCR calculation."
+   },
+   {
+    "kstudio": "DSCR-CALC",
+    "ours": "acra-platinum.liabilities_assessment.dscr_denominator",
+    "relation": "differs",
+    "note": "The left uses the first monthly PITIA payment due under the Note; the right specifies a denominator summed from annual components and includes subordinate financing when applicable. The right also leaves the interest-only payment basis unresolved, while the left specifies the first payment due under the Note."
+   },
+   {
+    "kstudio": "DSCR-CALC",
+    "ours": "acra-platinum.appraisal_review.qualifying_rent_selection",
+    "relation": "partial",
+    "note": "Covers the qualifying-rent portion of the calculation, but adds a rent-selection rule (greater of market rent or actual rent) that the left item does not state."
+   },
+   {
+    "kstudio": "DSCR-CALC",
+    "ours": "acra-platinum.property_tax_calculation.interest_only_payment_treatment",
+    "relation": "partial",
+    "note": "Covers only the interest-only payment treatment for the DSCR denominator; the left item gives the broader calculation using the first payment due under the Note."
+   },
+   {
+    "kstudio": "DSCR-CO-LEASE",
+    "ours": "acra-platinum.appraisal_review.cash_out_refinance_lease",
+    "relation": "partial",
+    "note": "Right covers cash-out refinances generally; left is limited to Platinum Select DSCR Cash-Out Refinance transactions and requires the lease term to cover the LOS application date."
+   },
+   {
+    "kstudio": "DSCR-CO-LEASE",
+    "ours": "acra-platinum.compliance_and_closing.cash_out_lease_verification",
+    "relation": "differs",
+    "note": "Lease timing condition differs: left requires the lease term to cover the LOS application date; right requires a current lease but does not specify coverage of that date."
+   },
+   {
+    "kstudio": "DSCR-FORB-OVL",
+    "ours": "acra-platinum.asset_assessment.recent_forbearance_or_mortgage_lates_reserves",
+    "relation": "partial",
+    "note": "Covers only the reserve alternative: 12 months of the subject property's payment in reserve when the prior two months' rent were not timely received. The left also permits timely rent receipts as an alternative."
+   },
+   {
+    "kstudio": "DSCR-LIST-MIN",
+    "ours": "acra-platinum.liabilities_assessment.listed_property_qualification",
+    "relation": "partial",
+    "note": "Includes the left item's listed-property channel-minimum DSCR requirement, but also permits a DTI alternative."
+   },
+   {
+    "kstudio": "DSCR-LIST-MIN",
+    "ours": "acra-platinum.loan_program_eligibility.listed_for_sale_requirements",
+    "relation": "partial",
+    "note": "Includes the channel-minimum DSCR among broader listed-property requirements; it does not state that DSCR is the sole qualification requirement."
+   },
+   {
+    "kstudio": "DSCR-LIST-MIN",
+    "ours": "acra-platinum.compliance_and_closing.listed_property_requirements",
+    "relation": "partial",
+    "note": "Includes the channel-minimum DSCR for listed properties, but also permits a DTI alternative and states additional requirements."
+   },
+   {
+    "kstudio": "DSCR-MINRATIO",
+    "ours": "acra-platinum.income_stability_sufficiency_analysis.channel_minimum_dscr",
+    "relation": "same",
+    "note": "Both apply the Platinum Select channel minimum: Correspondent \u22651.2 and Wholesale \u22651.0."
+   },
+   {
+    "kstudio": "DSCR-MINRATIO",
+    "ours": "acra-platinum.loan_program_eligibility.channel_minimum_dscr",
+    "relation": "same",
+    "note": "Both apply the same channel-specific minimum DSCRs: Correspondent \u22651.2 and Wholesale \u22651.0."
+   },
+   {
+    "kstudio": "DSCR-MINRATIO",
+    "ours": "acra-platinum.title_review.listed_property_qualification",
+    "relation": "partial",
+    "note": "The channel-specific DSCR minimum matches, but this also permits qualification through a 43% maximum DTI alternative."
+   },
+   {
+    "kstudio": "DSCR-MINRATIO",
+    "ours": "acra-platinum.liabilities_assessment.listed_property_qualification",
+    "relation": "partial",
+    "note": "The channel-specific DSCR minimum matches, but this listed-property requirement also includes a 43% maximum DTI alternative."
+   },
+   {
+    "kstudio": "DSCR-MINRATIO",
+    "ours": "acra-platinum.asset_assessment.listed_property_qualification",
+    "relation": "partial",
+    "note": "The channel-specific DSCR minimum matches, but this listed-property requirement also includes a 43% maximum DTI alternative."
+   },
+   {
+    "kstudio": "DSCR-MINRATIO",
+    "ours": "acra-platinum.compliance_and_closing.listed_property_requirements",
+    "relation": "partial",
+    "note": "The channel-specific DSCR minimum matches as one qualification condition, but this also covers other listed-property requirements."
+   },
+   {
+    "kstudio": "DSCR-PITIA",
+    "ours": "acra-platinum.income_stability_sufficiency_analysis.dscr_calculation",
+    "relation": "differs",
+    "note": "The left item defines a monthly housing-expense denominator; the right specifies an annual PITIA denominator."
+   },
+   {
+    "kstudio": "DSCR-PITIA",
+    "ours": "acra-platinum.property_tax_calculation.dscr_denominator_composition",
+    "relation": "differs",
+    "note": "The left item defines a monthly housing-expense denominator; the right specifies an annual PITIA denominator."
+   },
+   {
+    "kstudio": "DSCR-PITIA",
+    "ours": "acra-platinum.liabilities_assessment.dscr_denominator",
+    "relation": "differs",
+    "note": "The left item defines a monthly denominator and states the payment components to use; the right specifies an annual denominator and leaves the interest-only payment basis unresolved pending Acra confirmation."
+   },
+   {
+    "kstudio": "DSCR-PITIA",
+    "ours": "acra-platinum.property_tax_calculation.interest_only_payment_treatment",
+    "relation": "partial",
+    "note": "This addresses only the interest-only payment treatment within the DSCR denominator, not the full set of PITIA components defined by the left item."
+   },
+   {
+    "kstudio": "DSCR-QUALRENT",
+    "ours": "acra-platinum.income_stability_sufficiency_analysis.qualifying_rent_selection",
+    "relation": "partial",
+    "note": "Covers comparing and selecting the greater of market rent and actual rent, but not the left item\u2019s long-term rental, lease-duration, and rent-receipt requirements."
+   },
+   {
+    "kstudio": "DSCR-QUALRENT",
+    "ours": "acra-platinum.appraisal_review.qualifying_rent_selection",
+    "relation": "partial",
+    "note": "Covers the greater-of-market-or-actual-rent requirement, but not the left item\u2019s long-term rental, lease-duration, and rent-receipt requirements."
+   },
+   {
+    "kstudio": "DSCR-QUALRENT",
+    "ours": "acra-platinum.income_stability_sufficiency_analysis.actual_rent_evidence",
+    "relation": "partial",
+    "note": "Covers the left item\u2019s actual-rent conditions: long-term rental, 2 months of receipt evidence, and a lease extending at least 3 months after closing; it does not cover rent selection."
+   },
+   {
+    "kstudio": "DSCR-QUALRENT",
+    "ours": "acra-platinum.appraisal_review.actual_rent_lease_term",
+    "relation": "partial",
+    "note": "Covers the left item\u2019s long-term-rental and lease-duration conditions, but not rent selection or the 2-month receipt requirement."
+   },
+   {
+    "kstudio": "DSCR-QUALRENT",
+    "ours": "acra-platinum.appraisal_review.actual_rent_receipts",
+    "relation": "partial",
+    "note": "Covers the left item\u2019s long-term-rental and 2-month receipt-evidence conditions, but not rent selection or the lease-duration requirement."
+   },
+   {
+    "kstudio": "DSCR-RENT-XCESS",
+    "ours": "acra-platinum.appraisal_review.excessive_lease_rent_support",
+    "relation": "same",
+    "note": "Both require acceptable evidence that excessive lease-reflected rent for a single-family investment property is typical for the area, including classified ads, Form 1007, or a market rent survey."
+   },
+   {
+    "kstudio": "DSCR-STR-EXCL",
+    "ours": "acra-platinum.appraisal_review.qualifying_rent_selection",
+    "relation": "partial",
+    "note": "Covers the greater-of market-or-actual-rent selection, but does not limit that rule to long-term rentals or exclude short-term rental income."
+   },
+   {
+    "kstudio": "DSCR-STR-EXCL",
+    "ours": "acra-platinum.income_stability_sufficiency_analysis.qualifying_rent_selection",
+    "relation": "partial",
+    "note": "Covers the greater-of market-or-actual-rent selection, but does not limit that rule to long-term rentals or exclude short-term rental income."
+   },
+   {
+    "kstudio": "DSCR-STR-EXCL",
+    "ours": "acra-platinum.income_stability_sufficiency_analysis.actual_rent_evidence",
+    "relation": "partial",
+    "note": "States that actual-rent treatment is not appropriate for short-term rentals, but adds separate documentation conditions: 2 months of receipt proof and a lease extending at least 3 months after closing."
+   },
+   {
+    "kstudio": "DSCR-STR-EXCL",
+    "ours": "acra-platinum.appraisal_review.actual_rent_lease_term",
+    "relation": "partial",
+    "note": "Covers use of actual rent only for a long-term rental, but adds a lease-duration condition of at least 3 months after closing rather than the left item\u2019s tenancy term of at least 1 month."
+   },
+   {
+    "kstudio": "DSCR-SUBFIN",
+    "ours": "acra-platinum.property_tax_calculation.subordinate_financing_permission",
+    "relation": "partial",
+    "note": "Matches the caveat that the calculation rule does not establish permission for subordinate financing, but does not state that the lien payment is included in the DSCR denominator."
+   },
+   {
+    "kstudio": "DSCR-SUBFIN",
+    "ours": "acra-platinum.liabilities_assessment.dscr_denominator",
+    "relation": "partial",
+    "note": "Includes subordinate financing in the DSCR denominator if applicable, but does not specify that the subordinate lien\u2019s monthly payment is included whenever a lien is present at closing."
+   },
+   {
+    "kstudio": "DSCR-SUBFIN",
+    "ours": "acra-platinum.property_tax_calculation.dscr_denominator_composition",
+    "relation": "partial",
+    "note": "Includes subordinate financing in the DSCR denominator if applicable, but does not specify the monthly payment or the condition that a lien is present at closing."
+   },
+   {
+    "kstudio": "DSCR-SUBFIN",
+    "ours": "acra-platinum.income_stability_sufficiency_analysis.dscr_calculation",
+    "relation": "partial",
+    "note": "Includes subordinate financing in the DSCR denominator if applicable, but does not specify the monthly payment or the condition that a lien is present at closing."
+   },
+   {
+    "kstudio": "DSCR-IO-DENOM",
+    "ours": "acra-platinum.liabilities_assessment.dscr_denominator",
+    "relation": "partial",
+    "note": "Covers the denominator components and preserves the unresolved interest-only payment question, but does not apply the first-payment-due basis to the interest-only denominator."
+   },
+   {
+    "kstudio": "DSCR-IO-DENOM",
+    "ours": "acra-platinum.property_tax_calculation.interest_only_payment_treatment",
+    "relation": "partial",
+    "note": "Covers the interest-only payment question and requests Acra confirmation, but does not establish the denominator components or apply the first-payment-due basis."
+   },
+   {
+    "kstudio": "DSCR-IO-DENOM",
+    "ours": "acra-platinum.income_stability_sufficiency_analysis.dscr_calculation",
+    "relation": "partial",
+    "note": "Covers the general DSCR denominator components, but not the interest-only payment basis or its open question."
+   },
+   {
+    "kstudio": "DSCR-IO-DENOM",
+    "ours": "acra-platinum.property_tax_calculation.dscr_denominator_composition",
+    "relation": "partial",
+    "note": "Covers the general DSCR denominator components, but not the interest-only payment basis or its open question."
+   },
+   {
+    "kstudio": "DSCR-IO-DENOM",
+    "ours": "acra-platinum.property_tax_calculation.dscr_first_payment_basis",
+    "relation": "partial",
+    "note": "Covers the first-payment-due basis for DSCR, but not the interest-only denominator components or the open question about fully amortized principal."
+   },
+   {
+    "kstudio": "RLI-CLTV-EXEMPT",
+    "ours": "acra-platinum.asset_assessment.rent_loss_insurance",
+    "relation": "partial",
+    "note": "States the same exemption for loans with CLTV \u2264 70%, and includes an LTV > 70% coverage trigger, but does not require documenting which basis governs when LTV exceeds 70% and CLTV is at or below 70%."
+   },
+   {
+    "kstudio": "RLI-LTV-TRIGGER",
+    "ours": "acra-platinum.asset_assessment.rent_loss_insurance",
+    "relation": "differs",
+    "note": "Left requires coverage when LTV > 70%; right adds an exemption for loans with CLTV \u2264 70%."
+   },
+   {
+    "kstudio": "RLI-LTV-TRIGGER",
+    "ours": "acra-platinum.insurance_coverage_sufficiency_policy_assessment.rent_loss_insurance_applicability",
+    "relation": "partial",
+    "note": "Right determines whether the rent loss insurance requirement applies, but does not verify the required six months of coverage."
+   },
+   {
+    "kstudio": "RLI-LTV-TRIGGER",
+    "ours": "acra-platinum.insurance_coverage_sufficiency_policy_assessment.rent_loss_insurance_sufficiency",
+    "relation": "differs",
+    "note": "Both address six months of rent loss coverage, but right specifies losses during rehabilitation following a casualty and permits a reserves substitute; left does not state those conditions or substitution."
+   },
+   {
+    "kstudio": "RLI-LTV-TRIGGER",
+    "ours": "acra-platinum.loan_program_eligibility.non_owner_occupancy",
+    "relation": "partial",
+    "note": "Right verifies only the non-owner-occupied condition, one predicate within the left item's broader insurance requirement."
+   },
+   {
+    "kstudio": "RLI-PURPOSE",
+    "ours": "acra-platinum.insurance_coverage_sufficiency_policy_assessment.rent_loss_insurance_sufficiency",
+    "relation": "partial",
+    "note": "It includes the left requirement that coverage applies to rental income losses during casualty-related rehabilitation, but adds a six-month coverage requirement or a reserves substitute, which the left item does not specify."
+   },
+   {
+    "kstudio": "RLI-RESERVE-SUB",
+    "ours": "acra-platinum.asset_assessment.rent_loss_insurance_reserve_substitute",
+    "relation": "same",
+    "note": "Both require two months of reserves for each month of required rent loss coverage that cannot be obtained."
+   },
+   {
+    "kstudio": "RLI-RESERVE-SUB",
+    "ours": "acra-platinum.insurance_coverage_sufficiency_policy_assessment.rent_loss_insurance_sufficiency",
+    "relation": "partial",
+    "note": "It includes the same two-for-one reserve substitution when required rent loss coverage cannot be obtained, but also covers the separate six-month insurance coverage requirement."
+   },
+   {
+    "kstudio": "BOR-CITZ",
+    "ours": "acra-platinum.loan_program_eligibility.citizenship_eligibility",
+    "relation": "differs",
+    "note": "Both require US Citizen or Permanent Resident status, but LEFT requires the declared status to match the identification provided; RIGHT additionally requires a Permanent Resident to have an unexpired PRA ID and SSA card / SSA-89."
+   },
+   {
+    "kstudio": "BOR-CITZ",
+    "ours": "acra-platinum.identification_requirements.eligible_citizenship_type",
+    "relation": "partial",
+    "note": "RIGHT covers the eligible citizenship types, but does not cover LEFT\u2019s requirement that each borrower\u2019s declared status match the identification document provided."
+   },
+   {
+    "kstudio": "BOR-CITZ",
+    "ours": "acra-platinum.identification_requirements.permanent_resident_documentation",
+    "relation": "differs",
+    "note": "For a Permanent Resident, LEFT requires a PRA ID but does not specify that it be unexpired or require an SSA card / SSA-89; RIGHT requires an unexpired PRA ID and SSA card / SSA-89."
+   },
+   {
+    "kstudio": "BOR-FN-INELIG",
+    "ours": "acra-platinum.identification_requirements.eligible_citizenship_type",
+    "relation": "same",
+    "note": "Both require borrowers to be US Citizens or Permanent Residents and exclude non-permanent residents, foreign nationals, and ITIN borrowers."
+   },
+   {
+    "kstudio": "BOR-FN-INELIG",
+    "ours": "acra-platinum.loan_program_eligibility.citizenship_eligibility",
+    "relation": "differs",
+    "note": "The right candidate additionally requires Permanent Residents to have an unexpired PRA ID and SSA card / SSA-89; the left has no such documentation requirement."
+   },
+   {
+    "kstudio": "BOR-FTHB",
+    "ours": "acra-platinum.loan_program_eligibility.first_time_homebuyer_eligibility",
+    "relation": "same",
+    "note": "Both determine whether the application meets the all-applicants-have-never-owned-real-property definition and identify FTHB status as ineligible."
+   },
+   {
+    "kstudio": "BOR-FTHB",
+    "ours": "acra-platinum.identification_requirements.first_time_homebuyer_eligibility",
+    "relation": "same",
+    "note": "Both apply the all-Applicants definition and identify whether the borrower/application is not a First-Time Home Buyer."
+   },
+   {
+    "kstudio": "BOR-FTHB",
+    "ours": "acra-platinum.credit_review_analysis.fthb_status",
+    "relation": "same",
+    "note": "Both determine FTHB status for program eligibility; the stated outcome is not FTHB."
+   },
+   {
+    "kstudio": "BOR-GUAR-ATTEST",
+    "ours": "acra-platinum.title_review.prior_homeownership_experience",
+    "relation": "partial",
+    "note": "Covers the non-first-time-homebuyer attestation and prior-homeownership evidence, but does not require that at least one guarantor have prior homeownership experience or cross-check that the person attesting is the person with documented experience."
+   },
+   {
+    "kstudio": "BOR-GUAR-ATTEST",
+    "ours": "acra-platinum.identification_requirements.entity_borrower_homeownership_and_attestation",
+    "relation": "partial",
+    "note": "States both core requirements, but applies only to entity-borrower cases and explicitly says not to extend the requirement to individual borrowers."
+   },
+   {
+    "kstudio": "BOR-GUAR-ATTEST",
+    "ours": "acra-platinum.compliance_and_closing.entity_guarantor_requirements",
+    "relation": "partial",
+    "note": "Includes the core homeownership and attestation requirements, but is limited to entity-borrower guarantor requirements and adds ownership-percentage, guarantee, and recourse conditions not in the left item."
+   },
+   {
+    "kstudio": "BOR-PRA-ID",
+    "ours": "acra-platinum.identification_requirements.permanent_resident_documentation",
+    "relation": "differs",
+    "note": "Left requires the PRA ID expiration date to be on or after the application date and matching names on the PRA ID, Social Security document, and loan application; right requires an unexpired PRA ID and SSA document but does not state those date-reference or name-matching conditions."
+   },
+   {
+    "kstudio": "BOR-PRA-ID",
+    "ours": "acra-platinum.loan_program_eligibility.citizenship_eligibility",
+    "relation": "partial",
+    "note": "Right includes the PRA ID and SSA-document requirement for Permanent Residents, but also covers general citizenship eligibility and does not state the left item's application-date expiration test or name-matching requirement."
+   },
+   {
+    "kstudio": "LFC-AMT-STEPDN",
+    "ours": "acra-platinum.asset_assessment.loan_amount_requirements",
+    "relation": "partial",
+    "note": "Includes the same 75.00% step-down at below $350,000 or above $1,500,000, but uses total loan amount rather than the left item's base loan amount and adds separate loan-amount limits and increment requirements. It does not state the left item's standard-matrix treatment within the band."
+   },
+   {
+    "kstudio": "LFC-CORR-CAP",
+    "ours": "acra-platinum.loan_program_eligibility.matrix_cltv_limit",
+    "relation": "partial",
+    "note": "Covers the standard purpose-column matrix cap, which is part of the left requirement, but not the additional 60% Correspondent footnote cap for FICO 700\u2013719."
+   },
+   {
+    "kstudio": "LFC-CORR-CAP",
+    "ours": "acra-platinum.credit_review_analysis.minimum_score_and_matrix_cltv",
+    "relation": "partial",
+    "note": "Covers the standard matrix CLTV maximum, which is part of the left requirement, but not the additional 60% Correspondent footnote cap for FICO 700\u2013719."
+   },
+   {
+    "kstudio": "LFC-FICO-MTX",
+    "ours": "acra-platinum.loan_program_eligibility.matrix_cltv_limit",
+    "relation": "same",
+    "note": "Same FICO tiers, purpose columns, and CLTV caps."
+   },
+   {
+    "kstudio": "LFC-FICO-MTX",
+    "ours": "acra-platinum.credit_review_analysis.minimum_score_and_matrix_cltv",
+    "relation": "differs",
+    "note": "The matrix requirement is the same, but the right item limits its application to loans \u2264 $2,000,000; the left item states no loan-amount limit."
+   },
+   {
+    "kstudio": "LPE-CO-LEASE",
+    "ours": "acra-platinum.appraisal_review.cash_out_refinance_lease",
+    "relation": "differs",
+    "note": "Trigger differs: LEFT requires the lease for DSCR Cash-Out Refinance transactions; RIGHT states the requirement for Cash-Out Refinance transactions without limiting it to DSCR."
+   },
+   {
+    "kstudio": "LPE-CO-LEASE",
+    "ours": "acra-platinum.compliance_and_closing.cash_out_lease_verification",
+    "relation": "same",
+    "note": "Both require a current lease for the subject property for DSCR Cash-Out Refinance transactions."
+   },
+   {
+    "kstudio": "LPE-GIFT-MIN",
+    "ours": "acra-platinum.compliance_and_closing.investment_gift_funds_contribution",
+    "relation": "same",
+    "note": "Requires at least 10% of the purchase price in the borrower\u2019s own sourced and seasoned funds for an investment-property transaction using gift funds."
+   },
+   {
+    "kstudio": "LPE-GIFT-MIN",
+    "ours": "acra-platinum.asset_assessment.investment_property_gift_contribution",
+    "relation": "same",
+    "note": "Requires at least 10% of the purchase price in the applicants\u2019 own sourced and seasoned funds for an investment property with gift funds."
+   },
+   {
+    "kstudio": "LPE-INELIG-LOC",
+    "ours": "acra-platinum.loan_program_eligibility.property_eligibility_and_location",
+    "relation": "partial",
+    "note": "It includes the matching restriction against South Dakota and U.S. territories, but also covers other property-eligibility criteria and does not specify the left item's non-owner-occupied financing scope."
+   },
+   {
+    "kstudio": "LPE-INV-PROP",
+    "ours": "acra-platinum.loan_program_eligibility.property_eligibility_and_location",
+    "relation": "partial",
+    "note": "It covers property-type eligibility, which overlaps the left item's physical-property criteria, but adds location and ineligible-category checks and does not cover the tenant or lease requirements."
+   },
+   {
+    "kstudio": "LPE-INV-PROP",
+    "ours": "acra-platinum.loan_program_eligibility.non_owner_occupancy",
+    "relation": "partial",
+    "note": "It covers the non-owner-occupied condition, but not the unit/property-type criteria or the year-round lease to a non-owner tenant."
+   },
+   {
+    "kstudio": "LPE-INV-PROP",
+    "ours": "acra-platinum.appraisal_review.short_term_rental_eligibility",
+    "relation": "partial",
+    "note": "It covers the short-term-rental exclusion, which is part of the left item's year-round residential lease condition, but not the rest of the investment-property definition."
+   },
+   {
+    "kstudio": "LPE-INV-PROP",
+    "ours": "acra-platinum.asset_assessment.listed_property_occupancy",
+    "relation": "partial",
+    "note": "It covers tenant occupancy, which overlaps the left item's occupancy condition, but adds a vacancy test and applies to properties considered under listed-property requirements."
+   },
+   {
+    "kstudio": "LPE-LOAN-AMT",
+    "ours": "acra-platinum.loan_program_eligibility.loan_amount_requirements",
+    "relation": "same",
+    "note": "Same $100,000\u2013$2,000,000 range and $50 increment."
+   },
+   {
+    "kstudio": "LPE-LOAN-AMT",
+    "ours": "acra-platinum.credit_review_analysis.loan_amount",
+    "relation": "same",
+    "note": "Same inclusive $100,000\u2013$2,000,000 range and $50 increment."
+   },
+   {
+    "kstudio": "LPE-LOAN-AMT",
+    "ours": "acra-platinum.asset_assessment.loan_amount_requirements",
+    "relation": "partial",
+    "note": "Matches the left loan-amount range and increment, but adds a conditional CLTV limit."
+   },
+   {
+    "kstudio": "LPE-MIN-DSCR",
+    "ours": "acra-platinum.income_stability_sufficiency_analysis.channel_minimum_dscr",
+    "relation": "same",
+    "note": "Same Platinum Select channel-specific minimum DSCR requirement: Correspondent \u22651.2 and Wholesale \u22651.0."
+   },
+   {
+    "kstudio": "LPE-MIN-DSCR",
+    "ours": "acra-platinum.loan_program_eligibility.channel_minimum_dscr",
+    "relation": "same",
+    "note": "Same channel-specific minimum DSCR requirement and thresholds: Correspondent \u22651.2 and Wholesale \u22651.0."
+   },
+   {
+    "kstudio": "LPE-MIN-DSCR",
+    "ours": "acra-platinum.title_review.listed_property_qualification",
+    "relation": "partial",
+    "note": "Includes the same channel-specific DSCR minimums, but only as one qualification alternative for listed-property loans; it also permits a 43% maximum DTI alternative."
+   },
+   {
+    "kstudio": "LPE-MIN-DSCR",
+    "ours": "acra-platinum.liabilities_assessment.listed_property_qualification",
+    "relation": "partial",
+    "note": "Includes the same channel-specific DSCR minimums, but only for properties listed for sale in the last six months and alongside a 43% maximum DTI alternative."
+   },
+   {
+    "kstudio": "LPE-MIN-DSCR",
+    "ours": "acra-platinum.asset_assessment.listed_property_qualification",
+    "relation": "partial",
+    "note": "Includes the same channel-specific DSCR minimums, but only for listed-property qualification and alongside a 43% maximum DTI alternative."
+   },
+   {
+    "kstudio": "LPE-NO-RATIO",
+    "ours": "acra-platinum.income_stability_sufficiency_analysis.channel_minimum_dscr",
+    "relation": "partial",
+    "note": "States the channel minimum DSCR thresholds, covering the minimum-ratio part, but does not address No-Ratio selection or overrides."
+   },
+   {
+    "kstudio": "LPE-NO-RATIO",
+    "ours": "acra-platinum.loan_program_eligibility.channel_minimum_dscr",
+    "relation": "partial",
+    "note": "States the channel minimum DSCR thresholds, covering the minimum-ratio part, but does not address No-Ratio selection or overrides."
+   },
+   {
+    "kstudio": "LPE-OCCUPANCY",
+    "ours": "acra-platinum.loan_program_eligibility.non_owner_occupancy",
+    "relation": "same",
+    "note": "Both require the subject property to be non-owner occupied for program eligibility."
+   },
+   {
+    "kstudio": "LPE-PURPOSE",
+    "ours": "acra-platinum.loan_program_eligibility.eligible_loan_purpose",
+    "relation": "partial",
+    "note": "Covers the same four eligible purposes and verification against transaction records, but does not require the corresponding transaction support document to be present and match the declared purpose."
+   },
+   {
+    "kstudio": "LPE-RENTFORM",
+    "ours": "acra-platinum.income_stability_sufficiency_analysis.required_1007",
+    "relation": "partial",
+    "note": "Covers the single-family 1007 portion of the left requirement, but not the left requirement\u2019s 1025 form for two-unit properties."
+   },
+   {
+    "kstudio": "LPE-RENTFORM",
+    "ours": "acra-platinum.appraisal_review.single_family_rent_schedule",
+    "relation": "partial",
+    "note": "Covers the single-family 1007 portion, but not the left requirement\u2019s 1025 form for two-unit properties; it also specifies additional triggers."
+   },
+   {
+    "kstudio": "LPE-RIDER",
+    "ours": "acra-platinum.insurance_coverage_sufficiency_policy_assessment.rent_loss_insurance_applicability",
+    "relation": "partial",
+    "note": "Covers determination of the rent loss insurance obligation, but not execution of the One- to Four-Family Rider; it also adds applicability conditions (LTV > 70% and rents used to qualify)."
+   },
+   {
+    "kstudio": "LPE-RIDER",
+    "ours": "acra-platinum.asset_assessment.rent_loss_insurance",
+    "relation": "partial",
+    "note": "Covers rent loss insurance applicability and required coverage, but not execution of the One- to Four-Family Rider; it adds the LTV, rent-use, and six-month coverage conditions."
+   },
+   {
+    "kstudio": "LPE-SIZE-CLTV",
+    "ours": "acra-platinum.asset_assessment.loan_amount_requirements",
+    "relation": "same",
+    "note": "Applies the same 75.00% CLTV cap when the loan amount is below $350,000 or above $1,500,000; the additional loan-amount range and increment requirements are separate."
+   },
+   {
+    "kstudio": "LPE-VACANT",
+    "ours": "acra-platinum.loan_program_eligibility.vacant_property_eligibility",
+    "relation": "same",
+    "note": "Both require the subject property to be non-vacant for program eligibility and use current-lease evidence."
+   },
+   {
+    "kstudio": "LPE-VACANT",
+    "ours": "acra-platinum.compliance_and_closing.vacant_property_eligibility",
+    "relation": "partial",
+    "note": "It covers vacant-property ineligibility, but states only that the property is not vacant; the left also requires evidence of a tenant, including a signed active lease."
+   },
+   {
+    "kstudio": "PPT-ARM-TERMS",
+    "ours": "acra-platinum.loan_program_eligibility.product_eligibility",
+    "relation": "same",
+    "note": "The ARM index, 2/2/6 caps, and margin tiers match the left requirement."
+   },
+   {
+    "kstudio": "PPT-IO-CLTV",
+    "ours": "acra-platinum.loan_program_eligibility.product_eligibility",
+    "relation": "same",
+    "note": "Both require a 5-year interest-only term and CLTV no greater than 75%."
+   },
+   {
+    "kstudio": "PPT-IO-LISTEDSALE",
+    "ours": "acra-platinum.loan_program_eligibility.listed_for_sale_requirements",
+    "relation": "same",
+    "note": "Both state that a loan is not interest-only when the property was listed for sale within six months."
+   },
+   {
+    "kstudio": "PPT-IO-LISTEDSALE",
+    "ours": "acra-platinum.liabilities_assessment.listed_property_amortization",
+    "relation": "partial",
+    "note": "Includes the left restriction that the loan is not interest-only, plus a fully amortizing-term requirement."
+   },
+   {
+    "kstudio": "PPT-IO-LISTEDSALE",
+    "ours": "acra-platinum.compliance_and_closing.listed_property_requirements",
+    "relation": "partial",
+    "note": "Includes the left restriction that the loan is not interest-only, as part of broader listed-property requirements."
+   },
+   {
+    "kstudio": "PPT-IO-MINPARAMS",
+    "ours": "acra-platinum.credit_review_analysis.minimum_score_and_matrix_cltv",
+    "relation": "partial",
+    "note": "Covers the left item's minimum decisioning score of 700, but not its minimum loan amount."
+   },
+   {
+    "kstudio": "PPT-IO-MINPARAMS",
+    "ours": "acra-platinum.loan_program_eligibility.loan_amount_requirements",
+    "relation": "partial",
+    "note": "Covers the left item's $100,000 minimum loan amount, but not its minimum decisioning score; also adds a $2,000,000 maximum and $50 increments."
+   },
+   {
+    "kstudio": "PPT-IO-MINPARAMS",
+    "ours": "acra-platinum.asset_assessment.loan_amount_requirements",
+    "relation": "partial",
+    "note": "Covers the left item's $100,000 minimum loan amount, but not its minimum decisioning score; also adds a $2,000,000 maximum, $50 increments, and a conditional CLTV limit."
+   },
+   {
+    "kstudio": "PPT-IO-MINPARAMS",
+    "ours": "acra-platinum.credit_review_analysis.loan_amount",
+    "relation": "partial",
+    "note": "Covers the left item's $100,000 minimum loan amount, but not its minimum decisioning score; also adds a $2,000,000 maximum and $50 increments."
+   },
+   {
+    "kstudio": "PPT-IO-PMTCALC",
+    "ours": "acra-platinum.property_tax_calculation.interest_only_payment_treatment",
+    "relation": "partial",
+    "note": "Covers identifying the interest-only payment sufficient to pay accrued monthly interest at origination, but addresses the DSCR denominator and does not verify the post-term recast."
+   },
+   {
+    "kstudio": "PPT-PPP-LISTEDSALE",
+    "ours": "acra-platinum.liabilities_assessment.listed_property_prepayment_penalty",
+    "relation": "same",
+    "note": "Same six-month listing trigger, three-year minimum, and state-law exception."
+   },
+   {
+    "kstudio": "PPT-PPP-LISTEDSALE",
+    "ours": "acra-platinum.title_review.listed_property_prepayment_penalty",
+    "relation": "partial",
+    "note": "Includes the three-year minimum and state exception, but omits the six-month listed-property trigger."
+   },
+   {
+    "kstudio": "PPT-PPP-LISTEDSALE",
+    "ours": "acra-platinum.asset_assessment.listed_property_prepayment_penalty",
+    "relation": "partial",
+    "note": "Includes the three-year minimum and state exception and references listed-property requirements, but does not specify the six-month trigger."
+   },
+   {
+    "kstudio": "PPT-PPP-LISTEDSALE",
+    "ours": "acra-platinum.loan_program_eligibility.listed_for_sale_requirements",
+    "relation": "same",
+    "note": "Includes the same six-month listing trigger, three-year minimum, and state-law exception; additional requirements do not change this requirement."
+   },
+   {
+    "kstudio": "PPT-PPP-LISTEDSALE",
+    "ours": "acra-platinum.loan_program_eligibility.prepayment_penalty_requirements",
+    "relation": "same",
+    "note": "Includes the same six-month listing trigger, three-year minimum, and state-law exception."
+   },
+   {
+    "kstudio": "PPT-PPP-LISTEDSALE",
+    "ours": "acra-platinum.compliance_and_closing.prepayment_penalty_requirements",
+    "relation": "same",
+    "note": "Includes the same six-month listing trigger, three-year minimum, and state-law exception."
+   },
+   {
+    "kstudio": "PPT-PPP-STATE",
+    "ours": "acra-platinum.compliance_and_closing.prepayment_penalty_requirements",
+    "relation": "same",
+    "note": "Applies the printed state-specific prepayment restrictions to the property and transaction facts; the unresolved buy-out interpretation is also flagged rather than assumed."
+   },
+   {
+    "kstudio": "PPT-PPP-STATE",
+    "ours": "acra-platinum.loan_program_eligibility.prepayment_penalty_requirements",
+    "relation": "same",
+    "note": "Requires the selected prepayment structure to satisfy the printed state restriction applicable to the property and transaction facts."
+   },
+   {
+    "kstudio": "PPT-PPP-STRUCT",
+    "ours": "acra-platinum.loan_program_eligibility.prepayment_penalty_requirements",
+    "relation": "partial",
+    "note": "Includes the same published penalty structures, but adds state restrictions and a listed-property minimum that are not part of the left requirement."
+   },
+   {
+    "kstudio": "PPT-PPP-STRUCT",
+    "ours": "acra-platinum.compliance_and_closing.prepayment_penalty_requirements",
+    "relation": "partial",
+    "note": "Includes the published penalty-structure check, but also adds state restrictions, a listed-property minimum, and unresolved confirmation issues."
+   },
+   {
+    "kstudio": "PPT-PRODUCTS",
+    "ours": "acra-platinum.loan_program_eligibility.product_eligibility",
+    "relation": "partial",
+    "note": "It includes the same four eligible product types, but adds ARM and interest-only conditions and does not include the left item's Closing Disclosure-to-Note consistency check."
+   },
+   {
+    "kstudio": "LFC-CLTV-FINAL",
+    "ours": "acra-platinum.loan_program_eligibility.matrix_cltv_limit",
+    "relation": "partial",
+    "note": "Covers the FICO/purpose matrix cap, which is one component of the left item's consolidated maximum; it does not combine the other caps or apply the declining-market reduction."
+   },
+   {
+    "kstudio": "LFC-CLTV-FINAL",
+    "ours": "acra-platinum.credit_review_analysis.minimum_score_and_matrix_cltv",
+    "relation": "partial",
+    "note": "Covers the decisioning-score and matrix-CLTV component, but not the other CLTV caps or the declining-market reduction in the left item."
+   },
+   {
+    "kstudio": "LFC-CLTV-FINAL",
+    "ours": "acra-platinum.liabilities_assessment.listed_property_ltv_and_cltv",
+    "relation": "partial",
+    "note": "Covers the 65% listed-property cap, one component of the left item's consolidated maximum; it does not combine the other caps or apply the declining-market reduction."
+   },
+   {
+    "kstudio": "LFC-CLTV-FINAL",
+    "ours": "acra-platinum.title_review.listed_property_maximum_ltv_cltv",
+    "relation": "partial",
+    "note": "Covers the 65% listed-property cap, one component of the left item's consolidated maximum; it does not combine the other caps or apply the declining-market reduction."
+   },
+   {
+    "kstudio": "LFC-CLTV-FINAL",
+    "ours": "acra-platinum.asset_assessment.loan_amount_requirements",
+    "relation": "partial",
+    "note": "Covers the 75% CLTV cap for loans below $350,000 or above $1,500,000, one component of the left item's consolidated maximum; it does not combine the other caps or apply the declining-market reduction."
+   },
+   {
+    "kstudio": "LPE-CHANNEL",
+    "ours": "acra-platinum.income_stability_sufficiency_analysis.channel_minimum_dscr",
+    "relation": "partial",
+    "note": "Covers the channel-specific DSCR minimums (Correspondent \u22651.2, Wholesale \u22651.0), which are part of the left item; it does not determine or record the origination channel from the LOS and lock/registration records or address the 60% CLTV cap."
+   },
+   {
+    "kstudio": "LPE-CHANNEL",
+    "ours": "acra-platinum.loan_program_eligibility.channel_minimum_dscr",
+    "relation": "partial",
+    "note": "Covers the channel-specific DSCR minimums (Correspondent \u22651.2, Wholesale \u22651.0), which are part of the left item; it does not determine or record the origination channel from the LOS and lock/registration records or address the 60% CLTV cap."
+   },
+   {
+    "kstudio": "LPE-BIZ-CONSUMER",
+    "ours": "acra-platinum.asset_assessment.funds_to_close_seasoning_verification",
+    "relation": "partial",
+    "note": "Covers the funds-to-close seasoning component of the left item; the thresholds match: business-purpose funds over $50,000 and CLTV over 70%, and consumer transactions over 70% CLTV. It does not cover the other classification requirements."
+   },
+   {
+    "kstudio": "LPE-BIZ-CONSUMER",
+    "ours": "acra-platinum.title_review.business_purpose_entity_use",
+    "relation": "partial",
+    "note": "Covers the business-purpose/investment-property portion of the left classification, but not the consumer classification, seasoning thresholds, attestation, or program listing."
+   }
+  ]
+ },
+ "cost": {
+  "calls": 231,
+  "input_tokens": 468826,
+  "output_tokens": 50201,
+  "cost_usd": 0.1296,
+  "cost_is_upper_bound": false,
+  "budget_usd": 3.0,
+  "stopped_on_budget": false
+ }
+}

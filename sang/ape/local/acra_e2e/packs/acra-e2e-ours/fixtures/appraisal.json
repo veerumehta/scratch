@@ -1,0 +1,72 @@
+{
+  "default": {
+    "source": "fixture.appraisal_vendor",
+    "appraised_value": 500000,
+    "appraisal_date": "2026-01-01"
+  },
+  "DSCR-DEMO-001": {
+    "source": "fixture.appraisal_vendor",
+    "appraised_value": 1200000,
+    "appraisal_date": "2026-09-15",
+    "property_address": "1 Demo St",
+    "property_condition": "C3",
+    "condition_note": "Average condition (UAD C3): adequately maintained, no repairs required.",
+    "rent_schedule": {
+      "form": "1007",
+      "market_rent_monthly": 4000,
+      "note": "Comparable rent schedule supports the subject's monthly market rent."
+    }
+  },
+  "DSCR-DEMO-002": {
+    "source": "fixture.appraisal_vendor",
+    "appraised_value": 1875000,
+    "appraisal_date": "2026-09-15",
+    "property_address": "2 Demo St",
+    "property_condition": "C3",
+    "condition_note": "Average condition (UAD C3): adequately maintained, no repairs required.",
+    "rent_schedule": {
+      "form": "1007",
+      "market_rent_monthly": 6000,
+      "note": "Comparable rent schedule supports the subject's monthly market rent."
+    }
+  },
+  "DSCR-DEMO-003": {
+    "source": "fixture.appraisal_vendor",
+    "appraised_value": 1600000,
+    "appraisal_date": "2026-09-15",
+    "property_address": "3 Demo St",
+    "property_condition": "C3",
+    "condition_note": "Average condition (UAD C3): adequately maintained, no repairs required.",
+    "rent_schedule": {
+      "form": "1007",
+      "market_rent_monthly": 4000,
+      "note": "Comparable rent schedule supports the subject's monthly market rent."
+    }
+  },
+  "DSCR-DEMO-004": {
+    "source": "fixture.appraisal_vendor",
+    "appraised_value": 975610,
+    "appraisal_date": "2026-09-15",
+    "property_address": "4 Demo St, Miami",
+    "property_condition": "C3",
+    "condition_note": "Average condition (UAD C3): adequately maintained, no repairs required.",
+    "rent_schedule": {
+      "form": "1007",
+      "market_rent_monthly": 8000,
+      "note": "Comparable rent schedule supports the subject's monthly market rent."
+    }
+  },
+  "DSCR-DEMO-005": {
+    "source": "fixture.appraisal_vendor",
+    "appraised_value": 857143,
+    "appraisal_date": "2026-09-15",
+    "property_address": "5 Demo St",
+    "property_condition": "C3",
+    "condition_note": "Average condition (UAD C3): adequately maintained, no repairs required.",
+    "rent_schedule": {
+      "form": "1007",
+      "market_rent_monthly": 1800,
+      "note": "Comparable rent schedule supports the subject's monthly market rent."
+    }
+  }
+}

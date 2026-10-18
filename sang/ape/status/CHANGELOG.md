@@ -4,6 +4,233 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 ## [2.6.4] - unreleased
 
+- **`claude-mythos-5` and `claude-mythos-5.1` are priced.** Rows from the provider's pricing page (read 2026-10-18; limited availability; internal to the provider, the released equivalent being the Fable model): input 10, output 50, cache read 1.00 (0.25 for 5.1), cache write 12.50 for five minutes and 20 for one hour, per million tokens. Priced only, with no card: the overview page does not list them, so their context window and maximum output are unconfirmed. Not yet reviewed by a person. (+30 / -0 lines, 3 files)
+
+- **A one-hour cache write bills at its own rate.** Pricing rows take an optional `cache_creation_1h` (none: `CACHE_WRITE_1H_INPUT_MULTIPLE`, twice the input rate); `compute_cost` takes `cache_creation_1h_tokens`, a count apart from the standard `cache_creation_tokens`, and counts it toward the long-context threshold; the cost tier scales it. `AnthropicProvider.run` splits the response's cache writes by the TTL it reports (`cache_creation.ephemeral_1h_input_tokens`) and puts the one-hour count in its usage dict as `cache_creation_1h_tokens`. Usage rows (`TokenUsage`, `ModeUsage`) and the agent-execution path, which receives writes as one count, do not carry the split. (+58 / -9 lines, 3 files)
+
+- **A deprecated model can name its successor.** `model_data.json` rows take `replaced_by`; `deprecation_successor(model)` answers it (resolving the id as the pricing lookup does). `claude-3.5-haiku` is deprecated and replaced by `claude-haiku-5.5`; no pricing row was added. A test holds that a named successor is a priced, non-deprecated model. (+22 / -0 lines, 4 files)
+
+- **A Claude id spelled with a suffix or the older dashed form reaches its card.** `claude-3-5-haiku-20241022`, `claude-opus-4-0`, `-latest` and `[1m]` suffixes and a trailing `-0` were unpriced, so a run on them costed at the most expensive default or refused. `normalize_model_name` now drops an alias suffix, dots a `claude-3-5-haiku` style id and drops a version's trailing `.0` or `-0`; every spelling in the test table resolves to its card. (+24 / -6 lines, 3 files)
+
+- **A blank or near-empty page no longer fails a document's conversion when no DocIntel provider is set.** The converter treated every page under 50 characters as scanned and routed it to the stub provider, which refuses a scanned page, so one blank page among digital ones failed the whole document (a 534-page loan packet failed its read on a part holding one). Without a provider only a page an engine must read (no text layer, text over an image, unreadable text) counts; `require_readable` and any call with a provider are unchanged. (+22 / -3 lines, 2 files)
+
+- **A failed attempt's tokens are counted in a run's usage.** `run_agent` retried a schema failure, a truncated response or a MaxTurns stop and added only the attempt that answered, so the cost of the failed ones, which the provider bills, was missing from the run's usage and cost (the code in the 12-segment Acra extraction read about $0.025 where retries and truncations had spent more). It now adds the usage the failed attempt's error carries (`failed_attempt_usage`: the Agents SDK's `run_data`, or `usage` on `IncompleteOutputError`, which the model wrapper now sets from the truncated response). An in-flight provider error carries none and is still not counted, and `run_with_recovery`, which returns the raw result of the last attempt, does not carry earlier attempts' usage. (+55 / -9 lines, 4 files)
+
+- **An extraction segment a transient error failed is read again.** A segment the provider dropped (a connection error, a 429 or a 5xx) was recorded as failed and the run went on, so a run reported as succeeded could be missing a tenth of its code rules. `extract_step` now reads each such segment again in `RETRY_PASSES` more pass(es) after the others finish, so the provider has recovered; `ExtractedCandidates.recovered` counts them, and a failure that is not transient (a bad clause) is final. This covers the job, code and code-from-jobs representations. The catalog and documents extractions and the alignment keep their own part loops and are not yet retried. (+60 / -14 lines, 3 files)
+
+- **A flex request the provider answered on another tier is priced at that tier.** `OpenAIProvider.run` priced every `flex_` request at the flex discount whatever tier the response reported, so a request served at the standard tier was costed too low. The response's `service_tier` now decides (flex, or unreported as requested); any other tier prices the plain model. The agent-execution path, which prices from the model name in its usage rows, does not yet read the served tier. (+30 / -2 lines, 2 files)
+
+- **An experiment can run an assistant's cases on a variant of it.** The assistant invokers passed only `config["scope"]`, so comparing a persona, model or sampling setting meant editing the assistant. `config["agent_overrides"]` (`AgentOverrides`: `persona`, `model`, `temperature`, `reasoning_effort`, `max_tokens`, `max_turns`, `service_tier`) makes `AssistantInvoker` and `AssistantSessionInvoker` build a fresh, uncached agent through the new `AssistantRuntime.agent_with_overrides` (`agent_with_persona` is its persona case); the served agent is untouched. A key outside that list or a value of the wrong type is refused with the field's name, and each case then records as failed. (+120 / -22 lines, 6 files)
+
+- **Document precedence decides which document fills a field when documents disagree.** `document_ingest` took the first document read and listed a later differing value as a conflict, whatever the documents were. `precedence: {field: [class, ...]}` on the step (`"*"` for every field without an entry) orders classes best first; a class stands for the types nested under it and an unlisted class ranks last. A better-ranked document replaces the held value, a tie keeps the first, a submitted value is never replaced, and every disagreement stays in `conflicts`, marked `resolved_by: precedence` with the `kept` document when precedence decided it. The publish check names a field the step does not read and a class the registry lacks. Without `precedence` nothing changes. (+170 / -14 lines, 4 files)
+
+- **`ChatTurnSpec.on_step_error` is the supported way to shape a failed stage's error.** The coordinator ran the lifecycle with the default handler, so an application that needed its own error codes had to subclass `ChatCoordinator` and override the private `_consume`, copying its event loop. The spec now carries the handler (default `chat_step_error`; `None` propagates the exception) and `_consume` passes it on. (+30 / -3 lines, 2 files)
+
+- **Document catalog page rough edges.** Found by adopting the Master Taxonomy into a scratch draft: an adoption into a
+  draft whose manifest does not name its registry (`reachable: false`) now says the pack will not read the types
+  yet; a draft whose coverage cannot be read shows the server's reason; and a reference's `priority` attribute is a
+  column (+14 / -4 lines, 2 files).
+
+- **`POST /packs/{id}/assess` takes `engine_mode` and `primary`, and `PlatoClient.assess` takes `reason`, `engine_mode` and `primary`.** The modes were reachable only through an experiment's config or the pack's step, so a caller could not run one case in each mode. The client's `reason` gives the live rules (jobs) a model. (+58 / -6 lines, 4 files)
+
+- **A document table can carry aliases and guidance, and sit below title rows.** `DocumentColumns` gains `header_row`, `aliases` (split on `alias_separator`) and `cues`; `DocumentEntry` gains `aliases` and `cues`, stored only when set (`entries_json`) so earlier references keep their digest; adopting an entry writes them as the record's `aliases` and `cues`. (+120 / -12 lines, 5 files)
+
+- **The authoring context is in the SDK.** `authoring_service(db=, agents=, pack_store_for=)` and the draft material its runs read (`alignment_material`, `job_writers`, `policy_jobs`, `pack_prompts`, `with_registry`, `reasoning_agent`, `PROMPTS_DIR`, `JTBD_TEMPLATE_PATH`) moved from `plato/api/authoring.py` to `jazzx_sdk.server.authoring_context`; Plato keeps the routes and the authoring chat assistant. Behaviour is unchanged; the underscore names became public and tests patch `reasoning_agent` on the new module. (+253 / -239 lines, 9 files)
+
+- **Lint fixes are applied in the SDK, and written only at the revision they were computed on.** The lint-fix route
+  read the draft, computed the fixes, checked the revision once and wrote the files one by one, so an edit landing
+  between two writes was overwritten. `DbPackDraftStore.write_files(pack_id, files, expected_revision=)` writes
+  several files in one transaction after locking the draft, refusing the whole write with `DraftMoved` when the
+  draft is no longer at the revision a `snapshot` returned; `write_file` shares its per-file code.
+  `apply_fixes(drafts, pack_id, codes=, dry_run=, actor_id=)` (`jazzx_sdk.pack.lint_fix`) is the route's logic: the
+  fixers over a snapshot, then that write (`UnknownFixer` for a code no fixer answers). The route maps them to 422
+  and 409 (`draft_changing`, `draft_changed`) (+247 / -69 lines, 4 files).
+
+- **The retrial of a fixed proposal is built in the SDK.** `retrial_spec(previous, proposal_id)`
+  (`jazzx_sdk.pack.rule_trial`) is the `ExperimentSpec` of a trial of one proposal over the dataset, entity, template
+  and settings of the trial it follows; Plato's expand and redo routes called an inline copy (+33 / -9 lines, 3 files).
+
+- **An assistant applies the guidance its own tenant deployed.** An assistant reads guidance through the process-wide
+  `fabric.guidance`, so guidance deployed through the routes reached no assistant, and one shared store would have
+  mixed tenants. `AssistantRuntime(agent_extra_for=)` adds to the extras one tenant's assistants are built with, and
+  `FabricWithGuidance(shared, store)` is the shared fabric with that tenant's `DbGuidanceStore` as its `guidance`;
+  Plato builds each tenant's assistants that way. The guidance and `documents/satisfying` routes check their gate
+  before their input, as the other pack routes do (+127 / -15 lines, 7 files).
+
+- **Plato mounts governed guidance routes.** `GET /packs/{id}/guidance?status=`, `PUT /packs/{id}/guidance` (a draft;
+  a draft named by `asset_id` is revised, a deployed asset is superseded and never edited: 409),
+  `GET /packs/{id}/guidance/{asset}` (the asset and its versions),
+  `POST /packs/{id}/guidance/{asset}/{approve|deploy|deactivate|discard|revise}` through `GuidanceLifecycle`
+  (a reviewer's step; its refusal is the 409's `detail`) and `POST /packs/{id}/guidance/from-feedback`, which has the
+  curator write one draft from reviewed feedback (a model call; the asset's provenance names the feedback and
+  nothing approves or deploys it; 404 for feedback the tenant lacks, 503 without a model service). Deploying needs a
+  validator: with a model wired the guardrail validator decides, without one the request must say
+  `allow_unvalidated`. Over the tenant's `DbGuidanceStore`. Client: `guidance`, `guidance_asset`, `put_guidance`,
+  `approve_guidance`, `deploy_guidance`, `deactivate_guidance`, `draft_guidance_from_feedback`
+  (+459 / -1 lines, 4 files).
+
+- **Guidance assets have a durable, tenant-scoped store.** `DbGuidanceStore` (`jazzx_sdk.fabric.guidance.db_store`,
+  table `guidance_asset`, migration 0035) implements `GuidanceStore` over `fabric.db`: a row per `(tenant, asset,
+  version)`, the same content version replacing its row (a status change), new content a new version, the newest the
+  head; listing and searching score as the in-process store does, so the two agree. Plato had no guidance store of
+  its own (+267 / -0 lines, 5 files).
+
+- **A result computed elsewhere can be recorded for a subject.** A Decision or Outcome existed only when a case run
+  or session made one, so a chat grounded by subject found nothing on a result computed outside Plato.
+  `POST /subjects/{id}/outcomes` `{pack_id, result, recommendation?, confidence?, rationale?, outcome_type?,
+  observed_at?}` writes what a case run writes (`record_subject_outcome`): a Trace with no steps (workflow
+  `external:<pack>`), a Decision recommending what was recorded (`recorded` and an unstated confidence when none is
+  given) and an Outcome carrying the result as given, linked to each other; it answers their ids. The pack must be
+  one the tenant has (404/422), an outcome type other than direct, proxy or lagged is a 422 and a deployment
+  without a canonical store answers 503. No new ground kind is needed: a profile's `canonical` ground source
+  (`model: Decision` or `Outcome`, `where: [[subject_id, eq, <subject>]]`) reads what was recorded. Client:
+  `record_outcome(subject_id, pack_id, result=, ...)` (+245 / -2 lines, 6 files).
+
+- **A stored document can be read on its own.** A document was read only inside a case run's `document_ingest`
+  step. `read_document(pack, ref, documents=, agents=, step=, engine=, split=)` (`jazzx_sdk.pipelines.steps`) is
+  that read taken out of the step's loop, which now calls it too: the pack's taxonomy, schema and engine classify,
+  split when asked and extract, and it returns the items, the usage by mode, the step's settings and the step used
+  (`document_step(pack, step_id)` picks it: the named one, else the first; a pack with none is refused). Over
+  Plato `POST /documents/{id}/read?pack_id=&version=&step=&split=&engine=` queues a run (202; the run store's queue,
+  cost, stop and stream apply, and `GET /runs?pack_id=&subject_id=<document id>` lists a document's reads) whose output
+  is `{kind: "document_read", status, document_id, step, items, usage, settings}`. A document of another tenant is a
+  404, an unknown step a 422. Client: `classify_document(...)` queues it, `read_document(...)` waits and returns the
+  finished run (+294 / -14 lines, 5 files).
+
+- **Stored documents are indexed, and listed by subject or label.** The blob store keeps a document by its digest and
+  could not be listed, so a caller held every id. A table `document_record` (migration 0034, `DbDocumentIndex`)
+  records, per tenant and document, the filename, size, a free-text `subject` and free-text `labels`.
+  `POST /documents` takes optional `subject` and repeated `labels` and answers the record (the same bytes again merge
+  their labels and keep the subject unless one is given); `GET /documents?subject=&label=&limit=&after=` lists the
+  indexed ones, newest first, with a cursor (`next`) that misses and repeats nothing (a bad `after` is a 422);
+  `PATCH /documents/{id}` sets the subject, replaces labels or adds some, and indexes a document stored before
+  the index. Without a database a document is stored as before and the list says it is unavailable. Documents stored
+  earlier are not listed until labelled. Client: `upload_document(subject=, labels=)`, `documents(...)`,
+  `label_document(...)` (+495 / -13 lines, 8 files).
+
+- **The Plato client can retry, follow a run across a dropped connection, process feedback and name the reactions.**
+  `PlatoClient(retry=RetryPolicy(...))` is opt-in (a client without one never retries): a GET is retried on a dropped
+  or refused connection and on 429, 502, 503 and 504; a mutating call only where the request cannot have been taken
+  (a connection that failed before it was sent, 429, 503), always with the one `Idempotency-Key` and trace id the call
+  was first sent with; `Retry-After` sets the wait (jittered backoff otherwise, bounded by named constants).
+  `PlatoError` gains `attempts` and `retryable`. `follow_case_run(run_id, from_seq=0)` is `stream_case_run` that
+  reconnects from the last `seq` it yielded (so each journal entry arrives once), a bounded number of times in a
+  row. `process_feedback(feedback_id)` calls the route that had no method. `contracts.REACTIONS` is
+  `("positive", "negative", "neutral")`, held equal to the SDK's `Reaction` by a test, and `turn_feedback` refuses
+  any other reaction naming the values (+360 / -17 lines, 8 files).
+
+- **The runs page shows single-instance conflicts.** The documents section names each once-only document type that
+  more than one document was admitted as, with the documents (`documents.single_instance_conflicts`); the run is not
+  stopped, as the route says (+4 / -1 lines, 2 files).
+
+- **The document catalog page, step 3: documents the jobs name.** A section lists the documents the draft's jobs
+  name that no registry type covers (with how many jobs name each) and offers Suggest, which shows the reference's
+  best text matches with their scores; each is adopted only by a click, through the same adopt. The registry types
+  no job reads are listed too (candidates for a requirement nobody wrote) (+60 / -2 lines, 2 files).
+
+- **The document catalog page, step 2: adopt into a draft.** Pick a draft, tick entries (or select the ones shown), and
+  Adopt: the page posts the codes with the registry's digest, says what was adopted, what the draft already had
+  (and whether matched by source, code or name) and what was refused with why, and reads the registry again; a moved
+  draft is re-read and nothing is adopted. Entries already adopted from this reference show "in the draft", and the
+  draft's registry is listed with each type's source, instances, scope and the registry's findings (+140 / -6 lines, 2 files).
+
+- **A document catalog page (`/document-catalog/ui`), step 1: browse a reference.** Picks a stored document reference
+  (the list a loan system keeps) and its version, and lists its entries (category, name, code, single instance,
+  applies to) with a text search, category and scope filters and an "only one approved" filter, a hundred rows at a
+  time. In the nav as Documents (+190 / -0 lines, 5 files).
+
+- **Coverage lists the document types no job reads, and a run lists a single-instance type held twice.** The coverage
+  report (and the workbook's Documents sheet) gains `unread_documents`: the registry's classifiable types that no job
+  names and none is nested under a type a job names, so a coarse request counts as reading the types beneath it.
+  `document_ingest` records `single_instance_conflicts` on the case's documents: each registry type with
+  `cardinality: single_instance` that more than one document was admitted as, with the document ids. The run goes
+  on; a run with one counts as having something a reviewer has not seen, and a checkpoint's payload carries it
+  (+101 / -3 lines, 4 files).
+
+- **A draft adopts documents from a reference, and a name can be matched to one.** `POST /packs/{id}/documents/adopt`
+  takes the entries `codes` or `categories` select from a document reference into the draft's registry
+  (`document_types.yaml`): the id is the name's spelling, `parent` the category (or the caller's `category_map`), the
+  system's code goes in `external_ids` (under `system`, the reference's id by default), and `x-source` records
+  `reference@version#code`. An entry the registry already has (adopted before, the same code, or the same name) is
+  listed under `already_present` and left as it is; one that cannot be adopted (a code the reference lacks, an id
+  another document holds) is refused with its reason and the rest are kept. `if_match` is the registry digest the
+  caller read: a changed registry answers 409 `draft_moved`. `GET /packs/drafts/{id}/documents` returns the draft's
+  registry as written with its digest and the registry's findings, and `GET /document-references/{id}/suggest?name=`
+  ranks the reference's entries for a name by the words they share (no model; a person confirms). Client methods
+  `adopt_documents`, `draft_documents`, `suggest_documents` (+438 / -0 lines, 5 files).
+
+- **A pack can keep a document catalog an external system lists, read from a spreadsheet.** A document-catalog
+  reference (`jazzx_sdk.pack.document_reference`, table `document_reference`, migration 0033) is a versioned,
+  immutable list of entries `{category, name, code, single_instance, applies_to, attributes}`; the same entries
+  again are a no-op and other entries under a stored version are refused. `read_document_table` reads an xlsx or CSV
+  through a column mapping the caller declares (`DocumentColumns`: the category, name, code and single-instance
+  columns, the words that mean yes, other columns as attributes, each sheet as a scope): a row on several sheets is
+  one entry with every scope, a code is kept exactly as written, and every bad row is named (`Sheet row N: why`)
+  with nothing stored unless all read. Routes `GET /document-references`, `PUT /document-references/{id}/{version}`
+  (entries as JSON), `POST /document-references/{id}/{version}/upload` (a file and a `mapping`),
+  `GET /document-references/{id}?version=` and `DELETE`, and client methods `document_references`,
+  `document_reference`, `put_document_reference`, `upload_document_reference`, `delete_document_reference`
+  (+719 / -1 lines, 10 files).
+
+- **A coarse document request is met by the fine types under it, and the reverse can be listed.** `DocumentRegistry`
+  gains `lineage` (a type, the kinds above it, its category), `ancestors`, `descendants` (the live types that satisfy
+  a request for a name; a category stands for the types filed under it), `holds` (whether the classes held meet a
+  need: a fine class meets a need for a kind above it or its category, never the reverse) and `satisfying`. The
+  `document_ingest` required-classes check resolves names through the registry's ids, labels and aliases and expands
+  a class supplied without a taxonomy path (inline evidence) the same way (`missing_classes`); the publish check no
+  longer calls a registry alias a class no document can be. `GET /packs/{id}/{version}/documents/satisfying?name=`
+  and `GET /packs/drafts/{id}/documents/satisfying?name=` answer `{name, resolved, satisfying: [{id, label,
+  external_ids, cardinality, applies_to}]}`, and the client has `documents_satisfying(pack_id, name, version=)`. A
+  template's `expand_documents: true` lists, under a coarse document in an exported job's Reference Documents,
+  the types that satisfy it (+278 / -9 lines, 10 files).
+
+- **A document type carries an external code, a cardinality, a scope and attributes, and an unknown key is reported.**
+  `DocumentType` gains `external_ids` (`{system: code}`, kept verbatim: an external key of 20 characters is not
+  cut or normalised), `attributes` (a free map), `cardinality` (`many`, the default, or `single_instance`) and
+  `applies_to` (scopes such as a loan type; empty means every case). A key that is not a field was dropped
+  without a word; it is now kept in the file and reported as the lint warning `document_type_unknown_key`. A
+  template's `document_codes: <system>` prints that system's code beside each label in an exported job's
+  Reference Documents (`render_references(code_system=)`, `export_jtbdset(document_codes=)`); a document the
+  system does not key prints its label alone (+144 / -10 lines, 5 files).
+
+- **Lint warns of a job and its code both in force when the assessment runs every rule on its own.** A pack whose
+  `policy_assessment` selects `engine_mode: all` while a python rule is derived from a job gets
+  `job_and_code_both_in_force` (a warning naming the rules), since both report the same failure
+  (+49 / -0 lines, 2 files).
+
+- **An assessment chooses which engine decides a requirement that has a job and its code.** `assess(engine_mode=,
+  primary=)`, the `policy_assessment` step's `engine_mode:` and `primary:`, and an eval experiment's `config`
+  take one of five modes (`jazzx_sdk.pack.engine_modes`). **`hybrid` is the new default**: each job's code runs
+  first; a violation stands and the job is skipped; a satisfied verdict stands when the code covers the whole
+  job (every check computable, the coverage report's `code` disposition), otherwise the job still runs for its
+  other checks; code that cannot decide (missing data, an unreadable fact, an executor error, a gate that does
+  not hold) sends the job to the model, and without an executor every job runs. `all` is the earlier behaviour,
+  every rule on its own, which counted a requirement twice when a job and its code both failed. `code_only` runs
+  the rules that are not procedures and lists the jobs with no code as `not_covered`; `jobs_only` runs the
+  procedures; `both` runs code and job apart for each pair, returns the two verdicts side by side
+  (`comparison`, with agreement) and takes the answer from the primary (`jobs` by default). A job's code is
+  its `derived_from` rules and the ledger's matches (`job_code_pairs`); several code rules decide together
+  (violated when any is, satisfied when all are, else undecided). Every assessment carries `engine_mode`,
+  `decided_by` (`code` or `job` per rule; a job a code verdict settled says `code`) and an `engine_summary`
+  (pairs, decided by code, decided by job, fell back, not covered, disagreements). A pack with no code has no
+  pairs and is assessed as before; a pack with both now gets one verdict per requirement, so a consumer
+  reading `violations` sees one entry where it saw two (+510 / -11 lines, 4 files).
+
+- **The runs page answers the assistant's questions.** It declares two page actions for `ask_page`:
+  `corrections_in_progress` (the corrections typed into the table, or the error a bad facts box gives) and
+  `rerun_inputs` (the case inputs in the rerun box), so the assistant can ask what the user is part-way through
+  instead of guessing (+14 / -0 lines, 2 files).
+
+- **Job cards in the chat.** `show_job(pack_id, job_id, version)` puts a `job_view` artifact on the turn, drawn as the
+  job's coverage row read from the coverage report (published version or the open draft): description, policy,
+  section and kind, disposition with the computable checks, the code, the data and documents it lacks, folded jobs,
+  mapped data, disagreements and whether it is a pending proposal. The row is the one the coverage page shows, so
+  this is also the coverage-row widget (+110 / -2 lines, 5 files).
+
+- **The packs page shows a blueprint's chain findings.** Publishing or activating a blueprint now says how many
+  findings its narrowing chain has and names each with its layer (a strict chain still refuses, and the refusal is
+  shown as before); nothing is added when the chain holds (+25 / -2 lines, 2 files).
+
 - **Version 2.6.4, Plato 0.2.5 and `jazzx-plato-client` 0.2.5.** The 2.6.3 release is on `dev` (#92). (+6 / -6 lines,
   6 files)
 

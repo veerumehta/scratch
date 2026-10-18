@@ -57,9 +57,8 @@ masked ids.
 1. DONE, unpushed: plato-to-sdk items 1-3 (`9d013116`, `b1802104`, `1475857a`); document table reader (`8e49893d`);
    assess engine_mode/primary (`1dac85f6`).
 2. Acra end-to-end run: harness ready; waits on the approval and the case record (above).
-3. NEXT: `ChatCoordinator` hook (supported override of private `_consume`, assistant PR #31), document precedence,
-   assistant eval overrides, live usage/cost on a running run (served tier, `cache_creation` mapping, the 0.025 total
-   check, failed-code-segment retry with run summary and coverage display).
+3. DONE since the first save (unpushed, one commit each): `ChatTurnSpec.on_step_error` `be79469a`; document precedence `44043263` (plan `plan_document_precedence.md`); assistant eval overrides `edcf4ba6` (`AgentOverrides`, `agent_with_overrides`); OpenAI served-tier pricing `9922078b`. References and scratch packs verified alive after reboot.
+   REMAINING of the cost item: `cache_creation` mapping looks handled (`extract_usage`), the agent-execution path does not read the served tier, the 0.025 total check, live usage on a running run, failed-code-segment retry with run summary and coverage display: the written spec was in opus-xrepo's message; ask it to resend.
 4. Job-writing quality plan; code-yield and library plan (ranked Library asks).
 5. Blocked: assessment-engine acceptance run (needs the golden-set path), BytePro decisions for the document catalog.
 6. Low: gemini-3-flash provenance note in `model_data.json`; eval scorers reading `engine_summary`.

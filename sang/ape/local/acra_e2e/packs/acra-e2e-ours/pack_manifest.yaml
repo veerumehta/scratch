@@ -1,0 +1,85 @@
+pack_id: acra-e2e-ours
+pack_name: DSCR
+pack_version: 0.2.18
+exports:
+- jtbdset
+certification_status: draft
+domain: commercial_lending
+segment: dscr
+regulatory_context: []
+evidence_types: evidence_types.yaml
+document_types: document_types.yaml
+policies:
+  dir: policies
+programs:
+  standard:
+  - DSCR_STANDARD
+  platinum_select:
+  - DSCR_PLATINUM_SELECT
+profiles:
+  dir: profiles
+conductor:
+  kind: conductor_pipeline
+  input_schema: schemas/loan_application.json
+  subject_field: loan_id
+  steps:
+  - id: documents
+    kind: document_ingest
+    fields_schema: schemas/loan_document_fields.json
+    fills: input
+    split: true
+    required_when: documents
+    required_classes:
+    - loan_application
+    - any_of:
+      - lease_agreement
+      - rent_roll
+    - credit_report
+    - any_of:
+      - entity_documents
+      when:
+        Borrower.entity_type:
+        - llc
+        - corporation
+        - trust
+  - id: assessment
+    kind: policy_assessment
+    metrics: metrics.yaml
+    compose_caps:
+      compare_field: LoanCore.cltv_percent
+      strategy: min
+    default_program: standard
+  - id: investigation
+    kind: investigation
+    hypothesis_schema: schemas/hypothesis.json
+    decision_schema: schemas/eligibility_recommendation.json
+    evidence_tools: evidence_tools.yaml
+    max_iterations: 5
+    on_reasoner_failure:
+      decision: refer_to_underwriter
+      rationale: The reasoner did not produce a recommendation; refer to an underwriter.
+    deterministic_verdict:
+      mode: authoritative
+      adverse_decisions:
+      - ineligible
+  - id: approval
+    kind: human_checkpoint
+    checkpoint: ELIGIBILITY_DECISION_APPROVAL
+  - id: narrative
+    kind: narrate
+    gate:
+      governor_approved: true
+      decision_field: decision
+      decision_in:
+      - ineligible
+evaluation:
+  pass_threshold: 0.75
+autonomy_ceilings:
+  default: 1
+human_checkpoints:
+- ELIGIBILITY_DECISION_APPROVAL
+governance_chain:
+  aba: DEFERRED
+  jap: DEFERRED
+  overlay: DEFERRED
+created_at: '2026-08-13'

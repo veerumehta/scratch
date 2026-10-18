@@ -1,0 +1,3433 @@
+{
+  "entries": 152,
+  "job_documents": {
+    "lease_agreement": 31,
+    "bank_statement": 42,
+    "rent_roll": 26,
+    "appraisal_report": 30,
+    "loan_application": 88,
+    "title_commitment": 16,
+    "listing_history": 13,
+    "hazard_insurance": 8,
+    "entity_documents": 37,
+    "credit_report": 33,
+    "title_agent_verification": 3
+  },
+  "job_documents_matching_no_entry": [
+    "loan_application",
+    "listing_history",
+    "entity_documents",
+    "title_agent_verification"
+  ],
+  "entries_a_job_reads": {
+    "RNT-001": [
+      "lease_agreement"
+    ],
+    "AST-001": [
+      "bank_statement"
+    ],
+    "RNT-002": [
+      "rent_roll"
+    ],
+    "VAL-001": [
+      "appraisal_report"
+    ],
+    "VAL-011": [
+      "appraisal_report"
+    ],
+    "VAL-005": [
+      "appraisal_report"
+    ],
+    "TTL-001": [
+      "title_commitment"
+    ],
+    "INS-001": [
+      "hazard_insurance"
+    ],
+    "INS-005": [
+      "hazard_insurance"
+    ],
+    "CRD-002": [
+      "credit_report"
+    ],
+    "CRD-001": [
+      "credit_report"
+    ]
+  },
+  "entries_no_job_reads": [
+    {
+      "code": "APP-001",
+      "name": "Uniform Residential Loan Application (Form 1003)",
+      "category": "Application",
+      "priority": "Core"
+    },
+    {
+      "code": "APP-002",
+      "name": "URLA Lender Loan Information",
+      "category": "Application",
+      "priority": "Core"
+    },
+    {
+      "code": "APP-003",
+      "name": "URLA Continuation Sheet",
+      "category": "Application",
+      "priority": "Conditional"
+    },
+    {
+      "code": "APP-004",
+      "name": "Unmarried Addendum",
+      "category": "Application",
+      "priority": "Conditional"
+    },
+    {
+      "code": "APP-005",
+      "name": "Investor Application Authorization",
+      "category": "Application",
+      "priority": "Core"
+    },
+    {
+      "code": "APP-006",
+      "name": "Business Purpose Loan Certification and Attestation",
+      "category": "Application",
+      "priority": "Core"
+    },
+    {
+      "code": "APP-007",
+      "name": "Occupancy and Financial Status Affidavit",
+      "category": "Application",
+      "priority": "Core"
+    },
+    {
+      "code": "APP-008",
+      "name": "Non-Applicant Affidavit",
+      "category": "Application",
+      "priority": "Conditional"
+    },
+    {
+      "code": "APP-009",
+      "name": "Electronic Communications Consent Agreement",
+      "category": "Application",
+      "priority": "Core"
+    },
+    {
+      "code": "APP-010",
+      "name": "Consumer Consent Disclosure",
+      "category": "Application",
+      "priority": "Conditional"
+    },
+    {
+      "code": "IDV-001",
+      "name": "Government-Issued Identification",
+      "category": "Identity & Compliance",
+      "priority": "Core"
+    },
+    {
+      "code": "IDV-002",
+      "name": "Customer Identification Verification",
+      "category": "Identity & Compliance",
+      "priority": "Core"
+    },
+    {
+      "code": "IDV-003",
+      "name": "Patriot Act Borrower Documentation",
+      "category": "Identity & Compliance",
+      "priority": "Core"
+    },
+    {
+      "code": "IDV-004",
+      "name": "USA Patriot Act Information Disclosure",
+      "category": "Identity & Compliance",
+      "priority": "Core"
+    },
+    {
+      "code": "IDV-005",
+      "name": "OFAC Screening Report",
+      "category": "Identity & Compliance",
+      "priority": "Core"
+    },
+    {
+      "code": "IDV-006",
+      "name": "Watchlist Match Report",
+      "category": "Identity & Compliance",
+      "priority": "Core"
+    },
+    {
+      "code": "IDV-007",
+      "name": "Signature Affidavit and AKA Statement",
+      "category": "Identity & Compliance",
+      "priority": "Conditional"
+    },
+    {
+      "code": "IDV-008",
+      "name": "Data Integrity Risk Evaluation Report",
+      "category": "Identity & Compliance",
+      "priority": "Core"
+    },
+    {
+      "code": "IDV-009",
+      "name": "Mortgage Fraud Review",
+      "category": "Identity & Compliance",
+      "priority": "Core"
+    },
+    {
+      "code": "IDV-010",
+      "name": "Fraud Detection Report",
+      "category": "Identity & Compliance",
+      "priority": "Core"
+    },
+    {
+      "code": "CRD-003",
+      "name": "Credit Score Information Disclosure",
+      "category": "Credit",
+      "priority": "Core"
+    },
+    {
+      "code": "CRD-004",
+      "name": "Consumer Explanation Letter",
+      "category": "Credit",
+      "priority": "Conditional"
+    },
+    {
+      "code": "CRD-005",
+      "name": "Credit Authorization",
+      "category": "Credit",
+      "priority": "Core"
+    },
+    {
+      "code": "CRD-006",
+      "name": "Real Estate Owned Report",
+      "category": "Credit",
+      "priority": "Core"
+    },
+    {
+      "code": "CRD-007",
+      "name": "Mortgage or Housing Payment History",
+      "category": "Credit",
+      "priority": "Core"
+    },
+    {
+      "code": "AST-003",
+      "name": "Funds-to-Close Verification",
+      "category": "Assets & Reserves",
+      "priority": "Core"
+    },
+    {
+      "code": "ENT-001",
+      "name": "Articles of Organization",
+      "category": "Borrowing Entity",
+      "priority": "Core"
+    },
+    {
+      "code": "ENT-001A",
+      "name": "Articles of Incorporation",
+      "category": "Borrowing Entity",
+      "priority": "Conditional"
+    },
+    {
+      "code": "ENT-002",
+      "name": "Certificate of Organization",
+      "category": "Borrowing Entity",
+      "priority": "Conditional"
+    },
+    {
+      "code": "ENT-003",
+      "name": "Certificate of Good Standing or Existence",
+      "category": "Borrowing Entity",
+      "priority": "Core"
+    },
+    {
+      "code": "ENT-004",
+      "name": "Operating Agreement",
+      "category": "Borrowing Entity",
+      "priority": "Core"
+    },
+    {
+      "code": "ENT-005",
+      "name": "EIN Confirmation",
+      "category": "Borrowing Entity",
+      "priority": "Core"
+    },
+    {
+      "code": "ENT-006",
+      "name": "Form W-9",
+      "category": "Borrowing Entity",
+      "priority": "Core"
+    },
+    {
+      "code": "ENT-007",
+      "name": "Form W-8BEN",
+      "category": "Borrowing Entity",
+      "priority": "Conditional"
+    },
+    {
+      "code": "ENT-008",
+      "name": "Beneficial Ownership Certification",
+      "category": "Borrowing Entity",
+      "priority": "Core"
+    },
+    {
+      "code": "ENT-009",
+      "name": "Entity Resolution or Borrowing Authorization",
+      "category": "Borrowing Entity",
+      "priority": "Core"
+    },
+    {
+      "code": "PRP-001",
+      "name": "Purchase and Sale Agreement",
+      "category": "Property & Transaction",
+      "priority": "Conditional"
+    },
+    {
+      "code": "PRP-002",
+      "name": "Purchase Contract Addendum",
+      "category": "Property & Transaction",
+      "priority": "Conditional"
+    },
+    {
+      "code": "PRP-003",
+      "name": "Property Profile",
+      "category": "Property & Transaction",
+      "priority": "Core"
+    },
+    {
+      "code": "PRP-004",
+      "name": "Property Data Report (DataTree)",
+      "category": "Property & Transaction",
+      "priority": "Conditional"
+    },
+    {
+      "code": "PRP-005",
+      "name": "Property Report (SiteX)",
+      "category": "Property & Transaction",
+      "priority": "Conditional"
+    },
+    {
+      "code": "PRP-006",
+      "name": "Property Report (Redfin)",
+      "category": "Property & Transaction",
+      "priority": "Conditional"
+    },
+    {
+      "code": "PRP-007",
+      "name": "Property Survey",
+      "category": "Property & Transaction",
+      "priority": "Conditional"
+    },
+    {
+      "code": "PRP-007A",
+      "name": "Recorded Plat or Plat Map",
+      "category": "Property & Transaction",
+      "priority": "Conditional"
+    },
+    {
+      "code": "PRP-008",
+      "name": "Certificate of Occupancy",
+      "category": "Property & Transaction",
+      "priority": "Conditional"
+    },
+    {
+      "code": "VAL-002",
+      "name": "Uniform Residential Appraisal Report (Form 1004)",
+      "category": "Property Valuation",
+      "priority": "Core"
+    },
+    {
+      "code": "VAL-003",
+      "name": "Individual Condominium Unit Appraisal Report (Form 1073)",
+      "category": "Property Valuation",
+      "priority": "Conditional"
+    },
+    {
+      "code": "VAL-004",
+      "name": "Single Family Comparable Rent Schedule (Form 1007)",
+      "category": "Property Valuation",
+      "priority": "Core"
+    },
+    {
+      "code": "VAL-006",
+      "name": "Appraisal Independence Certification",
+      "category": "Property Valuation",
+      "priority": "Core"
+    },
+    {
+      "code": "VAL-007",
+      "name": "Appraisal Delivery Waiver",
+      "category": "Property Valuation",
+      "priority": "Core"
+    },
+    {
+      "code": "VAL-008",
+      "name": "Acknowledgment of Receipt of Appraisal",
+      "category": "Property Valuation",
+      "priority": "Conditional"
+    },
+    {
+      "code": "VAL-009",
+      "name": "UCDP Submission Summary Report",
+      "category": "Property Valuation",
+      "priority": "Core"
+    },
+    {
+      "code": "VAL-010",
+      "name": "Automated Valuation Model (AVM)",
+      "category": "Property Valuation",
+      "priority": "Conditional"
+    },
+    {
+      "code": "RNT-003",
+      "name": "Market Rent Analysis",
+      "category": "Rent & Lease",
+      "priority": "Core"
+    },
+    {
+      "code": "TTL-002",
+      "name": "Final Title Insurance Policy",
+      "category": "Title & Ownership",
+      "priority": "Core"
+    },
+    {
+      "code": "TTL-003",
+      "name": "Owner's Title Insurance Policy",
+      "category": "Title & Ownership",
+      "priority": "Conditional"
+    },
+    {
+      "code": "TTL-004",
+      "name": "Loan Title Insurance Policy",
+      "category": "Title & Ownership",
+      "priority": "Core"
+    },
+    {
+      "code": "TTL-005",
+      "name": "Chain of Title",
+      "category": "Title & Ownership",
+      "priority": "Core"
+    },
+    {
+      "code": "TTL-006",
+      "name": "Warranty Deed",
+      "category": "Title & Ownership",
+      "priority": "Core"
+    },
+    {
+      "code": "TTL-007",
+      "name": "Grant Deed",
+      "category": "Title & Ownership",
+      "priority": "Conditional"
+    },
+    {
+      "code": "TTL-008",
+      "name": "Closing Protection Letter",
+      "category": "Title & Ownership",
+      "priority": "Core"
+    },
+    {
+      "code": "TTL-009",
+      "name": "Title Agent Errors and Omissions Insurance",
+      "category": "Title & Ownership",
+      "priority": "Conditional"
+    },
+    {
+      "code": "TTL-010",
+      "name": "Texas Title Insurance Information",
+      "category": "Title & Ownership",
+      "priority": "Conditional"
+    },
+    {
+      "code": "INS-001A",
+      "name": "Homeowners Insurance Policy",
+      "category": "Insurance",
+      "priority": "Conditional"
+    },
+    {
+      "code": "INS-001B",
+      "name": "Rental Dwelling Policy",
+      "category": "Insurance",
+      "priority": "Core"
+    },
+    {
+      "code": "INS-002",
+      "name": "Evidence of Insurance",
+      "category": "Insurance",
+      "priority": "Core"
+    },
+    {
+      "code": "INS-003",
+      "name": "Certificate of Property Insurance",
+      "category": "Insurance",
+      "priority": "Conditional"
+    },
+    {
+      "code": "INS-004",
+      "name": "Certificate of Liability Insurance",
+      "category": "Insurance",
+      "priority": "Conditional"
+    },
+    {
+      "code": "INS-006",
+      "name": "Condominium Master Insurance Policy",
+      "category": "Insurance",
+      "priority": "Conditional"
+    },
+    {
+      "code": "INS-007",
+      "name": "Windstorm Insurance Policy",
+      "category": "Insurance",
+      "priority": "Conditional"
+    },
+    {
+      "code": "INS-008",
+      "name": "Hazard Insurance Authorization and Requirements",
+      "category": "Insurance",
+      "priority": "Conditional"
+    },
+    {
+      "code": "INS-010",
+      "name": "Statement of Anti-Coercion",
+      "category": "Insurance",
+      "priority": "Conditional"
+    },
+    {
+      "code": "FLD-001",
+      "name": "Standard Flood Hazard Determination Form",
+      "category": "Flood",
+      "priority": "Core"
+    },
+    {
+      "code": "FLD-002",
+      "name": "Notice of Special Flood Hazards",
+      "category": "Flood",
+      "priority": "Conditional"
+    },
+    {
+      "code": "FLD-003",
+      "name": "Flood Insurance Policy",
+      "category": "Flood",
+      "priority": "Conditional"
+    },
+    {
+      "code": "FLD-004",
+      "name": "NFIP Declaration Page",
+      "category": "Flood",
+      "priority": "Conditional"
+    },
+    {
+      "code": "FLD-005",
+      "name": "Private Flood Insurance Availability Notice",
+      "category": "Flood",
+      "priority": "Conditional"
+    },
+    {
+      "code": "TAX-001",
+      "name": "Property Tax Certificate",
+      "category": "Taxes",
+      "priority": "Core"
+    },
+    {
+      "code": "TAX-002",
+      "name": "Property Tax Bill",
+      "category": "Taxes",
+      "priority": "Core"
+    },
+    {
+      "code": "TAX-003",
+      "name": "Tax Assessor Record",
+      "category": "Taxes",
+      "priority": "Conditional"
+    },
+    {
+      "code": "TAX-004",
+      "name": "Current-Year Tax Summary",
+      "category": "Taxes",
+      "priority": "Conditional"
+    },
+    {
+      "code": "HOA-001",
+      "name": "Condominium Resale Certificate",
+      "category": "Condominium & HOA",
+      "priority": "Conditional"
+    },
+    {
+      "code": "HOA-002",
+      "name": "Condominium Questionnaire",
+      "category": "Condominium & HOA",
+      "priority": "Conditional"
+    },
+    {
+      "code": "HOA-003",
+      "name": "HOA Certification",
+      "category": "Condominium & HOA",
+      "priority": "Conditional"
+    },
+    {
+      "code": "HOA-004",
+      "name": "HOA Estoppel or Status Letter",
+      "category": "Condominium & HOA",
+      "priority": "Conditional"
+    },
+    {
+      "code": "HOA-005",
+      "name": "HOA Ledger or Account Statement",
+      "category": "Condominium & HOA",
+      "priority": "Conditional"
+    },
+    {
+      "code": "HOA-006",
+      "name": "HOA Budget",
+      "category": "Condominium & HOA",
+      "priority": "Conditional"
+    },
+    {
+      "code": "HOA-007",
+      "name": "HOA Financial Statements",
+      "category": "Condominium & HOA",
+      "priority": "Conditional"
+    },
+    {
+      "code": "HOA-008",
+      "name": "Declaration of Condominium or CC&Rs",
+      "category": "Condominium & HOA",
+      "priority": "Conditional"
+    },
+    {
+      "code": "HOA-009",
+      "name": "HOA Bylaws and Rules",
+      "category": "Condominium & HOA",
+      "priority": "Conditional"
+    },
+    {
+      "code": "HOA-010",
+      "name": "Structural Integrity Reserve Study",
+      "category": "Condominium & HOA",
+      "priority": "Conditional"
+    },
+    {
+      "code": "HOA-011",
+      "name": "Milestone Inspection Report",
+      "category": "Condominium & HOA",
+      "priority": "Conditional"
+    },
+    {
+      "code": "HOA-012",
+      "name": "Condominium Rider",
+      "category": "Condominium & HOA",
+      "priority": "Conditional"
+    },
+    {
+      "code": "UND-001",
+      "name": "Conditional Loan Approval",
+      "category": "Underwriting & Pricing",
+      "priority": "Core"
+    },
+    {
+      "code": "UND-002",
+      "name": "Counteroffer",
+      "category": "Underwriting & Pricing",
+      "priority": "Conditional"
+    },
+    {
+      "code": "UND-003",
+      "name": "Pricing Details",
+      "category": "Underwriting & Pricing",
+      "priority": "Core"
+    },
+    {
+      "code": "UND-004",
+      "name": "Rate Lock Request",
+      "category": "Underwriting & Pricing",
+      "priority": "Core"
+    },
+    {
+      "code": "UND-004A",
+      "name": "Rate Lock Confirmation",
+      "category": "Underwriting & Pricing",
+      "priority": "Core"
+    },
+    {
+      "code": "UND-006",
+      "name": "Prior-to-Funding Condition List",
+      "category": "Underwriting & Pricing",
+      "priority": "Core"
+    },
+    {
+      "code": "UND-007",
+      "name": "Loan Document Request",
+      "category": "Underwriting & Pricing",
+      "priority": "Conditional"
+    },
+    {
+      "code": "UND-008",
+      "name": "Rework Request",
+      "category": "Underwriting & Pricing",
+      "priority": "Conditional"
+    },
+    {
+      "code": "LND-001",
+      "name": "Promissory Note",
+      "category": "Loan Documents",
+      "priority": "Core"
+    },
+    {
+      "code": "LND-002",
+      "name": "Interest-Only Period Fixed Rate Note",
+      "category": "Loan Documents",
+      "priority": "Conditional"
+    },
+    {
+      "code": "LND-003",
+      "name": "Prepayment Addendum to Note",
+      "category": "Loan Documents",
+      "priority": "Conditional"
+    },
+    {
+      "code": "LND-004",
+      "name": "Mortgage",
+      "category": "Loan Documents",
+      "priority": "Core"
+    },
+    {
+      "code": "LND-004A",
+      "name": "Deed of Trust",
+      "category": "Loan Documents",
+      "priority": "Core"
+    },
+    {
+      "code": "LND-004B",
+      "name": "Security Deed",
+      "category": "Loan Documents",
+      "priority": "Core"
+    },
+    {
+      "code": "LND-005",
+      "name": "Loan Modification Agreement",
+      "category": "Loan Documents",
+      "priority": "Conditional"
+    },
+    {
+      "code": "LND-006",
+      "name": "Executed Loan Document Package",
+      "category": "Loan Documents",
+      "priority": "Core"
+    },
+    {
+      "code": "LND-007",
+      "name": "Compliance Agreement and Errors/Omissions Agreement",
+      "category": "Loan Documents",
+      "priority": "Conditional"
+    },
+    {
+      "code": "LND-008",
+      "name": "Automatic Mortgage Payment Authorization",
+      "category": "Loan Documents",
+      "priority": "Conditional"
+    },
+    {
+      "code": "LND-009",
+      "name": "Payment Letter to Borrower",
+      "category": "Loan Documents",
+      "priority": "Core"
+    },
+    {
+      "code": "CLS-001",
+      "name": "Loan Estimate",
+      "category": "Closing & Settlement",
+      "priority": "Core"
+    },
+    {
+      "code": "CLS-002",
+      "name": "Closing Disclosure",
+      "category": "Closing & Settlement",
+      "priority": "Core"
+    },
+    {
+      "code": "CLS-003",
+      "name": "HUD-1 Settlement Statement",
+      "category": "Closing & Settlement",
+      "priority": "Conditional"
+    },
+    {
+      "code": "CLS-004",
+      "name": "ALTA Settlement Statement",
+      "category": "Closing & Settlement",
+      "priority": "Conditional"
+    },
+    {
+      "code": "CLS-005",
+      "name": "Initial Escrow Account Disclosure Statement",
+      "category": "Closing & Settlement",
+      "priority": "Core"
+    },
+    {
+      "code": "CLS-006",
+      "name": "Escrow Instructions",
+      "category": "Closing & Settlement",
+      "priority": "Core"
+    },
+    {
+      "code": "CLS-007",
+      "name": "General Closing Instructions",
+      "category": "Closing & Settlement",
+      "priority": "Core"
+    },
+    {
+      "code": "CLS-008",
+      "name": "Specific Closing Instructions",
+      "category": "Closing & Settlement",
+      "priority": "Core"
+    },
+    {
+      "code": "CLS-009",
+      "name": "Supplemental Closing Instructions",
+      "category": "Closing & Settlement",
+      "priority": "Conditional"
+    },
+    {
+      "code": "CLS-010",
+      "name": "Wire Instructions",
+      "category": "Closing & Settlement",
+      "priority": "Core"
+    },
+    {
+      "code": "CLS-011",
+      "name": "Funding Figures",
+      "category": "Closing & Settlement",
+      "priority": "Core"
+    },
+    {
+      "code": "CLS-012",
+      "name": "Payoff Statement or Payoff Demand",
+      "category": "Closing & Settlement",
+      "priority": "Conditional"
+    },
+    {
+      "code": "CLS-013",
+      "name": "Closing Package",
+      "category": "Closing & Settlement",
+      "priority": "Core"
+    },
+    {
+      "code": "CLS-014",
+      "name": "Itemization of Amount Financed",
+      "category": "Closing & Settlement",
+      "priority": "Conditional"
+    },
+    {
+      "code": "CLS-015",
+      "name": "Federal Truth-in-Lending Disclosure Statement",
+      "category": "Closing & Settlement",
+      "priority": "Conditional"
+    },
+    {
+      "code": "SRV-001",
+      "name": "Servicing Transfer Notice",
+      "category": "Servicing & Payment",
+      "priority": "Conditional"
+    },
+    {
+      "code": "SRV-002",
+      "name": "Mortgage Payment History",
+      "category": "Servicing & Payment",
+      "priority": "Core"
+    },
+    {
+      "code": "SRV-003",
+      "name": "Escrow Account Analysis or Statement",
+      "category": "Servicing & Payment",
+      "priority": "Conditional"
+    },
+    {
+      "code": "SRV-004",
+      "name": "Loan Modification Payment History",
+      "category": "Servicing & Payment",
+      "priority": "Conditional"
+    },
+    {
+      "code": "BRK-001",
+      "name": "Broker Fee Worksheet",
+      "category": "Broker & Licensing",
+      "priority": "Core"
+    },
+    {
+      "code": "BRK-002",
+      "name": "Broker Fee Validation",
+      "category": "Broker & Licensing",
+      "priority": "Core"
+    },
+    {
+      "code": "BRK-003",
+      "name": "Broker Submission Package",
+      "category": "Broker & Licensing",
+      "priority": "Core"
+    },
+    {
+      "code": "BRK-004",
+      "name": "Branch NMLS Record",
+      "category": "Broker & Licensing",
+      "priority": "Core"
+    },
+    {
+      "code": "BRK-005",
+      "name": "Employer or Counterparty Profile Report",
+      "category": "Broker & Licensing",
+      "priority": "Conditional"
+    },
+    {
+      "code": "AUD-001",
+      "name": "Electronic Signature Certificate",
+      "category": "Electronic Records & Audit",
+      "priority": "Core"
+    },
+    {
+      "code": "AUD-002",
+      "name": "Electronic Consent Audit History",
+      "category": "Electronic Records & Audit",
+      "priority": "Core"
+    },
+    {
+      "code": "AUD-003",
+      "name": "Final Audit Report",
+      "category": "Electronic Records & Audit",
+      "priority": "Conditional"
+    },
+    {
+      "code": "AUD-004",
+      "name": "Proof of Disclosure Delivery",
+      "category": "Electronic Records & Audit",
+      "priority": "Core"
+    },
+    {
+      "code": "AUD-005",
+      "name": "Signature Addendum",
+      "category": "Electronic Records & Audit",
+      "priority": "Conditional"
+    }
+  ],
+  "bytepro_proposals": {
+    "APP-002": [
+      {
+        "code": "LockInformation",
+        "name": "Lock Information",
+        "category": "MISC",
+        "score": 0.2
+      }
+    ],
+    "APP-003": [
+      {
+        "code": "EntityCoverSheet",
+        "name": "Entity Cover Sheet",
+        "category": "ENTITY",
+        "score": 0.2
+      }
+    ],
+    "APP-005": [
+      {
+        "code": "CommercialApp",
+        "name": "Commercial Application",
+        "category": "BROKER",
+        "score": 0.25
+      },
+      {
+        "code": "BorrowerCertAuth",
+        "name": "Borrower Certification and Authorization",
+        "category": "DISC",
+        "score": 0.2
+      },
+      {
+        "code": "BrokerSubAuthoriztin",
+        "name": "Broker Submission Authorization",
+        "category": "BROKER",
+        "score": 0.2
+      }
+    ],
+    "APP-006": [
+      {
+        "code": "AMCertification",
+        "name": "AM Certification",
+        "category": "LENDER",
+        "score": 0.2
+      }
+    ],
+    "APP-007": [
+      {
+        "code": "CertificatofOccupanc",
+        "name": "Certificate of Occupancy",
+        "category": "MISC",
+        "score": 0.2
+      },
+      {
+        "code": "ProofofOccupancy",
+        "name": "Proof of Occupancy",
+        "category": "PROP",
+        "score": 0.2
+      }
+    ],
+    "APP-009": [
+      {
+        "code": "E-Consent",
+        "name": "E-Consent",
+        "category": "DISC",
+        "score": 0.25
+      },
+      {
+        "code": "LeaseAgreement",
+        "name": "Lease Agreement",
+        "category": "PROP",
+        "score": 0.2
+      },
+      {
+        "code": "ModificationAgrmt",
+        "name": "Modification Agreement",
+        "category": "CRED",
+        "score": 0.2
+      }
+    ],
+    "APP-010": [
+      {
+        "code": "E-Consent",
+        "name": "E-Consent",
+        "category": "DISC",
+        "score": 0.33
+      },
+      {
+        "code": "CAPerDiemDisclosure",
+        "name": "CA Per Diem Disclosure",
+        "category": "DOCS",
+        "score": 0.25
+      },
+      {
+        "code": "UnanimousConsent",
+        "name": "Unanimous Consent",
+        "category": "ENTITY",
+        "score": 0.25
+      }
+    ],
+    "IDV-001": [
+      {
+        "code": "PersonalID",
+        "name": "Personal Identification",
+        "category": "APP",
+        "score": 0.25
+      }
+    ],
+    "IDV-002": [
+      {
+        "code": "AgentVerification",
+        "name": "Agent Verification",
+        "category": "LENDER",
+        "score": 0.25
+      },
+      {
+        "code": "CPAVerification",
+        "name": "CPA Verification",
+        "category": "INC",
+        "score": 0.25
+      },
+      {
+        "code": "EINVerification",
+        "name": "EIN Verification",
+        "category": "APP",
+        "score": 0.25
+      }
+    ],
+    "IDV-003": [
+      {
+        "code": "PatriotActVerif",
+        "name": "Patriot Act Verification",
+        "category": "DISC",
+        "score": 0.4
+      }
+    ],
+    "IDV-004": [
+      {
+        "code": "PatriotActVerif",
+        "name": "Patriot Act Verification",
+        "category": "DISC",
+        "score": 0.33
+      }
+    ],
+    "IDV-005": [
+      {
+        "code": "BKPACERReport",
+        "name": "BK PACER Report",
+        "category": "SERV",
+        "score": 0.25
+      },
+      {
+        "code": "FeasibilityReport",
+        "name": "Feasibility Report",
+        "category": "PROP",
+        "score": 0.25
+      },
+      {
+        "code": "FraudReport",
+        "name": "Fraud Report",
+        "category": "LENDER",
+        "score": 0.25
+      }
+    ],
+    "IDV-006": [
+      {
+        "code": "BKPACERReport",
+        "name": "BK PACER Report",
+        "category": "SERV",
+        "score": 0.25
+      },
+      {
+        "code": "FeasibilityReport",
+        "name": "Feasibility Report",
+        "category": "PROP",
+        "score": 0.25
+      },
+      {
+        "code": "FraudReport",
+        "name": "Fraud Report",
+        "category": "LENDER",
+        "score": 0.25
+      }
+    ],
+    "IDV-007": [
+      {
+        "code": "MortgageStatement",
+        "name": "Mortgage Statement",
+        "category": "CRED",
+        "score": 0.2
+      }
+    ],
+    "IDV-009": [
+      {
+        "code": "FraudAlert",
+        "name": "Fraud Alert",
+        "category": "LENDER",
+        "score": 0.25
+      },
+      {
+        "code": "FraudReport",
+        "name": "Fraud Report",
+        "category": "LENDER",
+        "score": 0.25
+      },
+      {
+        "code": "MortgageStatement",
+        "name": "Mortgage Statement",
+        "category": "CRED",
+        "score": 0.25
+      }
+    ],
+    "IDV-010": [
+      {
+        "code": "FraudReport",
+        "name": "Fraud Report",
+        "category": "LENDER",
+        "score": 0.67
+      },
+      {
+        "code": "BKPACERReport",
+        "name": "BK PACER Report",
+        "category": "SERV",
+        "score": 0.25
+      },
+      {
+        "code": "FeasibilityReport",
+        "name": "Feasibility Report",
+        "category": "PROP",
+        "score": 0.25
+      }
+    ],
+    "CRD-001": [
+      {
+        "code": "BrokerCreditReport",
+        "name": "Broker Credit Report",
+        "category": "CRED",
+        "score": 0.4
+      },
+      {
+        "code": "CreditReportInvoice",
+        "name": "Credit Report Invoice",
+        "category": "CRED",
+        "score": 0.4
+      },
+      {
+        "code": "CreditReport",
+        "name": "Lender Credit Report",
+        "category": "CRED",
+        "score": 0.4
+      }
+    ],
+    "CRD-002": [
+      {
+        "code": "BrokerCreditReport",
+        "name": "Broker Credit Report",
+        "category": "CRED",
+        "score": 0.5
+      },
+      {
+        "code": "CreditReportInvoice",
+        "name": "Credit Report Invoice",
+        "category": "CRED",
+        "score": 0.5
+      },
+      {
+        "code": "CreditReport",
+        "name": "Lender Credit Report",
+        "category": "CRED",
+        "score": 0.5
+      }
+    ],
+    "CRD-003": [
+      {
+        "code": "CAPerDiemDisclosure",
+        "name": "CA Per Diem Disclosure",
+        "category": "DOCS",
+        "score": 0.2
+      },
+      {
+        "code": "CreditSupplement",
+        "name": "Credit Supplement",
+        "category": "CRED",
+        "score": 0.2
+      },
+      {
+        "code": "LockInformation",
+        "name": "Lock Information",
+        "category": "MISC",
+        "score": 0.2
+      }
+    ],
+    "CRD-004": [
+      {
+        "code": "LetterofExplanation",
+        "name": "Letter of Explanation",
+        "category": "MISC",
+        "score": 0.67
+      },
+      {
+        "code": "LttrofExplainSelfEmp",
+        "name": "Letter of Explanation - Self-Employment",
+        "category": "MISC",
+        "score": 0.4
+      },
+      {
+        "code": "CPALetter",
+        "name": "CPA Letter",
+        "category": "INC",
+        "score": 0.25
+      }
+    ],
+    "CRD-005": [
+      {
+        "code": "CreditSupplement",
+        "name": "Credit Supplement",
+        "category": "CRED",
+        "score": 0.33
+      },
+      {
+        "code": "BorrowerCertAuth",
+        "name": "Borrower Certification and Authorization",
+        "category": "DISC",
+        "score": 0.25
+      },
+      {
+        "code": "BrokerCreditReport",
+        "name": "Broker Credit Report",
+        "category": "CRED",
+        "score": 0.25
+      }
+    ],
+    "CRD-006": [
+      {
+        "code": "SchedRealEstateOwned",
+        "name": "Schedule of Real Estate Owned",
+        "category": "ASSET",
+        "score": 0.6
+      },
+      {
+        "code": "BKPACERReport",
+        "name": "BK PACER Report",
+        "category": "SERV",
+        "score": 0.2
+      },
+      {
+        "code": "FeasibilityReport",
+        "name": "Feasibility Report",
+        "category": "PROP",
+        "score": 0.2
+      }
+    ],
+    "CRD-007": [
+      {
+        "code": "ServgPaymentHistory",
+        "name": "Servicing Payment History",
+        "category": "SERV",
+        "score": 0.4
+      },
+      {
+        "code": "BKPaymentPlan",
+        "name": "BK Payment Plan",
+        "category": "SERV",
+        "score": 0.2
+      },
+      {
+        "code": "MortgageStatement",
+        "name": "Mortgage Statement",
+        "category": "CRED",
+        "score": 0.2
+      }
+    ],
+    "AST-001": [
+      {
+        "code": "BankStatementAssets",
+        "name": "Bank Statement (Assets)",
+        "category": "ASSET",
+        "score": 0.67
+      },
+      {
+        "code": "BankStatementIncome",
+        "name": "Bank Statement (Income)",
+        "category": "INC",
+        "score": 0.67
+      },
+      {
+        "code": "BankStmntAnalysis",
+        "name": "Bank Statement Analysis",
+        "category": "ASSET",
+        "score": 0.67
+      }
+    ],
+    "AST-003": [
+      {
+        "code": "FundstoClose",
+        "name": "Funds to Close",
+        "category": "ASSET",
+        "score": 0.67
+      },
+      {
+        "code": "AgentVerification",
+        "name": "Agent Verification",
+        "category": "LENDER",
+        "score": 0.25
+      },
+      {
+        "code": "CPAVerification",
+        "name": "CPA Verification",
+        "category": "INC",
+        "score": 0.25
+      }
+    ],
+    "ENT-001": [
+      {
+        "code": "ArticlesofIncorp/Org",
+        "name": "Articles of Incorporation / Organization",
+        "category": "APP",
+        "score": 0.67
+      }
+    ],
+    "ENT-001A": [
+      {
+        "code": "ArticlesofIncorp/Org",
+        "name": "Articles of Incorporation / Organization",
+        "category": "APP",
+        "score": 0.67
+      }
+    ],
+    "ENT-002": [
+      {
+        "code": "CertifictofFormation",
+        "name": "Certificate of Formation",
+        "category": "ENTITY",
+        "score": 0.33
+      },
+      {
+        "code": "CertificatofOccupanc",
+        "name": "Certificate of Occupancy",
+        "category": "MISC",
+        "score": 0.33
+      },
+      {
+        "code": "DeathCertificate",
+        "name": "Death Certificate",
+        "category": "MISC",
+        "score": 0.33
+      }
+    ],
+    "ENT-003": [
+      {
+        "code": "CertificateGoodStand",
+        "name": "Certificate of Good Standing",
+        "category": "MISC",
+        "score": 0.75
+      },
+      {
+        "code": "CertifictofFormation",
+        "name": "Certificate of Formation",
+        "category": "ENTITY",
+        "score": 0.2
+      },
+      {
+        "code": "CertificatofOccupanc",
+        "name": "Certificate of Occupancy",
+        "category": "MISC",
+        "score": 0.2
+      }
+    ],
+    "ENT-004": [
+      {
+        "code": "Bylaws/OperatingAgmt",
+        "name": "Bylaws/Operating Agreement",
+        "category": "ENTITY",
+        "score": 0.67
+      },
+      {
+        "code": "OperatingAgrmtByLaw",
+        "name": "Operating Agreement/By-Laws",
+        "category": "PROP",
+        "score": 0.67
+      },
+      {
+        "code": "LeaseAgreement",
+        "name": "Lease Agreement",
+        "category": "PROP",
+        "score": 0.33
+      }
+    ],
+    "ENT-005": [
+      {
+        "code": "EINNumber",
+        "name": "EIN Number",
+        "category": "ENTITY",
+        "score": 0.33
+      },
+      {
+        "code": "EINVerification",
+        "name": "EIN Verification",
+        "category": "APP",
+        "score": 0.33
+      },
+      {
+        "code": "BKObjectiontoConfPP",
+        "name": "BK Objectionto Confirmation of Payment Plan",
+        "category": "SERV",
+        "score": 0.2
+      }
+    ],
+    "ENT-006": [
+      {
+        "code": "SSAForm89",
+        "name": "SSA Form 89",
+        "category": "CRED",
+        "score": 0.5
+      },
+      {
+        "code": "ServicingACHform",
+        "name": "Servicing ACH form",
+        "category": "SERV",
+        "score": 0.33
+      },
+      {
+        "code": "ServgReconveyanceFrm",
+        "name": "Servicing Reconveyance Form",
+        "category": "SERV",
+        "score": 0.33
+      }
+    ],
+    "ENT-007": [
+      {
+        "code": "IRSW8BEN",
+        "name": "IRS W8 BEN",
+        "category": "INC",
+        "score": 0.33
+      },
+      {
+        "code": "SSAForm89",
+        "name": "SSA Form 89",
+        "category": "CRED",
+        "score": 0.33
+      },
+      {
+        "code": "ServicingACHform",
+        "name": "Servicing ACH form",
+        "category": "SERV",
+        "score": 0.25
+      }
+    ],
+    "ENT-008": [
+      {
+        "code": "AMCertification",
+        "name": "AM Certification",
+        "category": "LENDER",
+        "score": 0.33
+      },
+      {
+        "code": "CertofMarriage",
+        "name": "Certification of Marriage",
+        "category": "CRED",
+        "score": 0.25
+      },
+      {
+        "code": "FloodCert",
+        "name": "Flood Certification",
+        "category": "PROP",
+        "score": 0.25
+      }
+    ],
+    "ENT-009": [
+      {
+        "code": "CorpResol",
+        "name": "Corporate Resolution",
+        "category": "ENTITY",
+        "score": 0.2
+      }
+    ],
+    "PRP-001": [
+      {
+        "code": "LeaseAgreement",
+        "name": "Lease Agreement",
+        "category": "PROP",
+        "score": 0.25
+      },
+      {
+        "code": "ModificationAgrmt",
+        "name": "Modification Agreement",
+        "category": "CRED",
+        "score": 0.25
+      },
+      {
+        "code": "PurchaseContract",
+        "name": "Purchase Contract",
+        "category": "PROP",
+        "score": 0.25
+      }
+    ],
+    "PRP-002": [
+      {
+        "code": "PurchaseContract",
+        "name": "Purchase Contract",
+        "category": "PROP",
+        "score": 0.67
+      },
+      {
+        "code": "PurchaseContractExt",
+        "name": "Purchase Contract Extension",
+        "category": "PROP",
+        "score": 0.5
+      },
+      {
+        "code": "REOListingContract",
+        "name": "REO Listing Contract",
+        "category": "SERV",
+        "score": 0.2
+      }
+    ],
+    "PRP-003": [
+      {
+        "code": "PropertyProfile",
+        "name": "Property Profile",
+        "category": "PROP",
+        "score": 1.0
+      },
+      {
+        "code": "PropertyOperatingStm",
+        "name": "Property Operating Statement",
+        "category": "PROP",
+        "score": 0.25
+      },
+      {
+        "code": "REOPropertyInspectio",
+        "name": "REO Property Inspection",
+        "category": "SERV",
+        "score": 0.25
+      }
+    ],
+    "PRP-004": [
+      {
+        "code": "DataTree",
+        "name": "DataTree",
+        "category": "LENDER",
+        "score": 0.25
+      },
+      {
+        "code": "BKPACERReport",
+        "name": "BK PACER Report",
+        "category": "SERV",
+        "score": 0.2
+      },
+      {
+        "code": "FeasibilityReport",
+        "name": "Feasibility Report",
+        "category": "PROP",
+        "score": 0.2
+      }
+    ],
+    "PRP-005": [
+      {
+        "code": "SiteX",
+        "name": "SiteX",
+        "category": "PROP",
+        "score": 0.33
+      },
+      {
+        "code": "BKPACERReport",
+        "name": "BK PACER Report",
+        "category": "SERV",
+        "score": 0.25
+      },
+      {
+        "code": "FeasibilityReport",
+        "name": "Feasibility Report",
+        "category": "PROP",
+        "score": 0.25
+      }
+    ],
+    "PRP-006": [
+      {
+        "code": "Redfin",
+        "name": "Redfin",
+        "category": "PROP",
+        "score": 0.33
+      },
+      {
+        "code": "BKPACERReport",
+        "name": "BK PACER Report",
+        "category": "SERV",
+        "score": 0.25
+      },
+      {
+        "code": "FeasibilityReport",
+        "name": "Feasibility Report",
+        "category": "PROP",
+        "score": 0.25
+      }
+    ],
+    "PRP-007": [
+      {
+        "code": "EnvironmentalSurvey",
+        "name": "Environmental Survey",
+        "category": "PROP",
+        "score": 0.33
+      },
+      {
+        "code": "PropertyProfile",
+        "name": "Property Profile",
+        "category": "PROP",
+        "score": 0.33
+      },
+      {
+        "code": "PlatMap/Survey",
+        "name": "Plat Map/Survey",
+        "category": "TITLE",
+        "score": 0.25
+      }
+    ],
+    "PRP-007A": [
+      {
+        "code": "PlatMap/Survey",
+        "name": "Plat Map/Survey",
+        "category": "TITLE",
+        "score": 0.5
+      },
+      {
+        "code": "RecAssignmentofMrtg",
+        "name": "Recorded Assignment of Mortgage",
+        "category": "SERV",
+        "score": 0.2
+      }
+    ],
+    "PRP-008": [
+      {
+        "code": "CertificatofOccupanc",
+        "name": "Certificate of Occupancy",
+        "category": "MISC",
+        "score": 1.0
+      },
+      {
+        "code": "CertifictofFormation",
+        "name": "Certificate of Formation",
+        "category": "ENTITY",
+        "score": 0.33
+      },
+      {
+        "code": "DeathCertificate",
+        "name": "Death Certificate",
+        "category": "MISC",
+        "score": 0.33
+      }
+    ],
+    "VAL-001": [
+      {
+        "code": "2ndAppraisal",
+        "name": "2nd Appraisal",
+        "category": "PROP",
+        "score": 0.5
+      },
+      {
+        "code": "Appraisal",
+        "name": "Appraisal",
+        "category": "PROP",
+        "score": 0.5
+      },
+      {
+        "code": "Appraisal-UCDPSubRep",
+        "name": "Appraisal-UCDP Submission Summary Report",
+        "category": "PROP",
+        "score": 0.4
+      }
+    ],
+    "VAL-002": [
+      {
+        "code": "Appraisal-UCDPSubRep",
+        "name": "Appraisal-UCDP Submission Summary Report",
+        "category": "PROP",
+        "score": 0.25
+      },
+      {
+        "code": "2ndAppraisal",
+        "name": "2nd Appraisal",
+        "category": "PROP",
+        "score": 0.2
+      },
+      {
+        "code": "Appraisal",
+        "name": "Appraisal",
+        "category": "PROP",
+        "score": 0.2
+      }
+    ],
+    "VAL-003": [
+      {
+        "code": "Appraisal-UCDPSubRep",
+        "name": "Appraisal-UCDP Submission Summary Report",
+        "category": "PROP",
+        "score": 0.22
+      }
+    ],
+    "VAL-004": [
+      {
+        "code": "MultiFamilyRentRoll",
+        "name": "Multi-Family Rent Roll",
+        "category": "PROP",
+        "score": 0.25
+      },
+      {
+        "code": "LMREORentSchedule",
+        "name": "Loss Mitigation REO Rent Schedule",
+        "category": "SERV",
+        "score": 0.22
+      }
+    ],
+    "VAL-005": [
+      {
+        "code": "2ndAppraisal",
+        "name": "2nd Appraisal",
+        "category": "PROP",
+        "score": 0.5
+      },
+      {
+        "code": "Appraisal",
+        "name": "Appraisal",
+        "category": "PROP",
+        "score": 0.5
+      },
+      {
+        "code": "Appraisal1Final",
+        "name": "Appraisal 1 - Final",
+        "category": "PROP",
+        "score": 0.33
+      }
+    ],
+    "VAL-006": [
+      {
+        "code": "AppraisalDeliveryCer",
+        "name": "Appraisal Delivery Certification",
+        "category": "DISC",
+        "score": 0.5
+      },
+      {
+        "code": "2ndAppraisal",
+        "name": "2nd Appraisal",
+        "category": "PROP",
+        "score": 0.33
+      },
+      {
+        "code": "AMCertification",
+        "name": "AM Certification",
+        "category": "LENDER",
+        "score": 0.33
+      }
+    ],
+    "VAL-007": [
+      {
+        "code": "AppraisalDeliveryWvr",
+        "name": "Appraisal Delivery Waiver",
+        "category": "DISC",
+        "score": 1.0
+      },
+      {
+        "code": "AppraisalDeliveryCer",
+        "name": "Appraisal Delivery Certification",
+        "category": "DISC",
+        "score": 0.5
+      },
+      {
+        "code": "2ndAppraisal",
+        "name": "2nd Appraisal",
+        "category": "PROP",
+        "score": 0.33
+      }
+    ],
+    "VAL-008": [
+      {
+        "code": "2ndAppraisal",
+        "name": "2nd Appraisal",
+        "category": "PROP",
+        "score": 0.33
+      },
+      {
+        "code": "Appraisal",
+        "name": "Appraisal",
+        "category": "PROP",
+        "score": 0.33
+      },
+      {
+        "code": "Appraisal1Final",
+        "name": "Appraisal 1 - Final",
+        "category": "PROP",
+        "score": 0.25
+      }
+    ],
+    "VAL-009": [
+      {
+        "code": "Appraisal-UCDPSubRep",
+        "name": "Appraisal-UCDP Submission Summary Report",
+        "category": "PROP",
+        "score": 0.8
+      },
+      {
+        "code": "AssetSummaryReport",
+        "name": "Asset Summary Report",
+        "category": "ASSET",
+        "score": 0.4
+      },
+      {
+        "code": "BKPACERReport",
+        "name": "BK PACER Report",
+        "category": "SERV",
+        "score": 0.2
+      }
+    ],
+    "VAL-010": [
+      {
+        "code": "AVM",
+        "name": "AVM",
+        "category": "PROP",
+        "score": 0.25
+      }
+    ],
+    "VAL-011": [
+      {
+        "code": "AppraisalCollateral",
+        "name": "Appraisal Collateral Review",
+        "category": "PROP",
+        "score": 0.5
+      },
+      {
+        "code": "2ndAppraisal",
+        "name": "2nd Appraisal",
+        "category": "PROP",
+        "score": 0.33
+      },
+      {
+        "code": "Appraisal",
+        "name": "Appraisal",
+        "category": "PROP",
+        "score": 0.33
+      }
+    ],
+    "RNT-001": [
+      {
+        "code": "LeaseAgreement",
+        "name": "Lease Agreement",
+        "category": "PROP",
+        "score": 0.67
+      },
+      {
+        "code": "ModificationAgrmt",
+        "name": "Modification Agreement",
+        "category": "CRED",
+        "score": 0.25
+      },
+      {
+        "code": "ReferralAgreement",
+        "name": "Referral Agreement",
+        "category": "LENDER",
+        "score": 0.25
+      }
+    ],
+    "RNT-002": [
+      {
+        "code": "MultiFamilyRentRoll",
+        "name": "Multi-Family Rent Roll",
+        "category": "PROP",
+        "score": 0.4
+      },
+      {
+        "code": "LMREORentSchedule",
+        "name": "Loss Mitigation REO Rent Schedule",
+        "category": "SERV",
+        "score": 0.33
+      },
+      {
+        "code": "ScheduleE",
+        "name": "Schedule E",
+        "category": "INC",
+        "score": 0.33
+      }
+    ],
+    "RNT-003": [
+      {
+        "code": "IncomeAnalysis(UW)",
+        "name": "Income Analysis (UW)",
+        "category": "INC",
+        "score": 0.25
+      },
+      {
+        "code": "BankStmntAnalysis",
+        "name": "Bank Statement Analysis",
+        "category": "ASSET",
+        "score": 0.2
+      },
+      {
+        "code": "ServgEscrowAnalysis",
+        "name": "Servicing Escrow Analysis",
+        "category": "SERV",
+        "score": 0.2
+      }
+    ],
+    "TTL-001": [
+      {
+        "code": "PreliminaryTitleRpt",
+        "name": "Preliminary Title Report/Commitment",
+        "category": "TITLE",
+        "score": 1.0
+      },
+      {
+        "code": "BKPACERReport",
+        "name": "BK PACER Report",
+        "category": "SERV",
+        "score": 0.2
+      },
+      {
+        "code": "ChainofTitle",
+        "name": "Chain of Title",
+        "category": "TITLE",
+        "score": 0.2
+      }
+    ],
+    "TTL-002": [
+      {
+        "code": "FinalTitlePolicy",
+        "name": "Final Title Policy",
+        "category": "TITLE",
+        "score": 0.75
+      },
+      {
+        "code": "ServFinalTitlePolicy",
+        "name": "Servicing Final Title Policy",
+        "category": "SERV",
+        "score": 0.6
+      },
+      {
+        "code": "FloodInsurancePolicy",
+        "name": "Flood Insurance Policy",
+        "category": "T&I",
+        "score": 0.4
+      }
+    ],
+    "TTL-003": [
+      {
+        "code": "FinalTitlePolicy",
+        "name": "Final Title Policy",
+        "category": "TITLE",
+        "score": 0.4
+      },
+      {
+        "code": "FloodInsurancePolicy",
+        "name": "Flood Insurance Policy",
+        "category": "T&I",
+        "score": 0.4
+      },
+      {
+        "code": "HazardInsPolicy",
+        "name": "Hazard Insurance Policy",
+        "category": "T&I",
+        "score": 0.4
+      }
+    ],
+    "TTL-004": [
+      {
+        "code": "FinalTitlePolicy",
+        "name": "Final Title Policy",
+        "category": "TITLE",
+        "score": 0.4
+      },
+      {
+        "code": "FloodInsurancePolicy",
+        "name": "Flood Insurance Policy",
+        "category": "T&I",
+        "score": 0.4
+      },
+      {
+        "code": "HazardInsPolicy",
+        "name": "Hazard Insurance Policy",
+        "category": "T&I",
+        "score": 0.4
+      }
+    ],
+    "TTL-005": [
+      {
+        "code": "ChainofTitle",
+        "name": "Chain of Title",
+        "category": "TITLE",
+        "score": 1.0
+      },
+      {
+        "code": "TitleSupplements",
+        "name": "Title Supplements",
+        "category": "TITLE",
+        "score": 0.33
+      },
+      {
+        "code": "FinalTitlePolicy",
+        "name": "Final Title Policy",
+        "category": "TITLE",
+        "score": 0.25
+      }
+    ],
+    "TTL-006": [
+      {
+        "code": "WarrantyDeed",
+        "name": "Warranty Deed",
+        "category": "DOCS",
+        "score": 1.0
+      },
+      {
+        "code": "DeedOfTrust",
+        "name": "Deed of Trust",
+        "category": "LENDER",
+        "score": 0.33
+      },
+      {
+        "code": "GrantDeed",
+        "name": "Grant Deed",
+        "category": "DOCS",
+        "score": 0.33
+      }
+    ],
+    "TTL-007": [
+      {
+        "code": "GrantDeed",
+        "name": "Grant Deed",
+        "category": "DOCS",
+        "score": 1.0
+      },
+      {
+        "code": "DeedOfTrust",
+        "name": "Deed of Trust",
+        "category": "LENDER",
+        "score": 0.33
+      },
+      {
+        "code": "WarrantyDeed",
+        "name": "Warranty Deed",
+        "category": "DOCS",
+        "score": 0.33
+      }
+    ],
+    "TTL-008": [
+      {
+        "code": "ClosingProtectionLet",
+        "name": "Closing Protection Letter",
+        "category": "DOCS",
+        "score": 1.0
+      },
+      {
+        "code": "CPALetter",
+        "name": "CPA Letter",
+        "category": "INC",
+        "score": 0.25
+      },
+      {
+        "code": "ClosingPackage",
+        "name": "Closing Package",
+        "category": "DOCS",
+        "score": 0.25
+      }
+    ],
+    "TTL-009": [
+      {
+        "code": "E&OInsurance",
+        "name": "E & O Insurance",
+        "category": "PROP",
+        "score": 0.2
+      }
+    ],
+    "TTL-010": [
+      {
+        "code": "E&OInsurance",
+        "name": "E & O Insurance",
+        "category": "PROP",
+        "score": 0.25
+      },
+      {
+        "code": "ChainofTitle",
+        "name": "Chain of Title",
+        "category": "TITLE",
+        "score": 0.2
+      },
+      {
+        "code": "InsuranceChecklist",
+        "name": "Insurance Checklist",
+        "category": "LENDER",
+        "score": 0.2
+      }
+    ],
+    "INS-001": [
+      {
+        "code": "HazardInsPolicy",
+        "name": "Hazard Insurance Policy",
+        "category": "T&I",
+        "score": 1.0
+      },
+      {
+        "code": "HazardInsPolicyInv",
+        "name": "Hazard Insurance Policy - Invoice",
+        "category": "T&I",
+        "score": 0.75
+      },
+      {
+        "code": "HazardInsuranceRCE",
+        "name": "Hazard Insurance Policy - RCE",
+        "category": "T&I",
+        "score": 0.75
+      }
+    ],
+    "INS-001A": [
+      {
+        "code": "FloodInsurancePolicy",
+        "name": "Flood Insurance Policy",
+        "category": "T&I",
+        "score": 0.5
+      },
+      {
+        "code": "HazardInsPolicy",
+        "name": "Hazard Insurance Policy",
+        "category": "T&I",
+        "score": 0.5
+      },
+      {
+        "code": "HazardInsPolicyInv",
+        "name": "Hazard Insurance Policy - Invoice",
+        "category": "T&I",
+        "score": 0.4
+      }
+    ],
+    "INS-001B": [
+      {
+        "code": "HO6Policy",
+        "name": "HO6 Policy",
+        "category": "T&I",
+        "score": 0.25
+      },
+      {
+        "code": "RentalAgr",
+        "name": "Rental Agreement",
+        "category": "INC",
+        "score": 0.25
+      },
+      {
+        "code": "CondoMasterPolicy",
+        "name": "Condo Master Policy",
+        "category": "T&I",
+        "score": 0.2
+      }
+    ],
+    "INS-002": [
+      {
+        "code": "E&OInsurance",
+        "name": "E & O Insurance",
+        "category": "PROP",
+        "score": 0.5
+      },
+      {
+        "code": "InsuranceChecklist",
+        "name": "Insurance Checklist",
+        "category": "LENDER",
+        "score": 0.33
+      },
+      {
+        "code": "InsuranceCorresp",
+        "name": "Insurance Correspondence",
+        "category": "SERV",
+        "score": 0.33
+      }
+    ],
+    "INS-003": [
+      {
+        "code": "E&OInsurance",
+        "name": "E & O Insurance",
+        "category": "PROP",
+        "score": 0.33
+      },
+      {
+        "code": "CertifictofFormation",
+        "name": "Certificate of Formation",
+        "category": "ENTITY",
+        "score": 0.25
+      },
+      {
+        "code": "CertificatofOccupanc",
+        "name": "Certificate of Occupancy",
+        "category": "MISC",
+        "score": 0.25
+      }
+    ],
+    "INS-004": [
+      {
+        "code": "E&OInsurance",
+        "name": "E & O Insurance",
+        "category": "PROP",
+        "score": 0.33
+      },
+      {
+        "code": "CertifictofFormation",
+        "name": "Certificate of Formation",
+        "category": "ENTITY",
+        "score": 0.25
+      },
+      {
+        "code": "CertificatofOccupanc",
+        "name": "Certificate of Occupancy",
+        "category": "MISC",
+        "score": 0.25
+      }
+    ],
+    "INS-005": [
+      {
+        "code": "E&OInsurance",
+        "name": "E & O Insurance",
+        "category": "PROP",
+        "score": 0.33
+      },
+      {
+        "code": "InsuranceChecklist",
+        "name": "Insurance Checklist",
+        "category": "LENDER",
+        "score": 0.25
+      },
+      {
+        "code": "InsuranceCorresp",
+        "name": "Insurance Correspondence",
+        "category": "SERV",
+        "score": 0.25
+      }
+    ],
+    "INS-006": [
+      {
+        "code": "CondoMasterPolicy",
+        "name": "Condo Master Policy",
+        "category": "T&I",
+        "score": 0.4
+      },
+      {
+        "code": "FloodInsurancePolicy",
+        "name": "Flood Insurance Policy",
+        "category": "T&I",
+        "score": 0.4
+      },
+      {
+        "code": "HazardInsPolicy",
+        "name": "Hazard Insurance Policy",
+        "category": "T&I",
+        "score": 0.4
+      }
+    ],
+    "INS-007": [
+      {
+        "code": "FloodInsurancePolicy",
+        "name": "Flood Insurance Policy",
+        "category": "T&I",
+        "score": 0.5
+      },
+      {
+        "code": "HazardInsPolicy",
+        "name": "Hazard Insurance Policy",
+        "category": "T&I",
+        "score": 0.5
+      },
+      {
+        "code": "HazardInsPolicyInv",
+        "name": "Hazard Insurance Policy - Invoice",
+        "category": "T&I",
+        "score": 0.4
+      }
+    ],
+    "INS-008": [
+      {
+        "code": "HazardInsPolicy",
+        "name": "Hazard Insurance Policy",
+        "category": "T&I",
+        "score": 0.4
+      },
+      {
+        "code": "HazardInsPolicyInv",
+        "name": "Hazard Insurance Policy - Invoice",
+        "category": "T&I",
+        "score": 0.33
+      },
+      {
+        "code": "HazardInsuranceRCE",
+        "name": "Hazard Insurance Policy - RCE",
+        "category": "T&I",
+        "score": 0.33
+      }
+    ],
+    "INS-010": [
+      {
+        "code": "MortgageStatement",
+        "name": "Mortgage Statement",
+        "category": "CRED",
+        "score": 0.25
+      },
+      {
+        "code": "1098MortgageIntStmnt",
+        "name": "1098 Mortgage Interest Statement",
+        "category": "SERV",
+        "score": 0.2
+      },
+      {
+        "code": "1099IntIncomeStmnt",
+        "name": "1099 Interest Income Statement",
+        "category": "SERV",
+        "score": 0.2
+      }
+    ],
+    "FLD-001": [
+      {
+        "code": "ServgFloodHazardNoti",
+        "name": "Servicing Flood Hazard Notice",
+        "category": "SERV",
+        "score": 0.29
+      }
+    ],
+    "FLD-002": [
+      {
+        "code": "FloodCertNoticeDeliv",
+        "name": "Flood Cert Notice Delivery",
+        "category": "DISC",
+        "score": 0.33
+      },
+      {
+        "code": "ServgFloodHazardNoti",
+        "name": "Servicing Flood Hazard Notice",
+        "category": "SERV",
+        "score": 0.33
+      },
+      {
+        "code": "BankruptcyBKNotice",
+        "name": "Bankruptcy BK Notice",
+        "category": "SERV",
+        "score": 0.2
+      }
+    ],
+    "FLD-003": [
+      {
+        "code": "FloodInsurancePolicy",
+        "name": "Flood Insurance Policy",
+        "category": "T&I",
+        "score": 1.0
+      },
+      {
+        "code": "FloodInsuranceInvo",
+        "name": "Flood Insurance Invoice",
+        "category": "T&I",
+        "score": 0.5
+      },
+      {
+        "code": "HazardInsPolicy",
+        "name": "Hazard Insurance Policy",
+        "category": "T&I",
+        "score": 0.5
+      }
+    ],
+    "FLD-005": [
+      {
+        "code": "FloodInsuranceInvo",
+        "name": "Flood Insurance Invoice",
+        "category": "T&I",
+        "score": 0.33
+      },
+      {
+        "code": "FloodInsurancePolicy",
+        "name": "Flood Insurance Policy",
+        "category": "T&I",
+        "score": 0.33
+      },
+      {
+        "code": "ServgFloodInsurance",
+        "name": "Servicing Flood Insurance",
+        "category": "SERV",
+        "score": 0.33
+      }
+    ],
+    "TAX-001": [
+      {
+        "code": "TaxCertificate",
+        "name": "Tax Certificate",
+        "category": "T&I",
+        "score": 0.67
+      },
+      {
+        "code": "ServgTaxCertificate",
+        "name": "Servicing Tax Certificate",
+        "category": "SERV",
+        "score": 0.5
+      },
+      {
+        "code": "TaxCertificateTCD",
+        "name": "Tax Certificate - Internal TCD Report",
+        "category": "T&I",
+        "score": 0.33
+      }
+    ],
+    "TAX-002": [
+      {
+        "code": "TAX-HAZ-HOABill(s)",
+        "name": "TAX-HAZ-HOA Bill(s) for Non-Subject Property",
+        "category": "CRED",
+        "score": 0.43
+      },
+      {
+        "code": "PropertyProfile",
+        "name": "Property Profile",
+        "category": "PROP",
+        "score": 0.25
+      },
+      {
+        "code": "TaxCertificate",
+        "name": "Tax Certificate",
+        "category": "T&I",
+        "score": 0.25
+      }
+    ],
+    "TAX-003": [
+      {
+        "code": "TaxCertificate",
+        "name": "Tax Certificate",
+        "category": "T&I",
+        "score": 0.25
+      },
+      {
+        "code": "TaxCorrespondence",
+        "name": "Tax Correspondence",
+        "category": "SERV",
+        "score": 0.25
+      },
+      {
+        "code": "ServgTaxCertificate",
+        "name": "Servicing Tax Certificate",
+        "category": "SERV",
+        "score": 0.2
+      }
+    ],
+    "TAX-004": [
+      {
+        "code": "TaxCertificate",
+        "name": "Tax Certificate",
+        "category": "T&I",
+        "score": 0.2
+      },
+      {
+        "code": "TaxCorrespondence",
+        "name": "Tax Correspondence",
+        "category": "SERV",
+        "score": 0.2
+      }
+    ],
+    "HOA-001": [
+      {
+        "code": "CertifictofFormation",
+        "name": "Certificate of Formation",
+        "category": "ENTITY",
+        "score": 0.25
+      },
+      {
+        "code": "CertificatofOccupanc",
+        "name": "Certificate of Occupancy",
+        "category": "MISC",
+        "score": 0.25
+      },
+      {
+        "code": "DeathCertificate",
+        "name": "Death Certificate",
+        "category": "MISC",
+        "score": 0.25
+      }
+    ],
+    "HOA-003": [
+      {
+        "code": "AMCertification",
+        "name": "AM Certification",
+        "category": "LENDER",
+        "score": 0.5
+      },
+      {
+        "code": "CertofMarriage",
+        "name": "Certification of Marriage",
+        "category": "CRED",
+        "score": 0.33
+      },
+      {
+        "code": "FloodCert",
+        "name": "Flood Certification",
+        "category": "PROP",
+        "score": 0.33
+      }
+    ],
+    "HOA-004": [
+      {
+        "code": "CPALetter",
+        "name": "CPA Letter",
+        "category": "INC",
+        "score": 0.2
+      },
+      {
+        "code": "GiftLetter",
+        "name": "Gift Letter",
+        "category": "ASSET",
+        "score": 0.2
+      },
+      {
+        "code": "HOACert",
+        "name": "HOA Cert",
+        "category": "PROP",
+        "score": 0.2
+      }
+    ],
+    "HOA-005": [
+      {
+        "code": "HOACert",
+        "name": "HOA Cert",
+        "category": "PROP",
+        "score": 0.2
+      },
+      {
+        "code": "HOAFinancials",
+        "name": "HOA Financials",
+        "category": "PROP",
+        "score": 0.2
+      },
+      {
+        "code": "HOALitigation",
+        "name": "HOA Litigation",
+        "category": "PROP",
+        "score": 0.2
+      }
+    ],
+    "HOA-006": [
+      {
+        "code": "HOACert",
+        "name": "HOA Cert",
+        "category": "PROP",
+        "score": 0.33
+      },
+      {
+        "code": "HOAFinancials",
+        "name": "HOA Financials",
+        "category": "PROP",
+        "score": 0.33
+      },
+      {
+        "code": "HOALitigation",
+        "name": "HOA Litigation",
+        "category": "PROP",
+        "score": 0.33
+      }
+    ],
+    "HOA-007": [
+      {
+        "code": "HOACert",
+        "name": "HOA Cert",
+        "category": "PROP",
+        "score": 0.25
+      },
+      {
+        "code": "HOAFinancials",
+        "name": "HOA Financials",
+        "category": "PROP",
+        "score": 0.25
+      },
+      {
+        "code": "HOALitigation",
+        "name": "HOA Litigation",
+        "category": "PROP",
+        "score": 0.25
+      }
+    ],
+    "HOA-009": [
+      {
+        "code": "HOACert",
+        "name": "HOA Cert",
+        "category": "PROP",
+        "score": 0.25
+      },
+      {
+        "code": "HOAFinancials",
+        "name": "HOA Financials",
+        "category": "PROP",
+        "score": 0.25
+      },
+      {
+        "code": "HOALitigation",
+        "name": "HOA Litigation",
+        "category": "PROP",
+        "score": 0.25
+      }
+    ],
+    "HOA-011": [
+      {
+        "code": "TermiteInspectionRpt",
+        "name": "Termite Inspection Report",
+        "category": "PROP",
+        "score": 0.5
+      },
+      {
+        "code": "PostDisasterReport",
+        "name": "Post Disaster Inspection Report",
+        "category": "PROP",
+        "score": 0.4
+      },
+      {
+        "code": "BKPACERReport",
+        "name": "BK PACER Report",
+        "category": "SERV",
+        "score": 0.25
+      }
+    ],
+    "UND-001": [
+      {
+        "code": "Approval",
+        "name": "Approval",
+        "category": "LENDER",
+        "score": 0.33
+      },
+      {
+        "code": "LienHolderApproval",
+        "name": "Lien Holder Approval",
+        "category": "CRED",
+        "score": 0.2
+      },
+      {
+        "code": "LoanDocumentRequest",
+        "name": "Loan Document Request",
+        "category": "LENDER",
+        "score": 0.2
+      }
+    ],
+    "UND-003": [
+      {
+        "code": "PricerDetails",
+        "name": "Pricer Details",
+        "category": "LENDER",
+        "score": 0.33
+      }
+    ],
+    "UND-004": [
+      {
+        "code": "LockRequest",
+        "name": "Lock Request",
+        "category": "BROKER",
+        "score": 0.67
+      },
+      {
+        "code": "LockExtensionRequest",
+        "name": "Lock Extension Request",
+        "category": "BROKER",
+        "score": 0.5
+      },
+      {
+        "code": "RateLockDisclosure",
+        "name": "Rate Lock Disclosure",
+        "category": "DISC",
+        "score": 0.5
+      }
+    ],
+    "UND-004A": [
+      {
+        "code": "RateLockDisclosure",
+        "name": "Rate Lock Disclosure",
+        "category": "DISC",
+        "score": 0.5
+      },
+      {
+        "code": "StateRateLockAgrmt",
+        "name": "State Specific Rate Lock Agreement",
+        "category": "DISC",
+        "score": 0.33
+      },
+      {
+        "code": "LockInformation",
+        "name": "Lock Information",
+        "category": "MISC",
+        "score": 0.25
+      }
+    ],
+    "UND-007": [
+      {
+        "code": "LoanDocumentRequest",
+        "name": "Loan Document Request",
+        "category": "LENDER",
+        "score": 1.0
+      },
+      {
+        "code": "ExceptionRequest",
+        "name": "Exception Request",
+        "category": "CRED",
+        "score": 0.25
+      },
+      {
+        "code": "LockRequest",
+        "name": "Lock Request",
+        "category": "BROKER",
+        "score": 0.25
+      }
+    ],
+    "UND-008": [
+      {
+        "code": "ReworkRequest",
+        "name": "Rework Request",
+        "category": "BROKER",
+        "score": 1.0
+      },
+      {
+        "code": "ExceptionRequest",
+        "name": "Exception Request",
+        "category": "CRED",
+        "score": 0.33
+      },
+      {
+        "code": "LockRequest",
+        "name": "Lock Request",
+        "category": "BROKER",
+        "score": 0.33
+      }
+    ],
+    "LND-001": [
+      {
+        "code": "Note",
+        "name": "Note",
+        "category": "LENDER",
+        "score": 0.5
+      }
+    ],
+    "LND-002": [
+      {
+        "code": "Note",
+        "name": "Note",
+        "category": "LENDER",
+        "score": 0.2
+      }
+    ],
+    "LND-003": [
+      {
+        "code": "Note",
+        "name": "Note",
+        "category": "LENDER",
+        "score": 0.33
+      }
+    ],
+    "LND-004": [
+      {
+        "code": "MortgageStatement",
+        "name": "Mortgage Statement",
+        "category": "CRED",
+        "score": 0.5
+      },
+      {
+        "code": "SatisfactionofMtg",
+        "name": "Satisfaction of Mortgage",
+        "category": "LENDER",
+        "score": 0.5
+      },
+      {
+        "code": "1098MortgageIntStmnt",
+        "name": "1098 Mortgage Interest Statement",
+        "category": "SERV",
+        "score": 0.33
+      }
+    ],
+    "LND-004A": [
+      {
+        "code": "DeedOfTrust",
+        "name": "Deed of Trust",
+        "category": "LENDER",
+        "score": 1.0
+      },
+      {
+        "code": "RecAssignmentofDoT",
+        "name": "Recorded Assignment of Deed of Trust",
+        "category": "SERV",
+        "score": 0.5
+      },
+      {
+        "code": "GrantDeed",
+        "name": "Grant Deed",
+        "category": "DOCS",
+        "score": 0.33
+      }
+    ],
+    "LND-004B": [
+      {
+        "code": "DeedOfTrust",
+        "name": "Deed of Trust",
+        "category": "LENDER",
+        "score": 0.33
+      },
+      {
+        "code": "GrantDeed",
+        "name": "Grant Deed",
+        "category": "DOCS",
+        "score": 0.33
+      },
+      {
+        "code": "WarrantyDeed",
+        "name": "Warranty Deed",
+        "category": "DOCS",
+        "score": 0.33
+      }
+    ],
+    "LND-005": [
+      {
+        "code": "ModificationAgrmt",
+        "name": "Modification Agreement",
+        "category": "CRED",
+        "score": 0.67
+      },
+      {
+        "code": "LeaseAgreement",
+        "name": "Lease Agreement",
+        "category": "PROP",
+        "score": 0.25
+      },
+      {
+        "code": "ReferralAgreement",
+        "name": "Referral Agreement",
+        "category": "LENDER",
+        "score": 0.25
+      }
+    ],
+    "LND-006": [
+      {
+        "code": "LoanDocumentRequest",
+        "name": "Loan Document Request",
+        "category": "LENDER",
+        "score": 0.4
+      },
+      {
+        "code": "ClosingPackage",
+        "name": "Closing Package",
+        "category": "DOCS",
+        "score": 0.2
+      },
+      {
+        "code": "ECOAPackage",
+        "name": "ECOA Package",
+        "category": "DISC",
+        "score": 0.2
+      }
+    ],
+    "LND-007": [
+      {
+        "code": "CorrectionofErrors",
+        "name": "Correction of Errors",
+        "category": "MISC",
+        "score": 0.2
+      },
+      {
+        "code": "LeaseAgreement",
+        "name": "Lease Agreement",
+        "category": "PROP",
+        "score": 0.2
+      },
+      {
+        "code": "ModificationAgrmt",
+        "name": "Modification Agreement",
+        "category": "CRED",
+        "score": 0.2
+      }
+    ],
+    "LND-008": [
+      {
+        "code": "ServicingAAfAP",
+        "name": "Servicing Authorization Agreement for Auto Payment",
+        "category": "SERV",
+        "score": 0.29
+      },
+      {
+        "code": "BKPaymentPlan",
+        "name": "BK Payment Plan",
+        "category": "SERV",
+        "score": 0.2
+      },
+      {
+        "code": "MortgageStatement",
+        "name": "Mortgage Statement",
+        "category": "CRED",
+        "score": 0.2
+      }
+    ],
+    "LND-009": [
+      {
+        "code": "ServgBorrTransferLtr",
+        "name": "Servicing Borrower Transfer Letter",
+        "category": "SERV",
+        "score": 0.4
+      },
+      {
+        "code": "ServgShortPaymentLtr",
+        "name": "Servicing Short Payment Letter",
+        "category": "SERV",
+        "score": 0.4
+      },
+      {
+        "code": "ServFirstPaymentDefL",
+        "name": "Servicing First Payment Default Letter",
+        "category": "SERV",
+        "score": 0.33
+      }
+    ],
+    "CLS-001": [
+      {
+        "code": "AckReceiptLE",
+        "name": "Acknowledgement of Receipt of Loan Estimate",
+        "category": "LENDER",
+        "score": 0.5
+      },
+      {
+        "code": "LoanDocumentRequest",
+        "name": "Loan Document Request",
+        "category": "LENDER",
+        "score": 0.25
+      }
+    ],
+    "CLS-002": [
+      {
+        "code": "AckReceiptCD",
+        "name": "Acknowledgement of Receipt of Closing Disclosure",
+        "category": "LENDER",
+        "score": 0.5
+      },
+      {
+        "code": "CAPerDiemDisclosure",
+        "name": "CA Per Diem Disclosure",
+        "category": "DOCS",
+        "score": 0.33
+      },
+      {
+        "code": "ClosingPackage",
+        "name": "Closing Package",
+        "category": "DOCS",
+        "score": 0.33
+      }
+    ],
+    "CLS-003": [
+      {
+        "code": "FinalSettlementStmt",
+        "name": "Final Settlement Statement",
+        "category": "MISC",
+        "score": 0.5
+      },
+      {
+        "code": "EstimatedHUD/ClsStmt",
+        "name": "Estimated HUD/Closing Statement",
+        "category": "DOCS",
+        "score": 0.4
+      },
+      {
+        "code": "FinalHUD/ClosingStmt",
+        "name": "Final HUD/Closing Statement",
+        "category": "DOCS",
+        "score": 0.4
+      }
+    ],
+    "CLS-004": [
+      {
+        "code": "FinalSettlementStmt",
+        "name": "Final Settlement Statement",
+        "category": "MISC",
+        "score": 0.5
+      },
+      {
+        "code": "MortgageStatement",
+        "name": "Mortgage Statement",
+        "category": "CRED",
+        "score": 0.25
+      },
+      {
+        "code": "1098MortgageIntStmnt",
+        "name": "1098 Mortgage Interest Statement",
+        "category": "SERV",
+        "score": 0.2
+      }
+    ],
+    "CLS-005": [
+      {
+        "code": "StateSpecificDisc",
+        "name": "State Specific Disclosure Statement",
+        "category": "DISC",
+        "score": 0.29
+      },
+      {
+        "code": "InitialCD",
+        "name": "Initial CD",
+        "category": "DISC",
+        "score": 0.2
+      }
+    ],
+    "CLS-006": [
+      {
+        "code": "EscrowInstructions",
+        "name": "Escrow Instructions",
+        "category": "DOCS",
+        "score": 1.0
+      },
+      {
+        "code": "WiringInstructions",
+        "name": "Wiring Instructions",
+        "category": "DOCS",
+        "score": 0.33
+      },
+      {
+        "code": "ServgEscrowAnalysis",
+        "name": "Servicing Escrow Analysis",
+        "category": "SERV",
+        "score": 0.25
+      }
+    ],
+    "CLS-007": [
+      {
+        "code": "ClosingPackage",
+        "name": "Closing Package",
+        "category": "DOCS",
+        "score": 0.25
+      },
+      {
+        "code": "EscrowInstructions",
+        "name": "Escrow Instructions",
+        "category": "DOCS",
+        "score": 0.25
+      },
+      {
+        "code": "WiringInstructions",
+        "name": "Wiring Instructions",
+        "category": "DOCS",
+        "score": 0.25
+      }
+    ],
+    "CLS-008": [
+      {
+        "code": "ClosingPackage",
+        "name": "Closing Package",
+        "category": "DOCS",
+        "score": 0.25
+      },
+      {
+        "code": "EscrowInstructions",
+        "name": "Escrow Instructions",
+        "category": "DOCS",
+        "score": 0.25
+      },
+      {
+        "code": "WiringInstructions",
+        "name": "Wiring Instructions",
+        "category": "DOCS",
+        "score": 0.25
+      }
+    ],
+    "CLS-009": [
+      {
+        "code": "ClosingPackage",
+        "name": "Closing Package",
+        "category": "DOCS",
+        "score": 0.25
+      },
+      {
+        "code": "EscrowInstructions",
+        "name": "Escrow Instructions",
+        "category": "DOCS",
+        "score": 0.25
+      },
+      {
+        "code": "WiringInstructions",
+        "name": "Wiring Instructions",
+        "category": "DOCS",
+        "score": 0.25
+      }
+    ],
+    "CLS-010": [
+      {
+        "code": "EscrowInstructions",
+        "name": "Escrow Instructions",
+        "category": "DOCS",
+        "score": 0.33
+      },
+      {
+        "code": "WiringInstructions",
+        "name": "Wiring Instructions",
+        "category": "DOCS",
+        "score": 0.33
+      }
+    ],
+    "CLS-011": [
+      {
+        "code": "ExternalFundingFigur",
+        "name": "External Funding Figures",
+        "category": "LENDER",
+        "score": 0.67
+      },
+      {
+        "code": "InternalFundingFigur",
+        "name": "Internal Funding Figure",
+        "category": "LENDER",
+        "score": 0.25
+      },
+      {
+        "code": "ServReinstatementFig",
+        "name": "Servicing Reinstatement Figures",
+        "category": "SERV",
+        "score": 0.25
+      }
+    ],
+    "CLS-012": [
+      {
+        "code": "CreditorPayoffStmt",
+        "name": "Creditor Payoff Statement",
+        "category": "CRED",
+        "score": 0.5
+      },
+      {
+        "code": "MortgagePayoffDemand",
+        "name": "Mortgage Payoff Demand",
+        "category": "TITLE",
+        "score": 0.5
+      },
+      {
+        "code": "MortgageStatement",
+        "name": "Mortgage Statement",
+        "category": "CRED",
+        "score": 0.25
+      }
+    ],
+    "CLS-013": [
+      {
+        "code": "ClosingPackage",
+        "name": "Closing Package",
+        "category": "DOCS",
+        "score": 1.0
+      },
+      {
+        "code": "ClosingPckgScanned",
+        "name": "Closing Package Scanned",
+        "category": "DOCS",
+        "score": 0.67
+      },
+      {
+        "code": "ClosingPackageSigned",
+        "name": "Closing Package Signed",
+        "category": "DOCS",
+        "score": 0.67
+      }
+    ],
+    "CLS-014": [
+      {
+        "code": "BrokerItemFinanced",
+        "name": "Broker Itemization of Amount Financed",
+        "category": "BROKER",
+        "score": 0.75
+      }
+    ],
+    "CLS-015": [
+      {
+        "code": "StateSpecificDisc",
+        "name": "State Specific Disclosure Statement",
+        "category": "DISC",
+        "score": 0.29
+      }
+    ],
+    "SRV-001": [
+      {
+        "code": "ServgGoodbyeLtrST",
+        "name": "Servicing Goodbye Letter Servicing Transfer Notice",
+        "category": "SERV",
+        "score": 0.6
+      },
+      {
+        "code": "ServicingLateNotice",
+        "name": "Servicing Late Notice",
+        "category": "SERV",
+        "score": 0.5
+      },
+      {
+        "code": "ServgNoticeofError",
+        "name": "Servicing Notice of Error",
+        "category": "SERV",
+        "score": 0.5
+      }
+    ],
+    "SRV-002": [
+      {
+        "code": "ServgPaymentHistory",
+        "name": "Servicing Payment History",
+        "category": "SERV",
+        "score": 0.5
+      },
+      {
+        "code": "BKPaymentPlan",
+        "name": "BK Payment Plan",
+        "category": "SERV",
+        "score": 0.25
+      },
+      {
+        "code": "MortgageStatement",
+        "name": "Mortgage Statement",
+        "category": "CRED",
+        "score": 0.25
+      }
+    ],
+    "SRV-003": [
+      {
+        "code": "BankStmntAnalysis",
+        "name": "Bank Statement Analysis",
+        "category": "ASSET",
+        "score": 0.4
+      },
+      {
+        "code": "ServgEscrowAnalysis",
+        "name": "Servicing Escrow Analysis",
+        "category": "SERV",
+        "score": 0.4
+      },
+      {
+        "code": "BrokerBankStmntAnlys",
+        "name": "Broker Bank Statement Analysis",
+        "category": "BROKER",
+        "score": 0.33
+      }
+    ],
+    "SRV-004": [
+      {
+        "code": "ServgPaymentHistory",
+        "name": "Servicing Payment History",
+        "category": "SERV",
+        "score": 0.4
+      },
+      {
+        "code": "BKPaymentPlan",
+        "name": "BK Payment Plan",
+        "category": "SERV",
+        "score": 0.2
+      },
+      {
+        "code": "ModificationAgrmt",
+        "name": "Modification Agreement",
+        "category": "CRED",
+        "score": 0.2
+      }
+    ],
+    "BRK-001": [
+      {
+        "code": "BrokerFeeValidation",
+        "name": "Broker Fee Validation",
+        "category": "BROKER",
+        "score": 0.5
+      },
+      {
+        "code": "BrokerFeesWorksheet",
+        "name": "Broker Fees Worksheet",
+        "category": "BROKER",
+        "score": 0.5
+      },
+      {
+        "code": "ZeroBrokerFee",
+        "name": "Zero Broker Fee Confirmation",
+        "category": "BROKER",
+        "score": 0.4
+      }
+    ],
+    "BRK-002": [
+      {
+        "code": "BrokerFeeValidation",
+        "name": "Broker Fee Validation",
+        "category": "BROKER",
+        "score": 1.0
+      },
+      {
+        "code": "ZeroBrokerFee",
+        "name": "Zero Broker Fee Confirmation",
+        "category": "BROKER",
+        "score": 0.4
+      },
+      {
+        "code": "BrokerDisclosures",
+        "name": "Broker Disclosures",
+        "category": "DISC",
+        "score": 0.25
+      }
+    ],
+    "BRK-003": [
+      {
+        "code": "BrokerSubAuthoriztin",
+        "name": "Broker Submission Authorization",
+        "category": "BROKER",
+        "score": 0.5
+      },
+      {
+        "code": "BrokerDisclosures",
+        "name": "Broker Disclosures",
+        "category": "DISC",
+        "score": 0.25
+      },
+      {
+        "code": "BrokerInitial1003",
+        "name": "Broker Initial 1003",
+        "category": "APP",
+        "score": 0.25
+      }
+    ],
+    "BRK-004": [
+      {
+        "code": "BranchNMLS",
+        "name": "Branch NMLS",
+        "category": "LENDER",
+        "score": 0.67
+      },
+      {
+        "code": "LONMLS",
+        "name": "LO NMLS",
+        "category": "LENDER",
+        "score": 0.33
+      },
+      {
+        "code": "BrokerNMLS",
+        "name": "Broker NMLS",
+        "category": "LENDER",
+        "score": 0.25
+      }
+    ],
+    "BRK-005": [
+      {
+        "code": "BKPACERReport",
+        "name": "BK PACER Report",
+        "category": "SERV",
+        "score": 0.2
+      },
+      {
+        "code": "FeasibilityReport",
+        "name": "Feasibility Report",
+        "category": "PROP",
+        "score": 0.2
+      },
+      {
+        "code": "FraudReport",
+        "name": "Fraud Report",
+        "category": "LENDER",
+        "score": 0.2
+      }
+    ],
+    "AUD-001": [
+      {
+        "code": "CertifictofFormation",
+        "name": "Certificate of Formation",
+        "category": "ENTITY",
+        "score": 0.25
+      },
+      {
+        "code": "CertificatofOccupanc",
+        "name": "Certificate of Occupancy",
+        "category": "MISC",
+        "score": 0.25
+      },
+      {
+        "code": "DeathCertificate",
+        "name": "Death Certificate",
+        "category": "MISC",
+        "score": 0.25
+      }
+    ],
+    "AUD-002": [
+      {
+        "code": "E-Consent",
+        "name": "E-Consent",
+        "category": "DISC",
+        "score": 0.25
+      },
+      {
+        "code": "UnanimousConsent",
+        "name": "Unanimous Consent",
+        "category": "ENTITY",
+        "score": 0.2
+      }
+    ],
+    "AUD-003": [
+      {
+        "code": "Final1003",
+        "name": "Final 1003",
+        "category": "APP",
+        "score": 0.33
+      },
+      {
+        "code": "Appraisal1Final",
+        "name": "Appraisal 1 - Final",
+        "category": "PROP",
+        "score": 0.25
+      },
+      {
+        "code": "Appraisal2Final",
+        "name": "Appraisal 2 - Final",
+        "category": "PROP",
+        "score": 0.25
+      }
+    ],
+    "AUD-004": [
+      {
+        "code": "BKProofofClaim",
+        "name": "BK Proof of Claim",
+        "category": "SERV",
+        "score": 0.25
+      },
+      {
+        "code": "CAPerDiemDisclosure",
+        "name": "CA Per Diem Disclosure",
+        "category": "DOCS",
+        "score": 0.25
+      },
+      {
+        "code": "ProofofCDSent",
+        "name": "Proof of CD Sent",
+        "category": "DISC",
+        "score": 0.25
+      }
+    ]
+  },
+  "entries_matching_no_bytepro_entry": [
+    "APP-001",
+    "APP-004",
+    "APP-008",
+    "IDV-008",
+    "FLD-004",
+    "HOA-002",
+    "HOA-008",
+    "HOA-010",
+    "HOA-012",
+    "UND-002",
+    "UND-006",
+    "AUD-005"
+  ]
+}

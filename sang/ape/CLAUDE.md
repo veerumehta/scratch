@@ -4,17 +4,14 @@
 
 ## Where things stand
 
-**Runtime session (sonnet-runtime, 2026-10-14)**: `v2.6.2` squash pushed: `origin/plato` is `846d8bde` (Plato and
-client 0.2.3, SDK 2.6.2; pushed by the user with `--no-verify` after the pre-push hook failed, Dependabot alerts
-not confirmed). It includes the review fixes, the Plato-to-SDK moves (activation windows, release report,
-solution material, `answer_turn`, `recent_activity`, draft registry reader, export readiness; reviewed) and the
-pricing edit (Sonnet 5.5 cache reads 0.05x, Sonnet 4.5 deprecated, `gemini-4-argon` priced-only; openai's verified
-date left at 2026-09-30). Local `plato` has `05166dc7` past it (the route test of a strict export's full 422
-list; on no other branch, cherry-pick to `v2.6.3` requested 2026-10-14). Typed conditions built on `v2.6.3` (SDK 2.6.3, `37a6c71f`..`fb0bc9c1`, six commits, review owed;
-`status/done_typed_conditions.md`). Next, in the user's order (`plans/note_parity_adjudication_20261012.md` items 2, 4-6): evidence
-scoped per rule (plan first, fresh session), then the Acra job-writer fixes, blueprint chain from N1, document
-precedence, assistant eval overrides, the `ChatCoordinator` hook. Open: `gemini-4-argon` needs a context window and status before a
-card; re-price it on 2026-12-01; Acra's case date; local Postgres `trasdb` orphan `alembic` process.
+**Runtime session (sonnet-runtime, 2026-10-17, `v2.6.4`, local and unpushed)**: restart file
+`scripts/local/restart/sonnet-runtime.md` holds the exact state. Built since the v2.6.3 squash (pushed `a3911478`): engine
+modes (hybrid default), document catalog and reference reader (header row, aliases, cues), client gaps, guidance, the
+authoring context and lint-fix compare-and-write moved into the SDK (`b1802104`, `9d013116`), assess `engine_mode`/`primary`
+(`1dac85f6`). Acra end-to-end run (`plans/plan_acra_end_to_end_run.md`): harness, scratch packs and references are ready on local
+Plato; the loan run waits on the user's own approval and sonnet-ui's case record (loans are loan-N only, never read the PDFs,
+outputs only under `docs/status/Acra/Acra Lending/e2e/`, 30 USD total, 8 per variant). Next: `ChatCoordinator` hook, document
+precedence, assistant eval overrides, live usage/cost, job-writing quality, code-yield and library.
 
 **UI session (sonnet-ui, 2026-10-13, `v2.6.2`, unpushed)**: owns `plans/plan_solution_view.md` and
 `plans/plan_plato_assistant_chat.md`. Built, one commit per piece: V4 `33d44d0c`, V1 `652af6e7`, V2 data `c71c8496`,
@@ -27,7 +24,7 @@ after (blueprints, assistants, packs); it squashes v2.6.2 to plato; hold edits u
 A4.5 navigation, A4.6/A6.4 browser-answered tools, A6.6 widgets by kind, A4.7 eval authoring skills, A3 email
 drafting beyond the pack's specialist; the solution page's xlsx and draft toggle; page locators in guideline
 citations. Nothing was run in a browser (page scripts are `node --check`ed and string-tested). Review owed over the
-range (the user runs it). Restart prompt for this session: `/tmp/sonnet_ui_restart.md` (the user cannot paste in tmux; tell
+range (the user runs it). Restart prompt for this session: `/Users/sangit/src/japes/scripts/local/restart/sonnet-ui.md` (the user cannot paste in tmux; tell
 the session to read that file). Dock: shared page script carries `assistant_chat.js` and `assistant_dock.js`; a page that is
 the full chat sets `PLATO_FULL_CHAT`. Hosted ground kinds read the tenant from `scope["tenant_id"]`, set by Plato.
 
@@ -78,7 +75,7 @@ evaluation pages (`plato/static/cost.js`, `ModeUsage.cost_is_upper_bound`, `usag
 JTBD routes); `scripts/check_new_models.py` as step 2d of `pre_push_check.sh`; the Ontology plan
 phases A-E (JSON Schema catalog, reference library migration 0023, `catalog` extraction and
 proposals, `merge-catalog`, fact cap scoped in the formal compiler, the packs page panel). Suite
-8420 green. Open: the user runs the commit script and `/tmp/japes_migrate_local.sh` (now to 0023),
+8420 green. Open: the user runs the commit script and `/Users/sangit/src/japes/scripts/local/release/japes_migrate_local.sh` (now to 0023),
 `scripts/local/upload_mortgage_references.py`; naming (`-policy`/`-assistant`, customer-first) per
 the blueprint plan section 9; one review at the end (the user runs it).
 
@@ -176,41 +173,22 @@ so a branch switch in the main checkout cannot break a running server (it did on
 of a moved module failed every extraction run). `ape/local/plato_worktree.sh pin|start|stop|restart [rev]|status`;
 env file, pack blobs/cache and documents stay in the main checkout, named absolutely; log `.plato-local.log`.
 
-**Cross-repo session state (opus-xrepo, 2026-10-14).** Routes work to `sonnet-runtime` (SDK, policy, runtime),
-`sonnet-ui` (Plato pages, solution view, assistant chat; started 2026-10-13) and `sonnet-jaci`. Scenario priority:
-DSCR, then CRE. Programme: `plans/plan_programme_oct.md`.
-- Pushed 2026-10-14: `origin/plato` = `846d8bde`, the v2.6.2 squash (Plato and client 0.2.3; SDK 2.6.2) on top of
-  the KernelClient hotfix `8d50b9e3`. Review loop clean (full pass, then four fix rounds; Plato-to-SDK moves
-  reviewed). The user pushed with --no-verify after the hook failed (cause unseen; Dependabot unconfirmed).
-- Plans: corrections (built), registry and job shape D1-D4 (built), guideline release R1/R2 (built), solution
-  view and assistant chat A1-A7 (built, never opened in a browser), blueprint narrowing chain
-  (`plans/plan_blueprint_narrowing_chain.md`, four decisions owed). sonnet-runtime next: typed conditions, then
-  per-rule evidence.
-- Acra regeneration (`ape/local/coverage/regen_2/`, trial `acra-regen-2`): 130/128 jobs, code decides at least part
-  of 58% (was 40%), lacks data 34% (was 60%); against Acra's set same 58/39 (was 66/47), none 11/6 (was 4/3),
-  duplicated listed-for-sale jobs. Proposed next: fold duplicate jobs across sections, map missing data to catalog
-  fields, rerun (waits on the user).
-- Watch: `assistant` (Poetry; the sibling repo, not jazzx-assistant) `origin/JAPES_V2`, equal to main `74d90ad` on 10-14; and `jazzx-assistant` `origin/JAPES-V2` (hyphen), PR #31, the SDK chat-pipeline migration, reviewed 10-14 (BLOCK, comments sent to the author). Sibling notes: `plans/note_sibling_parity.md`,
-  `note_sibling_review_20261014.md` (document precedence and per-experiment overrides proposed).
-- Local Plato on :8000 is still at `a54165b7`: `/tmp/japes_migrate_local.sh` pins it to the tip and migrates to 0031.
-- Decided 2026-10-14: blueprint chain (profile in the blueprint's activation, N2 warns and `strict:` refuses,
-  Acra's matrix a proposed default the user reviews, case runs an API/Service surface plus Automation when a
-  schedule or trigger is declared); Acra job-writer fixes, document precedence and assistant eval overrides sent to
-  sonnet-runtime after typed conditions; SDK request for a supported `ChatCoordinator` hook (assistant PR #31
-  overrides private `_consume`). PR #31 reviewed (BLOCK: conversation lock dropped; findings posted by the user).
-- Branches (2026-10-14): `v2.6.2` is frozen. `review/v2.6.2` is pushed (one squash commit off `dev`, `e241e407`, tree
-  = the v2.6.2 tip `d869b2db`; `dev` and the 2.6.1 squash untouched), made by `scripts/local/review_branch_from_version.sh`
-  (parameters in `/tmp/japes_review_262_branch.sh`, push in `push_review_branch.sh`). Work continues on local `v2.6.3`
-  (checkout is on it); sonnet-runtime bumped the SDK to 2.6.3 (`6ae4b25a`); Plato and the client go to 0.2.4 on `v2.6.3` before the squash (user, 2026-10-15;
-  Plato and SDK versions are independent, and 0.2.3 is already published at `846d8bde`; the client gained methods).
-  Reviewer fixes on `review/v2.6.2` are carried to `v2.6.3` as they come. Squash to plato from v2.6.3 afterwards.
-- Pushed 2026-10-15: `origin/plato` = `71961a88`, the v2.6.3 squash (SDK 2.6.3, Plato and client 0.2.4), after review
-  rounds 1-4 (round 4 was the pre-push hook; carry rule simplified in `57723bbf`). No PR from plato to `dev` (the
-  reviewer owns `review/v2.6.2` -> `dev`; then merge `origin/dev` back into plato with plato's tree). Review
-  script `/tmp/japes_review_plato_263.sh` keeps its transcripts in `ape/local/.reviews_plato`.
-- Waiting on the user: browser check of the new pages; Acra case date (assumed the lock date, 2026-10-14; confirm with
-  Acra); `/tmp/japes_branch_cleanup.sh`; commit the `adversarial_review.sh` stdin-hang fix; qualifying_rent; Docker
-  for the executor check; a sanitized Acra loan package; PR #91 replies.
+**Cross-repo session state (opus-xrepo, 2026-10-17).** Full detail in `scripts/local/restart/opus-xrepo.md` (read it first;
+sessions restart with `scripts/local/restart_session.sh <opus-xrepo|sonnet-runtime|sonnet-ui|sonnet-jaci>`, each reads
+its own `scripts/local/restart/<name>.md`). Routes work to `sonnet-runtime` (SDK, runtime, assessment, references),
+`sonnet-ui` (Plato pages, classification eval) and `sonnet-jaci` (jaci only through it).
+- Released: v2.6.2 on main (#95), v2.6.3 on dev (#92 squash `6277834e`); dev recorded on local plato (`0abeacdd`,
+  unpushed); `origin/plato` = `1a35ec41`. `v2.6.4` cut from dev (`417abf1c`: SDK 2.6.4, Plato and client 0.2.5); its
+  builder commits (assessment modes with hybrid the default, document catalog, jaci client gaps, UI pages) are
+  unpushed and unreviewed; the user runs the review before any push.
+- Active programme: Acra end-to-end on ONE real loan (our jobs, code, hybrid, both vs K-Studio JTBDs), led by
+  sonnet-runtime (`plans/plan_acra_end_to_end_run.md`); references acra-taxonomy@2026-10-17 and bytepro@2026-07-29
+  loaded on local Plato; classification eval planned by sonnet-ui. Loan files are real borrower data in
+  `docs/status/Acra/Acra Lending/` (gitignored in the scratch repo, never pushed, masked loan-N only). Each run that
+  sends documents to providers needs the user's OWN approval in the builder session.
+- Local Plato (:8000) runs from the pinned worktree `/Users/sangit/src/japes-plato` (`scripts/local/plato_worktree.sh
+  start|stop|restart|status`), database at 0035; it does not survive a reboot.
+- /tmp scripts and notes moved to `scripts/local/{release,acra,restart,notes}/` on 2026-10-17.
 
 **Pending for the cross-repo session (older):**
 1. (done) The user runs

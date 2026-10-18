@@ -1,0 +1,14 @@
+pack_id: acra-e2e-kstudio
+pack_version: 0.0.1
+domain: commercial_lending
+segment: dscr
+policies:
+  dir: policies
+programs:
+  standard:
+  - JTBD_PROGRAM_STANDARD
+  platinum_select:
+  - JTBD_PROGRAM_PLATINUM_SELECT
+conductor:
+  pre_loop:
+  - kind: policy_assessment

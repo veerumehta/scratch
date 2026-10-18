@@ -1,0 +1,7 @@
+# Where the DSCR conductor's investigator gets the evidence it asks for (jazzx_sdk.pack.evidence_tools).
+# Author: Virendra Mehta <virendra.mehta@jazzx.ai>
+# The two vendor feeds are fixtures, so the pack runs with no vendor; a request for any other
+# evidence type is recorded on the case as UNAVAILABLE evidence.
+evidence_tools:
+  credit_report: {source: fixture, file: fixtures/credit_report.json}
+  appraisal: {source: fixture, file: fixtures/appraisal.json}

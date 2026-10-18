@@ -1,0 +1,145 @@
+{
+  "$defs": {
+    "ConditionType": {
+      "description": "Types of loan conditions -- copied verbatim from cre_underwriting.\n\nByte-sourced PTC (Prior to Closing) / PTF (Prior to Funding) condition\nbuckets map onto PRIOR_TO_CLOSING/PRIOR_TO_FUNDING directly.",
+      "enum": [
+        "prior_to_closing",
+        "prior_to_funding",
+        "post_closing",
+        "ongoing_covenant"
+      ],
+      "title": "ConditionType",
+      "type": "string"
+    },
+    "EligibilityDecision": {
+      "description": "DSCR eligibility recommendation.",
+      "enum": [
+        "eligible",
+        "eligible_with_conditions",
+        "ineligible",
+        "refer_to_underwriter"
+      ],
+      "title": "EligibilityDecision",
+      "type": "string"
+    },
+    "LoanCondition": {
+      "description": "Individual loan condition -- base shape copied verbatim from cre_underwriting, extended\nwith the citation ABA \u00a75.9 requires (no Decision without policy_refs/evidence_refs/trace_id/\nproduced_by): rule_id and policy_refs are required, not defaulted, so a condition cannot be\nconstructed without naming what it violated. cell_key/cell_value are set only for a\nmatrix-derived violation (an expression/ratio violation has no single resolved cell).",
+      "properties": {
+        "condition_id": {
+          "title": "Condition Id",
+          "type": "string"
+        },
+        "condition_type": {
+          "$ref": "#/$defs/ConditionType",
+          "description": "When condition must be satisfied"
+        },
+        "category": {
+          "description": "Category (e.g., 'Credit', 'Appraisal')",
+          "title": "Category",
+          "type": "string"
+        },
+        "description": {
+          "description": "Condition text",
+          "title": "Description",
+          "type": "string"
+        },
+        "responsible_party": {
+          "default": "borrower",
+          "description": "Who must satisfy",
+          "title": "Responsible Party",
+          "type": "string"
+        },
+        "severity": {
+          "default": "standard",
+          "description": "standard, material, waivable",
+          "title": "Severity",
+          "type": "string"
+        },
+        "rule_id": {
+          "description": "The eligibility rule_id this condition cites",
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "policy_refs": {
+          "description": "source_refs ref_id(s) the cited rule implements",
+          "items": {
+            "type": "string"
+          },
+          "title": "Policy Refs",
+          "type": "array"
+        },
+        "cell_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Resolved matrix cell key, if the rule was a MatrixCondition",
+          "title": "Cell Key"
+        },
+        "cell_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Resolved matrix cell value, if the rule was a MatrixCondition (numeric, or 'NA')",
+          "title": "Cell Value"
+        }
+      },
+      "required": [
+        "condition_type",
+        "category",
+        "description",
+        "rule_id",
+        "policy_refs"
+      ],
+      "title": "LoanCondition",
+      "type": "object"
+    }
+  },
+  "description": "Final DSCR eligibility recommendation with conditions.\n\nThis is the TDecision type parameter for the dscr domain.",
+  "properties": {
+    "decision": {
+      "$ref": "#/$defs/EligibilityDecision",
+      "description": "Eligible/ineligible/conditional"
+    },
+    "conditions": {
+      "description": "Loan conditions",
+      "items": {
+        "$ref": "#/$defs/LoanCondition"
+      },
+      "title": "Conditions",
+      "type": "array"
+    },
+    "rationale": {
+      "description": "Eligibility rationale",
+      "title": "Rationale",
+      "type": "string"
+    },
+    "key_concerns": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Key Concerns",
+      "type": "array"
+    }
+  },
+  "required": [
+    "decision",
+    "rationale"
+  ],
+  "title": "EligibilityRecommendation",
+  "type": "object"
+}

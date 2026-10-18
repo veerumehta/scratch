@@ -1,0 +1,1654 @@
+{
+ "acra_vs_jtbd_std": {
+  "left_items": 123,
+  "right_items": 0,
+  "left_best": {
+   "none": 123
+  },
+  "right_unmatched": 0,
+  "rows": [
+   {
+    "id": "PRE-TYPES",
+    "section": "Appraisal Review",
+    "title": "Confirms the subject property type is on Acra's eligible Standard DSCR list \u2014 SFR, Townhome, PUD, Warrantable Condo, Non-Warrantable Condo, Condotel / PUDtel, 2-4 Units or Manufactured \u2014 and routes each restricted type to its cap and condition overlay.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PRE-TYPE-CAPS",
+    "section": "Appraisal Review",
+    "title": "Applies the property-type caps and conditions printed for restricted types \u2014 Non-Warrantable Condo 80% / 75% / 75% with \u22125% CLTV in Florida and minimum DSCR 1.0; Condotel / PUDtel 75% / 70% / 65% with \u22125% in Florida and minimum DSCR 1.0; 2-4 Unit maximum CLTV 80%; Manufactured Home 65% / 60% / 60%.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PRE-RURAL",
+    "section": "Appraisal Review",
+    "title": "Applies the rural / unique property overlay \u2014 maximum CLTV 80% purchase, 75% rate & term, 70% cash-out; minimum FICO 700; minimum DSCR 1.00 \u2014 and flags that LTV may be further reduced where marketing time is excessive or the property exhibits unusual, inadequate or peculiar functionality.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PRE-DECLMKT",
+    "section": "Appraisal Review",
+    "title": "Confirms a 5-percentage-point CLTV reduction from the applicable cap is applied whenever the appraisal identifies the subject as located in a declining market.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PRE-LOCATION",
+    "section": "Appraisal Review",
+    "title": "Confirms the subject property is not located in South Dakota, the only ineligible state under the 8.17.2026 Standard Summary, noting the earlier 6.15.2026 copy also excluded Alaska and North Dakota.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PRE-VACANT-ELIG",
+    "section": "Appraisal Review",
+    "title": "Determines whether a vacant subject property is eligible \u2014 a vacant property may be purchased with rents taken from the 1007 / 1025, while a vacant investment property may be refinanced only under the \u00a710.17 conditions.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PRE-VACANT-RT",
+    "section": "Appraisal Review",
+    "title": "Confirms a rate & term refinance of a vacant property meets the \u00a710.17 conditions \u2014 minimum 700 FICO; maximum 70% CLTV up to $1,000,000 and 65% up to $2,000,000; minimum 1.000 DSCR; at least a two-year prepayment penalty where allowable; full amortization; impounds; six months reserves.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PRE-VACANT-CO",
+    "section": "Appraisal Review",
+    "title": "Confirms a cash-out refinance of a vacant property meets the Summary's conditions \u2014 minimum 700 FICO; DSCR of 1.15 or greater; at least a three-year prepayment penalty where allowable; no interest-only; impounds; six months reserves; maximum 60% CLTV for loan amounts under $1,500,000; and at least 15 months of ownership.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PRE-LISTDEF",
+    "section": "Appraisal Review",
+    "title": "Determines whether the subject is 'listed for sale' under \u00a711.5 \u2014 listed at any point in the six months measured from the last listing date to the Application Date \u2014 so the listed-for-sale conditions can be applied.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PRE-LISTCOND",
+    "section": "Appraisal Review",
+    "title": "Confirms a subject listed for sale within six months meets every \u00a711.5 condition \u2014 non-delinquent lien, tenant occupancy, DSCR of 1.0 or greater, three-year prepayment penalty unless state-restricted, 24 months reserves, fully amortizing, 65% LTV / CLTV on the lesser of appraised value or lowest recent listing price, no subordinate financing, and impounds.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PRE-MIXEDUSE",
+    "section": "Appraisal Review",
+    "title": "Identifies a mixed-use, adult care or assisted living property, confirms it is approved under the \u00a710.7 conditions that the excerpt does not reproduce, and applies the minimum DSCR of 1.2 those properties require.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "AFC-GIFT-MIN",
+    "section": "Asset Assessment",
+    "title": "Confirms that when gift funds are used on an investment property purchase the borrower contributes at least 10% of the purchase price from their own sourced and seasoned funds.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "AFC-SEASON-THRESH",
+    "section": "Asset Assessment",
+    "title": "Determines whether seasoning-of-funds verification is required \u2014 on loans over 70% CLTV for consumer transactions, or on business-purpose loans where funds to close exceed $50,000 and CLTV exceeds 70% \u2014 with Foreign Nationals always subject to 60-day seasoning.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "AFC-VERIF-DOCS",
+    "section": "Asset Assessment",
+    "title": "Confirms that fund seasoning verification, when required, is supported by an acceptable document \u2014 the borrower's bank statement(s) for the most recent month(s) or a VOD reflecting current and average balance.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "AFC-30DAY-MIN",
+    "section": "Asset Assessment",
+    "title": "Confirms every transaction is supported by at least 30 days of asset documentation for funds to close, regardless of transaction type, and flags whether any domestic seasoning period applies beyond that minimum.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "AFC-FOREIGN-REPAT",
+    "section": "Asset Assessment",
+    "title": "Confirms funds held in a foreign bank or currency are repatriated into a US account at least three business days before closing, and flags whether the rule applies to any borrower holding funds abroad or only to Foreign Nationals.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "AFC-RESERVE-LTV80",
+    "section": "Asset Assessment",
+    "title": "Confirms six months of PITIA reserves are documented whenever the loan's LTV exceeds 80.00%.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "AFC-RESERVE-FICO",
+    "section": "Asset Assessment",
+    "title": "Confirms twelve months of reserves are documented whenever the decisioning FICO is below 620.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "AFC-RESERVE-TXN",
+    "section": "Asset Assessment",
+    "title": "Confirms transaction-driven reserve requirements are met \u2014 six months for a first-time homebuyer, six months for a vacant-property rate & term or cash-out refinance, 24 months for a property listed for sale (cash-in-hand may count), and 12 months of the subject's payment for a forbearance / mortgage late without timely rent receipts.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "AFC-RESERVE-TOTAL",
+    "section": "Asset Assessment",
+    "title": "Aggregates every reserve trigger that applies to the loan \u2014 LTV above 80% (6 months PITIA), FICO below 620 (12), first-time homebuyer (6), vacant refinance (6), listed for sale (24), forbearance / late (12), and 2-for-1 substitution for unobtainable rent loss insurance \u2014 into one governing requirement, applying the highest trigger with the substitution added, and confirms verified reserves meet it.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-ENTITY-ELIG",
+    "section": "Compliance and Closing",
+    "title": "Confirms a business entity borrower is financed only on a business-purpose transaction secured by investment property, per \u00a73.12.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-TITLE-HOLD",
+    "section": "Compliance and Closing",
+    "title": "Confirms title to the collateral is held either directly by an individual or by an entity that Acra has accepted in its sole discretion.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-GUAR-20PCT",
+    "section": "Compliance and Closing",
+    "title": "Confirms every individual with 20% or greater direct or indirect ownership in an entity borrower has executed a joint-and-several recourse personal guarantee on Exhibit 7 or an Acra-approved form.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-SPE-DEF",
+    "section": "Compliance and Closing",
+    "title": "Confirms the entity borrower qualifies as a single-purpose entity \u2014 no assets other than residential investment or rental properties, engaged in owning and operating them \u2014 and is not a series LLC.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-BORR-ONTITLE",
+    "section": "Compliance and Closing",
+    "title": "Confirms every entity that will directly own and appear on title to the subject property is named as a borrowing entity on the loan.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-OWNCHG-LOOKBACK",
+    "section": "Compliance and Closing",
+    "title": "Confirms no change to an entity's ownership percentages made within 30 days before the application date or during the application process is used to circumvent the required personal guarantors.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-ENTITY-TYPES",
+    "section": "Compliance and Closing",
+    "title": "Confirms the entity or guarantor type is one Acra allows \u2014 domestic C or S Corporation, single-purpose LLC (not series), LLP, LLLP, GP, LP or Sole Proprietorship \u2014 and that the entity is US-formed, US-based and not foreign-owned.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-PROHIB-TYPES",
+    "section": "Compliance and Closing",
+    "title": "Confirms the entity borrower is not a prohibited type \u2014 cooperative, irrevocable trust, land trust, IRA, non-profit or joint venture \u2014 and that ownership nesting does not exceed one wholly-owned subsidiary that is itself owned by individuals.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-FTHB-ATTEST",
+    "section": "Compliance and Closing",
+    "title": "Confirms at least one guarantor of an entity borrower has prior homeownership experience and at least one borrower or guarantor attests on the application to not being a first-time homebuyer, conditioning for supporting documentation where ownership is not evident.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-FORM-DOCS",
+    "section": "Compliance and Closing",
+    "title": "Confirms the loan file contains a complete, legible Certificate of Formation or Articles of Organization, with all amendments, for every entity borrower \u2014 required without exception and not waivable by borrower letter.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-OPAGREEMENT",
+    "section": "Compliance and Closing",
+    "title": "Confirms the file contains a complete Operating Agreement (LLCs / partnerships) or Bylaws (corporations), with all amendments and referenced exhibits, stating management type, authorization to borrow and mortgage, and designated signers, and that it does not conflict with the formation documents.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-OWN-EVID",
+    "section": "Compliance and Closing",
+    "title": "Confirms documentation evidencing every owner's interest in the entity borrower is on file \u2014 the Operating Agreement or membership certificates for LLCs and partnerships; stock certificates or the stock ledger (with an Affidavit of Lost Stock Certificate where unavailable) for corporations; or K-1s plus a CPA letter where both are unavailable.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-NAME-MATCH",
+    "section": "Compliance and Closing",
+    "title": "Confirms that the entity name and every owner, officer and signer name on the entity documents match exactly the names on government-issued identification and the loan documents, with a letter of explanation on file for any discrepancy.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-GOODSTAND",
+    "section": "Compliance and Closing",
+    "title": "Confirms the entity borrower's Certificate of Good Standing (or equivalent) is valid within ninety days of the closing date, and that a Certificate of Foreign Qualification is on file when the entity is formed in a state other than where it does business or where the property is located.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-EIN-TAXID",
+    "section": "Compliance and Closing",
+    "title": "Confirms the entity borrower's Employer Identification Number is documented by IRS Form SS-4 or the TIN / EIN issuance letter, or that an EIN exception request with a letter of explanation has been submitted to Acra's Legal Department.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-AUTH-POA",
+    "section": "Compliance and Closing",
+    "title": "Confirms a Unanimous Written Consent or Board Resolution signed by all members authorizes the transaction with Acra and identifies the loan-document signers, and that a Power of Attorney \u2014 not the Consent / Resolution \u2014 is used to designate any attorney-in-fact for a personal guarantee.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-BGCHECK",
+    "section": "Compliance and Closing",
+    "title": "Confirms borrower / guarantor due diligence \u2014 background, OFAC, criminal, litigation, judgment and lien searches on the entity, its recourse guarantors and any party owning 20% or more or holding managing control \u2014 is current as of loan approval or draw.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-REVTRUST",
+    "section": "Compliance and Closing",
+    "title": "Confirms title vesting in an inter vivos revocable trust meets all of Acra's conditions \u2014 a complete trust or Certification of Trust with the required statements, validity under state law, revocability, natural-person trustors as primary beneficiaries, trustee powers to hold title and mortgage, and a Senior Management exception where trustor and trustee differ.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CMP-SRC-VERSION",
+    "section": "Compliance and Closing",
+    "title": "Confirms the loan is underwritten to the controlling Acra sources for the Standard program \u2014 the DSCR Program Summary dated 8.17.2026 (which supersedes the 6.15.2026 V1.1 copy) and the Seller's Guide excerpt dated August 28, 2026 \u2014 applies the four version differences correctly, and records any Acra confirmation-register responses applied.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-TRADELINE",
+    "section": "Credit Review & Analysis",
+    "title": "Confirms tradeline depth meets the Credit Requirements panel \u2014 no overlay for applicants with scores from three repositories; for two or fewer scores, two tradelines with 24-month history or three tradelines with 12-month history.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-ONENOSCORE",
+    "section": "Credit Review & Analysis",
+    "title": "Applies the 1-or-no-score / deficient-tradeline overlay \u2014 maximum 65% LTV / CLTV, DSCR of 1.1 or greater, 24 months 0x30 housing history \u2014 and the score rules printed with it: use the actual single score up to a maximum of 700, and price a no-score file at the 700 tier.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-DECSCORE",
+    "section": "Credit Review & Analysis",
+    "title": "Determines the decisioning credit score for the file, recording the convention applied (middle of three, lower of two, actual single score capped at 700) and the guarantor whose score is used for an entity borrower, since the Standard Summary does not state the rule.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-MTG-RATING",
+    "section": "Credit Review & Analysis",
+    "title": "Determines the mortgage / rental payment rating over the trailing 12 months across properties the borrower owns or rents, considering all mortgages reported on credit and documenting history on unreported mortgages for the primary residence(s), second residence(s) and subject.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-HIST-SCOPE",
+    "section": "Credit Review & Analysis",
+    "title": "Confirms housing-history documentation on a DSCR file is scoped to the subject property, principal residence and second home(s) of the borrower and guarantor(s), with additional properties documented only where the file suggests a major credit event.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-MATURED",
+    "section": "Credit Review & Analysis",
+    "title": "Confirms a matured mortgage loan used in the housing-history rating is evaluated as of its maturity date and that any extension of the maturity date is documented in writing.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-MTGHIST-TIER",
+    "section": "Credit Review & Analysis",
+    "title": "Applies the mortgage-history CLTV caps printed in the Housing History & PCEs panel \u2014 1x30x12: 80% purchase / 75% refinance; 0x60x12: 75% / 70%; 0x90x12: 65%; 0x120x12: ineligible \u2014 while recording that the labels' definitions are pending Acra's confirmation.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-BKFC-SEASON",
+    "section": "Credit Review & Analysis",
+    "title": "Applies the bankruptcy and foreclosure seasoning caps \u2014 36 months or more: no restriction; 24\u201335 months: 80% purchase / 75% refinance; 12\u201323 months: 65%; under 12 months: ineligible \u2014 measured from the event to the application, with the measurement convention pending Acra's confirmation.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-SSDIL-SEASON",
+    "section": "Credit Review & Analysis",
+    "title": "Applies the short sale, deed-in-lieu and modification seasoning caps \u2014 24 months or more: no restriction; 12\u201323 months: 80% purchase / 75% refinance; under 12 months: 75% / 70% \u2014 and flags 'FB Taken \u2264 6 Mos: Case-by-case' for underwriter review pending Acra's definition.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-ESCROW-WVR",
+    "section": "Credit Review & Analysis",
+    "title": "Determines escrow-waiver eligibility \u2014 maximum loan amount $1,500,000, maximum CLTV 80%, minimum FICO 700, mortgage history no worse than 0x30x24, and no Foreign National borrower \u2014 and confirms impounds are established where any transaction separately requires them.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-IMPOUNDS-REQ",
+    "section": "Credit Review & Analysis",
+    "title": "Confirms tax and insurance impounds are established, without exception, on transactions that require them \u2014 first-time homebuyer files, vacant-property rate & term and cash-out refinances, and properties listed for sale within six months.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-GUAR-SCOPE",
+    "section": "Credit Review & Analysis",
+    "title": "Identifies every party whose credit must be evaluated on an entity-borrower loan \u2014 each individual with 20% or greater direct or indirect ownership who executes the recourse guarantee \u2014 and confirms the tradeline, housing-history, credit-event and FICO requirements are tested for each such guarantor, not only the guarantor supplying the decisioning score.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BOR-CITZ",
+    "section": "Identification Requirements",
+    "title": "Classifies every borrower and guarantor into one of the five eligible citizenship types \u2014 US Citizen, Permanent Resident, Non-Permanent Resident, Foreign National or ITIN \u2014 since each type carries its own identification, loan-amount and CLTV rules on the Standard program.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BOR-PRA-ID",
+    "section": "Identification Requirements",
+    "title": "Verifies a Permanent Resident borrower provides an unexpired Permanent Resident Alien card and a Social Security card or Form SSA-89.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BOR-NPR-ID",
+    "section": "Identification Requirements",
+    "title": "Verifies a Non-Permanent Resident borrower provides proof of legal residency \u2014 an unexpired Employment Authorization Document (EAD) or a valid visa.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BOR-NPR-LIMITS",
+    "section": "Identification Requirements",
+    "title": "Applies the Non-Permanent Resident limit printed as 'Max Loan Amount: $1.5M: Max CLTV 80%', testing both the $1,500,000 loan amount and the 80% CLTV while flagging whether they are two independent limits or one conditional limit.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BOR-FN-DEF",
+    "section": "Identification Requirements",
+    "title": "Determines whether a borrower is a Foreign National \u2014 one whose primary residence is not in the United States and who is a non-resident alien not authorized to live or work in the US \u2014 as distinct from a Non-Permanent Resident or a US-resident ITIN holder.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BOR-FN-CAPS",
+    "section": "Identification Requirements",
+    "title": "Applies the Foreign National caps \u2014 maximum CLTV 70% on a purchase and 65% on a rate & term or cash-out refinance \u2014 and records that the loan is priced at a FICO equal to 700, noting no maximum loan amount is printed for foreign nationals.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BOR-ITIN-DEF",
+    "section": "Identification Requirements",
+    "title": "Determines whether a borrower is an ITIN borrower \u2014 a non-resident unable to provide any of the Non-Permanent Resident documents \u2014 and flags US-resident ITIN holders, whose eligibility the Summary and \u00a73.10 leave open.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BOR-ITIN-CAPS",
+    "section": "Identification Requirements",
+    "title": "Applies the ITIN borrower limits \u2014 maximum loan amount $1,000,000, minimum FICO 640, and maximum CLTV by FICO tier: 70% purchase / 65% refinance at 'FICO 700', 65% / 60% at 660\u2013699, 60% / 60% at 640\u2013659.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BOR-ITIN-CREDIT",
+    "section": "Identification Requirements",
+    "title": "Confirms that credit scores and tradelines used to qualify are reported under the borrower's correct identifier \u2014 the ITIN for an ITIN borrower or the SSN for other borrowers \u2014 so they can be relied on for the FICO and tradeline requirements.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BOR-FN-RESTRICT",
+    "section": "Identification Requirements",
+    "title": "Applies the Foreign National restrictions stated outside the citizenship panel \u2014 ineligible for the escrow waiver \u2014 and flags the Credit Requirements panel's unscoped 'Foreign National ineligible' entry for Acra to confirm whether it is limited to the one-or-no-score provision.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BOR-FTHB-DEF",
+    "section": "Identification Requirements",
+    "title": "Determines whether the application meets Acra's First Time Home Buyer definition \u2014 an application where all applicants have never previously owned real property \u2014 so that the FTHB conditions can be applied.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "FN-BIZPURPOSE",
+    "section": "Identification Requirements",
+    "title": "Confirms a Foreign National borrower is financed only on a business-purpose transaction secured by investment property, per \u00a73.10.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "FN-FX-REVIEW",
+    "section": "Identification Requirements",
+    "title": "Confirms the underwriter has reviewed a Foreign National applicant's post-close financial position and ability to mitigate exchange-rate fluctuations, as \u00a73.10 requires.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "FN-OFAC-STATE",
+    "section": "Identification Requirements",
+    "title": "Confirms a Foreign National file is screened against the OFAC restrictions and state-specific exclusions of \u00a73.10, which the excerpt refers to but does not reproduce, and conditions the file on Acra supplying them.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "FN-ASSET-USD",
+    "section": "Identification Requirements",
+    "title": "Confirms assets held in foreign accounts are verified in U.S. dollar equivalency at the current exchange rate using xe.com or the Wall Street Journal conversion table.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "FN-FUNDS-ESCROW",
+    "section": "Identification Requirements",
+    "title": "Confirms a Foreign National's funds to close are on deposit with the escrow / closing agent at least three business days \u2014 counting Saturdays \u2014 before the closing date.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "FN-SEASON-60",
+    "section": "Identification Requirements",
+    "title": "Confirms a Foreign National's funds are documented with the two most recent statements and seasoned at least 60 days regardless of LTV / CLTV \u2014 or, if not seasoned, supported by a letter of explanation and a 60-day chain of funds \u2014 with any non-English statements translated.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "FN-CREDIT-REF",
+    "section": "Identification Requirements",
+    "title": "Confirms a Foreign National provides one acceptable credit reference \u2014 a U.S. credit report with at least two tradelines (one at least two years old), an international credit report, an original credit reference letter from an internationally known financial institution, or a 60-day foreign bank statement evidencing the banking relationship.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "FN-CLOSING-DOCS",
+    "section": "Identification Requirements",
+    "title": "Confirms the Foreign National closing requirements are met \u2014 a copy of the current passport, visa or ITIN; a title and closing agent approved or vetted by Acra; any Power of Attorney conforming to Acra and title requirements; and an executed IRS Form W-8BEN.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "FN-NOTARY",
+    "section": "Identification Requirements",
+    "title": "Confirms documents signed outside the U.S. are notarized by a U.S. embassy or consular official with the embassy / consular seal, or \u2014 in a Hague Convention country \u2014 acknowledged by an authorized notary with an apostille in English, in each case acceptable to the title company.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-CALC",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Calculates the Debt Service Coverage Ratio as qualifying rent divided by PITIA using the first payment due under the Note, per Acra's stated methodology, on every file that qualifies by a calculated ratio.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-PITIA",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Defines and validates the PITIA components used as the DSCR denominator \u2014 principal, interest, real estate taxes, property insurance, homeowner's / condominium association fees \u2014 plus any subordinate financing payment, each supported by its source document.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-SUBFIN",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Confirms an existing subordinate lien's monthly payment is included in the DSCR denominator, without inferring from the calculation rule that subordinate financing is eligible, which remains an open question for Acra.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-QUALRENT",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Determines the qualifying rent for the DSCR numerator by applying \u00a75.32's formula (lesser of annual in-place rent or market rent) while identifying files that rely on the same section's note permitting the higher of actual or market rents, which Acra has been asked to reconcile.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-ACTRENT-DOC",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Verifies that actual rent above market rent is supported by two consecutive months of rental income receipt and a lease continuing at least three months after closing, and that no security deposit or prepaid rent is counted as receipt.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-VACANT-RENT",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Confirms that on the purchase of a vacant property the qualifying rent is taken from the Form 1007 or 1025 appraisal rent schedule, since no in-place rent exists.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-1007-REQ",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Verifies a Form 1007 from a state-licensed appraiser is obtained wherever \u00a714.12 requires it \u2014 on all DSCR qualifying files, on lease-option purchases funded from excess rent, and whenever proposed rental income is used to qualify.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-RENT-XCESS",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Verifies that a single-family investment property whose lease reflects excessive monthly rent is supported by evidence the rent is typical for the area \u2014 classified ads, an appraiser-completed 1007, or a market rent survey from a local real estate or rental management company.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-STR-FORM",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Confirms that a property occupied as a short-term rental has an acceptable rent form \u2014 an STRpro or similar short-term-rental appraisal form signed by an appropriately licensed appraiser may replace the Form 1007.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-STR-LEDGER",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Verifies short-term-rental actual rents are documented by 12-month ledgers from condotel management companies, property managers, AirBnB, VRBO or similar, and flags how the ledger converts to qualifying rent and whether the \u00a75.32 receipt / lease conditions apply.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-STR-CAPS",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Applies the short-term-rental overlay \u2014 maximum 75% LTV / CLTV on a purchase and 70% on a rate & term or cash-out refinance, minimum FICO 640 \u2014 to any loan qualifying with short-term rental income.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-FORB-OVL",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Applies the forbearance / mortgage-late overlay: where the applicant has had forbearance or a mortgage late within the last 12 months, a tenant-occupied subject requires either timely receipt of the prior two months' rent or 12 months of the subject's payment in reserve, which may come from cash-in-hand.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-LTV80",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Applies the above-80% LTV overlay \u2014 minimum DSCR of 1.20, six months PITIA reserves, and eligibility limited to SFR, Warrantable Condos outside Florida, Townhome and PUD \u2014 noting the test is stated in LTV while the matrix is labelled CLTV.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-SUB1-NORATIO",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Applies the caps for a DSCR below 1.0 or a No Ratio file \u2014 maximum CLTV 75% purchase, 70% rate & term, 65% cash-out \u2014 and the 640 minimum FICO.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-NORATIO-DOCS",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Confirms a No Ratio DSCR file carries a Form 1007, does not require proof of actual rents, may be a short-term or long-term rental with appropriate pricing, and remains subject to the rent loss insurance requirement.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LFC-DSCR-FINAL",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Determines the governing minimum DSCR as the highest of every situation-specific minimum Acra publishes \u2014 1.20 above 80% LTV, 1.0 above $2,000,000, 1.1 for one or no score, 1.00 rural / unique, 1.0 non-warrantable condo / condotel / PUDtel, 1.150 first-time homebuyer, 1.000 vacant rate & term, 1.15 vacant cash-out, 1.0 listed for sale, 1.2 mixed use \u2014 and confirms the ratio meets it, flagging No Ratio files where a minimum applies.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-IO-DENOM",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Determines the DSCR denominator on an interest-only loan by applying Acra's rule that the DSCR uses the first payment due under the Note \u2014 the interest-only payment plus taxes, insurance, association fees and any subordinate payment \u2014 while computing the fully amortized alternative pending Acra's confirmation.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "RLI-PURPOSE",
+    "section": "Insurance Coverage Sufficiency & Policy Assessment",
+    "title": "Confirms rent loss insurance coverage, when obtained, insures rental income losses incurred while the subject property is being rehabilitated following a casualty event.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "RLI-LTV-TRIGGER",
+    "section": "Insurance Coverage Sufficiency & Policy Assessment",
+    "title": "Confirms six months of rent loss insurance is obtained on a one- to four-unit non-owner-occupied income property with LTV above 70% when subject rents are used to qualify \u2014 including No Ratio DSCR files.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "RLI-CLTV-EXEMPT",
+    "section": "Insurance Coverage Sufficiency & Policy Assessment",
+    "title": "Confirms loans with CLTV at or below 70% are exempt from the rent loss insurance requirement, and flags the LTV/CLTV basis mismatch between the coverage trigger and the exemption.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "RLI-RESERVE-SUB",
+    "section": "Insurance Coverage Sufficiency & Policy Assessment",
+    "title": "Confirms that when required rent loss insurance cannot be obtained, the borrower has substituted two months of reserves for every one month of rent loss coverage not provided.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-OCCUPANCY",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms the subject property's occupancy is classified Investment (non-owner occupied), the only occupancy type eligible under the Acra Standard DSCR program.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-INV-PROP",
+    "section": "Loan Program Eligibility",
+    "title": "Verifies the subject property meets Acra's investment property definition \u2014 a one- to four-unit residential dwelling or a condominium / PUD unit not occupied by the owner and leased as a principal year-round residence to others.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-BIZPURPOSE",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms a Business Purpose Attestation (Exhibit 8) or Acra-approved equivalent is executed with the loan documents whenever the borrower qualifies on the subject property's actual or market cash flow under a business-purpose transaction.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-BIZ-CONSUMER",
+    "section": "Loan Program Eligibility",
+    "title": "Classifies the transaction as business-purpose or consumer-purpose and records the basis, since the classification drives the attestation requirement and the funds-to-close seasoning threshold ($50,000 and 70% CLTV for business-purpose vs 70% CLTV for consumer).",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-PURPOSE",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms the loan purpose maps to one of the three matrix columns \u2014 Purchase, Rate & Term Refinance or Cash-Out Refinance \u2014 and identifies delayed-financing transactions, which the matrix addresses only by the $1.5MM footnote.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-QUAL-METHOD",
+    "section": "Loan Program Eligibility",
+    "title": "Determines and records whether the loan qualifies by a calculated DSCR (\u00a75.32) or as No Ratio DSCR (\u00a75.33), since the two paths carry different documentation, caps and minimum-FICO rules that downstream JTBDs depend on.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-NO-DTI",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms no debt-to-income ratio is calculated or used as a decisioning factor for a DSCR-qualified borrower, and that borrowing-entity income documentation is not required, per the Program Summary and \u00a77.3.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-RENTFORM",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms a Form 1007 rent schedule is in the file on every DSCR transaction \u2014 expressly including No Ratio \u2014 from the original or any state-licensed appraiser, and identifies 2-4 unit files where a Form 1025 is relied on pending Acra's confirmation.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-RIDER",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms execution of the One- to Four-Family Rider with the loan documents on every investment-property purchase or refinance, and that the associated rent loss insurance obligation under \u00a723.40 is identified.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-REO-SCOPE",
+    "section": "Loan Program Eligibility",
+    "title": "Determines which real estate must be listed on the application and Schedule of Real Estate Owned for a DSCR borrower \u2014 only the subject property, principal residence and second home(s) are required.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-LOAN-AMT",
+    "section": "Loan Program Eligibility",
+    "title": "Validates that the requested loan amount falls within the Standard DSCR range of $100,000 to $3,000,000 and is expressed in a $50 increment.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-SELLER-CONC",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms seller concessions and other interested-party contributions on a purchase do not exceed 3% of the sale price, per the Standard DSCR Loan Amount panel.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-FTHB-COND",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms a first-time-homebuyer application meets every condition Acra sets for FTHB on DSCR \u2014 minimum 700 FICO, maximum 70% CLTV, DSCR of 1.15 or greater, loan amount of $1,000,000 or less, fully amortizing (no interest-only), impounds and six months reserves.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LFC-FICO-MTX",
+    "section": "Loan Program Eligibility",
+    "title": "Determines the matrix maximum CLTV by locating the loan in its loan-amount tier (\u2264 $1.5M; $1,500,001\u2013$2M; $2,000,001\u2013$3M), mapping the decisioning FICO to the printed minimum-FICO row, and reading the cap for the loan's purpose column, treating 'NA' as no published value.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LFC-FICO-FLOOR",
+    "section": "Loan Program Eligibility",
+    "title": "Identifies loans whose decisioning score falls below the lowest printed matrix row \u2014 below 600 for loans of $1,500,000 or less, below 620 (purchase) or 640 (refinance) for $1,500,001\u2013$2,000,000, below 700 above $2,000,000 \u2014 and routes them for Acra confirmation rather than assuming eligibility.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LFC-CASHHAND",
+    "section": "Loan Program Eligibility",
+    "title": "Verifies cash-in-hand on a cash-out refinance does not exceed the matrix footnote caps \u2014 $1,000,000 for loans of $1,500,000 or more and $500,000 for loans below $1,500,000 when LTV exceeds 65% \u2014 with unlimited cash-in-hand when LTV is 65% or less, flagging the LTV/CLTV basis and footnote-scope questions.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LFC-DELAY-FIN",
+    "section": "Loan Program Eligibility",
+    "title": "Verifies a delayed-financing transaction does not exceed the matrix-footnote loan amount cap of $1.5MM and is supported by evidence of the prior all-cash acquisition, flagging the open questions of which matrix column and cash-in-hand rule govern it.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LFC-SMALL-LOAN",
+    "section": "Loan Program Eligibility",
+    "title": "Applies the loan-amount cap for loans below $200,000: maximum CLTV 80% on a purchase and 75% on a rate & term or cash-out refinance, regardless of the matrix value.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LFC-JUMBO-DSCR",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms a loan above $2,000,000 has a calculated DSCR of 1.0 or greater, which also excludes No Ratio and sub-1.0 qualification at that loan size.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LFC-CLTV-FINAL",
+    "section": "Loan Program Eligibility",
+    "title": "Determines the single governing maximum CLTV by taking the lowest of every applicable published cap (matrix, loan-size, ratio, citizenship, credit-event, property-type, transaction and product caps), then applying the declining-market and Florida 5-point reductions, and confirms the loan's CLTV does not exceed that result.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LFC-FICO-FINAL",
+    "section": "Loan Program Eligibility",
+    "title": "Determines the governing minimum decisioning FICO as the highest of every feature-specific floor Acra publishes \u2014 matrix tier (600 / 620 / 700), DSCR < 1.0 or No Ratio (640), interest-only (640), short-term rental (640), ITIN (640), first-time homebuyer (700), vacant refinance (700), rural / unique (700), escrow waiver (700) \u2014 and confirms the score meets it.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PPT-PRODUCTS",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms the loan product is one of Acra's eligible Standard DSCR products \u2014 30 Yr Fixed; 5/1 ARM; 7/1 ARM; Interest Only 5 Yr / 30 (on 30 Yr Fixed, 5/1 or 7/1 ARM); or Interest Only 10 Yr / 40 Year Term.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PPT-ARM-TERMS",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms the ARM index, cap structure and margin match Acra's published terms \u2014 1 Yr CMT, 2/2/6 caps, and margin by decisioning score band: 3.00 (760+), 3.25 (720\u2013759), 3.50 (700\u2013719), 3.75 (680\u2013699), 4.00 (660\u2013679), 4.25 (640\u2013659), 5.00 (600\u2013639).",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PPT-IO-PARAMS",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms an interest-only loan meets the published interest-only parameters \u2014 minimum loan amount $250,000, maximum $3,000,000 and minimum decisioning FICO 640 \u2014 for the 5 Yr / 30 fixed and 5/1 or 7/1 ARM interest-only products.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PPT-IO-1040",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms an Interest Only 10 Yr / 40 Year Term loan does not exceed the 80% maximum LTV / CLTV and the $3,000,000 maximum loan amount, in addition to the $250,000 minimum and 640 FICO floor.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PPT-IO-EXCL",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms interest-only financing is not used on a transaction that must be fully amortizing \u2014 first-time homebuyer files, vacant-property rate & term or cash-out refinances, and properties listed for sale within six months.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PPT-IO-PMTCALC",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms the interest-only payment on the Note equals the amount sufficient to pay accrued interest monthly at origination and that payments recast to a fully amortized payment for the balance of the term after the interest-only period.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PPT-SUBFIN-HELOC",
+    "section": "Loan Program Eligibility",
+    "title": "Identifies subordinate / secondary financing on the loan, applies the HELOC rule that CLTV is calculated on the greater of the credit line limit or current balance where subordinate financing is allowable, confirms none exists on a listed-for-sale property, and flags eligibility for Acra confirmation.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PPT-PPP-STRUCT",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms the prepayment penalty term and percentage structure match one of Acra's published structures \u2014 5-year (5% fixed or 5/4/3/2/1 stepdown), 4-year (5% or 3% fixed), 3-year (5% or 3% fixed), 2-year (3% fixed), 1-year (3% fixed) \u2014 or No Prepay.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PPT-PPP-MINTERM",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms transaction-specific minimum prepayment terms are met \u2014 at least two years on a vacant-property rate & term refinance, at least three years on a vacant-property cash-out refinance, and at least three years on a property listed for sale \u2014 each 'where allowable' under state law.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PPT-PPP-STATE",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms the prepayment penalty treatment complies with the state-specific restriction printed for the subject property's state (AK, IL, KS, MD, MI, MN, MS, NJ, NM, OH, PA, RI, VA, VT), applying each state's borrower-type, loan-amount, rate, unit-count and transaction conditions.",
+    "best": "none",
+    "matches": []
+   }
+  ],
+  "only_right": [],
+  "left": "acra standard",
+  "right": "ours jtbd standard"
+ },
+ "acra_vs_jtbd_plat": {
+  "left_items": 108,
+  "right_items": 0,
+  "left_best": {
+   "none": 108
+  },
+  "right_unmatched": 0,
+  "rows": [
+   {
+    "id": "PRE-CONDO-CLTV",
+    "section": "Appraisal Review",
+    "title": "Confirms the loan's CLTV does not exceed 75.00% when the subject property is a Warrantable Condo or a Two-Unit dwelling, per the Platinum Select property-type CLTV overlay.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PRE-DECLMKT",
+    "section": "Appraisal Review",
+    "title": "Confirms a 5-percentage-point CLTV reduction from the applicable matrix cap is applied whenever the subject property is located in a declining market, per the Platinum Select location overlay.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PRE-INELIG-TYP",
+    "section": "Appraisal Review",
+    "title": "Confirms the subject property is not a Rural Property, Condotel, Non-Warrantable Condo, or Short-Term Rental, each of which is expressly ineligible for the Platinum Select DSCR program.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PRE-LISTCOND",
+    "section": "Appraisal Review",
+    "title": "Confirms a subject property classified as listed for sale meets every required overlay \u2014 non-delinquent lien, tenant occupancy, channel-minimum DSCR, 3-year prepayment penalty (unless state-restricted), 24 months reserves, full amortization, 65% LTV/CLTV cap, no subordinate financing, and impounds.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PRE-LISTDEF",
+    "section": "Appraisal Review",
+    "title": "Determines whether the subject property is classified as \"listed for sale\" under Acra's definition \u2014 listed for sale at any point in the six months measured from the last listing date to the Application Date.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PRE-LOCATION",
+    "section": "Appraisal Review",
+    "title": "Confirms the subject property is not located in South Dakota or a U.S. territory, both of which are ineligible locations for non-owner-occupied loans under the Platinum Select program.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PRE-TYPES",
+    "section": "Appraisal Review",
+    "title": "Confirms the subject property type is one of Acra's eligible Platinum Select property types \u2014 SFR, Townhome, PUD, Warrantable Condo, or a Two-Unit dwelling.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PRE-VACANT",
+    "section": "Appraisal Review",
+    "title": "Confirms the subject property is tenant-occupied and shows no physical or documentary indication of vacancy, since vacant properties are categorically ineligible under Platinum Select property eligibility standards.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PRE-UNADDRESSED",
+    "section": "Appraisal Review",
+    "title": "Identifies a subject property whose type or use the Platinum Summary neither lists as eligible nor expressly excludes \u2014 three- or four-unit, manufactured home, mixed-use, Adult Care / Assisted Living, PUDtel \u2014 and routes the file for Acra confirmation instead of treating the silence as either permission or prohibition.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "AFC-30DAY-MIN",
+    "section": "Asset Assessment",
+    "title": "Confirms every transaction is supported by at least 30 days of asset documentation for funds to close, regardless of transaction type.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "AFC-FOREIGN-REPAT",
+    "section": "Asset Assessment",
+    "title": "Confirms that funds held in a foreign bank account or foreign currency are repatriated into a US account at least three business days prior to the scheduled closing date.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "AFC-GIFT-MIN",
+    "section": "Asset Assessment",
+    "title": "Confirms the borrower contributes a minimum of 10% of the purchase price from their own sourced and seasoned funds on an investment property transaction, even when gift funds are also used.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "AFC-RESERVE-CLTV",
+    "section": "Asset Assessment",
+    "title": "Confirms that 6 months of reserves are documented whenever the transaction's CLTV exceeds 75%.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "AFC-RESERVE-OTHER",
+    "section": "Asset Assessment",
+    "title": "Confirms reserve documentation meets the applicable non-CLTV trigger requirement \u2014 24 months for a property listed for sale, 12 months of subject payment for recent forbearance/lates, or 2 months per month of unavailable rent loss coverage.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "AFC-SEASON-THRESH",
+    "section": "Asset Assessment",
+    "title": "Determines whether seasoning-of-funds verification is required based on transaction type, CLTV, and the dollar amount of funds to close.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "AFC-VERIF-DOCS",
+    "section": "Asset Assessment",
+    "title": "Confirms that fund seasoning verification, when required, is supported by an acceptable document type \u2014 a recent bank statement or a VOD reflecting current and average balance.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "AFC-UNACCEPT-SRC",
+    "section": "Asset Assessment",
+    "title": "Confirms that no funds used for down payment, closing costs or reserves derive from a source the Acra Seller's Guide designates as unacceptable, and that every large or irregular deposit in the asset documentation is sourced.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "AFC-RESERVE-TOTAL",
+    "section": "Asset Assessment",
+    "title": "Aggregates every reserve trigger that applies to the loan \u2014 6 months for CLTV above 75.00%, 24 months for a property listed for sale, 12 months of subject payment for recent forbearance/lates without rent receipts, and 2-for-1 substitution for unobtainable rent loss insurance \u2014 into one governing reserve requirement, applying the highest trigger with the substitution added, and confirms verified reserves meet it.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-AUTH-POA",
+    "section": "Compliance and Closing",
+    "title": "Confirms a Unanimous Written Consent or Board Resolution authorizes the transaction and identifies loan-document signers, and that a Power of Attorney (not the Consent/Resolution) is used to designate an attorney-in-fact for any personal guarantee signature.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-BGCHECK",
+    "section": "Compliance and Closing",
+    "title": "Confirms background due diligence \u2014 including OFAC, criminal, litigation, judgment, and lien searches \u2014 is current as of loan approval for the entity, its recourse guarantor(s), and any party owning 20% or more or holding managing control.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-BORR-ONTITLE",
+    "section": "Compliance and Closing",
+    "title": "Confirms every entity that will directly own and appear on title to the subject property is named as a borrowing entity on the loan.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-EIN-TAXID",
+    "section": "Compliance and Closing",
+    "title": "Confirms the entity borrower's Employer Identification Number is documented via IRS Form SS-4 or the EIN issuance letter, or that an EIN exception request has been submitted to Acra's Legal Department with a letter of explanation.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-ENTITY-ELIG",
+    "section": "Compliance and Closing",
+    "title": "Confirms a business entity borrower is eligible for financing only on business-purpose transactions secured by investment property, per Acra Platinum Select entity eligibility rules.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-ENTITY-TYPES",
+    "section": "Compliance and Closing",
+    "title": "Confirms the entity or guarantor type is among Acra's allowed domestic entity types and that the entity is US-formed, US-based, and not foreign-owned.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-FORM-DOCS",
+    "section": "Compliance and Closing",
+    "title": "Confirms the loan file contains a complete, legible Certificate of Formation or Articles of Organization, with all amendments, for every entity borrower \u2014 required without exception and not waivable by borrower letter.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-FTHB-ATTEST",
+    "section": "Compliance and Closing",
+    "title": "Confirms at least one guarantor demonstrates prior homeownership experience and at least one borrower or guarantor attests they are not a first-time homebuyer.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-GOODSTAND",
+    "section": "Compliance and Closing",
+    "title": "Confirms the entity borrower's Certificate of Good Standing is valid within ninety days of closing, and that a Certificate of Foreign Qualification is on file when the entity is formed in a different state than where it does business or the property is located.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-GUAR-20PCT",
+    "section": "Compliance and Closing",
+    "title": "Confirms every individual with 20% or greater direct or indirect ownership in an entity borrower has executed a joint-and-several recourse personal guarantee.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-OPAGREEMENT",
+    "section": "Compliance and Closing",
+    "title": "Confirms the loan file contains a complete Operating Agreement (LLCs/Partnerships) or Bylaws (corporations), with all amendments and referenced exhibits, showing borrowing authority and designated signers.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-OWN-EVID",
+    "section": "Compliance and Closing",
+    "title": "Confirms documentation evidencing every owner's interest in the entity borrower is on file \u2014 membership certificates or the Operating Agreement for LLCs/Partnerships, or stock certificates/ledger (or the K-1 plus CPA-letter alternative) for corporations.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-OWNCHG-LOOKBACK",
+    "section": "Compliance and Closing",
+    "title": "Confirms no change to an entity's ownership percentages made within 30 days before the application date or during the application process is used to circumvent the required personal guarantors.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-PROHIB-TYPES",
+    "section": "Compliance and Closing",
+    "title": "Confirms the entity borrower is not organized as a prohibited type (cooperative, irrevocable trust, land trust, IRA, non-profit, or joint venture) and that ownership nesting does not exceed one wholly-owned subsidiary layer.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-REVTRUST",
+    "section": "Compliance and Closing",
+    "title": "Confirms title vesting in an inter vivos revocable trust meets all of Acra's conditions \u2014 a valid, revocable trust established by natural persons, with the Trustor(s) as primary beneficiary and Trustee powers sufficient to mortgage the property.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-SPE-DEF",
+    "section": "Compliance and Closing",
+    "title": "Confirms the entity borrower qualifies as a single-purpose entity holding only residential investment or rental properties and is not organized as a series LLC.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-TITLE-HOLD",
+    "section": "Compliance and Closing",
+    "title": "Confirms title to the collateral is held either directly by an individual or by an entity that Acra has accepted in its sole discretion.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BET-NAME-MATCH",
+    "section": "Compliance and Closing",
+    "title": "Confirms that the entity name and every owner, member, officer and signer name appearing on the entity's formation documents, Operating Agreement or Bylaws, ownership evidence, Good Standing certificate, EIN letter and Consent/Resolution match exactly the names on the government-issued identification and loan documents, and that a letter of explanation is on file for any discrepancy.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CMP-SRC-VERSION",
+    "section": "Compliance and Closing",
+    "title": "Confirms the loan is underwritten to the controlling Acra source versions for Platinum Select \u2014 the Platinum Select DSCR Program Summary dated 8.17.2026 and the Acra DSCR Seller's Guide excerpt dated August 28, 2026 \u2014 or to any later version Acra confirms as governing, and records any Acra confirmation-register responses (Q-01 to Q-22) applied to the file.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-DECSCORE",
+    "section": "Credit Review & Analysis",
+    "title": "Determines which score serves as the decisioning credit score \u2014 the Primary Wage Earner's middle score for individual borrowers, or the highest middle score among equal-ownership guarantors (or the highest-ownership guarantor's score) for entity borrowers.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-ESCROW-WVR",
+    "section": "Credit Review & Analysis",
+    "title": "Determines escrow-waiver eligibility for a Platinum Select DSCR loan based on the $1,500,000 loan-amount cap, a 0x30x24 mortgage payment history, and exclusion of Section 35 (HPML) loans.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-FTHB-XREF",
+    "section": "Credit Review & Analysis",
+    "title": "Cross-references Acra's First-Time Homebuyer program ineligibility, as restated in the Borrower Credit History Requirements panel, confirming no Platinum Select DSCR applicant is flagged as a first-time homebuyer.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-HIST-SCOPE",
+    "section": "Credit Review & Analysis",
+    "title": "Confirms that housing-history documentation on a Platinum Select DSCR loan is scoped to only the subject property, principal residence, and second home(s), unless a major credit event is flagged on another owned property.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-HOUSHIST",
+    "section": "Credit Review & Analysis",
+    "title": "Confirms the borrower's housing payment history meets the \"0x30x12\" standard \u2014 no mortgage or rental payment reported 30 or more days late within the most recent 12 months.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-IMPOUNDS",
+    "section": "Credit Review & Analysis",
+    "title": "Confirms that impounds (escrow) are established, without exception, on a Platinum Select DSCR loan secured by a property listed for sale within the six months preceding the application.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-MATURED",
+    "section": "Credit Review & Analysis",
+    "title": "Confirms that a matured mortgage loan used in a Platinum Select DSCR housing-history rating is evaluated as of its maturity date, and that any maturity extension is documented in writing.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-MINSCORE",
+    "section": "Credit Review & Analysis",
+    "title": "Confirms the decisioning credit score meets the program's 700 minimum and, for Correspondent-channel loans with a 700-719 score, applies the 60% CLTV cap.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-MTG-RATING",
+    "section": "Credit Review & Analysis",
+    "title": "Determines the mortgage/rental payment rating for a Platinum Select DSCR loan by evaluating trailing 12-month payment history across owned and rented properties, sourcing unreported mortgages from independent documentation.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-ONETWOSCR",
+    "section": "Credit Review & Analysis",
+    "title": "Identifies applicants with one or two credit repository scores, applies the corresponding tradeline overlay, and flags the file for underwriter confirmation since the source guideline does not state how the decisioning score itself is set in this scenario.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-PCE-SEASON",
+    "section": "Credit Review & Analysis",
+    "title": "Verifies that any previous credit event (bankruptcy, foreclosure, short sale, or deed-in-lieu) reported for a Platinum Select DSCR applicant or guarantor has at least 48 months of seasoning from the event date to the application date.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-PCESEASON",
+    "section": "Credit Review & Analysis",
+    "title": "Confirms that any previous credit event \u2014 bankruptcy, foreclosure, short sale, deed-in-lieu, or modification \u2014 is seasoned at least 48 months from the event or discharge date to the application date.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-TIEOWN",
+    "section": "Credit Review & Analysis",
+    "title": "Flags entity-borrower loans where two or more guarantors hold an equal largest ownership interest and overall ownership is unequal, since the source guideline does not state whose score governs in that scenario.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-TRADELINE",
+    "section": "Credit Review & Analysis",
+    "title": "Confirms tradeline depth meets the required 2 tradelines with 24-month history or 3 tradelines with 12-month history for applicants with two or fewer repository scores, with no overlay for three-repository applicants.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "CRD-GUAR-SCOPE",
+    "section": "Credit Review & Analysis",
+    "title": "Identifies every party whose credit must be evaluated on an entity-borrower loan \u2014 each individual with 20% or greater direct or indirect ownership who executes the recourse guarantee \u2014 and confirms that the minimum score, tradeline, 0x30x12 housing-history and 48-month previous-credit-event requirements are tested for each such guarantor, not only the guarantor supplying the decisioning score.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-1007-REQ",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Verifies that a Single-Family Comparable Rent Schedule (Form 1007) from a state-licensed appraiser is obtained wherever Acra requires it: on all DSCR-qualifying files, lease-option purchases funded from excess rent, or when proposed rental income is used to qualify.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-ACTRENT-DOC",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Verifies that actual-rent-based DSCR qualification is supported by two months of rent receipt evidence and a lease extending at least three months past closing, per Acra Platinum Select requirements.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-CALC",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Calculates the Debt Service Coverage Ratio as qualifying rent divided by the first monthly payment due under the Note (PITIA), per Acra's stated calculation methodology.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-CO-LEASE",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Verifies that a Platinum Select DSCR Cash-Out Refinance transaction includes a current lease agreement on the subject property.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-FORB-OVL",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Applies the rent-receipt or reserve alternative-documentation overlay when an applicant has had forbearance or a mortgage late within the last 12 months on a tenant-occupied Platinum Select DSCR subject property.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-LIST-MIN",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Verifies that a Platinum Select DSCR loan on a property listed for sale within the last six months still meets the loan's applicable channel-minimum DSCR (1.20 Correspondent / 1.0 Wholesale).",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-MINRATIO",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Verifies that a Platinum Select DSCR loan's calculated debt service coverage ratio meets the channel-specific minimum published by Acra: 1.20 for Correspondent, 1.0 for Wholesale.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-PITIA",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Defines and validates the PITIA components \u2014 principal, interest, taxes, insurance, association fees, and subordinate financing where applicable \u2014 used as the DSCR denominator.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-QUALRENT",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Determines the qualifying gross rental income used in the DSCR numerator by selecting the greater of Form 1007/1025 market rent or fully-documented actual rent, per Acra Platinum Select rules.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-RENT-XCESS",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Verifies that a single-family investment property with an excessive lease-reflected monthly rent is supported by acceptable evidence that the rent is typical for the area, such as classified ads, a 1007, or a market rent survey.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-STR-EXCL",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Confirms that short-term or nightly rental income is excluded from DSCR qualification, since the greater-of actual/market rent rule applies to long-term rentals only.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-SUBFIN",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Confirms that an existing subordinate lien's monthly payment is included in the DSCR denominator, without inferring subordinate financing eligibility from the calculation rule itself.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "DSCR-IO-DENOM",
+    "section": "Income Stability & Sufficiency Analysis",
+    "title": "Determines the DSCR denominator on an interest-only loan by applying Acra's rule that the DSCR uses the first payment due under the Note \u2014 the interest-only payment plus taxes, insurance, association fees and any subordinate lien payment \u2014 while flagging the open question whether the \u00a75.32 'principal' component requires a fully amortized payment instead.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "RLI-CLTV-EXEMPT",
+    "section": "Insurance Coverage Sufficiency & Policy Assessment",
+    "title": "Confirms loans with CLTV at or below 70% are exempt from the rent loss insurance requirement, and flags the LTV/CLTV basis mismatch between the coverage trigger and the exemption.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "RLI-LTV-TRIGGER",
+    "section": "Insurance Coverage Sufficiency & Policy Assessment",
+    "title": "Confirms six months of rent loss insurance is obtained on one- to four-unit non-owner-occupied income properties with LTV greater than 70% when subject property rents are used to qualify.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "RLI-PURPOSE",
+    "section": "Insurance Coverage Sufficiency & Policy Assessment",
+    "title": "Confirms rent loss insurance coverage, when obtained, insures rental income losses incurred while the subject property is being rehabilitated following a casualty event.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "RLI-RESERVE-SUB",
+    "section": "Insurance Coverage Sufficiency & Policy Assessment",
+    "title": "Confirms that when required rent loss insurance cannot be obtained, the borrower has substituted two months of reserves for every one month of rent loss coverage not provided.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BOR-CITZ",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms that every borrower on the loan holds an eligible citizenship or residency status \u2014 US Citizen or Permanent Resident Alien \u2014 required for the Acra Platinum Select DSCR program.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BOR-FN-INELIG",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms that no borrower on the transaction is a non-permanent resident, foreign national, or ITIN tax-ID holder, since only US Citizen and Permanent Resident are eligible citizenship types on this program.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BOR-FTHB",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms the borrower group does not meet Acra's First-Time Homebuyer definition \u2014 an application where all applicants have never previously owned real property \u2014 since FTHB applicants are ineligible for this program.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BOR-GUAR-ATTEST",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms at least one guarantor has prior homeownership experience and at least one borrower or guarantor attests on the loan application to not being a first-time homebuyer.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "BOR-PRA-ID",
+    "section": "Loan Program Eligibility",
+    "title": "Verifies that a Permanent Resident borrower provides an unexpired Permanent Resident Alien card and a Social Security card or Form SSA-89 as required identification.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LFC-AMT-STEPDN",
+    "section": "Loan Program Eligibility",
+    "title": "Applies Acra's loan-amount-driven CLTV step-down, capping maximum CLTV at 75.00% for Platinum Select DSCR loans below $350,000 or above $1,500,000, regardless of the standard matrix cap.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LFC-CASHHAND",
+    "section": "Loan Program Eligibility",
+    "title": "Verifies that cash-in-hand proceeds on a Platinum Select DSCR cash-out refinance do not exceed Acra's matrix-footnote caps, which vary by the loan's LTV band and base loan amount.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LFC-CORR-CAP",
+    "section": "Loan Program Eligibility",
+    "title": "Applies Acra's Correspondent-channel footnote capping CLTV at 60% for Platinum Select DSCR loans with a decisioning FICO score of 700-719, on top of the standard matrix cap for the loan's purpose.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LFC-DELAY-FIN",
+    "section": "Loan Program Eligibility",
+    "title": "Verifies that a delayed-financing transaction on the Platinum Select DSCR program does not exceed Acra's matrix-footnote loan amount cap of $1,500,000.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LFC-FICO-MTX",
+    "section": "Loan Program Eligibility",
+    "title": "Determines the maximum CLTV permitted for a Platinum Select DSCR loan by mapping the borrower's decisioning FICO score to Acra's published minimum-FICO tier (730, 721, or 700) and reading the CLTV cap for the loan's purpose column.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-BIZPURPOSE",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms execution of the Business Purpose Attestation (Exhibit 8) or an Acra-approved equivalent when the borrower qualifies using the subject property's actual or market cash flow under a business-purpose transaction.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-CO-LEASE",
+    "section": "Loan Program Eligibility",
+    "title": "Verifies a current, unexpired lease agreement matching the subject property is on file for every DSCR Cash-Out Refinance transaction, as required by the Platinum Select Program Summary.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-DECL-MKT",
+    "section": "Loan Program Eligibility",
+    "title": "Applies the 5-percentage-point CLTV reduction required when the subject property is located in a declining market on the borrower's full credit profile.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-GIFT-MIN",
+    "section": "Loan Program Eligibility",
+    "title": "Validates that the borrower has contributed a minimum of 10% of the purchase price from their own sourced and seasoned funds on an investment property transaction using gift funds.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-INELIG-LOC",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms the subject property is not located in an ineligible jurisdiction (South Dakota or a U.S. territory) for non-owner occupied financing under the program.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-INV-PROP",
+    "section": "Loan Program Eligibility",
+    "title": "Verifies the subject property meets Acra's investment property definition \u2014 a one- to four-unit dwelling or a condominium/PUD unit not occupied by the owner and leased as a principal year-round residence to a non-owner tenant.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-LOAN-AMT",
+    "section": "Loan Program Eligibility",
+    "title": "Validates that the requested loan amount falls within the program's $100,000 to $2,000,000 range and is expressed in a $50 increment.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-MIN-DSCR",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms the loan's calculated DSCR meets the minimum ratio required for its origination channel \u2014 1.20 or greater for Correspondent and 1.00 or greater for Wholesale \u2014 under the Platinum Select program.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-NO-DTI",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms that no debt-to-income ratio is calculated or used as a decisioning factor for borrowers qualifying under the DSCR method, per Acra's Platinum Select policy that income/employment data is superfluous to the underwrite.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-NO-RATIO",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms the loan is not originated under a No-Ratio or sub-channel-minimum DSCR option, since the Platinum Select Program Summary lists no such option and states no ratio below the channel minimum.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-OCCUPANCY",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms the subject property's occupancy is classified Non-Owner Occupied before a loan proceeds under the Platinum Select DSCR program, since the program is restricted to non-owner occupied investment property.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-PURPOSE",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms the loan's transaction purpose is one of the four Acra Platinum Select eligible purposes \u2014 Purchase, Rate and Term Refinance, Cash-Out Refinance, or Delayed Financing \u2014 and matches its supporting transaction document.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-RENTFORM",
+    "section": "Loan Program Eligibility",
+    "title": "Determines whether the correct rent-schedule appraisal form (Form 1007 for single-family, Form 1025 for two-unit) has been obtained to establish market rent for DSCR qualification.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-REO-SCOPE",
+    "section": "Loan Program Eligibility",
+    "title": "Determines which real estate holdings must be listed on the loan application and Schedule of Real Estate Owned for a DSCR borrower, limited to the subject property, principal residence, and second homes.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-RIDER",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms execution of the One- to Four-Family Rider and identification of the associated rent loss insurance obligation for investment property purchase or refinance transactions.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-SIZE-CLTV",
+    "section": "Loan Program Eligibility",
+    "title": "Applies the 75.00% maximum CLTV cap that governs loan amounts below $350,000 or above $1,500,000, overriding the standard FICO/CLTV matrix at those loan sizes.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-VACANT",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms the subject property is tenant-occupied and not vacant, since vacant properties are ineligible for the Acra Platinum Select DSCR program under any loan purpose.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PPT-ARM-TERMS",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms the ARM index, cap structure, and margin match Acra's published Platinum Select terms \u2014 1 Yr CMT index, 2/2/6 caps, and margin tiered by decisioning score band.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PPT-IO-CLTV",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms interest-only loans with a 5-year interest-only term do not exceed the published 75% maximum CLTV cap.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PPT-IO-LISTEDSALE",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms interest-only financing is not offered on a property that has been listed for sale within the last six months.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PPT-IO-MINPARAMS",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms an interest-only loan meets the program's baseline minimum loan amount and minimum decisioning score, since no interest-only-specific floor is separately published.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PPT-IO-PMTCALC",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms the interest-only payment is calculated as the amount sufficient to pay accrued interest monthly at origination, recasting to a fully amortized payment after the interest-only term.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PPT-PPP-LISTEDSALE",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms a property listed for sale within six months carries a prepayment penalty of at least three years unless located in a state that does not allow prepayment penalties.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PPT-PPP-STATE",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms the prepayment penalty structure and buy-out treatment applied to the loan comply with the state-specific restriction published for the subject property's state.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PPT-PPP-STRUCT",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms the prepayment penalty term and percentage structure selected match one of Acra's published structures (5/3/2/1-year fixed or stepdown, or No Prepay).",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "PPT-PRODUCTS",
+    "section": "Loan Program Eligibility",
+    "title": "Confirms the loan product selected is one of Acra's eligible Platinum Select DSCR products \u2014 30-year fixed, 5-year ARM, 30-year fixed interest-only, or 5-year ARM interest-only.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LFC-CLTV-FINAL",
+    "section": "Loan Program Eligibility",
+    "title": "Determines the single governing maximum CLTV for the loan by taking the lowest of every applicable published cap \u2014 FICO/purpose matrix, loan-size 75.00%, Warrantable Condo/Two-Unit 75.00%, Interest-Only 75.00%, Correspondent 700-719 60%, listed-for-sale 65% \u2014 then applying the 5-point declining-market reduction, and confirms the loan's CLTV does not exceed that result.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-CHANNEL",
+    "section": "Loan Program Eligibility",
+    "title": "Determines and records the loan's origination channel \u2014 Correspondent or Wholesale \u2014 from the LOS and lock/registration records, since the channel sets the minimum DSCR (1.20 Correspondent / 1.00 Wholesale) and triggers the Correspondent 60% CLTV cap for FICO 700-719.",
+    "best": "none",
+    "matches": []
+   },
+   {
+    "id": "LPE-BIZ-CONSUMER",
+    "section": "Loan Program Eligibility",
+    "title": "Classifies the transaction as business-purpose or consumer-purpose and records the basis, since the classification drives the Business Purpose Attestation requirement, the funds-to-close seasoning threshold ($50,000 and 70% CLTV for business-purpose vs 70% CLTV for consumer), and the program's listing as Business Purpose DSCR Platinum.",
+    "best": "none",
+    "matches": []
+   }
+  ],
+  "only_right": [],
+  "left": "acra platinum",
+  "right": "ours jtbd platinum"
+ },
+ "cost": {
+  "calls": 0,
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "cost_usd": 0.0,
+  "cost_is_upper_bound": false,
+  "budget_usd": 3.0,
+  "stopped_on_budget": false
+ }
+}

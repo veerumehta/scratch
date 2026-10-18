@@ -1,0 +1,590 @@
+# Flat fact names in jaci's Acra DSCR pack -> Entity.field names (DRAFT, 2026-10-13).
+#
+# Pack: /Users/sangit/src/jaci/config/packs/acra_dscr_policy (pack_version 0.2.14)
+# Plan: .scratch/sang/ape/plans/plan_document_registry_and_job_shape.md sections 2b and 4 (D2).
+#
+# Sources, in priority order:
+#   1. hand_built: japes/documents/Acra/acra_New_Guideline_JTBD{,_Platinum}.json -- metric_key
+#      values and the Entity.field names used in their indicator_context / requirement text.
+#   2. ontology: mortgage-app-ontology/common/resources/ontologies/mortgage_ontology_v2.json
+#      ($defs: 45 entities, 631 fields -- the only copy that matches; mortgage-app 49/693,
+#      policy-workbench 49/690, macer 39/424).
+#   3. japes/tests/test_dotted_fact_names.py RENAMED (6 names) -- see `renamed_conflicts`.
+#
+# Field meanings:
+#   basis        hand_built | ontology | proposed. hand_built = the exact key appears in the hand-built
+#                set (as metric_key unless `hand_built_use: text`). proposed = no ontology field fits.
+#   in_ontology  false where a hand_built key is NOT in the production ontology (the hand-built set
+#                uses a few such names in its prose); always false for proposed.
+#   unit_change  "none" when a key rename alone keeps values identical. Otherwise the transform the
+#                migration must apply to rules, fixtures and gold cases alike, or what differs.
+#   vocab        for enums: the pack's value vocabulary vs the ontology enum. Recommendation for all
+#                of them: rename the key, KEEP the pack's values (acceptance needs identical values,
+#                and several pack values have no ontology member). Recorded so nobody "fixes" it later.
+#   derived      true where the pack (or the record supplier) computes the value rather than reading
+#                a stored field; see `derived_metrics` and `derived_booleans`.
+
+ontology_file: /Users/sangit/src/mortgage-app-ontology/common/resources/ontologies/mortgage_ontology_v2.json
+
+# ---------------------------------------------------------------------------------------------
+# 1. Facts: schemas/loan_application.json properties (54) = loan_document_fields.json (53, all
+#    but loan_id) + metrics.yaml ids/inputs. Order follows loan_application.json.
+# ---------------------------------------------------------------------------------------------
+facts:
+  - flat: loan_amount
+    target: LoanCore.total_loan_amount_usd
+    basis: hand_built
+    unit_change: none
+    renamed_had: LoanCore.loan_amount
+    notes: >-
+      Hand-built uses total_loan_amount_usd (35x) for every amount cap (min/max, IO, FTHB, ITIN,
+      NPR, delayed financing) and base_loan_amount_usd (10x) for a few (escrow waiver, delayed
+      financing). DSCR has no financed MI/FF, so the two are equal here. Read by 24 rules (matrix
+      axes incl. profile_custom_key band edges) and is a cltv metric input. RENAMED's
+      LoanCore.loan_amount is not an ontology field.
+
+  - flat: loan_purpose
+    target: LoanCore.loan_purpose
+    basis: hand_built
+    unit_change: none
+    vocab: "pack purchase|rate_term_refinance|cash_out_refinance vs ontology Purchase|RefinanceRateAndTerm|RefinanceCashOut|...; keep pack values (they are matrix axis keys and profile table keys)."
+    notes: Read by 35 rules, matrix axis of every CLTV grid.
+
+  - flat: property_type
+    target: SubjectProperty.property_type
+    basis: hand_built
+    unit_change: none
+    vocab: "pack sfr|warrantable_condo|townhome|pud|non_warrantable_condo|condotel|manufactured|two_to_four_unit vs ontology SingleFamily|Condominium|Townhouse|PUD|TwoToFourUnit|ManufacturedHome|...; ontology has no condotel / non-warrantable member (it splits them into SubjectProperty.condo_project_classification and CondoProject.transient_use_status). Keep pack values."
+    notes: Read by 12 rules; also matrix axis and table keys (non_warrantable_condo|purchase ...).
+
+  - flat: property_address
+    target: SubjectProperty.address
+    basis: hand_built
+    hand_built_use: text
+    unit_change: "type: pack string vs ontology $ref Address (object: street_line_1, city, state, postal_code ...). No rule reads it; keep it a string under this key, or keep it flat (see stays_flat alternative)."
+    notes: Read by document_agent (loan_application, appraisal_report, title_commitment) and the appraisal fixture.
+
+  - flat: property_state
+    target: SubjectProperty.state
+    basis: hand_built
+    hand_built_use: text
+    in_ontology: false
+    unit_change: none
+    notes: >-
+      Hand-built writes SubjectProperty.state (once, prose); the ontology has only the nested
+      SubjectProperty.address.state (Address.state, USStateCode). Recommend SubjectProperty.state
+      as a derived field (plan 2b: derived, keep reads plain) = address.state. Read by 19 rules
+      (ineligible states, every state PPP rule) and the IL interest_rate validator. NEEDS DECISION
+      (see report).
+
+  - flat: property_value
+    target: SubjectProperty.appraised_value_usd
+    basis: hand_built
+    hand_built_use: text
+    unit_change: none
+    renamed_had: SubjectProperty.value
+    notes: >-
+      RENAMED's SubjectProperty.value is not an ontology field. Pack says "stated or appraised";
+      ontology also has estimated_value_usd and purchase_price_usd, and AppraisalSummary.appraised_value_usd.
+      appraised_value_usd chosen because the appraisal fixture's appraised_value must equal it
+      (test_dscr_document_ingest.py:192). cltv metric input; read by no rule directly.
+
+  - flat: fico
+    target: CreditReport.representative_score
+    basis: hand_built
+    unit_change: none
+    renamed_had: CreditReport.representative_score
+    notes: Read by 15 rules incl. every grid's FICO axis. Kept from RENAMED.
+
+  - flat: citizenship_type
+    target: Borrower.citizenship_status
+    basis: hand_built
+    unit_change: none
+    vocab: "pack us_citizen|permanent_resident|non_permanent_resident|itin|foreign_national vs ontology USCitizen|PermanentResidentAlien|NonPermanentResidentAlien. itin is Borrower.tax_id_type=ITIN in the ontology and foreign_national has no member; the pack folds three ontology facts into one enum. Keep pack values."
+    notes: Read by 8 rules. A Borrower field on a loan with one borrower; multi-borrower grain is D3's question.
+
+  - flat: gross_rental_income
+    target: RatioSet.total_monthly_income_usd
+    basis: hand_built
+    unit_change: none
+    notes: >-
+      Monthly, the DSCR numerator. Hand-built's DSCR-CALC / LFC-DSCR-FINAL compute DSCR =
+      RatioSet.total_monthly_income_usd / RatioSet.total_monthly_obligation_usd, with
+      total_monthly_income_usd the qualifying rent. The lease rent itself is the filtered path
+      RealEstateOwned[is_subject_property=True].gross_rental_income_usd (see filtered_paths); the
+      pack's figure is the qualifying one. Ratio rule numerator (14 rules), dscr metric input.
+
+  - flat: pitia
+    target: RatioSet.total_monthly_obligation_usd
+    basis: hand_built
+    unit_change: none
+    notes: >-
+      DSCR denominator (14 ratio rules), dscr metric input. Hand-built uses total_monthly_obligation_usd
+      as the DSCR denominator ("PITIA at the first payment") and RatioSet.proposed_housing_expense_usd
+      for the PITIA reconciliation job; on a DSCR file both are PITIA(+subordinate payment).
+      NEEDS DECISION if they should diverge.
+
+  - flat: reserves_months
+    target: RatioSet.reserves_months
+    basis: hand_built
+    unit_change: "none (pack integer, ontology number)"
+    notes: Read by 8 rules.
+
+  - flat: occupancy_subtype
+    target: SubjectProperty.occupancy_subtype
+    basis: proposed
+    unit_change: none
+    notes: >-
+      standard|short_term_rental. SubjectProperty.occupancy_type is PrimaryResidence|SecondHome|Investment
+      (always Investment for DSCR). Closest ontology fact is CondoProject.transient_use_status=ShortTermRental,
+      but that is a condo project attribute, not the subject's rental mode. Read by 3 rules.
+
+  - flat: dscr_documentation_type
+    target: LoanCore.dscr_qualification_method
+    basis: hand_built
+    hand_built_use: text
+    in_ontology: false
+    unit_change: none
+    notes: full|no_ratio. Hand-built names LoanCore.dscr_qualification_method once in prose; not in the ontology. Read by 5 rules.
+
+  - flat: escrow_waiver_requested
+    target: LoanCore.is_escrow_waived
+    basis: hand_built
+    unit_change: none
+    notes: Read by 8 rules. Semantics shift from "requested" to "waived"; the rules test the request, which on an application is the same flag.
+
+  - flat: product_is_interest_only
+    target: MortgageLoanInformation.is_interest_only
+    basis: ontology
+    unit_change: none
+    notes: >-
+      Boolean in the ontology. Hand-built instead tests LoanCore.interest_only_period_months > 0
+      (23x) -- that would be an int-vs-bool transform. MortgageLoanInformation is the 1008-style
+      lender section; if entities should stay to the hand-built ones, use a derived
+      LoanCore.is_interest_only (= interest_only_period_months > 0). Read by 7 rules.
+
+  - flat: borrower_name
+    target: null
+    stays_flat: true
+    basis: n/a
+    unit_change: none
+    notes: See stays_flat. Ontology has Borrower.first_name/last_name (split) and no entity-name field.
+
+  - flat: sponsor_name
+    target: null
+    stays_flat: true
+    basis: n/a
+    unit_change: none
+    notes: See stays_flat. No guarantor/sponsor entity in the ontology.
+
+  - flat: loan_officer
+    target: null
+    stays_flat: true
+    basis: n/a
+    unit_change: none
+    notes: See stays_flat. Ontology form is the filtered LoanPersonnel[designation=LoanOfficer].name.
+
+  - flat: borrower_entity_type
+    target: Borrower.entity_type
+    basis: hand_built
+    hand_built_use: text
+    in_ontology: false
+    unit_change: none
+    notes: >-
+      individual|llc|corporation|trust. Hand-built uses Borrower.entity_type (8x prose) and maps the
+      "Entity vs Individual" metric to Borrower.borrower_type, whose ontology enum is
+      Primary|CoBorrower|... (a different fact). Not in the ontology. Read by 7 rules, the IL
+      validator, and pack_manifest.yaml required_classes `when:`.
+
+  - flat: entity_is_borrower_1
+    target: Borrower.is_entity_borrower_1
+    basis: proposed
+    derived: true
+    unit_change: none
+    notes: Cross-document attestation (entity is Borrower 1 on all docs). Hand-built has Borrower.is_entity (prose, not in ontology) which is a different fact. Read by 1 rule.
+
+  - flat: entity_documents_complete
+    target: Borrower.entity_documents_complete
+    basis: proposed
+    derived: true
+    unit_change: none
+    notes: Judgement across operating agreement / articles / good standing. No ontology counterpart. Read by 1 rule (DSCR-ENTITY-DOCS).
+
+  - flat: title_multiple_transfers_among_related_parties
+    target: TitleInformation.has_related_party_transfers
+    basis: proposed
+    derived: true
+    unit_change: none
+    notes: TitleInformation.chain_of_title_status (Clear|NotClear) is broader; using it would need bool->enum and lose meaning. Read by 1 rule.
+
+  - flat: duplicate_ssn_cleared
+    target: UnderwritingSummary.duplicate_ssn_cleared
+    basis: proposed
+    derived: true
+    unit_change: none
+    notes: Process attestation (Stage 1 duplicate-SSN check). No ontology counterpart; entity choice is a guess. Read by 1 rule.
+
+  - flat: broker_nmls_verified
+    target: UnderwritingSummary.broker_nmls_verified
+    basis: proposed
+    derived: true
+    unit_change: none
+    notes: Verification outcome. Ontology has only NMLS ids (LoanPersonnel.external_id, CoBorrowerInvitation.company_nmls). Read by 1 rule.
+
+  - flat: loan_officer_nmls_verified
+    target: UnderwritingSummary.loan_officer_nmls_verified
+    basis: proposed
+    derived: true
+    unit_change: none
+    notes: As broker_nmls_verified (CoBorrowerInvitation.loan_officer_nmls is an id). Read by 1 rule.
+
+  - flat: property_currently_listed_for_sale
+    target: SubjectProperty.is_listed_for_sale
+    basis: proposed
+    unit_change: none
+    notes: >-
+      Hand-built maps "Listed-For-Sale Status" to RealEstateOwned.property_status, whose enum is
+      Sold|PendingSale|Retained (no "Listed") and which describes REO, not the subject. Read by 1 rule.
+
+  - flat: hoa_reserves_adequate
+    target: CondoProject.hoa_reserves_adequate
+    basis: proposed
+    unit_change: none
+    notes: >-
+      Ontology alternative CondoProject.budget_adequacy_status (Adequate|Deficit|Undetermined) would
+      need bool->enum in rules, fixtures and gold (true->Adequate, false->Deficit) and the pack's
+      fail-closed default has no Undetermined. Proposed boolean keeps values identical. NEEDS DECISION.
+
+  - flat: hoa_litigation_pending
+    target: CondoProject.hoa_litigation_pending
+    basis: proposed
+    unit_change: none
+    notes: >-
+      Ontology alternative CondoProject.litigation_status (None|MinorExcepted|Material) needs
+      bool->enum (true->Material?, false->None) and MinorExcepted has no pack value. NEEDS DECISION.
+
+  - flat: prepayment_penalty_requested
+    target: LoanCore.prepayment_penalty_structure
+    basis: proposed
+    unit_change: none
+    notes: >-
+      Enum of PPP structures (5yr_5pct_fixed, 5yr_step, ...). Ontology has LoanCore.prepayment_penalty
+      (bool) and prepayment_penalty_term_months (int) -- the structure (term + percent schedule) does
+      not decompose losslessly. Read by 15 state PPP rules.
+
+  - flat: residential_unit_count
+    target: SubjectProperty.number_of_units
+    basis: hand_built
+    unit_change: none
+    notes: Read by 4 rules; dscr_schemas.py before-validator resolves it from property_type.
+
+  - flat: interest_rate
+    target: LoanCore.note_rate_percent
+    basis: hand_built
+    unit_change: "none (both percent, 7.5 = 7.5%; ontology PercentageRate 0-100)"
+    renamed_had: LoanCore.interest_rate
+    notes: RENAMED's LoanCore.interest_rate is not an ontology field. Read by DSCR-PPP-IL-2 and the IL validator; jtbd_template units entry moves with it.
+
+  - flat: channel
+    target: LoanCore.channel
+    basis: hand_built
+    unit_change: none
+    vocab: "pack wholesale|correspondent|unspecified vs ontology null|Retail|Wholesale|Correspondent|ConsumerDirect|BrokerDirect. Keep pack values ('unspecified' is a deliberate held-to-correspondent value, not null)."
+    notes: Read by 2 rules.
+
+  - flat: housing_history
+    target: CreditReport.housing_history_rating
+    basis: proposed
+    derived: true
+    unit_change: none
+    notes: >-
+      Worst 12-month rating enum (0x30x12 ...). Hand-built reads Liability.late_30_days_count
+      (filtered to mortgage/rent tradelines, no 60/90/120 or 12-month window). A derived rating keeps
+      the enum. Read by 3 rules.
+
+  - flat: mortgage_history_0x30x24
+    target: CreditReport.mortgage_0x30x24
+    basis: proposed
+    derived: true
+    unit_change: none
+    notes: 24-month window; ontology late counts carry no window. Read by 3 rules.
+
+  - flat: current_lease_in_place
+    target: SubjectProperty.has_current_lease
+    basis: proposed
+    unit_change: none
+    notes: No lease entity in the ontology. Read by 1 rule.
+
+  - flat: bankruptcy_or_foreclosure
+    target: Borrower.has_bankruptcy_or_foreclosure
+    basis: proposed
+    derived: true
+    unit_change: none
+    notes: = Borrower.has_declared_bankruptcy OR Borrower.has_property_foreclosed (both ontology, hand_built). Read by 2 rules.
+
+  - flat: months_since_bankruptcy_or_foreclosure
+    target: Borrower.months_since_bankruptcy_or_foreclosure
+    basis: proposed
+    derived: true
+    unit_change: "months (int) vs the ontology's dates Borrower.bankruptcy_discharge_date / foreclosure_date (hand_built). Pointing at the dates would need months = diff(application_date, latest event date) -- keep the derived month count."
+    notes: Read by 3 rules (matrix axis lt12/12_23/24_35 ...).
+
+  - flat: short_sale_dil_or_modification
+    target: Borrower.has_short_sale_dil_or_modification
+    basis: proposed
+    derived: true
+    unit_change: none
+    notes: = Borrower.has_preforeclosure_short_sale OR has_conveyed_title_in_lieu (ontology); loan modification has no ontology field. Read by 2 rules.
+
+  - flat: months_since_short_sale_dil_or_modification
+    target: Borrower.months_since_short_sale_dil_or_modification
+    basis: proposed
+    derived: true
+    unit_change: "months (int); ontology has no short-sale / DIL / modification date at all."
+    notes: Read by 3 rules.
+
+  - flat: credit_score_count
+    target: CreditReport.score_count
+    basis: proposed
+    derived: true
+    unit_change: "hand-built's 'Number of Repository Scores' metric is CreditReport.scores (array of CreditScore). Targeting it would need count = len(scores) and array fixtures; keep a derived count."
+    notes: Read by 4 rules.
+
+  - flat: tradelines_meet_requirement
+    target: CreditReport.tradelines_meet_requirement
+    basis: proposed
+    derived: true
+    unit_change: none
+    notes: Derived from CreditReport.total_trade_lines / oldest_trade_line_date (ontology) per the 2x24 or 3x12 rule. Read by 4 rules.
+
+  - flat: seller_concession_pct
+    target: LoanCore.seller_concession_percent
+    basis: proposed
+    derived: true
+    unit_change: >-
+      Hand-built's Seller-Paid Contributions metric is ClosingFee.seller_paid_at_closing_usd -- USD,
+      not percent of price. Pointing there needs pct = 100 * usd / LoanCore.purchase_price_usd and
+      dollar fixtures; the proposed derived field keeps percent (jtbd_template units: percent).
+    notes: Read by 1 rule.
+
+  - flat: ownership_months
+    target: SubjectProperty.ownership_months
+    basis: proposed
+    derived: true
+    unit_change: "months (int); ontology has no acquisition date for the subject."
+    notes: Read by 1 rule (vacant cash-out seasoning).
+
+  - flat: mixed_use
+    target: SubjectProperty.is_mixed_use
+    basis: hand_built
+    unit_change: none
+    notes: Pack meaning is wider (mixed use OR adult care OR assisted living). Read by 1 rule.
+
+  - flat: interest_only_10_40
+    target: LoanCore.is_interest_only_10_40
+    basis: proposed
+    derived: true
+    unit_change: none
+    notes: Product flag. Derivable as interest_only_period_months == 120 AND term_months == 480 (both ontology); kept boolean. Read by 2 rules.
+
+  - flat: first_time_homebuyer
+    target: Borrower.is_first_time_homebuyer
+    basis: hand_built
+    unit_change: none
+    notes: Read by 4 rules.
+
+  - flat: rural_property
+    target: SubjectProperty.is_rural
+    basis: proposed
+    unit_change: none
+    notes: No ontology field. Read by 4 rules.
+
+  - flat: vacant_property
+    target: SubjectProperty.is_vacant
+    basis: proposed
+    unit_change: none
+    notes: Hand-built routes vacancy through SubjectProperty.occupancy_type, whose enum has no Vacant member. Read by 8 rules.
+
+  - flat: delayed_financing
+    target: LoanCore.is_delayed_financing
+    basis: proposed
+    unit_change: none
+    notes: Hand-built says "when the LOS flags delayed financing" without a key; LoanCore.refinance_type has no member for it. Read by 2 rules.
+
+  - flat: listed_for_sale_last_6_months
+    target: SubjectProperty.listed_for_sale_last_6_months
+    basis: proposed
+    derived: true
+    unit_change: "hand-built uses SubjectProperty.last_listing_date (prose; not in ontology) -- a date. Pointing there needs within_6_months(last_listing_date, LoanCore.application_date); keep the derived boolean."
+    notes: Read by 5 rules.
+
+  # Derived metrics (metrics.yaml ids) -- also listed under derived_metrics.
+  - flat: cltv_pct
+    target: LoanCore.cltv_percent
+    basis: hand_built
+    derived: true
+    unit_change: "none (pack percent 75.0; ontology LtvRate 0-200 percent)"
+    renamed_had: LoanCore.cltv_percent
+    notes: >-
+      metrics.yaml id; 26 matrix compare_field + 5 rule fields; pack_manifest compose_caps.compare_field;
+      jtbd_template reads + units; gold `expected.cltv_pct`. The formula (100*loan/value) is really a
+      first-lien LTV (metrics.yaml calls it a book-LTV proxy); hand-built uses cltv_percent for the caps,
+      so the name stays. Kept from RENAMED.
+
+  - flat: dscr
+    target: RatioSet.dscr
+    basis: proposed
+    derived: true
+    unit_change: none
+    renamed_had: RatioSet.dscr
+    notes: >-
+      metrics.yaml id only; no rule reads it (ratio rules compute numerator/denominator themselves,
+      ratio_name DSCR). RatioSet has no dscr field and hand-built never stores one. Kept from RENAMED,
+      marked proposed.
+
+# ---------------------------------------------------------------------------------------------
+# 2. Names that stay flat (not facts).
+# ---------------------------------------------------------------------------------------------
+stays_flat:
+  - flat: loan_id
+    why: Case identity and the conductor's subject_field (pack_manifest.yaml); keys fixtures, gold cases, run ids. LoanCore.loan_number exists but the run key is not a fact a rule reads.
+  - flat: program_id
+    why: Routing selector for the manifest's `programs:` (which policy set applies); not a loan fact. Plato and the page pass it as a run parameter.
+  - flat: submission_date
+    why: Envelope metadata (defaults to now); no rule reads it.
+  - flat: source_system
+    why: Envelope metadata (DataProvenance.source_system in the ontology is per-entity provenance, a different thing).
+  - flat: borrower_name
+    why: Display/identity; no rule reads it; no single ontology field (Borrower.first_name/last_name; no entity-name field). Alternative if it must move -- proposed Borrower.entity_name.
+  - flat: sponsor_name
+    why: Display/identity; no rule reads it; no sponsor/guarantor entity. Alternative -- proposed Borrower.sponsor_name.
+  - flat: loan_officer
+    why: Display/identity; no rule reads it; ontology form is a filtered path (LoanPersonnel[designation=LoanOfficer].name). Alternative -- derived LoanCore.loan_officer_name.
+  - flat: binding_cap_pct
+    why: Not a fact -- an assessment output (gold `expected.binding_cap_pct`, EligibilityAssessment.binding_cap_pct, run_dscr_eval_plato.py). Listed so the script does not touch it.
+  - flat: "profile threshold/table keys (cltv/fico/reserves in names: max_cltv_grid, fico_min_rural, reserves_months_fthb, ...)"
+    why: PolicyProfile keys and profile_custom_key values, not fact names; the rename regex must not match inside them (e.g. `reserves_months` inside `reserves_months_fthb`).
+
+# ---------------------------------------------------------------------------------------------
+# 3. Derived metrics that land on (or beside) stored ontology fields.
+# ---------------------------------------------------------------------------------------------
+derived_metrics:
+  - id: cltv_pct -> LoanCore.cltv_percent
+    formula_after: "100 * LoanCore.total_loan_amount_usd / SubjectProperty.appraised_value_usd"
+    issue: >-
+      LoanCore.cltv_percent is a stored ontology field. A record that also supplies it (from the LOS)
+      collides with the derived value. Decide which wins (derived should, as today), or name the
+      metric distinctly. Rounding 2 places unchanged.
+  - id: dscr -> RatioSet.dscr
+    formula_after: "RatioSet.total_monthly_income_usd / RatioSet.total_monthly_obligation_usd"
+    issue: Not in the ontology (proposed). Same formula as hand-built DSCR-CALC.
+
+# ---------------------------------------------------------------------------------------------
+# 4. Filtered / nested paths (plan 2b recommends derived fields, keeping reads plain).
+# ---------------------------------------------------------------------------------------------
+filtered_paths:
+  - path: SubjectProperty.address.state
+    used_for: property_state
+    recommendation: derived SubjectProperty.state (hand-built's own spelling)
+  - path: "RealEstateOwned[is_subject_property=True].gross_rental_income_usd"
+    used_for: "not the pack's gross_rental_income (that maps to RatioSet.total_monthly_income_usd); hand-built's lease-rent jobs"
+    recommendation: derived SubjectProperty.lease_rent_monthly_usd if a rule ever reads lease rent
+  - path: "Liability[is_subject_property_lien=True].monthly_payment_usd"
+    used_for: none in this pack (hand-built subordinate-lien jobs)
+    recommendation: derived; out of scope for this migration
+  - path: LoanCore.down_payment.percent_of_purchase_price
+    used_for: none in this pack
+    recommendation: RatioSet.down_payment_percent already exists as a plain field
+  - path: "LoanPersonnel[designation=LoanOfficer].name"
+    used_for: loan_officer (stays flat)
+  - path: "Liability[mortgage|rent].late_30_days_count over 12/24 months"
+    used_for: housing_history, mortgage_history_0x30x24
+    recommendation: derived (proposed CreditReport.housing_history_rating / mortgage_0x30x24)
+
+# ---------------------------------------------------------------------------------------------
+# 5. Booleans/attestations the pack derives with no ontology counterpart (all `proposed`).
+# ---------------------------------------------------------------------------------------------
+derived_booleans:
+  - entity_is_borrower_1
+  - entity_documents_complete
+  - title_multiple_transfers_among_related_parties
+  - duplicate_ssn_cleared
+  - broker_nmls_verified
+  - loan_officer_nmls_verified
+  - tradelines_meet_requirement
+  - mortgage_history_0x30x24
+  - bankruptcy_or_foreclosure        # OR of two ontology booleans
+  - short_sale_dil_or_modification   # OR of two ontology booleans + modification (none)
+  - interest_only_10_40
+  - listed_for_sale_last_6_months
+  # Non-derived booleans with no ontology field (also proposed): current_lease_in_place,
+  # property_currently_listed_for_sale, rural_property, vacant_property, delayed_financing,
+  # hoa_reserves_adequate, hoa_litigation_pending.
+
+# ---------------------------------------------------------------------------------------------
+# 6. Evidence fixtures (fixtures/*.json). Not read by the assessment; read by the investigator
+#    model and test_dscr_document_ingest.py:192-195. Optional to migrate; targets if they are.
+# ---------------------------------------------------------------------------------------------
+fixture_fields:
+  appraisal.json:
+    - {flat: appraised_value, target: AppraisalSummary.appraised_value_usd, basis: ontology, unit_change: none}
+    - {flat: appraisal_date, target: AppraisalSummary.effective_date, basis: ontology, unit_change: none}
+    - {flat: property_address, target: SubjectProperty.address, basis: hand_built, unit_change: "string vs Address object (as above)"}
+    - {flat: property_condition, target: AppraisalSummary.property_condition, basis: ontology, unit_change: none}
+    - {flat: condition_note, target: AppraisalSummary.condition_note, basis: proposed, unit_change: none}
+    - {flat: rent_schedule.form, target: AppraisalSummary.form_type, basis: hand_built, unit_change: none, notes: "hand-built 'Rent Schedule Form Type' uses form_type; but one appraisal has its main form and a 1007 addendum -- a nested path"}
+    - {flat: rent_schedule.market_rent_monthly, target: AppraisalSummary.market_rent_monthly_usd, basis: proposed, unit_change: none, notes: "nested; no ontology field for 1007 market rent"}
+    - {flat: rent_schedule.note, target: null, basis: n/a, notes: prose}
+    - {flat: source, target: null, stays_flat: true, notes: evidence provenance}
+  credit_report.json:
+    - {flat: fico_score, target: CreditReport.representative_score, basis: hand_built, unit_change: none}
+    - {flat: scores_reported, target: CreditReport.score_count, basis: proposed, unit_change: "same as credit_score_count"}
+    - {flat: delinquencies_24mo, target: CreditReport.total_accounts_with_late, basis: hand_built, unit_change: "ontology count carries no 24-month window"}
+    - {flat: bankruptcies, target: Borrower.has_declared_bankruptcy, basis: hand_built, unit_change: "list vs boolean (len > 0)"}
+    - {flat: source, target: null, stays_flat: true, notes: evidence provenance}
+
+# ---------------------------------------------------------------------------------------------
+# 7. RENAMED (japes/tests/test_dotted_fact_names.py) vs this table.
+# ---------------------------------------------------------------------------------------------
+renamed_conflicts:
+  fico: {renamed: CreditReport.representative_score, here: same}
+  cltv_pct: {renamed: LoanCore.cltv_percent, here: same}
+  dscr: {renamed: RatioSet.dscr, here: same, note: "not in ontology; kept as proposed"}
+  property_value: {renamed: SubjectProperty.value, here: SubjectProperty.appraised_value_usd, why: "SubjectProperty.value is not an ontology field; hand-built names appraised_value_usd"}
+  loan_amount: {renamed: LoanCore.loan_amount, here: LoanCore.total_loan_amount_usd, why: "not an ontology field; hand-built metric key is total_loan_amount_usd"}
+  interest_rate: {renamed: LoanCore.interest_rate, here: LoanCore.note_rate_percent, why: "not an ontology field; hand-built and ontology use note_rate_percent"}
+
+# ---------------------------------------------------------------------------------------------
+# 8. Sites the migration must touch besides the facts' own definitions.
+# ---------------------------------------------------------------------------------------------
+pack_sites:   # config/packs/acra_dscr_policy/
+  - "policies/standard.yaml, platinum_select.yaml, process.yaml: condition `field:` (240), matrix `compare_field:` (26), axes `field:`, ratio `numerator:`/`denominator:` (14 each). No python sources or `reads` in this pack."
+  - "metrics.yaml: ids cltv_pct, dscr; formulas; inputs name/ref (loan_amount, property_value, gross_rental_income, pitia); header comments."
+  - "schemas/loan_application.json, schemas/loan_document_fields.json: GENERATED by scripts/export_pack_schemas.py from dscr_schemas.py -- change the model, then regenerate."
+  - "pack_manifest.yaml:85 required_classes `when: {borrower_entity_type: ...}`; :89 compose_caps.compare_field cltv_pct; :55 comment. subject_field loan_id stays."
+  - "document_agent.yaml: every class's `fields:` list (and comments naming reserves_months, fico)."
+  - "jtbd_template.yaml: `reads:` (47) and `units:` (cltv_pct, interest_rate, seller_concession_pct)."
+  - "ENCODING_NOTES.md: ~40 prose mentions."
+  - "fixtures/*.json: only if section 6 is applied."
+  - "profiles/dscr_profile.yaml: no fact names (keys only) -- no change."
+code_sites:   # /Users/sangit/src/jaci
+  - "src/jaci/scenarios/dscr/schemas/dscr_schemas.py:91-311 -- LoanApplication model, 54 attributes + validators reading property_state, borrower_entity_type, loan_amount, interest_rate, residential_unit_count, property_type. Dotted names cannot be Python attributes: needs Field(alias=\"Entity.field\") + populate_by_name and by_alias dumps, or the record becomes a dict."
+  - "src/jaci/scenarios/dscr/cases.py -- 5 demo LoanApplication(...) records (~90 kwargs)."
+  - "src/jaci/scenarios/dscr/plato_review.py:89 -- loan.model_dump(mode=\"json\") sent to Plato (needs by_alias=True)."
+  - "src/jaci/scenarios/dscr/eligibility/assessment.py:73 -- derived.get(\"cltv_pct\"); EligibilityAssessment.cltv_pct attribute (an output name; may stay)."
+  - "src/jaci/scenarios/dscr/ui/demo_page.py:62-63, 246-247 (derived \"dscr\"/\"cltv_pct\"), :311 (gold loan dict -> LoanApplication)."
+  - "scripts/export_pack_schemas.py:79 -- DOCUMENT_FIELDS excludes \"loan_id\" (stays) ; regenerates both schemas."
+  - "tests/scenarios/dscr/test_dscr_eligibility.py (~86 hits), test_dscr_standard.py (~85), test_dscr_platinum.py (~51) -- loans built by flat kwargs/dicts."
+  - "tests/scenarios/dscr/test_dscr_document_ingest.py (~18; :192-195 compares fixture keys to loan[\"property_value\"], loan[\"fico\"], loan[\"gross_rental_income\"])."
+  - "tests/scenarios/dscr/test_dscr_pack_assessment.py:60-94 (expected[\"cltv_pct\"], derived[\"dscr\"|\"cltv_pct\"], loan.gross_rental_income / pitia / loan_amount / property_value)."
+  - "tests/scenarios/dscr/test_dscr_plato_adapters.py:55, 143, 192 (derived dict keys, underivable \"cltv_pct\")."
+  - "tests/scenarios/dscr/test_dscr_page_plato_run.py:32-33 (derived keys, violation field \"cltv_pct\")."
+  - "tests/scenarios/dscr/test_profile_literal_drift.py:89 (axis.field == \"loan_amount\")."
+  - "tests/scenarios/dscr/pack_assessment.py:32 and tests/integration/test_plato_pilots.py:43,57 -- model_dump/model_validate of gold loans (alias handling)."
+  - "tests/eval/run_dscr_eval_plato.py:70-72 -- \"assessment.derived.cltv_pct\" / expected_path \"cltv_pct\"."
+  - "tests/eval/gold_cases/dscr/*.json (5) -- 53 loan_application keys each + expected.cltv_pct."
+  - "test_acra_dscr_*: no source files remain (only stale .pyc in tests/unit/__pycache__)."
+japes_sites:
+  - "japes/plato/data/seed_packs/acra_dscr_policy/ -- synced copy of this pack (SYNCED_FROM jaci)."
+  - "japes/tests/test_dotted_fact_names.py RENAMED -- 3 targets differ from this table (section 7)."
+  - "japes/jazzx_sdk/rules/lib.py:64,71 -- docstring examples only (dscr, pitia)."
