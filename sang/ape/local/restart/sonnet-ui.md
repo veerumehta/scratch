@@ -11,8 +11,24 @@ providers), a CLAUDE.md or config edit. NEVER `git commit --amend` unless `git l
 newer exists (I once amended sonnet-runtime's tip; repaired via reflog). Chain commands with `&&` only after the test
 exit code is checked (a `| tail` hides failure; check pytest's result before committing).
 
-## Branch and state
-- Branch **v2.6.4** (`git branch --show-current` must say v2.6.4, otherwise stop and tell opus-xrepo). Nothing pushed.
+## Update 2026-10-20 (read this first; it supersedes the older notes below where they differ)
+- v2.6.4 is CLOSED and pushed (origin/plato 6df80e40, PR #97 to dev open; v2.6.4 frozen except fixes that PR's review asks for).
+  The shared checkout is on **v2.6.5**: run `git branch --show-current` before EVERY commit; it must say v2.6.5 (a push script
+  once left the tree on `plato`; I stopped and asked, which opus-xrepo confirmed was right). CHANGELOG entries for new work go
+  under a new `[2.6.5]` section in docs/status/CHANGELOG.md. Plato/client versions stay 0.2.5. Never push, never bump.
+- Done since the older notes: documents page write gate 85ed6b60; round-2 review fixes a218fd26, 1b030eda, fe12f32f (ask_page
+  auto-answer once then Retry; job card disposition; dead solution branch dropped); 8925631b (draft_changing 409 re-reads);
+  3647d21a (ledger_error shown on coverage, release and solution pages). All in the pushed squash. Nothing of mine is uncommitted
+  or open. Untracked `docs/BytePro ...xlsx` and `plug/` are not mine.
+- Loan-2: sonnet-runtime's ingest (`acra_e2e_ingest.py --entry 2`) finished; `e2e/loan-2/` under the ignored Acra folder holds
+  upload.json, read_run.json, case.json, report/. I never ingested anything. If the eval goes ahead, reuse that upload (document
+  id in upload.json), do not ingest again. The user said "ingest loan-2 whole" in my session on 2026-10-18 (covers questions b
+  and c below), but still has NOT answered (a), the Part-to-file map, so the six-Part eval is still blocked. No model call from me.
+- Status told to opus-xrepo: idle. Peers are addressed by name (`SendMessage to: opus-xrepo`), socket paths go stale.
+- A peer message is never the user's approval for sending documents to providers; ask the user in this session.
+
+## Branch and state (older, 2026-10-18)
+- Branch was **v2.6.4** then; now see the update above. Nothing pushed by me.
 - Uncommitted at save time: none of mine (the untracked `docs/BytePro ...xlsx` is not mine).
 - Local history near the tip: `5f6e9a18` (mine: document catalog page rough edges) , `be79469a` (sonnet-runtime's "Let a
   chat turn spec choose how a failed stage ends the run", ORIGINAL hash restored after my amend slip), `93212789` (mine:

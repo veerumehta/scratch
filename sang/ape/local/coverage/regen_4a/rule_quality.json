@@ -1,0 +1,11 @@
+{
+ "standard": {
+  "python_rules": 41,
+  "boundary_findings_rules": 1,
+  "unprinted_figures_rules": 2
+ },
+ "platinum": {
+  "python_rules": 34,
+  "unprinted_figures_rules": 2
+ }
+}

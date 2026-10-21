@@ -1,0 +1,38 @@
+{
+ "job_code_standard": {
+  "segments": 41,
+  "proposals": 41,
+  "unwritten_by_reason": {},
+  "failed_segments": 0,
+  "keys": [
+   "health"
+  ]
+ },
+ "job_code_platinum": {
+  "segments": 35,
+  "proposals": 34,
+  "unwritten_by_reason": {},
+  "failed_segments": 0,
+  "keys": [
+   "health"
+  ]
+ },
+ "seg_code_standard": {
+  "segments": 48,
+  "proposals": 26,
+  "unwritten_by_reason": {},
+  "failed_segments": 0,
+  "keys": [
+   "health"
+  ]
+ },
+ "seg_code_platinum": {
+  "segments": 42,
+  "proposals": 24,
+  "unwritten_by_reason": {},
+  "failed_segments": 0,
+  "keys": [
+   "health"
+  ]
+ }
+}

@@ -42,6 +42,13 @@ if [[ "${JAPES_SKIP_PREPUSH:-}" == "1" ]]; then
     exit 0
 fi
 
+# git hands a pre-push hook one line per pushed ref on stdin ("local_ref local_sha remote_ref
+# remote_sha"). Read it before anything else can consume it: step 2e checks the range being pushed,
+# not whatever happens to be checked out. A run by hand has a terminal on stdin and no refs.
+PUSH_REFS=""
+[[ -t 0 ]] || PUSH_REFS=$(cat)
+export PUSH_REFS
+
 QUICK=0
 CI_VERSIONS=0
 # A pass is recorded against the exact commit it verified. `git push` opens its connection to the
@@ -220,6 +227,15 @@ else
         echo "      python scripts/update_model_pricing.py && touch \"$price_stamp\""
     fi
 fi
+
+# ── 2e. British spelling in what is being pushed ─────────────────────────────
+# The repo is US English. Only added lines and commit messages in the pushed range are checked, so
+# words already in the tree stay until someone touches them. `uk-ok` on a line, or
+# JAPES_SKIP_SPELLING=1, is the escape for a quoted external name.
+say "2e/4  British spelling in what is being pushed"
+python "$(git rev-parse --show-toplevel)/scripts/local/check_us_spelling.py"
+# 1 is a British spelling added; 2 is "could not check" (no git range), which never blocks a push.
+[[ $? -ne 1 ]] || fail=1
 
 # ── 3. the suite ──────────────────────────────────────────────────────────────
 # `JAPES_SKIP_SUITE=1` keeps the review, which `--quick` does not: the review is the step that

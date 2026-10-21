@@ -1,0 +1,37 @@
+{
+ "counts": {
+  "code": 51,
+  "code_and_procedure": 24,
+  "computable_no_code": 0,
+  "procedure": 5,
+  "not_computable": 110,
+  "unassessed": 1
+ },
+ "coded_share": 0.393,
+ "by_policy": {
+  "acra-platinum": {
+   "code": 22,
+   "code_and_procedure": 12,
+   "computable_no_code": 0,
+   "procedure": 3,
+   "not_computable": 41,
+   "unassessed": 1
+  },
+  "acra-standard": {
+   "code": 29,
+   "code_and_procedure": 12,
+   "computable_no_code": 0,
+   "procedure": 2,
+   "not_computable": 69,
+   "unassessed": 0
+  }
+ },
+ "clause_summary_prefix_code": {
+  "units": 79,
+  "checked": 79,
+  "cited_only": 0,
+  "uncited": 0,
+  "by_code": 34,
+  "by_procedure": 45
+ }
+}

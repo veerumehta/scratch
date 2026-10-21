@@ -1,0 +1,87 @@
+[
+ {
+  "representation": "jtbd",
+  "document": "standard",
+  "policy_id": "acra-standard",
+  "attempts": [
+   {
+    "run_id": "fff2e03872274381b252c91c6909a196",
+    "status": "succeeded",
+    "segments": 9,
+    "failed_segments": [
+     "Loan Program Eligibility"
+    ],
+    "proposals": 117,
+    "cost_usd": 0.0185,
+    "started_at": "2026-10-20T17:02:17.431996Z",
+    "finished_at": "2026-10-20T19:34:16.339564Z",
+    "error": ""
+   },
+   {
+    "run_id": "791c75a2a0634abd8fb0bafb7aba2883",
+    "status": "succeeded",
+    "segments": 9,
+    "failed_segments": [],
+    "proposals": 112,
+    "cost_usd": 0.0212,
+    "started_at": "2026-10-20T19:34:26.968425Z",
+    "finished_at": "2026-10-20T19:48:45.921175Z",
+    "error": ""
+   }
+  ]
+ },
+ {
+  "representation": "jtbd",
+  "document": "platinum",
+  "policy_id": "acra-platinum",
+  "attempts": [
+   {
+    "run_id": "45139656a02246d0988c976c00581067",
+    "status": "succeeded",
+    "segments": 9,
+    "failed_segments": [],
+    "proposals": 79,
+    "cost_usd": 0.0187,
+    "started_at": "2026-10-20T17:02:17.429492Z",
+    "finished_at": "2026-10-20T18:38:11.363743Z",
+    "error": ""
+   }
+  ]
+ },
+ {
+  "representation": "python",
+  "document": "standard",
+  "policy_id": "acra-standard",
+  "attempts": [
+   {
+    "run_id": "6ec82d9e816a4db483a1cf17e9ff8482",
+    "status": "succeeded",
+    "segments": 48,
+    "failed_segments": [],
+    "proposals": 26,
+    "cost_usd": 0.039,
+    "started_at": "2026-10-20T18:38:29.614954Z",
+    "finished_at": "2026-10-20T20:38:13.163282Z",
+    "error": ""
+   }
+  ]
+ },
+ {
+  "representation": "python",
+  "document": "platinum",
+  "policy_id": "acra-platinum",
+  "attempts": [
+   {
+    "run_id": "ef7583e122d14bacbde03bca2f8a6c2c",
+    "status": "succeeded",
+    "segments": 42,
+    "failed_segments": [],
+    "proposals": 24,
+    "cost_usd": 0.0264,
+    "started_at": "2026-10-20T19:48:58.006288Z",
+    "finished_at": "2026-10-20T20:38:05.728704Z",
+    "error": ""
+   }
+  ]
+ }
+]

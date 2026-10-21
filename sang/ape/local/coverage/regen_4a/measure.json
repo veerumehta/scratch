@@ -1,0 +1,22 @@
+{
+ "platinum": {
+  "jobs": 79,
+  "citations": 36,
+  "citations_spanning_sections": 0,
+  "most_jobs_one_citation": 10,
+  "near_duplicate_pairs": 7,
+  "near_duplicate_pairs_across_sections": 7,
+  "reads_but_none_computable": 38,
+  "reads_none": 6
+ },
+ "standard": {
+  "jobs": 112,
+  "citations": 43,
+  "citations_spanning_sections": 0,
+  "most_jobs_one_citation": 13,
+  "near_duplicate_pairs": 6,
+  "near_duplicate_pairs_across_sections": 2,
+  "reads_but_none_computable": 61,
+  "reads_none": 10
+ }
+}

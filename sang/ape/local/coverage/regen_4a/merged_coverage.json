@@ -1,0 +1,20 @@
+{
+ "counts": {
+  "code": 51,
+  "code_and_procedure": 24,
+  "computable_no_code": 0,
+  "procedure": 5,
+  "not_computable": 110,
+  "unassessed": 1
+ },
+ "coded_share": 0.393,
+ "clause_summary": {
+  "units": 79,
+  "checked": 79,
+  "cited_only": 0,
+  "uncited": 0,
+  "by_code": 34,
+  "by_procedure": 45
+ },
+ "orphans": 0
+}

@@ -151,3 +151,4 @@ date,category,activity,source_id,model,calls,input_tokens,output_tokens,cached_t
 2026-10-14,extraction,extract python_jobs,6fb3048efc4f445e936205d6ca42eaef,flex_gpt-6-luna,66,198,38362,0,82900,0.040819587499999976,False,32.6,65,parts,53,proposals,11801,succeeded,acra-regen-2 acra-standard; 0 parts failed
 2026-10-14,extraction,extract python_jobs,b1a6d75837704ad19f9be1293b623630,,0,0,0,0,0,0,False,29.6,52,parts,43,proposals,10220,failed,acra-regen-2 acra-platinum; 0 parts failed; no progress since 2026-10-14T04:38:44.840378+00:00; its process stopped. Submit 
 2026-10-14,extraction,extract python_jobs,6ebab6129119410283cd663ab8028c3d,,0,0,0,0,0,0,False,29.6,46,parts,32,proposals,11801,failed,acra-regen-2 acra-standard; 0 parts failed; no progress since 2026-10-14T04:38:48.319300+00:00; its process stopped. Submit 
+2026-10-17,analysis,review comparison,coverage/regen_3b/compare/compare_sets.json,,0,0,0,,,0.0,False,,231,items,,,,done,

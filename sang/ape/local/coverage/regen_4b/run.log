@@ -1,0 +1,132 @@
+wrote 24 seed files into acra-regen-4b, jtbd_template.yaml extended with acra_template_extra.yaml
+jtbd:platinum attempt 1: run 5ea37dda045c49558ae76053c9ba08fc
+jtbd:standard attempt 1: run 1b978908c1804b9e99c202d276cd6f44
+jtbd:platinum still running after 120s: 0 proposals so far, $0 spent
+jtbd:standard still running after 120s: 0 proposals so far, $0 spent
+jtbd:platinum still running after 240s: 18 proposals so far, $0 spent
+jtbd:standard still running after 240s: 19 proposals so far, $0 spent
+jtbd:platinum still running after 360s: 38 proposals so far, $0 spent
+jtbd:standard still running after 360s: 33 proposals so far, $0 spent
+jtbd:platinum still running after 480s: 51 proposals so far, $0 spent
+jtbd:standard still running after 480s: 51 proposals so far, $0 spent
+jtbd:platinum still running after 600s: 62 proposals so far, $0 spent
+jtbd:standard still running after 600s: 64 proposals so far, $0 spent
+jtbd:standard still running after 720s: 82 proposals so far, $0 spent
+jtbd:platinum still running after 720s: 72 proposals so far, $0 spent
+jtbd:platinum run 5ea37dda succeeded: 76 proposals, 0 of 9 parts failed, $0.018
+python:standard attempt 1: run aa8fa4efca81445db7ec12ed4fdd2a0f
+jtbd:standard still running after 840s: 85 proposals so far, $0 spent
+jtbd:standard run 1b978908 succeeded: 100 proposals, 0 of 9 parts failed, $0.0217
+python:platinum attempt 1: run 597d97e5b67a4c97a2a702bb34e0a4f5
+python:standard still running after 120s: 0 proposals so far, $0 spent
+python:platinum still running after 120s: 1 proposals so far, $0 spent
+python:standard still running after 240s: 1 proposals so far, $0 spent
+python:platinum still running after 240s: 4 proposals so far, $0 spent
+python:standard still running after 360s: 2 proposals so far, $0 spent
+python:platinum still running after 360s: 5 proposals so far, $0 spent
+python:standard still running after 480s: 3 proposals so far, $0 spent
+python:standard still running after 600s: 5 proposals so far, $0 spent
+python:platinum still running after 480s: 7 proposals so far, $0 spent
+python:platinum still running after 600s: 9 proposals so far, $0 spent
+python:standard still running after 720s: 6 proposals so far, $0 spent
+python:standard still running after 840s: 6 proposals so far, $0 spent
+python:platinum still running after 720s: 11 proposals so far, $0 spent
+python:standard still running after 960s: 7 proposals so far, $0 spent
+python:platinum still running after 840s: 13 proposals so far, $0 spent
+python:standard still running after 1080s: 8 proposals so far, $0 spent
+python:platinum still running after 960s: 15 proposals so far, $0 spent
+python:standard still running after 1200s: 10 proposals so far, $0 spent
+python:platinum still running after 1080s: 16 proposals so far, $0 spent
+python:platinum still running after 1200s: 17 proposals so far, $0 spent
+python:standard still running after 1320s: 11 proposals so far, $0 spent
+python:platinum still running after 1320s: 18 proposals so far, $0 spent
+python:standard still running after 1440s: 12 proposals so far, $0 spent
+python:standard still running after 1560s: 14 proposals so far, $0 spent
+python:platinum still running after 1440s: 18 proposals so far, $0 spent
+python:standard still running after 1681s: 15 proposals so far, $0 spent
+python:platinum still running after 1561s: 19 proposals so far, $0 spent
+python:platinum still running after 1681s: 20 proposals so far, $0 spent
+python:standard still running after 1801s: 15 proposals so far, $0 spent
+python:standard still running after 1921s: 16 proposals so far, $0 spent
+python:platinum still running after 1801s: 21 proposals so far, $0 spent
+python:platinum still running after 1921s: 22 proposals so far, $0 spent
+python:standard still running after 2041s: 16 proposals so far, $0 spent
+python:platinum still running after 2041s: 22 proposals so far, $0 spent
+python:standard still running after 2161s: 16 proposals so far, $0 spent
+python:platinum still running after 2161s: 24 proposals so far, $0 spent
+python:standard still running after 2281s: 17 proposals so far, $0 spent
+python:platinum still running after 2281s: 25 proposals so far, $0 spent
+python:standard still running after 2401s: 19 proposals so far, $0 spent
+python:platinum run 597d97e5 succeeded: 25 proposals, 0 of 42 parts failed, $0.0312
+python:standard still running after 2521s: 19 proposals so far, $0 spent
+python:standard still running after 2641s: 19 proposals so far, $0 spent
+python:standard still running after 2761s: 19 proposals so far, $0 spent
+python:standard still running after 2882s: 19 proposals so far, $0 spent
+python:standard still running after 3002s: 19 proposals so far, $0 spent
+python:standard still running after 3122s: 19 proposals so far, $0 spent
+python:standard still running after 3242s: 20 proposals so far, $0 spent
+python:standard still running after 3362s: 21 proposals so far, $0 spent
+python:standard still running after 3482s: 22 proposals so far, $0 spent
+python:standard still running after 3602s: 23 proposals so far, $0 spent
+python:standard still running after 3723s: 23 proposals so far, $0 spent
+python:standard still running after 3843s: 23 proposals so far, $0 spent
+python:standard still running after 3963s: 24 proposals so far, $0 spent
+python:standard run aa8fa4ef succeeded: 25 proposals, 0 of 48 parts failed, $0.0438
+wrote /Users/sangit/src/japes/scripts/local/coverage/regen_4b/runs.json
+  acra-standard run 1b978908: {"trigger": "approve", "decided": ["acra-standard:acra-standard.appraisal_review_property_eligibility.2_4_unit_cltv", "acra-standard:acra-standard.appraisal_review_property_eligibility.above_80_00_ltv
+  merged into acra-standard: {"rel_path": "policies/acra-standard.yaml", "policy_id": "acra-standard", "added": ["acra-standard.appraisal_review_property_eligibility.2_4_unit_cltv", "acra-standard.appraisal_review_property_eligibility.above_80_00_ltv_type_eligibility", "acra-standard.appraisal_review_property_eligibility.condot
+  acra-platinum run 5ea37dda: {"trigger": "approve", "decided": ["acra-platinum:acra-platinum.appraisal_review_property_eligibility.declining_market_cltv_reduction", "acra-platinum:acra-platinum.appraisal_review_property_eligibili
+  merged into acra-platinum: {"rel_path": "policies/acra-platinum.yaml", "policy_id": "acra-platinum", "added": ["acra-platinum.appraisal_review_property_eligibility.declining_market_cltv_reduction", "acra-platinum.appraisal_review_property_eligibility.expressly_eligible_property_type", "acra-platinum.appraisal_review_property_
+job run a78653b4c78840ad8f06c0999b63dbf8 for acra-standard
+job run 7d9a269131f947c09e5afd618658d0e6 for acra-platinum
+  run a78653b4 still running after 121s: 2 proposed so far, $0 spent
+  run a78653b4 still running after 241s: 4 proposed so far, $0 spent
+  run a78653b4 still running after 361s: 6 proposed so far, $0 spent
+  run a78653b4 still running after 481s: 8 proposed so far, $0 spent
+  run a78653b4 still running after 601s: 10 proposed so far, $0 spent
+  run a78653b4 still running after 721s: 10 proposed so far, $0 spent
+  run a78653b4 still running after 841s: 12 proposed so far, $0 spent
+  run a78653b4 still running after 961s: 14 proposed so far, $0 spent
+  run a78653b4 still running after 1081s: 17 proposed so far, $0 spent
+  run a78653b4 still running after 1201s: 18 proposed so far, $0 spent
+  run a78653b4 still running after 1321s: 20 proposed so far, $0 spent
+  run a78653b4 still running after 1442s: 23 proposed so far, $0 spent
+  run a78653b4 still running after 1562s: 25 proposed so far, $0 spent
+  run a78653b4 still running after 1682s: 27 proposed so far, $0 spent
+  run a78653b4 still running after 1802s: 28 proposed so far, $0 spent
+  run a78653b4 still running after 1922s: 31 proposed so far, $0 spent
+  run a78653b4 still running after 2042s: 32 proposed so far, $0 spent
+  run a78653b4 still running after 2162s: 33 proposed so far, $0 spent
+  run a78653b4 still running after 2282s: 35 proposed so far, $0 spent
+  run a78653b4 still running after 2402s: 37 proposed so far, $0 spent
+  run a78653b4 still running after 2522s: 40 proposed so far, $0 spent
+  run a78653b4 still running after 2642s: 41 proposed so far, $0 spent
+  run a78653b4 still running after 2763s: 43 proposed so far, $0 spent
+  run a78653b4 python_jobs acra-standard: succeeded, 54 parts, 0 failed, 44 proposed, $0.0319
+  run 7d9a2691 python_jobs acra-platinum: succeeded, 41 parts, 0 failed, 38 proposed, $0.0204
+  acra-standard run a78653b4: {"trigger": "approve", "decided": ["acra-standard:acra-standard.appraisal_review_property_eligibility.2_4_unit_cltv.python", "acra-standard:acra-standard.appraisal_review_property_eligibility.above_80
+  merged into acra-standard: {"rel_path": "policies/acra-standard.yaml", "policy_id": "acra-standard", "added": ["acra-standard.appraisal_review_property_eligibility.2_4_unit_cltv.python", "acra-standard.appraisal_review_property_eligibility.above_80_00_ltv_type_eligibility.python", "acra-standard.appraisal_review_property_elig
+  acra-platinum run 7d9a2691: {"trigger": "approve", "decided": ["acra-platinum:acra-platinum.appraisal_review_property_eligibility.expressly_eligible_property_type.python", "acra-platinum:acra-platinum.appraisal_review_property_e
+  merged into acra-platinum: {"rel_path": "policies/acra-platinum.yaml", "policy_id": "acra-platinum", "added": ["acra-platinum.appraisal_review_property_eligibility.expressly_eligible_property_type.python", "acra-platinum.appraisal_review_property_eligibility.expressly_ineligible_property_type.python", "acra-platinum.appraisal
+alignment run bfa23e4c4dfc4185b540b7ad8c52bb07
+  run bfa23e4c still running after 120s: 3 proposed so far, $0 spent
+  run bfa23e4c still running after 240s: 3 proposed so far, $0 spent
+  run bfa23e4c still running after 360s: 6 proposed so far, $0 spent
+  run bfa23e4c still running after 480s: 6 proposed so far, $0 spent
+  run bfa23e4c still running after 600s: 6 proposed so far, $0 spent
+  run bfa23e4c still running after 720s: 18 proposed so far, $0 spent
+  run bfa23e4c still running after 840s: 18 proposed so far, $0 spent
+  run bfa23e4c still running after 960s: 18 proposed so far, $0 spent
+  run bfa23e4c still running after 1080s: 21 proposed so far, $0 spent
+  run bfa23e4c still running after 1200s: 21 proposed so far, $0 spent
+  run bfa23e4c still running after 1321s: 23 proposed so far, $0 spent
+  run bfa23e4c still running after 1441s: 45 proposed so far, $0 spent
+  run bfa23e4c still running after 1561s: 50 proposed so far, $0 spent
+  run bfa23e4c alignment *: succeeded, 50 parts, 0 failed, 3 proposed, $0.0216
+all jobs: {'code': 49, 'code_and_procedure': 49, 'computable_no_code': 1, 'procedure': 4, 'not_computable': 63, 'unassessed': 13} coded share 0.547
+merged jobs only: {'code': 49, 'code_and_procedure': 49, 'computable_no_code': 0, 'procedure': 4, 'not_computable': 61, 'unassessed': 13}
+by policy: {'acra-platinum': {'code': 28, 'code_and_procedure': 21, 'computable_no_code': 1, 'procedure': 2, 'not_computable': 22, 'unassessed': 3}, 'acra-standard': {'code': 21, 'code_and_procedure': 28, 'computable_no_code': 0, 'procedure': 2, 'not_computable': 41, 'unassessed': 10}}
+orphans 3 unaligned 0
+schema backlog: [('The calculated DSCR.', 10), ('DSCR calculation and qualifying DSCR value', 5), ('Application Date', 3), ('Impound status', 3), ('The payment basis for the reserves requirement', 3), ('DSCR value', 2), ('Evidence of reserves.', 2), ('FICO score evidence', 2), ('Last date the property was listed for sale', 2), ('Prepayment penalty term and whether it is allowable', 2)]
+disagreements: 2 jobs with unprinted figures: 13
+done: acra-regen-4b -> /Users/sangit/src/japes/scripts/local/coverage/regen_4b
