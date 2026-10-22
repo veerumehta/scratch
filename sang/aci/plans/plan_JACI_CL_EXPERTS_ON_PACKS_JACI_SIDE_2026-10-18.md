@@ -213,3 +213,45 @@ What I see at HEAD, for whoever builds it:
   P3 waiting. The same applies as for the CL packs: the cases can be written as fixtures first.
 - The story's source text (evidence standard, the partial-name thresholds) is not in hand; the same `pending configuration` rule applies.
 - The jaci pin in `pyproject.toml` moves when the japes phases land (a dependency pin, not release versioning); still no version bump.
+
+## 10. P1 and a P4 route run, 2026-10-21 (branch `cl-experts-p1`, off `dev`; local, unpushed)
+
+Asked by opus-xrepo after japes 2.6.5 reached `plato` (116ac14e): bump the pin, run the suite, do P1, run the P4 fixtures through the route.
+- `81f21ac` Lock japes to plato at 2.6.5 (`uv.lock` only; `pyproject.toml` still `@plato`; japes, jazzx-plato-client 0.2.5 and
+  knowledge-hub-client moved). Plain `uv lock` kept the old commit; lock once with the sha, then back to `@plato` and relock.
+- `1f09501` P1: `workshop_bank_cl_of/surface_bindings.yaml` declares the policy Expert as one `api_service` surface (advisory ceilings,
+  `connector_call` out of scope), named by the manifest's `surface_bindings:`. The test runs japes' own `check_non_widening` over matrix,
+  binding and overlay. It found a real conflict in Step 2's data: the overlay narrowed `recommend_dscr_exception` to l1_recommend, above the
+  binding's l0_assist ceiling; that narrowing is removed (the plan never specified it). No binding for `workshop_bank_cl_sp`: it has no matrix
+  and no policy registry, so the route serves no Expert there and the checker would flag a binding with no matrix above it. The Playbook Expert
+  is not declared: the route serves none. The interim `experts:` blocks in the core `cl_of_core`/`cl_sp_core` manifests are untouched.
+- P4 through the route (local Plato 0.2.5 / SDK 2.6.5, scratch tenant `workshop-bank`, versions 0.1.0 and a throwaway 0.1.1 published):
+  Plato's pack check passes with no findings, `GET .../experts` lists `policy`, 20 of 20 calls answered. But the cases cannot pass as written:
+  - `resolve` answers every question with the same line and one reference (`WB_CREDIT_POLICY@7.0.0`); it resolves policies, it does not answer.
+  - `interpret` returns `uncited` for every case (no answer text).
+  - `check_compliance` works when the rule facts are in `context` (not `proposed_action`): dscr 1.10, ltv 0.72, 0 stress scenarios and 2 unsupported
+    add-backs return three cited violations with the 1.25, 4 and 0 thresholds; passing facts return "All policy gates passed" and skip the
+    stress rule (not applicable below 70% LTV). Its references name the rule id with version `unknown` and no section: a japes gap.
+  - The route cites policies and rules only. The note, stress library, agency rows and playbooks (expected in every case's `references`) are
+    not served, so the freshness, conflict and "both positions" cases cannot run; the Playbook Expert is not served at all.
+  - With policy v7 as `draft`, every answer carries a "not active" warning and lists it as superseded; `detect_staleness` is clean with `active`.
+    The draft status is a deliberate choice (effective date not in hand).
+  - Answers are unsigned: no attestation key on the local Plato.
+- Decision for the user (fixtures): to make P4 executable, add the rule facts to the cases `check_compliance` can answer (the DSCR, stress and
+  non-recurring ones) and drop or re-home the expectations the route cannot serve; that is a change to the case fixtures, so it needs the user's OK.
+
+## 11. P4 fixtures split, 2026-10-21 (branch `cl-experts-p1`, rebased onto `origin/dev` d13da7f; local, unpushed)
+
+The user approved editing the P4 fixtures directly. Local `dev` was fast-forwarded to d13da7f (PR #9: private git deps authenticate with a
+header, not a URL token); the branch was rebased, so the earlier hashes 81f21ac and 1f09501 are now `41fa263` (relock) and `7e52662` (P1).
+- `6d7adcc`: `fixtures/cases/` holds the two cases the route serves today, each with a `route` block (`check_compliance`, rule facts in
+  `context`) and `expected.violated_rules`: `dscr_stress_gold` (DSCR floor and stress scenarios) and `roof_invoice_label_regression`
+  (unsupported non-recurring add-back). The facts are illustrative (dscr 1.10, ltv 0.72, one or zero unsupported add-backs).
+  `fixtures/cases_deferred/` holds the other ten, each with `deferred: {until, needs}`: the eight unservable originals plus
+  `dscr_stress_gold_answer` and `roof_invoice_label_answer`, the answer-text halves of the two rewritten cases. They move back when
+  japes E1 to E6 (and 2.7.1 for playbooks) land.
+- Checked: the unit test runs the two cases through `DefaultPolicyExpert` (the code the route calls); on the live local Plato both return the
+  expected violated rules on the draft (0.1.0) and the active (0.1.1) policy. `check_compliance` references list every applied rule, passing
+  or not; the violations are in the answer text, so a route-level check must read those. 831 unit tests pass.
+- The CHANGELOG could not be updated: `docs/status` (the jaci CHANGELOG's home) is now gzip archives (`CHANGELOG.md.gz`), which I did not
+  unpack. This section holds the details until the user says where the CHANGELOG lives now.

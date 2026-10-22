@@ -1,0 +1,477 @@
+{
+  "$defs": {
+    "LoanPurpose": {
+      "description": "DSCR loan purpose.",
+      "enum": [
+        "purchase",
+        "rate_term_refinance",
+        "cash_out_refinance"
+      ],
+      "title": "LoanPurpose",
+      "type": "string"
+    },
+    "PropertyType": {
+      "description": "Property type -- the complete vocabulary the authored eligibility corpus checks against\n(this pack's policies/standard.yaml: the DSCR-HIGH-LTV-PROPERTY-TYPE eligible\nset + DSCR-PROPERTY-TYPE-CLTV overlay set), not a guess.",
+      "enum": [
+        "sfr",
+        "warrantable_condo",
+        "townhome",
+        "pud",
+        "non_warrantable_condo",
+        "condotel",
+        "manufactured",
+        "two_to_four_unit"
+      ],
+      "title": "PropertyType",
+      "type": "string"
+    }
+  },
+  "description": "Incoming DSCR loan application.\n\nThis is the trigger that initiates an eligibility investigation. Its fields carry the pack's\nEntity.field names, which the policies/ rules read directly; a field under any other name is\nnot read.",
+  "properties": {
+    "loan_id": {
+      "description": "Unique loan identifier",
+      "title": "Loan Id",
+      "type": "string"
+    },
+    "program_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The Acra program applied for, one of the pack manifest's programs; None takes the manifest's default_program",
+      "title": "Program Id"
+    },
+    "LoanCore.total_loan_amount_usd": {
+      "description": "Requested loan amount in dollars",
+      "title": "Loancore.Total Loan Amount Usd",
+      "type": "number"
+    },
+    "LoanCore.loan_purpose": {
+      "$ref": "#/$defs/LoanPurpose",
+      "description": "Purpose of the loan"
+    },
+    "SubjectProperty.property_type": {
+      "$ref": "#/$defs/PropertyType",
+      "description": "Property type"
+    },
+    "SubjectProperty.address": {
+      "description": "Property address",
+      "title": "Subjectproperty.Address",
+      "type": "string"
+    },
+    "SubjectProperty.state": {
+      "description": "Property state (2-letter code, e.g. 'CA')",
+      "enum": [
+        "AL",
+        "AK",
+        "AZ",
+        "AR",
+        "CA",
+        "CO",
+        "CT",
+        "DE",
+        "FL",
+        "GA",
+        "HI",
+        "ID",
+        "IL",
+        "IN",
+        "IA",
+        "KS",
+        "KY",
+        "LA",
+        "ME",
+        "MD",
+        "MA",
+        "MI",
+        "MN",
+        "MS",
+        "MO",
+        "MT",
+        "NE",
+        "NV",
+        "NH",
+        "NJ",
+        "NM",
+        "NY",
+        "NC",
+        "ND",
+        "OH",
+        "OK",
+        "OR",
+        "PA",
+        "RI",
+        "SC",
+        "SD",
+        "TN",
+        "TX",
+        "UT",
+        "VT",
+        "VA",
+        "WA",
+        "WV",
+        "WI",
+        "WY",
+        "DC",
+        "PR",
+        "GU",
+        "VI",
+        "AS",
+        "MP"
+      ],
+      "title": "Subjectproperty.State",
+      "type": "string"
+    },
+    "SubjectProperty.appraised_value_usd": {
+      "description": "Stated or appraised property value",
+      "title": "Subjectproperty.Appraised Value Usd",
+      "type": "number"
+    },
+    "CreditReport.representative_score": {
+      "description": "Borrower FICO score",
+      "maximum": 850,
+      "minimum": 300,
+      "title": "Creditreport.Representative Score",
+      "type": "integer"
+    },
+    "Borrower.citizenship_status": {
+      "description": "Borrower citizenship/residency status",
+      "enum": [
+        "us_citizen",
+        "permanent_resident",
+        "non_permanent_resident",
+        "itin",
+        "foreign_national"
+      ],
+      "title": "Borrower.Citizenship Status",
+      "type": "string"
+    },
+    "RatioSet.total_monthly_income_usd": {
+      "description": "Monthly gross rental income",
+      "title": "Ratioset.Total Monthly Income Usd",
+      "type": "number"
+    },
+    "RatioSet.total_monthly_obligation_usd": {
+      "description": "Monthly PITIA (principal, interest, taxes, insurance, assoc. dues)",
+      "title": "Ratioset.Total Monthly Obligation Usd",
+      "type": "number"
+    },
+    "RatioSet.reserves_months": {
+      "description": "Months of PITIA reserves the borrower can show",
+      "minimum": 0,
+      "title": "Ratioset.Reserves Months",
+      "type": "integer"
+    },
+    "SubjectProperty.occupancy_subtype": {
+      "default": "standard",
+      "description": "e.g. 'standard', 'short_term_rental'",
+      "enum": [
+        "standard",
+        "short_term_rental"
+      ],
+      "title": "Subjectproperty.Occupancy Subtype",
+      "type": "string"
+    },
+    "LoanCore.dscr_qualification_method": {
+      "default": "full",
+      "description": "e.g. 'full', 'no_ratio' -- 'no_ratio' is NOT inferable from a missing DSCR",
+      "enum": [
+        "full",
+        "no_ratio"
+      ],
+      "title": "Loancore.Dscr Qualification Method",
+      "type": "string"
+    },
+    "LoanCore.is_escrow_waived": {
+      "default": false,
+      "title": "Loancore.Is Escrow Waived",
+      "type": "boolean"
+    },
+    "MortgageLoanInformation.is_interest_only": {
+      "default": false,
+      "title": "Mortgageloaninformation.Is Interest Only",
+      "type": "boolean"
+    },
+    "borrower_name": {
+      "description": "Borrowing entity name",
+      "title": "Borrower Name",
+      "type": "string"
+    },
+    "sponsor_name": {
+      "description": "Sponsor/guarantor name",
+      "title": "Sponsor Name",
+      "type": "string"
+    },
+    "loan_officer": {
+      "description": "Originating loan officer",
+      "title": "Loan Officer",
+      "type": "string"
+    },
+    "Borrower.entity_type": {
+      "default": "individual",
+      "description": "'individual', 'llc', 'corporation', or 'trust'. Gates the entity-review rules.",
+      "enum": [
+        "individual",
+        "llc",
+        "corporation",
+        "trust"
+      ],
+      "title": "Borrower.Entity Type",
+      "type": "string"
+    },
+    "Borrower.is_entity_borrower_1": {
+      "default": false,
+      "description": "Only meaningful when Borrower.entity_type != 'individual': is the LLC/entity listed as Borrower 1 on all loan documents?",
+      "title": "Borrower.Is Entity Borrower 1",
+      "type": "boolean"
+    },
+    "Borrower.entity_documents_complete": {
+      "default": false,
+      "description": "Only meaningful when Borrower.entity_type != 'individual': Operating Agreement/Bylaws, Articles of Organization/Incorporation, and Certificate of Good Standing all on file.",
+      "title": "Borrower.Entity Documents Complete",
+      "type": "boolean"
+    },
+    "TitleInformation.has_related_party_transfers": {
+      "default": false,
+      "description": "Title review found the subject property transferred more than once among the entity and its guarantors.",
+      "title": "Titleinformation.Has Related Party Transfers",
+      "type": "boolean"
+    },
+    "UnderwritingSummary.duplicate_ssn_cleared": {
+      "default": false,
+      "description": "The Stage 1 duplicate-SSN check ran and any duplicate found was withdrawn or declined before this loan proceeds.",
+      "title": "Underwritingsummary.Duplicate Ssn Cleared",
+      "type": "boolean"
+    },
+    "UnderwritingSummary.broker_nmls_verified": {
+      "default": false,
+      "description": "Broker's NMLS credentials verified (1003 p.4 / NMLS consumer access).",
+      "title": "Underwritingsummary.Broker Nmls Verified",
+      "type": "boolean"
+    },
+    "UnderwritingSummary.loan_officer_nmls_verified": {
+      "default": false,
+      "description": "Broker's Loan Officer's NMLS credentials verified.",
+      "title": "Underwritingsummary.Loan Officer Nmls Verified",
+      "type": "boolean"
+    },
+    "SubjectProperty.is_listed_for_sale": {
+      "default": false,
+      "description": "Refinance-only listing check: is the subject property currently listed for sale (e.g. via Redfin)?",
+      "title": "Subjectproperty.Is Listed For Sale",
+      "type": "boolean"
+    },
+    "CondoProject.hoa_reserves_adequate": {
+      "default": true,
+      "description": "Condo/condotel only: HOA budget and reserve fund reviewed as adequate against program guidelines. No numeric reserve standard is published in the source corpus (either program's consolidated guidelines) -- this is the AM's own budget-review determination, not a computed threshold.",
+      "title": "Condoproject.Hoa Reserves Adequate",
+      "type": "boolean"
+    },
+    "CondoProject.hoa_litigation_pending": {
+      "default": false,
+      "description": "Condo/condotel only: active or pending litigation against the HOA/condo association.",
+      "title": "Condoproject.Hoa Litigation Pending",
+      "type": "boolean"
+    },
+    "LoanCore.prepayment_penalty_structure": {
+      "default": "unspecified",
+      "description": "Selected PPP structure: 'unspecified' (not stated; denies in the states with a buyout rule), 'no_prepay', '5yr_5pct_fixed', '5yr_step', '4yr_5pct_fixed', '4yr_3pct_fixed', '3yr_5pct_fixed', '3yr_3pct_fixed', '2yr_3pct_fixed', or '1yr_3pct_fixed'.",
+      "enum": [
+        "unspecified",
+        "no_prepay",
+        "5yr_5pct_fixed",
+        "5yr_step",
+        "4yr_5pct_fixed",
+        "4yr_3pct_fixed",
+        "3yr_5pct_fixed",
+        "3yr_3pct_fixed",
+        "2yr_3pct_fixed",
+        "1yr_3pct_fixed"
+      ],
+      "title": "Loancore.Prepayment Penalty Structure",
+      "type": "string"
+    },
+    "SubjectProperty.number_of_units": {
+      "description": "1-4; distinguishes single-unit/Residential-1-2 state PPP carve-outs from the broader Residential-1-4 ones, and Platinum Select's two-unit limit. Required and never null: 1 for a single-unit property type, and stated by the application for a 2-4 unit property, since a null would leave the rules that gate on it unevaluated and the loan allowed.",
+      "maximum": 4,
+      "minimum": 1,
+      "title": "Subjectproperty.Number Of Units",
+      "type": "integer"
+    },
+    "LoanCore.note_rate_percent": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Note rate, percent (e.g. 7.5). Only needed for the Illinois >$250k/individual/>8% PPP rule.",
+      "title": "Loancore.Note Rate Percent"
+    },
+    "LoanCore.channel": {
+      "default": "unspecified",
+      "description": "'wholesale' or 'correspondent'; 'unspecified' is held to Correspondent limits.",
+      "enum": [
+        "wholesale",
+        "correspondent",
+        "unspecified"
+      ],
+      "title": "Loancore.Channel",
+      "type": "string"
+    },
+    "CreditReport.housing_history_rating": {
+      "default": "unspecified",
+      "description": "Worst 12-month housing rating: '0x30x12' (no lates), '1x30x12', '0x60x12', '0x90x12', '0x120x12', or 'unspecified'. An enum, since the rules match these spellings exactly and another spelling would skip them.",
+      "enum": [
+        "0x30x12",
+        "1x30x12",
+        "0x60x12",
+        "0x90x12",
+        "0x120x12",
+        "unspecified"
+      ],
+      "title": "Creditreport.Housing History Rating",
+      "type": "string"
+    },
+    "CreditReport.mortgage_0x30x24": {
+      "default": false,
+      "description": "No 30-day mortgage late in 24 months (escrow waiver).",
+      "title": "Creditreport.Mortgage 0X30X24",
+      "type": "boolean"
+    },
+    "SubjectProperty.has_current_lease": {
+      "default": false,
+      "description": "A current lease agreement is on file (cash-out refinance).",
+      "title": "Subjectproperty.Has Current Lease",
+      "type": "boolean"
+    },
+    "Borrower.has_bankruptcy_or_foreclosure": {
+      "default": false,
+      "title": "Borrower.Has Bankruptcy Or Foreclosure",
+      "type": "boolean"
+    },
+    "Borrower.months_since_bankruptcy_or_foreclosure": {
+      "default": 0,
+      "description": "Read only when Borrower.has_bankruptcy_or_foreclosure.",
+      "minimum": 0,
+      "title": "Borrower.Months Since Bankruptcy Or Foreclosure",
+      "type": "integer"
+    },
+    "Borrower.has_short_sale_dil_or_modification": {
+      "default": false,
+      "title": "Borrower.Has Short Sale Dil Or Modification",
+      "type": "boolean"
+    },
+    "Borrower.months_since_short_sale_dil_or_modification": {
+      "default": 0,
+      "description": "Read only when Borrower.has_short_sale_dil_or_modification.",
+      "minimum": 0,
+      "title": "Borrower.Months Since Short Sale Dil Or Modification",
+      "type": "integer"
+    },
+    "CreditReport.score_count": {
+      "default": 3,
+      "description": "Repositories reporting a score (0 to 3).",
+      "maximum": 3,
+      "minimum": 0,
+      "title": "Creditreport.Score Count",
+      "type": "integer"
+    },
+    "CreditReport.tradelines_meet_requirement": {
+      "default": true,
+      "description": "2 tradelines with 24 months history or 3 with 12 months, where 2 or fewer scores are reported.",
+      "title": "Creditreport.Tradelines Meet Requirement",
+      "type": "boolean"
+    },
+    "LoanCore.seller_concession_percent": {
+      "default": 0,
+      "description": "Percent of sale price.",
+      "minimum": 0,
+      "title": "Loancore.Seller Concession Percent",
+      "type": "number"
+    },
+    "SubjectProperty.ownership_months": {
+      "default": 0,
+      "description": "Months the borrower has owned the subject (refinance).",
+      "minimum": 0,
+      "title": "Subjectproperty.Ownership Months",
+      "type": "integer"
+    },
+    "SubjectProperty.is_mixed_use": {
+      "default": false,
+      "description": "Mixed use, adult care or assisted living.",
+      "title": "Subjectproperty.Is Mixed Use",
+      "type": "boolean"
+    },
+    "LoanCore.is_interest_only_10_40": {
+      "default": false,
+      "description": "The Interest Only 10 Yr / 40 Year Term product.",
+      "title": "Loancore.Is Interest Only 10 40",
+      "type": "boolean"
+    },
+    "Borrower.is_first_time_homebuyer": {
+      "default": false,
+      "title": "Borrower.Is First Time Homebuyer",
+      "type": "boolean"
+    },
+    "SubjectProperty.is_rural": {
+      "default": false,
+      "title": "Subjectproperty.Is Rural",
+      "type": "boolean"
+    },
+    "SubjectProperty.is_vacant": {
+      "default": false,
+      "title": "Subjectproperty.Is Vacant",
+      "type": "boolean"
+    },
+    "LoanCore.is_delayed_financing": {
+      "default": false,
+      "title": "Loancore.Is Delayed Financing",
+      "type": "boolean"
+    },
+    "SubjectProperty.listed_for_sale_last_6_months": {
+      "default": false,
+      "description": "Listed for sale in the six months before the application date.",
+      "title": "Subjectproperty.Listed For Sale Last 6 Months",
+      "type": "boolean"
+    },
+    "submission_date": {
+      "format": "date-time",
+      "title": "Submission Date",
+      "type": "string"
+    },
+    "source_system": {
+      "default": "loan_origination_system",
+      "title": "Source System",
+      "type": "string"
+    }
+  },
+  "required": [
+    "loan_id",
+    "LoanCore.total_loan_amount_usd",
+    "LoanCore.loan_purpose",
+    "SubjectProperty.property_type",
+    "SubjectProperty.address",
+    "SubjectProperty.state",
+    "SubjectProperty.appraised_value_usd",
+    "CreditReport.representative_score",
+    "Borrower.citizenship_status",
+    "RatioSet.total_monthly_income_usd",
+    "RatioSet.total_monthly_obligation_usd",
+    "RatioSet.reserves_months",
+    "borrower_name",
+    "sponsor_name",
+    "loan_officer",
+    "SubjectProperty.number_of_units"
+  ],
+  "title": "LoanApplication",
+  "type": "object"
+}

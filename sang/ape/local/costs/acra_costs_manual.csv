@@ -1,1 +1,5 @@
 date,category,activity,source_id,model,calls,input_tokens,output_tokens,cached_tokens,reasoning_tokens,cost_usd,cost_is_upper_bound,minutes,work_units,unit,outputs,output_kind,doc_words,status,notes
+2026-10-22,ingestion,document read with engine fallback,loan-2 (fallback_run),gpt-6-luna + docintel:prebuilt-read,,,,,,0.5624,False,,325,pages,37,documents,,completed,325 pages: 321 vision and 4 read by DocIntel after vision failed; DocIntel pages billed not separately priced here
+2026-10-22,extraction,code writer sample flag off,acra-casing-off,gpt-6-luna,10,,,,,0.0048,False,,10,rules,10,python,,completed,10 codable regen-4b jobs; independent cases off
+2026-10-22,extraction,code writer sample independent cases on,acra-casing-on,gpt-6-luna,21,,,,,0.0087,False,,10,rules,10,python,,completed,same 10 jobs; independent cases on: 79 cases written; 4 of 10 rules disagreed with the code
+2026-10-22,evaluation,verifier on loan-2 V5,loan-2 (verifier_run),gpt-6-luna,253,122987,20934,0,43212,0.0224,False,50,99,pairs,22,disagreements,,completed,V5 both with verify_disagreements; 17 of 22 disagreements backed a side

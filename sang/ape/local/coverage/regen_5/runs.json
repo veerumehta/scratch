@@ -1,0 +1,88 @@
+[
+ {
+  "representation": "jtbd",
+  "document": "standard",
+  "policy_id": "acra-standard",
+  "attempts": [
+   {
+    "run_id": "91c8285d41eb4559964ab0e3e3486b28",
+    "status": "succeeded",
+    "segments": 9,
+    "failed_segments": [],
+    "proposals": 114,
+    "cost_usd": 0.0225,
+    "started_at": "2026-10-22T10:50:58.465129Z",
+    "finished_at": "2026-10-22T15:24:05.722682Z",
+    "error": ""
+   }
+  ]
+ },
+ {
+  "representation": "jtbd",
+  "document": "platinum",
+  "policy_id": "acra-platinum",
+  "attempts": [
+   {
+    "run_id": "cbb27746f3ad4c80952c6a64194ccf01",
+    "status": "succeeded",
+    "segments": 9,
+    "failed_segments": [],
+    "proposals": 81,
+    "cost_usd": 0.0181,
+    "started_at": "2026-10-22T10:50:58.465559Z",
+    "finished_at": "2026-10-22T15:23:38.851213Z",
+    "error": ""
+   }
+  ]
+ },
+ {
+  "representation": "python",
+  "document": "standard",
+  "policy_id": "acra-standard",
+  "attempts": [
+   {
+    "run_id": "a9c980dfe5a54e26b2d2b99d8ed39cb5",
+    "status": "succeeded",
+    "segments": 48,
+    "failed_segments": [
+     "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b621",
+     "Acra_DSCR_Standard_Consolidated_Guidelines_v1_0.docx#Section 3.12 \u00b622"
+    ],
+    "proposals": 24,
+    "cost_usd": 0.0706,
+    "started_at": "2026-10-22T15:23:52.858187Z",
+    "finished_at": "2026-10-22T20:05:43.928601Z",
+    "error": ""
+   },
+   {
+    "run_id": "65bfcece2fec4ac48a372dfa35806ca3",
+    "status": "succeeded",
+    "segments": 48,
+    "failed_segments": [],
+    "proposals": 27,
+    "cost_usd": 0.08,
+    "started_at": "2026-10-22T20:06:12.205913Z",
+    "finished_at": "2026-10-22T21:45:56.772486Z",
+    "error": ""
+   }
+  ]
+ },
+ {
+  "representation": "python",
+  "document": "platinum",
+  "policy_id": "acra-platinum",
+  "attempts": [
+   {
+    "run_id": "a68e21d828da4be6853432dcda1fe094",
+    "status": "succeeded",
+    "segments": 42,
+    "failed_segments": [],
+    "proposals": 26,
+    "cost_usd": 0.0523,
+    "started_at": "2026-10-22T15:24:23.004888Z",
+    "finished_at": "2026-10-22T16:13:17.949559Z",
+    "error": ""
+   }
+  ]
+ }
+]

@@ -8,7 +8,7 @@ Companion: `claude/Acra_JTBD_and_Code_Generation_Assessment.md` (the findings th
 
 The Acra regeneration (`acra-regen-3b`) produced 231 jobs and 99 code rules. The assessment traced the shortfall to five mechanisms in our own pipeline, not to model skill: units planned into several sections and written once per section; computability decided once by the job writer and never revisited; the ledger clause stripped of headings and table labels; coverage counted by citation rather than by check; and an export that drops the section, the metrics and the step numbering. This plan changes those five, in `jazzx_sdk/pipelines/policy/`, `jazzx_sdk/pack/ledger.py`, `jazzx_sdk/pipelines/policy/jtbdset.py` and four prompt files, so the next regeneration is measurably better before any pack or schema work.
 
-What this plan does not do: feed the run different Acra source material (an input decision), bind the Acra template to the canonical object schema (a pack change that needs the canonical catalog file, listed under "Decisions needed"), or change the assessment engine, Plato routes or the kernel.
+What this plan does not do: bind the Acra template to the canonical object schema (a pack change that needs the canonical catalog file, listed under "Decisions needed"), or change the assessment engine, Plato routes or the kernel.
 
 ## Confirmed against current code
 
@@ -147,4 +147,4 @@ W1 and W2 first (small, prompt plus `_candidate`, and everything else reads thei
 
 1. Catalog: bind `acra_dscr_policy/jtbd_template.yaml` to the canonical object schema (the `Canonical_Object_Schema_Specification_v1_0` entities) with the current 47 fields declared as derived determinations over it. This needs the canonical catalog as a JSON Schema file in the pack; `JtbdTemplate.bound_to_catalog()` and `catalog_reads()` already consume that form. Without it, W4's `needs_field` names will point at fields no catalog holds and W5's derived reads are the only new vocabulary.
 2. Document-presence fields: whether `DocumentRegistry` exposes per-type presence and key attributes as readable fields (`Documents.<id>.present`, `.issued_date`). Most uncoded verifications wait on this.
-3. Input: whether the next regeneration reads the consolidated guidelines (with the Q-xx items resolved) or the Acra originals. No workstream above recovers content the input lacks.
+3. Open points (corrected 2026-10-22: both JTBD sets were written from the same consolidated guidelines, so this is not an input choice). Whether the writer is told to decide a check on the printed text and carry a Q-xx question as an open item on the job, rather than writing "do not resolve" steps and a missing-data line that also blocks code. A prompt line in `write_prompt.md` plus an `open_items` list in the `jtbd` extension; small enough to fold into W4.

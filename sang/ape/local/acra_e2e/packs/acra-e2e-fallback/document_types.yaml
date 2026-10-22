@@ -1,0 +1,138 @@
+# The documents of a DSCR loan package: the pack's document registry (japes `DocumentRegistry`,
+# named by pack_manifest.yaml). The classifier's classes come from here; document_agent.yaml keeps
+# only its splitting thresholds. Ids are stable: never reuse one for another document, keep a
+# renamed id in `aliases`, and mark a dropped one `retired: true` rather than deleting it.
+#
+# Each document names, under `yields`, the schemas/loan_document_fields.json fields that kind of
+# document prints: a document admitted as that class is read for those fields only, so a bank
+# statement is never asked for a FICO score. `yields: []` reads none: the document is still
+# classified and counts toward required_classes. Every entry states its yields, since one with no
+# `yields` key at all would be read for every field.
+#
+# Only what the page itself states. The extractor sees one document and no case record, so a
+# ratio, a span measured from the application date, or a judgement across several documents
+# (reserves in months of PITIA, months since a bankruptcy, months owned, tradelines meeting the
+# rule, a complete entity file, adequate HOA reserves, a listing in the last six months) is
+# left to the submitted record. The source repo tests that every field named is in the schema
+# and read by a policy or identifying the case.
+#
+# The entries mirror the classifier as it was (no categories, so its tree is unchanged). The
+# evidence types the rules request more finely (operating agreement, HOA budget, NMLS lookup, ...)
+# are not entries yet.
+
+document_types:
+  - id: loan_application
+    label: Loan application (1003)
+    kind: borrower_supplied
+    cues: >-
+      The Uniform Residential Loan Application (Form 1003 / URLA): loan amount and purpose,
+      subject property, borrower or borrowing entity, sponsor, citizenship and the originating
+      loan officer.
+    yields: [LoanCore.total_loan_amount_usd, LoanCore.loan_purpose, SubjectProperty.property_type, SubjectProperty.address, SubjectProperty.state,
+             SubjectProperty.appraised_value_usd, borrower_name, sponsor_name, loan_officer,
+             Borrower.citizenship_status, SubjectProperty.number_of_units, Borrower.entity_type]
+  - id: appraisal_report
+    label: Appraisal report
+    aliases: [appraisal]
+    kind: third_party
+    cues: >-
+      A real estate appraisal report (e.g. Freddie Mac Form 70 / Fannie Mae Form 1073) with
+      the appraiser's opinion of value, property address, and effective date.
+    yields: [SubjectProperty.appraised_value_usd, SubjectProperty.property_type, SubjectProperty.address, SubjectProperty.state,
+             SubjectProperty.number_of_units, SubjectProperty.is_rural, SubjectProperty.is_vacant, SubjectProperty.is_mixed_use]
+  - id: lease_agreement
+    label: Lease agreement
+    kind: borrower_supplied
+    cues: >-
+      A residential lease for the subject property: tenant, monthly rent, term and unit.
+    yields: [RatioSet.total_monthly_income_usd, SubjectProperty.has_current_lease, SubjectProperty.number_of_units]
+  - id: rent_roll
+    label: Rent roll
+    kind: borrower_supplied
+    cues: >-
+      A rent roll for the subject property listing each unit, its tenant and its monthly rent.
+    yields: [RatioSet.total_monthly_income_usd, SubjectProperty.number_of_units]
+  - id: bank_statement
+    label: Bank statement
+    kind: borrower_supplied
+    cues: >-
+      A bank or brokerage account statement showing the balances the borrower can show as
+      reserves.
+    # It shows balances; reserves_months is those over the case's PITIA, which this page does
+    # not state, so the record supplies it.
+    yields: []
+  - id: credit_report
+    label: Credit report
+    kind: third_party
+    cues: >-
+      A tri-merge credit report: scores by repository, tradelines, mortgage and housing
+      payment history, and public records such as bankruptcy, foreclosure, short sale or deed
+      in lieu.
+    yields: [CreditReport.representative_score, CreditReport.score_count, CreditReport.mortgage_0x30x24, CreditReport.housing_history_rating,
+             Borrower.has_bankruptcy_or_foreclosure, Borrower.has_short_sale_dil_or_modification]
+  - id: entity_documents
+    label: Entity documents
+    kind: borrower_supplied
+    cues: >-
+      The borrowing entity's documents: articles or certificate of formation, operating
+      agreement, certificate of good standing, and the IRS EIN letter.
+    yields: [Borrower.entity_type]
+  - id: title_commitment
+    label: Title commitment
+    kind: third_party
+    cues: >-
+      A title commitment or preliminary title report for the subject: vesting, the chain of
+      transfers, liens and exceptions.
+    yields: [TitleInformation.has_related_party_transfers, SubjectProperty.address]
+  - id: hazard_insurance
+    label: Hazard insurance declarations
+    kind: third_party
+    cues: >-
+      The hazard (homeowner's or landlord) insurance declarations page for the subject:
+      insurer, coverage and annual premium.
+    # Its premium is one part of PITIA, which the schema holds whole: no field is this page's.
+    yields: []
+  - id: hoa_questionnaire
+    label: HOA questionnaire
+    kind: third_party
+    cues: >-
+      A condominium or HOA questionnaire, or the association's budget: reserve funding and any
+      pending litigation against the association.
+    yields: [CondoProject.hoa_litigation_pending]
+  - id: listing_history
+    label: Listing history
+    kind: third_party
+    cues: >-
+      A listing history or MLS printout for the subject property, read for a refinance:
+      whether it is listed for sale now or was in the past six months.
+    yields: [SubjectProperty.is_listed_for_sale]
+
+  # Closing paperwork found in real packages: known, so it is not "unknown", and read for nothing.
+  - id: borrower_authorization
+    label: Borrower payment authorization
+    kind: closing
+    cues: >-
+      A borrower's ACH or payment authorization form: bank routing and account numbers and the
+      borrower's consent to automatic debits of the loan payment.
+    yields: []
+  - id: certificate_of_completion
+    label: E-signature certificate of completion
+    kind: closing
+    cues: >-
+      An e-signature platform's certificate of completion (e.g. DocuSign): the envelope id,
+      the signers, their timestamps and IP addresses, and the audit trail of the signing.
+    yields: []
+  - id: electronic_signature_disclosure
+    label: Electronic signature disclosure
+    kind: closing
+    cues: >-
+      The electronic records and signature disclosure (E-SIGN Act consent) a signer accepts
+      before signing electronically.
+    yields: []
+  - id: title_agent_verification
+    label: Title agent verification letter
+    kind: closing
+    cues: >-
+      A closing protection or title agent verification letter from the title insurer or the
+      settlement agent, confirming the agent is authorized and naming the closing.
+    yields: []

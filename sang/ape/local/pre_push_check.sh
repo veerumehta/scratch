@@ -49,6 +49,12 @@ PUSH_REFS=""
 [[ -t 0 ]] || PUSH_REFS=$(cat)
 export PUSH_REFS
 
+# Steps 1 to 3 run on the checked-out tree; say so when the pushed ref is a different commit.
+while read -r _ lsha _ _; do
+    [[ -z "${lsha:-}" || "$lsha" == 0000000000000000000000000000000000000000 ]] && continue
+    [[ "$lsha" == "$(git rev-parse HEAD)" ]] || echo "pre-push: pushing ${lsha:0:8}, not HEAD: lock, drift and suite check HEAD; spelling and review check the pushed ref."
+done <<< "$PUSH_REFS"
+
 QUICK=0
 CI_VERSIONS=0
 # A pass is recorded against the exact commit it verified. `git push` opens its connection to the
@@ -297,7 +303,8 @@ else
     # Repo-relative, not `dirname $0`: the hook is installed as a symlink into .git/hooks, and
     # BASH_SOURCE holds the *symlink* path, so dirname gave .git/hooks and the review never ran.
     # This script already cd'd to the toplevel on line 1, so the path below is well defined.
-    if ! "$(git rev-parse --show-toplevel)/scripts/local/adversarial_review.sh" japes; then
+    # Each pushed ref is reviewed at its own sha (a throwaway worktree when it is not HEAD).
+    if ! "$(git rev-parse --show-toplevel)/scripts/local/review_pushed.sh" japes; then
         fail=1
     fi
 fi

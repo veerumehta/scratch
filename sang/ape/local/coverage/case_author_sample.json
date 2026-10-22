@@ -1,0 +1,60 @@
+{
+ "jobs": {
+  "acra-standard": 5,
+  "acra-platinum": 5
+ },
+ "off": {
+  "policies": {
+   "acra-standard": {
+    "jobs": 5,
+    "status": "succeeded",
+    "proposals": 5,
+    "failed": 0,
+    "cost_usd": 0.0023,
+    "calls": 5,
+    "run_id": "f21ae1a71e224effba2121b87ba1d292"
+   },
+   "acra-platinum": {
+    "jobs": 5,
+    "status": "succeeded",
+    "proposals": 5,
+    "failed": 0,
+    "cost_usd": 0.0024,
+    "calls": 5,
+    "run_id": "848687880f744937be2c097b74b31228"
+   }
+  },
+  "extensions": {
+   "code_rules_with_independent_cases": 0,
+   "cases": 0,
+   "rules_with_a_mismatch": 0
+  }
+ },
+ "on": {
+  "policies": {
+   "acra-standard": {
+    "jobs": 5,
+    "status": "succeeded",
+    "proposals": 5,
+    "failed": 0,
+    "cost_usd": 0.0046,
+    "calls": 11,
+    "run_id": "b3984fabba4240759c25f5bdf24d792d"
+   },
+   "acra-platinum": {
+    "jobs": 5,
+    "status": "succeeded",
+    "proposals": 5,
+    "failed": 0,
+    "cost_usd": 0.0041,
+    "calls": 10,
+    "run_id": "1d46842a2f584f8f9d95afd051aa78a9"
+   }
+  },
+  "extensions": {
+   "code_rules_with_independent_cases": 10,
+   "cases": 79,
+   "rules_with_a_mismatch": 4
+  }
+ }
+}

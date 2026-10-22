@@ -55,9 +55,9 @@ async def _one(http: httpx.AsyncClient, rep: str, doc: str, attempts: int, pack:
                 break
             if time.monotonic() - last >= HEARTBEAT_SECONDS:
                 last = time.monotonic()
-                spent = round(sum(u.get("cost_usd", 0) for u in (run.get("usage") or {}).values()), 2)
                 print(f"{rep}:{doc} still {run['status']} after {int(last - began)}s: "
-                      f"{run['proposals']} proposals so far, ${spent} spent", flush=True)
+                      f"{run['segments']} of {run['segments_total']} segments, {run['proposals']} proposals, "
+                      f"{run['calls']} calls, ${run['cost_usd']:.4f} so far", flush=True)
         cost = round(sum(u.get("cost_usd", 0) for u in (run.get("usage") or {}).values()), 4)
         tries.append({"run_id": run_id, "status": run["status"], "segments": run["segments"],
                       "failed_segments": run["failed_segments"], "proposals": run["proposals"],

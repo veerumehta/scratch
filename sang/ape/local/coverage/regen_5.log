@@ -1,0 +1,196 @@
+wrote 24 seed files into acra-regen-5, jtbd_template.yaml extended with acra_template_extra_casing.yaml
+jtbd:standard attempt 1: run 91c8285d41eb4559964ab0e3e3486b28
+jtbd:platinum attempt 1: run cbb27746f3ad4c80952c6a64194ccf01
+jtbd:standard still running after 120s: 0 proposals so far, $0 spent
+jtbd:platinum still running after 120s: 0 proposals so far, $0 spent
+jtbd:standard still running after 240s: 16 proposals so far, $0 spent
+jtbd:platinum still running after 240s: 19 proposals so far, $0 spent
+jtbd:standard still running after 360s: 30 proposals so far, $0 spent
+jtbd:platinum still running after 360s: 33 proposals so far, $0 spent
+jtbd:standard still running after 480s: 30 proposals so far, $0 spent
+jtbd:platinum still running after 480s: 40 proposals so far, $0 spent
+jtbd:platinum still running after 600s: 40 proposals so far, $0 spent
+jtbd:standard still running after 600s: 30 proposals so far, $0 spent
+jtbd:standard still running after 720s: 42 proposals so far, $0 spent
+jtbd:platinum still running after 720s: 40 proposals so far, $0 spent
+jtbd:platinum still running after 840s: 49 proposals so far, $0 spent
+jtbd:standard still running after 840s: 42 proposals so far, $0 spent
+jtbd:platinum still running after 960s: 49 proposals so far, $0 spent
+jtbd:standard still running after 960s: 63 proposals so far, $0 spent
+jtbd:platinum still running after 1080s: 49 proposals so far, $0 spent
+jtbd:standard still running after 1080s: 63 proposals so far, $0 spent
+jtbd:platinum still running after 1200s: 49 proposals so far, $0 spent
+jtbd:standard still running after 1201s: 63 proposals so far, $0 spent
+jtbd:platinum still running after 1321s: 49 proposals so far, $0 spent
+jtbd:standard still running after 1321s: 63 proposals so far, $0 spent
+jtbd:platinum still running after 1441s: 58 proposals so far, $0 spent
+jtbd:standard still running after 1441s: 63 proposals so far, $0 spent
+jtbd:platinum still running after 1561s: 58 proposals so far, $0 spent
+jtbd:standard still running after 1561s: 88 proposals so far, $0 spent
+jtbd:platinum still running after 1681s: 63 proposals so far, $0 spent
+jtbd:standard still running after 1681s: 97 proposals so far, $0 spent
+jtbd:platinum still running after 1801s: 73 proposals so far, $0 spent
+jtbd:standard still running after 1801s: 101 proposals so far, $0 spent
+jtbd:platinum run cbb27746 succeeded: 81 proposals, 0 of 9 parts failed, $0.0181
+python:standard attempt 1: run a9c980dfe5a54e26b2d2b99d8ed39cb5
+jtbd:standard run 91c8285d succeeded: 114 proposals, 0 of 9 parts failed, $0.0225
+python:platinum attempt 1: run a68e21d828da4be6853432dcda1fe094
+python:standard still running after 120s: 0 proposals so far, $0 spent
+python:platinum still running after 120s: 1 proposals so far, $0 spent
+python:standard still running after 240s: 0 proposals so far, $0 spent
+python:platinum still running after 240s: 3 proposals so far, $0 spent
+python:standard still running after 360s: 0 proposals so far, $0 spent
+python:platinum still running after 360s: 5 proposals so far, $0 spent
+python:standard still running after 480s: 2 proposals so far, $0 spent
+python:platinum still running after 480s: 5 proposals so far, $0 spent
+python:standard still running after 600s: 2 proposals so far, $0 spent
+python:platinum still running after 600s: 7 proposals so far, $0 spent
+python:standard still running after 720s: 3 proposals so far, $0 spent
+python:platinum still running after 720s: 9 proposals so far, $0 spent
+python:standard still running after 840s: 4 proposals so far, $0 spent
+python:platinum still running after 840s: 11 proposals so far, $0 spent
+python:standard still running after 960s: 5 proposals so far, $0 spent
+python:platinum still running after 960s: 12 proposals so far, $0 spent
+python:standard still running after 1080s: 6 proposals so far, $0 spent
+python:platinum still running after 1080s: 15 proposals so far, $0 spent
+python:standard still running after 1200s: 7 proposals so far, $0 spent
+python:platinum still running after 1200s: 15 proposals so far, $0 spent
+python:standard still running after 1320s: 7 proposals so far, $0 spent
+python:platinum still running after 1320s: 16 proposals so far, $0 spent
+python:standard still running after 1441s: 8 proposals so far, $0 spent
+python:platinum still running after 1440s: 18 proposals so far, $0 spent
+python:standard still running after 1561s: 10 proposals so far, $0 spent
+python:platinum still running after 1560s: 18 proposals so far, $0 spent
+python:standard still running after 1681s: 10 proposals so far, $0 spent
+python:platinum still running after 1681s: 19 proposals so far, $0 spent
+python:standard still running after 1801s: 11 proposals so far, $0 spent
+python:platinum still running after 1801s: 21 proposals so far, $0 spent
+python:standard still running after 1921s: 13 proposals so far, $0 spent
+python:platinum still running after 1921s: 21 proposals so far, $0 spent
+python:standard still running after 2041s: 14 proposals so far, $0 spent
+python:platinum still running after 2041s: 22 proposals so far, $0 spent
+python:standard still running after 2161s: 15 proposals so far, $0 spent
+python:platinum still running after 2161s: 22 proposals so far, $0 spent
+python:standard still running after 2281s: 15 proposals so far, $0 spent
+python:platinum still running after 2281s: 23 proposals so far, $0 spent
+python:standard still running after 2401s: 16 proposals so far, $0 spent
+python:platinum still running after 2401s: 24 proposals so far, $0 spent
+python:standard still running after 2522s: 16 proposals so far, $0 spent
+python:platinum still running after 2521s: 24 proposals so far, $0 spent
+python:standard still running after 2642s: 17 proposals so far, $0 spent
+python:platinum still running after 2641s: 25 proposals so far, $0 spent
+python:standard still running after 2762s: 19 proposals so far, $0 spent
+python:platinum still running after 2762s: 26 proposals so far, $0 spent
+python:standard still running after 2882s: 19 proposals so far, $0 spent
+python:platinum still running after 2882s: 26 proposals so far, $0 spent
+python:platinum run a68e21d8 succeeded: 26 proposals, 0 of 42 parts failed, $0.0523
+python:standard still running after 3002s: 20 proposals so far, $0 spent
+python:standard still running after 3122s: 20 proposals so far, $0 spent
+python:standard still running after 3242s: 21 proposals so far, $0 spent
+python:standard still running after 3362s: 21 proposals so far, $0 spent
+python:standard still running after 3482s: 21 proposals so far, $0 spent
+python:standard still running after 3602s: 22 proposals so far, $0 spent
+python:standard still running after 3722s: 22 proposals so far, $0 spent
+python:standard still running after 3842s: 23 proposals so far, $0 spent
+python:standard still running after 3962s: 23 proposals so far, $0 spent
+python:standard still running after 4083s: 23 proposals so far, $0 spent
+python:standard still running after 4203s: 23 proposals so far, $0 spent
+python:standard still running after 4323s: 23 proposals so far, $0 spent
+python:standard still running after 4443s: 23 proposals so far, $0 spent
+python:standard still running after 4563s: 23 proposals so far, $0 spent
+python:standard still running after 4683s: 23 proposals so far, $0 spent
+python:standard still running after 4803s: 23 proposals so far, $0 spent
+python:standard still running after 4923s: 23 proposals so far, $0 spent
+python:standard still running after 5043s: 23 proposals so far, $0 spent
+python:standard still running after 5163s: 23 proposals so far, $0 spent
+python:standard still running after 5283s: 24 proposals so far, $0 spent
+python:standard still running after 5403s: 24 proposals so far, $0 spent
+python:standard still running after 5523s: 24 proposals so far, $0 spent
+python:standard still running after 5643s: 24 proposals so far, $0 spent
+python:standard still running after 5763s: 24 proposals so far, $0 spent
+python:standard still running after 5883s: 24 proposals so far, $0 spent
+python:standard still running after 6003s: 24 proposals so far, $0 spent
+python:standard still running after 6124s: 24 proposals so far, $0 spent
+python:standard still running after 6244s: 24 proposals so far, $0 spent
+python:standard still running after 6364s: 24 proposals so far, $0 spent
+python:standard still running after 6484s: 24 proposals so far, $0 spent
+python:standard still running after 6604s: 24 proposals so far, $0 spent
+python:standard still running after 6724s: 24 proposals so far, $0 spent
+python:standard still running after 6844s: 24 proposals so far, $0 spent
+python:standard still running after 6964s: 24 proposals so far, $0 spent
+python:standard still running after 7084s: 24 proposals so far, $0 spent
+python:standard still running after 7204s: 24 proposals so far, $0 spent
+python:standard still running after 7324s: 24 proposals so far, $0 spent
+python:standard still running after 7444s: 24 proposals so far, $0 spent
+python:standard still running after 7564s: 24 proposals so far, $0 spent
+python:standard still running after 7684s: 24 proposals so far, $0 spent
+python:standard still running after 7804s: 24 proposals so far, $0 spent
+python:standard still running after 7925s: 24 proposals so far, $0 spent
+python:standard still running after 8045s: 24 proposals so far, $0 spent
+python:standard still running after 8165s: 24 proposals so far, $0 spent
+python:standard still running after 8285s: 24 proposals so far, $0 spent
+python:standard still running after 8405s: 24 proposals so far, $0 spent
+python:standard still running after 8525s: 24 proposals so far, $0 spent
+python:standard still running after 8645s: 24 proposals so far, $0 spent
+python:standard still running after 8765s: 24 proposals so far, $0 spent
+python:standard still running after 8885s: 24 proposals so far, $0 spent
+python:standard still running after 9006s: 24 proposals so far, $0 spent
+python:standard run a9c980df succeeded: 24 proposals, 2 of 48 parts failed, $0.0706
+python:standard attempt 2: run 65bfcece2fec4ac48a372dfa35806ca3
+python:standard still running after 120s: 0 proposals so far, $0 spent
+python:standard still running after 240s: 0 proposals so far, $0 spent
+python:standard still running after 360s: 0 proposals so far, $0 spent
+python:standard still running after 480s: 0 proposals so far, $0 spent
+python:standard still running after 600s: 0 proposals so far, $0 spent
+python:standard still running after 720s: 0 proposals so far, $0 spent
+python:standard still running after 840s: 0 proposals so far, $0 spent
+python:standard still running after 960s: 1 proposals so far, $0 spent
+python:standard still running after 1080s: 1 proposals so far, $0 spent
+python:standard still running after 1200s: 1 proposals so far, $0 spent
+python:standard still running after 1320s: 2 proposals so far, $0 spent
+python:standard still running after 1440s: 2 proposals so far, $0 spent
+python:standard still running after 1560s: 3 proposals so far, $0 spent
+python:standard still running after 1680s: 4 proposals so far, $0 spent
+python:standard still running after 1800s: 5 proposals so far, $0 spent
+python:standard still running after 1920s: 5 proposals so far, $0 spent
+python:standard still running after 2041s: 6 proposals so far, $0 spent
+python:standard still running after 2161s: 6 proposals so far, $0 spent
+python:standard still running after 2281s: 7 proposals so far, $0 spent
+python:standard still running after 2401s: 7 proposals so far, $0 spent
+python:standard still running after 2521s: 9 proposals so far, $0 spent
+python:standard still running after 2641s: 10 proposals so far, $0 spent
+python:standard still running after 2761s: 10 proposals so far, $0 spent
+python:standard still running after 2881s: 11 proposals so far, $0 spent
+python:standard still running after 3001s: 12 proposals so far, $0 spent
+python:standard still running after 3121s: 13 proposals so far, $0 spent
+python:standard still running after 3241s: 13 proposals so far, $0 spent
+python:standard still running after 3361s: 14 proposals so far, $0 spent
+python:standard still running after 3481s: 14 proposals so far, $0 spent
+python:standard still running after 3601s: 14 proposals so far, $0 spent
+python:standard still running after 3721s: 14 proposals so far, $0 spent
+python:standard still running after 3841s: 15 proposals so far, $0 spent
+python:standard still running after 3961s: 15 proposals so far, $0 spent
+python:standard still running after 4081s: 16 proposals so far, $0 spent
+python:standard still running after 4201s: 17 proposals so far, $0 spent
+python:standard still running after 4321s: 18 proposals so far, $0 spent
+python:standard still running after 4441s: 19 proposals so far, $0 spent
+python:standard still running after 4561s: 20 proposals so far, $0 spent
+python:standard still running after 4681s: 21 proposals so far, $0 spent
+python:standard still running after 4802s: 21 proposals so far, $0 spent
+python:standard still running after 4922s: 22 proposals so far, $0 spent
+python:standard still running after 5042s: 22 proposals so far, $0 spent
+python:standard still running after 5162s: 22 proposals so far, $0 spent
+python:standard still running after 5282s: 23 proposals so far, $0 spent
+python:standard still running after 5402s: 23 proposals so far, $0 spent
+python:standard still running after 5522s: 24 proposals so far, $0 spent
+python:standard still running after 5642s: 24 proposals so far, $0 spent
+python:standard still running after 5762s: 26 proposals so far, $0 spent
+python:standard still running after 5882s: 27 proposals so far, $0 spent
+python:standard run 65bfcece succeeded: 27 proposals, 0 of 48 parts failed, $0.08
+wrote /Users/sangit/src/japes/scripts/local/coverage/regen_5/runs.json
+  acra-standard run 91c8285d: {"trigger": "approve", "decided": ["acra-standard:acra-standard.appraisal_review_property_eligibility.2_4_unit_cltv_cap", "acra-standard:acra-standard.appraisal_review_property_eligibility.above_80_00
+  merged into acra-standard: {"rel_path": "policies/acra-standard.yaml", "policy_id": "acra-standard", "added": ["acra-standard.appraisal_review_property_eligibility.2_4_unit_cltv_cap", "acra-standard.appraisal_review_property_eligibility.above_80_00_ltv_property_type", "acra-standard.appraisal_review_property_eligibility.condo
+  acra-platinum run cbb27746: {"trigger": "approve", "decided": ["acra-platinum:acra-platinum.appraisal_review_property_eligibility.declining_market_cltv_reduction", "acra-platinum:acra-platinum.appraisal_review_property_eligibili
+  merged into acra-platinum: {"rel_path": "policies/acra-platinum.yaml", "policy_id": "acra-platinum", "added": ["acra-platinum.appraisal_review_property_eligibility.declining_market_cltv_reduction", "acra-platinum.appraisal_review_property_eligibility.ineligible_state", "acra-platinum.appraisal_review_property_eligibility.list
+job run b1e73ee94fb24d4ba5f6711eb8739e1b for acra-standard
+job run e99ba73c35fe479c955a1ece1160e711 for acra-platinum
