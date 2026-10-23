@@ -53,6 +53,14 @@ lowest; the first layer that defines the term owns it. A pack-only term (no alia
 - **Only adds**: a layer that defines a lower term with another type or unit is refused when the chain is loaded.
 - **Cheap to move**: one file per entity under its layer's namespace, and one table, `layers.yaml`, saying which layer owns which
   entity. Aliases name terms, not layers, so moving an entity edits the table and the file, nothing in a pack.
+- **Excludes and replaces** (slots reserved; no case needs them yet, so only the key shape, the resolution rule and the compare kind):
+  a domain extension may carry, in its layer file, `excludes: {<core term>: <reason>}` and, on one of its own terms,
+  `replaces: <core term>`. Neither deletes anything: core stays intact because helpers are typed against it.
+  `excludes`: the term is not applicable in this domain; it is not offered to the writers, a read of it is a lint error, and a
+  helper whose parameter needs it is marked unavailable there. `replaces`: the domain's term has a different meaning from the core
+  term, so it is not an alias: no helper inheritance, its own helpers or none. Resolution walks the chain most specific first:
+  an excluded term resolves to "excluded in <layer>: <reason>", a replaced one to the replacing term and never to the core term it
+  replaces. Compare reports both as their own change kinds, `excluded` and `replaced`, beside `added`, `removed` and `changed`.
 - **Domain extensions** (DSCR, commercial lending, commercial insurance terms) are where a pack is justified: shared by several
   packs, evolving on its own. Not built; the first one is made when a second pack needs the same terms (CRE is the likely trigger),
   and it enters the chain as `pack:<id>@version`.
