@@ -28,6 +28,9 @@ SEED = ROOT / "plato" / "data" / "seed_packs" / "acra_dscr_policy"
 BUNDLE = ROOT / "docs" / "status" / "Acra" / "acra_bundle"
 OUT = Path("/Users/sangit/src/.scratch/sang/ape/local/acra_e2e/packs")
 KSTUDIO_ID, OURS_ID = "acra-e2e-kstudio", "acra-e2e-ours"
+#: The whole-pipeline packs, one per engine mode: `acra-e2e-pipe-<variant>`.
+PIPELINE_VARIANTS = {"hybrid": "hybrid", "both": "both"}
+MAX_LOOP_ITERATIONS = 5
 KSTUDIO_FILES = {"standard": "acra_New_Guideline_JTBD.json", "platinum_select": "acra_New_Guideline_JTBD_Platinum.json"}
 OURS_POLICIES = {"standard": ("DSCR_STANDARD", "standard_policy.yaml"),
                  "platinum_select": ("DSCR_PLATINUM_SELECT", "platinum_policy.yaml")}
@@ -104,6 +107,35 @@ def build_ours(bundle: Path, out: Path) -> Path:
     return root
 
 
+def build_pipeline(variant: str, out: Path) -> Path:
+    """`acra-e2e-pipe-<variant>`: our jobs and code under the whole conductor: documents, assessment (both programs, missing
+    facts skipped and recorded), adjudication, the investigation loop with its sentinel and convergence gate, a policy
+    check over the decision, and the narrative ungated so it is measured. No human checkpoint."""
+    ours = out / OURS_ID
+    root = out / f"acra-e2e-pipe-{variant}"
+    shutil.rmtree(root, ignore_errors=True)
+    shutil.copytree(ours, root)
+    manifest = yaml.safe_load((root / "pack_manifest.yaml").read_text())
+    manifest["pack_id"] = f"acra-e2e-pipe-{variant}"
+    steps = {step["id"]: step for step in manifest["conductor"]["steps"]}
+    assessment = {**steps["assessment"], "default_programs": list(OURS_POLICIES), "missing_inputs": "skip",
+                  "engine_mode": PIPELINE_VARIANTS[variant]}
+    assessment.pop("default_program", None)
+    investigation = {**steps["investigation"], "max_iterations": MAX_LOOP_ITERATIONS, "deterministic_verdict": "advisory",
+                     "sentinel": {"signal_decay_threshold": 2}, "convergence": {"min_iterations": 2}}
+    manifest["conductor"]["steps"] = [
+        steps["documents"], assessment,
+        {"id": "adjudication", "kind": "adjudication", "agent": "adjudication.yaml"},
+        investigation,
+        {"id": "policy_check", "kind": "policy_check", "decision_field": "decision", "metrics": "metrics.yaml",
+         "missing_inputs": "skip"},
+        {"id": "narrative", "kind": "narrate", "gate": {"governor_approved": False, "decision_field": "decision"}}]
+    (root / "pack_manifest.yaml").write_text(yaml.safe_dump(manifest, sort_keys=False, allow_unicode=True))
+    (root / "adjudication.yaml").write_text(yaml.safe_dump({"name": "acra-e2e-adjudication", "bin_by_section": True,
+                                                            "replicas": 1}))
+    return root
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--bundle", type=Path, default=BUNDLE)
@@ -112,6 +144,8 @@ def main() -> None:
     args.out.mkdir(parents=True, exist_ok=True)
     print(asyncio.run(build_kstudio(args.bundle, args.out)))
     print(build_ours(args.bundle, args.out))
+    for variant in PIPELINE_VARIANTS:
+        print(build_pipeline(variant, args.out))
 
 
 if __name__ == "__main__":
