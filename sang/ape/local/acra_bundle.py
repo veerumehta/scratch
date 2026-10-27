@@ -37,6 +37,7 @@ ARCHIVE_DIR = "archive"
 BEST = ROOT / "docs" / "status" / "Acra" / "acra_bundle"
 CANDIDATE = Path("/tmp/acra_bundle_candidate")
 DOCS = ROOT / "documents" / "Acra"
+REFERENCES = Path(__file__).parent / "acra_kstudio_references.yaml"
 
 
 def _get(http: httpx.Client, url: str, **params) -> httpx.Response:
@@ -113,6 +114,23 @@ def _provider(model: str | None) -> str:
     return "openai (agents sdk)" if name.startswith(("gpt", "o1", "o3")) else "anthropic" if "claude" in name else "unknown"
 
 
+def _references(dest: Path) -> list[dict]:
+    """The K-Studio sets of `REFERENCES`, each copied into ``dest`` under its id and described: title, version, jobs, digest."""
+    import hashlib
+
+    rows = []
+    for ref in yaml.safe_load(REFERENCES.read_text())["references"]:
+        source = ROOT / ref["file"]
+        data = source.read_bytes()
+        held = json.loads(data)
+        name = f"{ref['id']}.json"
+        (dest / name).write_bytes(data)
+        rows.append({"id": ref["id"], "program": ref["program"], "file": name, "title": held.get("title"),
+                     "version": held.get("version"), "jobs": len(held.get("values") or []), "source": ref["source"],
+                     "model": ref["model"], "received": ref["received"], "sha256": hashlib.sha256(data).hexdigest()})
+    return rows
+
+
 def _metadata(label: str, trial: str, counts: dict, sets: dict, pack, stages: dict, http: httpx.Client) -> dict:
     from jazzx_sdk import __version__ as sdk_version
     from jazzx_sdk.pipelines.policy.ledger import is_job
@@ -141,10 +159,35 @@ def _promote(candidate: Path, best: Path, label: str | None) -> None:
         shutil.move(str(item), best / item.name)
 
 
+HTML_PAGE = """<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acra DSCR bundle</title>
+<style>
+:root{color-scheme:light dark;--line:#8884}
+body{font:16px/1.5 system-ui,sans-serif;max-width:60rem;margin:2rem auto;padding:0 1rem}
+table{border-collapse:collapse;margin:1rem 0}
+th,td{border:1px solid var(--line);padding:.3rem .7rem;text-align:left}
+code{background:var(--line);padding:0 .25em;border-radius:3px}
+</style></head><body>
+{body}
+</body></html>
+"""
+
+
+def _write_readme(path: Path, text: str) -> None:
+    """Write the README and its HTML render beside it."""
+    from markdown_it import MarkdownIt
+
+    path.write_text(text)
+    body = MarkdownIt("commonmark").enable("table").render(text)
+    path.with_suffix(".html").write_text(HTML_PAGE.replace("{body}", body))
+
+
 def _archive_previous(out: Path, label: str | None) -> None:
     """Move the current bundle into `archive/<label>` so `out` always holds the best-so-far."""
     present = [d for d in out.iterdir() if d.is_dir() and d.name != ARCHIVE_DIR]
     readme = out / "README.md"
+    readme_html = out / "README.html"
     if not present and not readme.exists():
         return
     stamp = label or datetime.date.fromtimestamp((readme if readme.exists() else present[0]).stat().st_mtime).isoformat()
@@ -152,7 +195,7 @@ def _archive_previous(out: Path, label: str | None) -> None:
     if target.exists():
         raise SystemExit(f"{target} exists; pass --archive-as with a new name")
     target.mkdir(parents=True)
-    for item in [*present, *([readme] if readme.exists() else [])]:
+    for item in [*present, *(f for f in (readme, readme_html) if f.exists())]:
         shutil.move(str(item), target / item.name)
 
 
@@ -203,8 +246,9 @@ def main() -> None:
         sets = export_program_sets(pack, version=label, programs=PROGRAM_POLICIES)
         for program, artifact in sets.items():
             (dirs["3_sdk_jtbds"] / SET_FILES[program]).write_text(json.dumps(artifact, indent=1))
-        (out / "bundle.json").write_text(json.dumps(
-            _metadata(label, TRIAL, counts, sets, pack, _stages(args.runs, http), http), indent=2))
+        metadata = _metadata(label, TRIAL, counts, sets, pack, _stages(args.runs, http), http)
+        metadata["kstudio_references"] = _references(dirs["2_kstudio_jtbds"])
+        (out / "bundle.json").write_text(json.dumps(metadata, indent=2))
         (dirs["3_sdk_jtbds"] / "ledger.yaml").write_text(
             _get(http, f"/packs/drafts/{TRIAL}", path="ledger.yaml").json()["content"])
         (dirs["5_comparison"] / "coverage_trial.xlsx").write_bytes(
@@ -237,11 +281,11 @@ def main() -> None:
         if ledger_xlsx.exists():
             shutil.copy2(ledger_xlsx, dirs["5_comparison"] / "coverage_trial_at_run.xlsx")
 
-    (out / "README.md").write_text(_readme(counts, legacy, out, BEST, BEST if BEST.exists() else None))
+    _write_readme(out / "README.md", _readme(counts, legacy, out, BEST, BEST if BEST.exists() else None))
     print(json.dumps(counts, indent=1))
     if args.promote:
         _promote(out, BEST, args.archive_as)
-        (BEST / "README.md").write_text(_readme(counts, legacy, BEST, BEST))
+        _write_readme(BEST / "README.md", _readme(counts, legacy, BEST, BEST))
         print(f"promoted to {BEST}")
     else:
         print(f"candidate at {out}; compare with {BEST}, then rerun with --promote")

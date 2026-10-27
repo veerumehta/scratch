@@ -1,0 +1,21 @@
+# Acra's hand-built (K-Studio) JTBD sets kept beside our own in the bundle. One row per set; both Standard versions stay.
+# `file` is relative to the repository root. `model` is what the source states; nothing is inferred.
+references:
+  - id: standard_v9
+    program: standard
+    file: documents/Acra/acra_New_Guideline_JTBD.json
+    source: Acra v1 team, K-Studio export
+    model: Fable (version not stated)
+    received: "2026-10-05"
+  - id: standard_v17
+    program: standard
+    file: docs/acra-v1/Acra-Standard-JTBDs.json
+    source: Acra v1 team, K-Studio export
+    model: Fable 5.1 (stated by the user)
+    received: "2026-10-27"
+  - id: platinum_select_v7
+    program: platinum_select
+    file: documents/Acra/acra_New_Guideline_JTBD_Platinum.json
+    source: Acra v1 team, K-Studio export
+    model: Fable (version not stated)
+    received: "2026-10-05"

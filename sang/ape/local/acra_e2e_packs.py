@@ -127,10 +127,18 @@ def build_pipeline(variant: str, out: Path) -> Path:
         steps["documents"], assessment,
         {"id": "adjudication", "kind": "adjudication", "agent": "adjudication.yaml"},
         investigation,
-        {"id": "policy_check", "kind": "policy_check", "decision_field": "decision", "metrics": "metrics.yaml",
-         "missing_inputs": "skip"},
         {"id": "narrative", "kind": "narrate", "gate": {"governor_approved": False, "decision_field": "decision"}}]
     (root / "pack_manifest.yaml").write_text(yaml.safe_dump(manifest, sort_keys=False, allow_unicode=True))
+    # Tolerant: a fact the packet does not state is recorded as missing, not a reason to refuse the case.
+    schema_path = root / "schemas" / "loan_application.json"
+    schema = json.loads(schema_path.read_text())
+    schema["required"] = [k for k in schema.get("required", []) if k == "loan_id"]
+    schema_path.write_text(json.dumps(schema, indent=2) + "\n")
+    # The program comes from the assessment's default_programs, never from a packet.
+    fields_path = root / "schemas" / "loan_document_fields.json"
+    fields = json.loads(fields_path.read_text())
+    fields["properties"].pop("program_id", None)
+    fields_path.write_text(json.dumps(fields, indent=2) + "\n")
     (root / "adjudication.yaml").write_text(yaml.safe_dump({"name": "acra-e2e-adjudication", "bin_by_section": True,
                                                             "replicas": 1}))
     return root
