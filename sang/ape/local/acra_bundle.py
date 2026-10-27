@@ -12,10 +12,14 @@ import argparse
 import json
 import datetime
 import shutil
+import tempfile
+from collections import Counter
 from pathlib import Path
 
 import httpx
 import yaml
+
+from jazzx_sdk.pack.ledger import DISPOSITIONS
 
 ROOT = Path("/Users/sangit/src/japes")
 COVERAGE = Path(__file__).parent / "coverage"
@@ -23,6 +27,10 @@ API = "http://localhost:8000/api/v1"
 HEAD = {"x-tenant-id": "acra-lending"}
 DEFAULT_TRIAL, SOURCE = "acra-ledger-trial", "acra-dscr-policy"
 TRIAL_POLICIES = {"standard": "policies/acra-standard.yaml", "platinum": "policies/acra-platinum.yaml"}
+#: Our extraction policy of each program, and the file name its set is written under (Acra's two files, per program).
+PROGRAM_POLICIES = {"standard": "acra-standard", "platinum_select": "acra-platinum"}
+SET_FILES = {"standard": "jtbdset_standard.json", "platinum_select": "jtbdset_platinum_select.json"}
+BUNDLE_FORMAT = 2
 RUNS = COVERAGE / "runs_20261011.json"
 TIMEOUT_SECONDS = 60
 ARCHIVE_DIR = "archive"
@@ -70,6 +78,61 @@ def _jobs_markdown(rules: list[dict], program: str) -> str:
     return "\n".join(lines)
 
 
+def _draft_pack(http: httpx.Client, trial: str):
+    """The trial draft's files, loaded as a pack in this process (nothing is written to Plato)."""
+    from jazzx_sdk.pack.domain import load_materialized_pack
+
+    root = Path(tempfile.mkdtemp(prefix="acra_bundle_draft_"))
+    for entry in _get(http, f"/packs/drafts/{trial}").json()["files"]:
+        rel = entry["rel_path"]
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / rel).write_text(_get(http, f"/packs/drafts/{trial}", path=rel).json()["content"])
+    return load_materialized_pack(root)
+
+
+def _stages(runs_json: Path | None, http: httpx.Client) -> dict:
+    """Per stage of the generation: model, provider and prompt versions, read from the extraction runs' provenance."""
+    if runs_json is None or not runs_json.is_file():
+        return {}
+    stages: dict[str, dict] = {}
+    for job in json.loads(runs_json.read_text()):
+        for attempt in job["attempts"]:
+            if attempt.get("status") != "succeeded":
+                continue
+            run = http.get(f"{API}/authoring/extract/runs/{attempt['run_id']}").json()
+            for step in run.get("provenance") or []:
+                held = stages.setdefault(step["step"], {"model": step.get("model"), "provider": _provider(step.get("model")),
+                                                         "prompt_versions": {}})
+                held["prompt_versions"].update({r["name"]: r["version"] for r in step.get("prompts") or []})
+    return stages
+
+
+def _provider(model: str | None) -> str:
+    """The provider a model id belongs to (the stages run through the OpenAI Agents SDK for the OpenAI models)."""
+    name = (model or "").lower().removeprefix("flex_")
+    return "openai (agents sdk)" if name.startswith(("gpt", "o1", "o3")) else "anthropic" if "claude" in name else "unknown"
+
+
+def _metadata(label: str, trial: str, counts: dict, sets: dict, pack, stages: dict, http: httpx.Client) -> dict:
+    from jazzx_sdk import __version__ as sdk_version
+    from jazzx_sdk.pipelines.policy.ledger import is_job
+    from jazzx_sdk.rules.lib import LIB_VERSION
+
+    info = http.get(f"{API}/info").json() if http else {}
+    within = sum(1 for s in sets.values() for c in Counter(v["mnemonic"] for v in s["values"]).values() if c > 1)
+    shared = len(set.intersection(*({v["mnemonic"] for v in s["values"]} for s in sets.values()))) if sets else 0
+    jobs = [r for p in pack.policies if p.policy_id in PROGRAM_POLICIES.values() for r in p.rules if is_job(r)]
+    return {"bundle_format": BUNDLE_FORMAT, "version": label, "trial_pack_id": trial,
+            "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
+            "sdk_version": sdk_version, "plato_version": ((info.get("versions") or {}).get("plato") if isinstance(info, dict) else None),
+            "library_version": LIB_VERSION, "export_fix": True, "stages": stages,
+            "counts": {"per_program": counts, "jobs": sum(len(s["values"]) for s in sets.values()),
+                       "own_mnemonics": sum(1 for r in jobs if ((r.domain_extensions or {}).get("jtbd") or {}).get("mnemonic")),
+                       "duplicate_mnemonics_within_a_set": within, "mnemonics_shared_by_both_programs": shared,
+                       "computable_checks": sum(len(r.condition.computable_checks or []) for r in jobs),
+                       "checks": sum(len(r.condition.checks) for r in jobs)}}
+
+
 def _promote(candidate: Path, best: Path, label: str | None) -> None:
     """Archive the current best as `archive/<label>`, then move the candidate's contents into `best`."""
     best.mkdir(parents=True, exist_ok=True)
@@ -98,6 +161,8 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", default=str(CANDIDATE), help="where the candidate is built")
     parser.add_argument("--trial", default=DEFAULT_TRIAL, help="draft pack holding the jobs and code")
+    parser.add_argument("--label", help="this bundle's version label (default: today's date)")
+    parser.add_argument("--runs", type=Path, help="the regeneration's runs.json, for the stages' models and prompts")
     parser.add_argument("--promote", action="store_true",
                         help="after building, archive the current best and replace it with this build")
     parser.add_argument("--archive-as", help="archive subfolder name for the bundle being replaced "
@@ -131,12 +196,15 @@ def main() -> None:
             for r in code:
                 (target / f"{'__'.join(r['rule_id'].split('.')[1:])}.py").write_text(_py_file(r, "written from a job"))
             counts[program] = {"jobs": len(jobs), "code_from_jobs": len(code)}
-        exported = http.get(f"{API}/packs/drafts/{TRIAL}/jtbdset")
-        if exported.status_code == 200:
-            (dirs["3_sdk_jtbds"] / "jtbdset.json").write_text(json.dumps(exported.json(), indent=1))
-        else:
-            (dirs["3_sdk_jtbds"] / "jtbdset_REFUSED.txt").write_text(
-                f"The export refused ({exported.status_code}): {exported.text}\n")
+        from jazzx_sdk.pack.jtbdset_export import export_program_sets
+
+        pack = _draft_pack(http, TRIAL)
+        label = args.label or datetime.date.today().isoformat()
+        sets = export_program_sets(pack, version=label, programs=PROGRAM_POLICIES)
+        for program, artifact in sets.items():
+            (dirs["3_sdk_jtbds"] / SET_FILES[program]).write_text(json.dumps(artifact, indent=1))
+        (out / "bundle.json").write_text(json.dumps(
+            _metadata(label, TRIAL, counts, sets, pack, _stages(args.runs, http), http), indent=2))
         (dirs["3_sdk_jtbds"] / "ledger.yaml").write_text(
             _get(http, f"/packs/drafts/{TRIAL}", path="ledger.yaml").json()["content"])
         (dirs["5_comparison"] / "coverage_trial.xlsx").write_bytes(
@@ -169,20 +237,71 @@ def main() -> None:
         if ledger_xlsx.exists():
             shutil.copy2(ledger_xlsx, dirs["5_comparison"] / "coverage_trial_at_run.xlsx")
 
-    (out / "README.md").write_text(_readme(counts, legacy))
+    (out / "README.md").write_text(_readme(counts, legacy, out, BEST, BEST if BEST.exists() else None))
     print(json.dumps(counts, indent=1))
     if args.promote:
         _promote(out, BEST, args.archive_as)
+        (BEST / "README.md").write_text(_readme(counts, legacy, BEST, BEST))
         print(f"promoted to {BEST}")
     else:
         print(f"candidate at {out}; compare with {BEST}, then rerun with --promote")
 
 
-def _readme(counts: dict, legacy: bool) -> str:
+def _facts(bundle: Path) -> dict | None:
+    """The coverage workbook's headline numbers for one bundle, or None when it has none."""
+    from openpyxl import load_workbook
+
+    path = bundle / "5_comparison" / "coverage_trial.xlsx"
+    if not path.exists():
+        return None
+    book = load_workbook(path, read_only=True)
+    cells = {row[0]: row[1] for row in book["Summary"].iter_rows(values_only=True) if row and row[0]}
+    loose = next((n for n in book.sheetnames if n.lower().endswith("without a job")), None)
+    dispositions = {d: cells.get(d, 0) for d in DISPOSITIONS}
+    return {"jobs": sum(dispositions.values()), "dispositions": dispositions,
+            "share": cells.get("coded share"), "units": cells.get("units"), "checked": cells.get("units checked"),
+            "loose": book[loose].max_row - 1 if loose else None}
+
+
+def _history(best: Path, current: Path | None, previous: Path | None = None) -> str:
+    """One row per archived bundle, oldest first, then the best being replaced (if any), then the current one."""
+    rows = [(d.name, _facts(d)) for d in sorted((best / ARCHIVE_DIR).glob("*")) if d.is_dir()]
+    if previous is not None:
+        rows.append(("previous best", _facts(previous)))
+    if current is not None:
+        rows.append(("current", _facts(current)))
+    lines = ["| Bundle | Jobs | Code | Code and procedure | Coded share | Clauses checked | Code rules without a job |",
+             "|---|---|---|---|---|---|---|"]
+    for name, f in rows:
+        if f is None:
+            continue
+        d = f["dispositions"]
+        checked = f"{f['checked']} of {f['units']}" if f["units"] else "n/a"
+        share = f"{f['share']:.0%}" if f["share"] is not None else "n/a"
+        lines.append(f"| {name} | {f['jobs']} | {d['code']} | {d['code_and_procedure']} | {share} | {checked} | "
+                     f"{'n/a' if f['loose'] is None else f['loose']} |")
+    return "\n".join(lines)
+
+
+def _readme(counts: dict, legacy: bool, bundle: Path, best: Path, previous: Path | None = None) -> str:
     rows = "\n".join(f"| {p} | {c['jobs']} | {c['code_from_jobs']} |"
                      for p, c in counts.items())
     segments = ("- `4_sdk_code/from_segments/`: rules written directly from guideline segments (the 2026-10-11 runs),\n"
                 "  a cross-check; most are proposals, not merged.\n") if legacy else ""
+    facts = _facts(bundle)
+    now = ""
+    if facts:
+        table = "\n".join(f"| {d} | {n} |" for d, n in facts["dispositions"].items())
+        now = f"""
+## This version, in numbers
+
+| Disposition | Jobs |
+|---|---|
+{table}
+
+Coded share {facts["share"]:.0%} (jobs code decides at least in part); {facts["checked"]} of {facts["units"]} guideline
+clauses are checked by some job. `5_comparison/coverage_trial.xlsx` has the detail; its Legend sheet defines every column.
+"""
     return f"""# Acra DSCR: guidelines, hand-built JTBDs, our JTBDs and our code
 
 Generated by `acra_bundle.py` from local Plato (trial pack `{TRIAL}`, proposals of `{SOURCE}`).
@@ -194,12 +313,42 @@ Generated by `acra_bundle.py` from local Plato (trial pack `{TRIAL}`, proposals 
 - `1_guidelines/`: the two Acra consolidated guidelines (Standard, Platinum Select).
 - `2_kstudio_jtbds/`: Acra's hand-built JTBD sets (123 Standard, 108 Platinum).
 - `3_sdk_jtbds/`: our jobs per program, readable (`*_jobs.md`) and as rules (`*_policy.yaml`, jobs
-  and code together); `jtbdset.json` is the export in the hand-built set's format; `ledger.yaml`
-  links code to jobs.
+  and code together); `jtbdset_standard.json` and `jtbdset_platinum_select.json` are our jobs, one set per
+  program, in the hand-built set's format (each job carries `rule_id` and `program`; `mnemonic` is the job's own
+  family mnemonic where it has one); `ledger.yaml` links code to jobs. `bundle.json` says how this version was
+  made (trial pack, date, models and prompts per stage, SDK, Plato and library versions, counts).
 - `4_sdk_code/from_jobs/`: one file per rule written from a job (header names the job).
 {segments}- `5_comparison/`: coverage of the trial pack{", plus the segment-code and Acra-alignment comparisons" if legacy else ""}.
+{now}
+## Terms
 
-This folder is the current best; earlier versions are under `archive/`.
+- **Job**: a requirement written as prose steps and checks that a person or an LLM follows (a JTBD).
+- **Code rule**: a Python function over case fields that decides some of a job's checks.
+- **Procedure**: what is left to the reviewer when no check is computable.
+- A job is **code** when every check is computable and a rule implements it, **code_and_procedure** when code decides
+  some checks and a reviewer the rest, **procedure** or **not_computable** when no check is computable (the latter
+  names the data it lacks), **computable_no_code** when a check could be code and nobody wrote it, **unassessed** when
+  nobody said which checks are computable.
+
+## Code without a job
+
+The sheet "Code rules without a job" lists code written from a guideline segment that no job is matched to, plus code
+not yet matched. It is not expected to be empty or always the same size:
+
+- Code written *from a job* always has one: it names the job it implements, one rule per job here, so code from jobs
+  can never exceed the jobs and cannot be an orphan. Jobs outnumber it because a job with no computable check gets no
+  code (the not_computable and procedure rows above).
+- Code written *from segments* (the cross-check pipeline) has no such guarantee. A rule left without a job means the
+  job list lacks a requirement the segment code enforces, or the code is spurious. Its count tells how complete the
+  job list is, not how good the code is. Segment code also matches jobs the job-written code did not reach, which is
+  why jobs coded can exceed the code written from jobs.
+- Action: write the job (the ledger can propose one from the rule's text) or drop the rule.
+
+## History
+
+{_history(best, bundle, previous)}
+
+Earlier bundles are under `archive/`; each has its own README and comparison files.
 """
 
 
