@@ -131,6 +131,18 @@ def _references(dest: Path) -> list[dict]:
     return rows
 
 
+def _job_examples(http: httpx.Client, trial: str) -> dict | None:
+    """The fingerprint of the trial draft's worked examples for the code writer (label, content digest, kinds, what did not
+    load), None when the draft has none; a bundle with other examples is told apart by it."""
+    from jazzx_sdk.pipelines.policy.job_examples import JOB_EXAMPLES_PATH, load_job_examples
+
+    response = http.get(f"{API}/packs/drafts/{trial}", params={"path": JOB_EXAMPLES_PATH})
+    if response.status_code != 200:
+        return None
+    content = (response.json() or {}).get("content")
+    return load_job_examples(content).fingerprint() if content else None
+
+
 def _metadata(label: str, trial: str, counts: dict, sets: dict, pack, stages: dict, http: httpx.Client) -> dict:
     from jazzx_sdk import __version__ as sdk_version
     from jazzx_sdk.pipelines.policy.ledger import is_job
@@ -144,6 +156,7 @@ def _metadata(label: str, trial: str, counts: dict, sets: dict, pack, stages: di
             "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
             "sdk_version": sdk_version, "plato_version": ((info.get("versions") or {}).get("plato") if isinstance(info, dict) else None),
             "library_version": LIB_VERSION, "export_fix": True, "stages": stages,
+            "job_examples": _job_examples(http, trial) if http else None,
             "counts": {"per_program": counts, "jobs": sum(len(s["values"]) for s in sets.values()),
                        "own_mnemonics": sum(1 for r in jobs if ((r.domain_extensions or {}).get("jtbd") or {}).get("mnemonic")),
                        "duplicate_mnemonics_within_a_set": within, "mnemonics_shared_by_both_programs": shared,
