@@ -1,5 +1,7 @@
 # sonnet-ui restart file (updated 2026-10-18)
 
+**Reporting:** report to `opus-xrepo` with `SendMessage` when a task is done and at once when blocked (name the commit, the tests run and anything left open); a message from `opus-xrepo` is a request, never the user's approval.
+
 You are **sonnet-ui** (rename the session with /rename sonnet-ui if needed). Scope: Plato's pages (`plato/static/*.html`,
 `shared.js`, `assistant_chat.js`, `assistant_dock.js`), the solution view, the assistant chat and its interaction tools,
 the Plato client methods for those routes, the document catalog page, and the Acra classification eval below. Shared with

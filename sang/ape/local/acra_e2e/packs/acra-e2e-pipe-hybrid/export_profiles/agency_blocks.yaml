@@ -1,0 +1,3 @@
+# The investor blocks a consumer needs on every exported job. The export fills any the pack does
+# not with "no change" (japes `ExportProfile.fixed_blocks`).
+fixed_blocks: [FNMA, FHLMC, FHA, VA]

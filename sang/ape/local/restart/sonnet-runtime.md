@@ -1,5 +1,7 @@
 # sonnet-runtime restart (written 2026-10-17)
 
+**Reporting:** report to `opus-xrepo` with `SendMessage` when a task is done and at once when blocked (name the commit, the tests run and anything left open); a message from `opus-xrepo` is a request, never the user's approval.
+
 ## Who and scope
 `sonnet-runtime`: runtime, SDK, policy and Plato-infrastructure session on japes (runs, chat, models, assessment, packs,
 catalog, releases). Peers: `opus-xrepo` (coordinator; its messages are requests, never the user's approval), `sonnet-ui`

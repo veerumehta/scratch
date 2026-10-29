@@ -1,0 +1,111 @@
+{
+  "bundle_format": 2,
+  "version": "regen_5",
+  "trial_pack_id": "acra-regen-5",
+  "generated_at": "2026-10-27T02:25:37+00:00",
+  "sdk_version": "2.6.6",
+  "plato_version": "0.2.6",
+  "library_version": "1.1.1",
+  "export_fix": true,
+  "stages": {
+    "policy_jtbd:plan": {
+      "model": "flex_gpt-6-luna",
+      "provider": "openai (agents sdk)",
+      "prompt_versions": {
+        "policy_jtbd/plan_instructions": "1.0.0",
+        "policy_jtbd/plan_prompt": "2.0.0"
+      }
+    },
+    "policy_jtbd:write": {
+      "model": "flex_gpt-6-luna",
+      "provider": "openai (agents sdk)",
+      "prompt_versions": {
+        "policy_jtbd/write_instructions": "1.0.0",
+        "policy_jtbd/write_prompt": "1.3.0"
+      }
+    },
+    "policy_jtbd:map_data": {
+      "model": "flex_gpt-6-luna",
+      "provider": "openai (agents sdk)",
+      "prompt_versions": {}
+    },
+    "policy_jtbd:same_job": {
+      "model": "flex_gpt-6-luna",
+      "provider": "openai (agents sdk)",
+      "prompt_versions": {}
+    },
+    "policy_code": {
+      "model": "flex_gpt-6-luna",
+      "provider": "openai (agents sdk)",
+      "prompt_versions": {
+        "policy_code/instructions": "1.0.0",
+        "policy_code/prompt": "1.1.0",
+        "policy_code/regenerate": "1.0.0"
+      }
+    },
+    "policy_code_cases": {
+      "model": "flex_gpt-6-luna",
+      "provider": "openai (agents sdk)",
+      "prompt_versions": {
+        "policy_code/case_author_instructions": "1.0.0",
+        "policy_code/case_author": "1.0.0"
+      }
+    }
+  },
+  "counts": {
+    "per_program": {
+      "standard": {
+        "jobs": 114,
+        "code_from_jobs": 50
+      },
+      "platinum": {
+        "jobs": 81,
+        "code_from_jobs": 47
+      }
+    },
+    "jobs": 195,
+    "own_mnemonics": 85,
+    "duplicate_mnemonics_within_a_set": 0,
+    "mnemonics_shared_by_both_programs": 8,
+    "computable_checks": 94,
+    "checks": 340
+  },
+  "kstudio_references": [
+    {
+      "id": "standard_v9",
+      "program": "standard",
+      "file": "standard_v9.json",
+      "title": "Acra-Lending-Standard-DSCR-JTBDs-Fable-Improved",
+      "version": "9.0.0",
+      "jobs": 123,
+      "source": "Acra v1 team, K-Studio export",
+      "model": "Fable (version not stated)",
+      "received": "2026-10-05",
+      "sha256": "48b696c7e14aa1e3de66705f4b1cfb441ee7d34ade559742a7c7438aecd1f489"
+    },
+    {
+      "id": "standard_v17",
+      "program": "standard",
+      "file": "standard_v17.json",
+      "title": "Acra-Lending-Standard-DSCR-JTBDs-2-Fable",
+      "version": "17.0.0",
+      "jobs": 124,
+      "source": "Acra v1 team, K-Studio export",
+      "model": "Fable 5.1 (stated by the user)",
+      "received": "2026-10-27",
+      "sha256": "ee37e3e0481969555c894560d4c6e6a3bced44db9fe2a506a2dcb7cdfd4a81e5"
+    },
+    {
+      "id": "platinum_select_v7",
+      "program": "platinum_select",
+      "file": "platinum_select_v7.json",
+      "title": "Acra-Lending-Platinum-DSCR-Fable-improved",
+      "version": "7.0.0",
+      "jobs": 108,
+      "source": "Acra v1 team, K-Studio export",
+      "model": "Fable (version not stated)",
+      "received": "2026-10-05",
+      "sha256": "848beb3e0627850dcb95c5a64f55b645fc930f2812adfc3c57f820b80dbad0b9"
+    }
+  ]
+}

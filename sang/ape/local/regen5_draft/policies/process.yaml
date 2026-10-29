@@ -1,0 +1,526 @@
+# Acra's process-flow gates and state prepayment rules, applied to every DSCR program. Loaded
+# with load_policies().
+# Author: Virendra Mehta <virendra.mehta@jazzx.ai>
+policies:
+- policy_id: DSCR_PROCESS
+  version: 2.0.0
+  name: DSCR Loan Process Gates
+  description: 'The condo, entity and fraud gates from the Commercial DSCR Loan Process Flow
+    (July 2026): Stage 1 Critical Validation Checklist, Stage 2 DataVerify review, Stage 3B Entity
+    and Condo Review; and the state prepayment-penalty buyout rules both programs print alike.
+    Program-independent, so core to every program.'
+  policy_type: institutional
+  pack_id: acra-regen-5
+  jurisdiction: US
+  effective_date: '2026-07-01T00:00:00Z'
+  status: draft
+  scope: institution
+  source_refs:
+  - ref_id: dscr_commercial_process_flow_jul_2026
+    title: Commercial DSCR Loan Process Flow (July 2026)
+    authority: Acra Lending
+    ref_type: procedure
+  - ref_id: acra_standard_consolidated_v1_0
+    title: Acra DSCR Standard Consolidated Guidelines v1.0 (DSCR Program Summary 8.17.2026; DSCR
+      Seller's Guide excerpt 2026-08-28)
+    authority: Acra Lending
+    ref_type: guideline
+  - ref_id: acra_platinum_select_consolidated_v1_0
+    title: Acra DSCR Platinum Select Consolidated Guidelines v1.0 (Platinum Select DSCR Program
+      Summary 8.17.2026; DSCR Seller's Guide excerpt 2026-08-28)
+    authority: Acra Lending
+    ref_type: guideline
+  rules:
+  - rule_id: DSCR-DUPLICATE-SSN-CLEARED
+    priority: 40
+    action: deny
+    description: 'Stage 1 Critical Validation Checklist: the duplicate-SSN check must have run,
+      and any duplicate found withdrawn or declined with notification sent, before this loan
+      proceeds.'
+    citations:
+    - dscr_commercial_process_flow_jul_2026
+    condition:
+      kind: expression
+      field: UnderwritingSummary.duplicate_ssn_cleared
+      operator: '=='
+      value: true
+  - rule_id: DSCR-NMLS-VERIFIED
+    priority: 40
+    action: require_evidence
+    description: 'Stage 1 Critical Validation Checklist: NMLS credentials verified for both the
+      Broker and the Broker''s Loan Officer (1003 p.4, NMLS consumer access, Salesforce).'
+    citations:
+    - dscr_commercial_process_flow_jul_2026
+    condition:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: UnderwritingSummary.broker_nmls_verified
+        operator: '=='
+        value: true
+      - kind: expression
+        field: UnderwritingSummary.loan_officer_nmls_verified
+        operator: '=='
+        value: true
+    parameters:
+      evidence_types:
+      - nmls_verification
+  - rule_id: DSCR-REFI-LISTING-CHECK
+    priority: 40
+    action: deny
+    description: 'Refinance only (Stage 1 Critical Validation Checklist item 6): the subject
+      property must not be currently listed for sale.'
+    citations:
+    - dscr_commercial_process_flow_jul_2026
+    applicability:
+      kind: expression
+      field: LoanCore.loan_purpose
+      operator: in
+      value:
+      - rate_term_refinance
+      - cash_out_refinance
+    condition:
+      kind: expression
+      field: SubjectProperty.is_listed_for_sale
+      operator: '=='
+      value: false
+  - rule_id: DSCR-CONDO-HOA-RESERVES
+    priority: 45
+    action: require_evidence
+    description: 'Condo/condotel (Stage 3B Entity & Condo Review): HOA budget and reserve fund
+      reviewed as adequate against program guidelines. NOTE: no numeric reserve standard is
+      encoded from the program guidelines -- this is the Account Manager''s own budget-review
+      determination, not a computed threshold.'
+    citations:
+    - dscr_commercial_process_flow_jul_2026
+    applicability:
+      kind: expression
+      field: SubjectProperty.property_type
+      operator: in
+      value:
+      - warrantable_condo
+      - non_warrantable_condo
+      - condotel
+    condition:
+      kind: expression
+      field: CondoProject.hoa_reserves_adequate
+      operator: '=='
+      value: true
+    parameters:
+      evidence_types:
+      - hoa_budget
+      - hoa_financials
+  - rule_id: DSCR-CONDO-HOA-LITIGATION
+    priority: 45
+    action: deny
+    description: 'Condo/condotel (Stage 3B Entity & Condo Review): no active or pending litigation
+      against the HOA or condo association.'
+    citations:
+    - dscr_commercial_process_flow_jul_2026
+    applicability:
+      kind: expression
+      field: SubjectProperty.property_type
+      operator: in
+      value:
+      - warrantable_condo
+      - non_warrantable_condo
+      - condotel
+    condition:
+      kind: expression
+      field: CondoProject.hoa_litigation_pending
+      operator: '=='
+      value: false
+  - rule_id: DSCR-ENTITY-BORROWER-1
+    priority: 50
+    action: deny
+    description: 'Entity borrower (Stage 3B Entity & Condo Review): the LLC/Corporation/Trust
+      must be listed as Borrower 1 on all loan documents.'
+    citations:
+    - dscr_commercial_process_flow_jul_2026
+    applicability:
+      kind: expression
+      field: Borrower.entity_type
+      operator: '!='
+      value: individual
+    condition:
+      kind: expression
+      field: Borrower.is_entity_borrower_1
+      operator: '=='
+      value: true
+  - rule_id: DSCR-ENTITY-TITLE-TRANSFERS
+    priority: 50
+    action: deny
+    description: 'Entity borrower (Stage 3B Entity & Condo Review): title must show no multiple
+      transfers of the subject property among the entity and its guarantors.'
+    citations:
+    - dscr_commercial_process_flow_jul_2026
+    applicability:
+      kind: expression
+      field: Borrower.entity_type
+      operator: '!='
+      value: individual
+    condition:
+      kind: expression
+      field: TitleInformation.has_related_party_transfers
+      operator: '=='
+      value: false
+  - rule_id: DSCR-ENTITY-DOCS
+    priority: 50
+    action: require_evidence
+    description: 'Entity borrower (Stage 3B Entity & Condo Review): Operating Agreement/Bylaws,
+      Articles of Organization/Incorporation, and Certificate of Good Standing all on file.'
+    citations:
+    - dscr_commercial_process_flow_jul_2026
+    applicability:
+      kind: expression
+      field: Borrower.entity_type
+      operator: '!='
+      value: individual
+    condition:
+      kind: expression
+      field: Borrower.entity_documents_complete
+      operator: '=='
+      value: true
+    parameters:
+      evidence_types:
+      - operating_agreement
+      - articles_of_organization
+      - certificate_of_good_standing
+  # State prepayment-penalty (PPP) buyout rules (STD-11.3, PLAT-10.3), state law and so core to
+  # every program. "Residential 1-4" needs no unit-count check -- every PropertyType in this
+  # corpus (sfr/condo/townhome/pud/condotel/manufactured/two_to_four_unit) already qualifies; only
+  # the narrower "Residential 1-2" (OH, PA) and "single unit" (MS) carve-outs need
+  # residential_unit_count. Mississippi's "5 year (STEP)" is `5yr_step`.
+  - rule_id: DSCR-PPP-AK
+    priority: 60
+    action: deny
+    description: 'STD-11.3, PLAT-10.3: Alaska: Residential 1-4 must buy out the prepayment penalty.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.state
+      operator: ==
+      value: AK
+    condition:
+      kind: expression
+      field: LoanCore.prepayment_penalty_structure
+      operator: ==
+      value: no_prepay
+  - rule_id: DSCR-PPP-IL-1
+    priority: 60
+    action: deny
+    description: 'STD-11.3, PLAT-10.3: Illinois: Residential 1-4 to an entity or individual, loan amount <= $250,000
+      must buy out the prepayment penalty.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: SubjectProperty.state
+        operator: '=='
+        value: IL
+      - kind: expression
+        field: LoanCore.total_loan_amount_usd
+        operator: <=
+        value: 250000
+    condition:
+      kind: expression
+      field: LoanCore.prepayment_penalty_structure
+      operator: '=='
+      value: no_prepay
+  - rule_id: DSCR-PPP-IL-2
+    priority: 60
+    action: deny
+    description: 'STD-11.3, PLAT-10.3: Illinois: Residential 1-4 to an individual, loan amount > $250,000 and interest
+      rate > 8%, must buy out the prepayment penalty.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: SubjectProperty.state
+        operator: '=='
+        value: IL
+      - kind: expression
+        field: Borrower.entity_type
+        operator: '=='
+        value: individual
+      - kind: expression
+        field: LoanCore.total_loan_amount_usd
+        operator: '>'
+        value: 250000
+      - kind: expression
+        field: LoanCore.note_rate_percent
+        operator: '>'
+        value: 8
+    condition:
+      kind: expression
+      field: LoanCore.prepayment_penalty_structure
+      operator: '=='
+      value: no_prepay
+  - rule_id: DSCR-PPP-KS
+    priority: 60
+    action: deny
+    description: 'STD-11.3, PLAT-10.3: Kansas: Residential 1-4 must buy out the prepayment penalty.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.state
+      operator: '=='
+      value: KS
+    condition:
+      kind: expression
+      field: LoanCore.prepayment_penalty_structure
+      operator: '=='
+      value: no_prepay
+  - rule_id: DSCR-PPP-MD
+    priority: 60
+    action: deny
+    description: 'STD-11.3, PLAT-10.3: Maryland: all loans must buy out the prepayment penalty.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.state
+      operator: '=='
+      value: MD
+    condition:
+      kind: expression
+      field: LoanCore.prepayment_penalty_structure
+      operator: '=='
+      value: no_prepay
+  - rule_id: DSCR-PPP-MI
+    priority: 60
+    action: deny
+    description: 'STD-11.3, PLAT-10.3: Michigan: Residential 1-4 must buy out the prepayment penalty.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.state
+      operator: '=='
+      value: MI
+    condition:
+      kind: expression
+      field: LoanCore.prepayment_penalty_structure
+      operator: '=='
+      value: no_prepay
+  - rule_id: DSCR-PPP-MN
+    priority: 60
+    action: deny
+    description: 'STD-11.3, PLAT-10.3: Minnesota: Residential 1-4 must buy out the prepayment penalty.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.state
+      operator: '=='
+      value: MN
+    condition:
+      kind: expression
+      field: LoanCore.prepayment_penalty_structure
+      operator: '=='
+      value: no_prepay
+  - rule_id: DSCR-PPP-MS
+    priority: 60
+    action: deny
+    description: 'STD-11.3, PLAT-10.3: Mississippi: single-unit residence must buy out the prepayment penalty or
+      take the 5-year step.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: SubjectProperty.state
+        operator: '=='
+        value: MS
+      - kind: expression
+        field: SubjectProperty.number_of_units
+        operator: '=='
+        value: 1
+    condition:
+      kind: expression
+      field: LoanCore.prepayment_penalty_structure
+      operator: in
+      value:
+      - no_prepay
+      - 5yr_step
+  - rule_id: DSCR-PPP-NJ
+    priority: 60
+    action: deny
+    description: 'STD-11.3, PLAT-10.3: New Jersey: loans closing in the name of an individual must buy out the prepayment
+      penalty.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: SubjectProperty.state
+        operator: '=='
+        value: NJ
+      - kind: expression
+        field: Borrower.entity_type
+        operator: '=='
+        value: individual
+    condition:
+      kind: expression
+      field: LoanCore.prepayment_penalty_structure
+      operator: '=='
+      value: no_prepay
+  - rule_id: DSCR-PPP-NM
+    priority: 60
+    action: deny
+    description: 'STD-11.3, PLAT-10.3: New Mexico: Residential 1-4 must buy out the prepayment penalty.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.state
+      operator: '=='
+      value: NM
+    condition:
+      kind: expression
+      field: LoanCore.prepayment_penalty_structure
+      operator: '=='
+      value: no_prepay
+  - rule_id: DSCR-PPP-OH
+    priority: 60
+    action: deny
+    description: 'STD-11.3, PLAT-10.3: Ohio: Residential 1-2 must buy out the prepayment penalty.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: SubjectProperty.state
+        operator: '=='
+        value: OH
+      - kind: expression
+        field: SubjectProperty.number_of_units
+        operator: <=
+        value: 2
+    condition:
+      kind: expression
+      field: LoanCore.prepayment_penalty_structure
+      operator: '=='
+      value: no_prepay
+  - rule_id: DSCR-PPP-PA
+    priority: 60
+    action: deny
+    description: 'STD-11.3, PLAT-10.3: Pennsylvania: Residential 1-2 to an individual, loan amount < $319,777, must
+      buy out the prepayment penalty.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: SubjectProperty.state
+        operator: '=='
+        value: PA
+      - kind: expression
+        field: Borrower.entity_type
+        operator: '=='
+        value: individual
+      - kind: expression
+        field: SubjectProperty.number_of_units
+        operator: <=
+        value: 2
+      - kind: expression
+        field: LoanCore.total_loan_amount_usd
+        operator: <
+        value: 319777
+    condition:
+      kind: expression
+      field: LoanCore.prepayment_penalty_structure
+      operator: '=='
+      value: no_prepay
+  - rule_id: DSCR-PPP-RI
+    priority: 60
+    action: deny
+    description: 'STD-11.3, PLAT-10.3: Rhode Island: purchase transactions must buy out the prepayment penalty.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: SubjectProperty.state
+        operator: '=='
+        value: RI
+      - kind: expression
+        field: LoanCore.loan_purpose
+        operator: '=='
+        value: purchase
+    condition:
+      kind: expression
+      field: LoanCore.prepayment_penalty_structure
+      operator: '=='
+      value: no_prepay
+  - rule_id: DSCR-PPP-VA
+    priority: 60
+    action: deny
+    description: 'STD-11.3, PLAT-10.3: Virginia: Residential 1-4 closed in the name of an individual must buy out
+      the prepayment penalty.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: SubjectProperty.state
+        operator: '=='
+        value: VA
+      - kind: expression
+        field: Borrower.entity_type
+        operator: '=='
+        value: individual
+    condition:
+      kind: expression
+      field: LoanCore.prepayment_penalty_structure
+      operator: '=='
+      value: no_prepay
+  - rule_id: DSCR-PPP-VT
+    priority: 60
+    action: deny
+    description: 'STD-11.3, PLAT-10.3: Vermont: loans under $1,000,000 must buy out the prepayment penalty.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: SubjectProperty.state
+        operator: '=='
+        value: VT
+      - kind: expression
+        field: LoanCore.total_loan_amount_usd
+        operator: <
+        value: 1000000
+    condition:
+      kind: expression
+      field: LoanCore.prepayment_penalty_structure
+      operator: '=='
+      value: no_prepay

@@ -123,7 +123,12 @@ def findings_in(text: str) -> list[tuple[str, str]]:
         return []
     text = _URL_RE.sub(" ", text)
     return [(m.group(0), suggestion(m.group(0)))
-            for rx in (_STEM_RE, _FIXED_RE) for m in rx.finditer(text)]
+            for rx in (_STEM_RE, _FIXED_RE) for m in rx.finditer(text) if not _is_api_call(text, m)]
+
+
+def _is_api_call(text: str, match: re.Match) -> bool:
+    """A method call such as `task.cancelled()` names a library API, not our prose."""
+    return match.start() > 0 and text[match.start() - 1] == "." and text[match.end():match.end() + 1] == "("
 
 
 def git(*args: str) -> str:

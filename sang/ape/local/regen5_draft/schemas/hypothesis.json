@@ -1,0 +1,27 @@
+{
+  "description": "DSCR-specific hypothesis content -- eligibility issue details.\n\nThis is the THypothesisContent type parameter for the dscr domain. Placeholder\nshape (mirrors CREHypothesisContent's role) pending a real DSCR issue taxonomy.",
+  "properties": {
+    "issue_type": {
+      "description": "Type of eligibility issue (domain taxonomy TBD)",
+      "title": "Issue Type",
+      "type": "string"
+    },
+    "description": {
+      "description": "Detailed description of the issue",
+      "title": "Description",
+      "type": "string"
+    },
+    "severity": {
+      "default": "medium",
+      "description": "Severity: low, medium, high, critical",
+      "title": "Severity",
+      "type": "string"
+    }
+  },
+  "required": [
+    "issue_type",
+    "description"
+  ],
+  "title": "DSCRHypothesisContent",
+  "type": "object"
+}

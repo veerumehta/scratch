@@ -1,0 +1,19 @@
+# The DSCR document classifier's settings, for the `documents` step (pack_manifest.yaml). Its classes
+# are the pack's document registry (document_types.yaml); this file keeps the splitting thresholds.
+#
+# Splitting a closing package (the step's `split: true`), tuned for packets of several hundred
+# pages of mixed documents:
+# - pages are classified three at a time, the window moving one page, so every page gets votes
+#   from up to three windows and a boundary inside a window is still found;
+# - an unrecognised run of one or two pages (a fax cover, a separator sheet) folds into its
+#   longer neighbour, as does a run of up to two pages that carries a neighbour's document on;
+# - a page classified below 0.6 is listed on its segment for review: a long packet has more
+#   pages near the line than one document does;
+# - no families: each class is one document, and the closing paperwork is read for nothing.
+# Scanned pages need japes' vision route; until then a scanned document in a package is not read.
+split_window_pages: 3
+split_window_stride: 1
+split_absorb_below: 2
+split_attach_below: 2
+split_review_below: 0.6
+

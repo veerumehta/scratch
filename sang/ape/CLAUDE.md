@@ -1,741 +1,112 @@
-# Claude Session Status
-
-**Last Updated**: 2026-10-01
-
-## Where things stand
-
-**Runtime session (sonnet-runtime, 2026-10-17, `v2.6.4`, local and unpushed)**: restart file
-`scripts/local/restart/sonnet-runtime.md` holds the exact state. Built since the v2.6.3 squash (pushed `a3911478`): engine
-modes (hybrid default), document catalog and reference reader (header row, aliases, cues), client gaps, guidance, the
-authoring context and lint-fix compare-and-write moved into the SDK (`b1802104`, `9d013116`), assess `engine_mode`/`primary`
-(`1dac85f6`). Acra end-to-end run (`plans/plan_acra_end_to_end_run.md`): harness, scratch packs and references are ready on local
-Plato; the loan run waits on the user's own approval and sonnet-ui's case record (loans are loan-N only, never read the PDFs,
-outputs only under `docs/status/Acra/Acra Lending/e2e/`, 30 USD total, 8 per variant). Next: `ChatCoordinator` hook, document
-precedence, assistant eval overrides, live usage/cost, job-writing quality, code-yield and library.
-
-**UI session (sonnet-ui, 2026-10-13, `v2.6.2`, unpushed)**: owns `plans/plan_solution_view.md` and
-`plans/plan_plato_assistant_chat.md`. Built, one commit per piece: V4 `33d44d0c`, V1 `652af6e7`, V2 data `c71c8496`,
-V2 page `899cfb82`, V3 bundle `62e0a2cc`; A1 conversations `715e2806`, assistants page `8f76307c`; A4 interaction
-tools `c04a17d8` + answers/approval gate/cards `c2c1ff98`; dock `0bcec2c8` + `16eddaed`; A2 ground kinds, feedback
-in the prompt, Acra case assistant pack `96e5fc92`; A5 platform codec `f500daf2`; artifacts, citation viewer,
-export `458b864b`; A7 (runs page activity `f2eb9563`, trace viewer + log context `7b38d5f6`, origin on records
-`a337585d`); review fixes `96a76f3d`, `0dc201a2`, `b485070f`, `7c6aa6b2`. sonnet-runtime moved Plato helpers into the SDK
-after (blueprints, assistants, packs); it squashes v2.6.2 to plato; hold edits until it says the squash is built. Migrations 0028 (alignment), 0029 (conversations), 0031 (blueprint guideline set). Not built:
-A4.5 navigation, A4.6/A6.4 browser-answered tools, A6.6 widgets by kind, A4.7 eval authoring skills, A3 email
-drafting beyond the pack's specialist; the solution page's xlsx and draft toggle; page locators in guideline
-citations. Nothing was run in a browser (page scripts are `node --check`ed and string-tested). Review owed over the
-range (the user runs it). Restart prompt for this session: `/Users/sangit/src/japes/scripts/local/restart/sonnet-ui.md` (the user cannot paste in tmux; tell
-the session to read that file). Dock: shared page script carries `assistant_chat.js` and `assistant_dock.js`; a page that is
-the full chat sets `PLATO_FULL_CHAT`. Hosted ground kinds read the tenant from `scope["tenant_id"]`, set by Plato.
-
-**Runtime session (2026-10-13, `v2.6.2`, unpushed, sonnet-runtime)**: the programme's registry and release work
-is built, one commit each: `f9f39fc6` (dotted `Entity.field` in formulas, D2 SDK half), `633a3fb8` + `078f9aef`
-(document registry D1: `document_types.yaml`, taxonomy, writer, export references, ledger gaps, `yields: []`
-reads none), `b6b14fb1` (job kinds D3), `cb270c9a` (D4: prefix families, variant and fixed blocks,
-`extraction_targets`), `5e990869` (draft lint compares registry ids to the opened-from version), `5bd901fa`
-(proposals from a job set's reference documents; script `scripts/local/build_document_registry.py`),
-`ee065b67` + `734aa462` (R1: activation `applies`, table `pack_activation` migration 0030,
-`case_date_field`/`strict_selection`, selection by case date in runs and assess), `9cdbc767` (R2: release
-report route, xlsx, gold cases on both versions, client). Open: the model-read document proposals (a
-`document` proposal kind, merge route, taxonomy reference library), the guideline effective date as a window
-default, CLI and coverage column for the release report, Acra's case date (the user asks Acra). sonnet-ui owns
-the solution view and assistant chat plans (shared files: `plato/static/shared.js`, `plato/app.py`,
-`plato/api/assistants.py`); sonnet-jaci synced the DSCR seed (`89515531`) and migrates it to `Entity.field`.
-
-**Runtime session (2026-10-12, `v2.6.2` tip `5d1b5a62`)**: `origin/plato` is `1b6972b6`. Local `plato` is
-`7ea54543` (squash of `v2.6.2`, unpushed; push script `/tmp/japes_push_plato_262o.sh`, review from `plato`
-with `REVIEW_UPSTREAM=origin/plato`, both the user's). Past the pushed plato on `v2.6.2`: `10a4b90e` (retries
-by `is_transient_error`, a retry's feedback without the prompt again, `adjudication_vote()` tie-break),
-`a6cf2f10` (adjudication `persona` wired), `5d1b5a62` (`jtbdset_lint`: readiness checks, `export_profiles/`,
-`/jtbdset/lint`, `strict`, client and CLI; plan `plans/plan_jtbdset_readiness.md` R1-R4 built, coverage-page
-column not). Squash with `scripts/local/squash_to_plato.sh --src v2.6.2` (plato must not be checked out).
-Direction from the user: tolerant first (proceed, record, surface; refuse only what would write wrong data;
-a `strict` flag restores refusal). `plans/plan_decision_corrections.md` C1, C2, C3 and C5 are built on `v2.6.2`,
-committed and unpushed (2026-10-12/13): `b43087f9` (C1+C2: `jazzx_sdk/pack/corrections*.py`, `correction_cases.py`,
-`correction_scorer.py`, `on_change` on the feedback router, run page section, sheet, client and CLI), `867f10a8`
-(C3: `pack/diagnosis.py`, `GET /packs/{id}/corrections/fixes`, coverage page "Fixes" and workbook sheet),
-`90c373c1` (C5: `citation_support` scorer, `pack/cited_text.py`, trace scorers registered), `da41f07b` (an
-unclaimed product policy is left out of the jtbdset export and named as `product-policy-skipped`; `strict`
-refuses; opus-xrepo confirmed it on local Plato). Deviations from the plan: source `user` (no reviewer source on
-the wire), `strict` a request flag not a pack setting, three evidence columns, scorer registered in Plato (layering).
-Last full suite 9308 green was before C5 and `da41f07b`; only targeted suites ran since. C4 (fix proposals through
-the gates: rule_fix with corrected cases for rule_code, the optimization job for procedure_text) waits for real
-corrections; nobody has run the flow live yet. NEXT in a fresh session: review the range (the user runs it) and
-squash, then (the user, 2026-10-13) `plans/plan_document_registry_and_job_shape.md` D1 first, then
-`plans/plan_solution_view.md` (V4, V1, V2, V3; it needs D1's stable ids), each in a fresh session; D1-D4 (D2 makes every fact-name reader accept dotted `Entity.field` names; jaci migrates its seed, never edit
-jaci). Two more opus-xrepo plans (`plan_guideline_release.md`) are NOT approved. Open:
-`TODO(adjudication-spec-fields-unread)`, `TODO(profile-condition-rules)`. Deferred on merit
-(2026-10-13): `ToolRequiredValueError` + `tool_choice="none"` on a `run_agent` / `run_with_recovery` retry (no consumer
-has hit it; our retries keep tools callable). Local Plato on :8000 runs from
-`/Users/sangit/src/japes-plato` (`ape/local/plato_worktree.sh restart <commit>`).
-
-**Cost display, model check and Ontology build (runtime session, 2026-10-07, `v2.6.1`, uncommitted
-until the user runs `/tmp/japes_commit_cost_and_model_check.sh`)**: cost on the run, extraction and
-evaluation pages (`plato/static/cost.js`, `ModeUsage.cost_is_upper_bound`, `usage` on assess and the
-JTBD routes); `scripts/check_new_models.py` as step 2d of `pre_push_check.sh`; the Ontology plan
-phases A-E (JSON Schema catalog, reference library migration 0023, `catalog` extraction and
-proposals, `merge-catalog`, fact cap scoped in the formal compiler, the packs page panel). Suite
-8420 green. Open: the user runs the commit script and `/Users/sangit/src/japes/scripts/local/release/japes_migrate_local.sh` (now to 0023),
-`scripts/local/upload_mortgage_references.py`; naming (`-policy`/`-assistant`, customer-first) per
-the blueprint plan section 9; one review at the end (the user runs it).
-
-
-**Conductor pipeline (policy session, 2026-10-02)**: all five phases of
-`status/done_conductor_pipeline.md` built on `v2.6.0`, `000ff187..cab3f9b8`, local and unpushed;
-full-range adversarial review over `fab0793e..1730b190` clean (rounds 33 and 35, after page
-labels/`ref`, documents API, required classes and many fix rounds). Then jaci-73's four extraction
-issues (`JtbdTemplate.units` fraction/percent, timing-discretion and constrained-fields prompt
-lines, article-qualified clause citations incl. titled `Article VIII - Title` headings),
-`e511e430` + `4d7a8ed8` + `cd61f0f4`, reviewed clean; jaci (2a238ad, `--units`) confirmed all four
-closed. Open low notes: orphan overlay refuses publish, composite live child unflagged,
-`TODO(python-percent-unguarded)`, `TODO(locator-printed-ref)`, `TODO(documents-converted-twice)`. `conductor_pipeline`
-kind and `jazzx_sdk.pipelines.steps` (step kinds `document_ingest`, `policy_assessment`,
-`adjudication`, `investigation` with sentinel/convergence, `policy_check`, `playbook`,
-`human_checkpoint`, `narrate`; `jazzx_sdk.step_kinds` entry point; publish-time slot check);
-`investigation_loop` is its fixed pipeline, held to `tests/data/dscr_loop_snapshot.json`. Phase 2's
-runtime half (`POST/GET {prefix}/documents`, `BlobDocumentStore`, `PlatoWiring.documents_for`,
-pinning in `CaseRunService`) was built here by the user's direction; the runtime session was told.
-ci-spread-core's seed is a `conductor_pipeline` and publishes. jaci session told what to adopt.
-Open: jaci adoption; the seed manifest's three TODOs. Suite 7716 green.
-
-**Survey-driven build (2026-10-04, cross-repo session, on `v2.6.1`, unpushed)**: ideas from imdoc and
-macer built as evolutions of DocumentAgent / AdjudicationAgent (vote split and scorers, rejected evidence,
-open conditions kept on reruns, short document aliases, `ValidatedOutput` retry feedback; split review pages,
-taxonomy levels `classify_path`, attach-short-runs, `split_scorers`, case-run `document_ingest split: true`),
-then `plans/plan_case_rerun.md` P1-P4 (`rerun` in the submit body, `RerunBasis`, unchanged documents reused,
-`DocumentFocus`) and `plans/plan_plato_ui.md` U1-U3 (runs page `/cases/ui`, spend and queue, per-metric
-experiment view). Open: the review owed over the range, U4-U8, macer's condition dedup and imdoc's page
-budget (deferred on merit, see the plans), `human_review_required` for unsure splits (untestable with the
-current test modes: they state no confidence).
-
-**Working branch is `v2.6.1`** (cut 2026-10-03 from `dev` `b316b5d3`, after PR #88 squashed
-v2.6.0 to `dev` as `ec16ee93`; `main`'s `ae974845` recorded on `dev`, `dev` merged back into
-`plato` `3218ce12`). Carries the export docstring fix `cd053934`, fastapi optional `82c63683`, the authoring chat as
-a built-in assistant (Plato vs workbench gap 1) `d9320795`; version not bumped yet. Review owed over
-`cd053934..HEAD` (`/tmp/japes_review_261.sh`). Client coverage for jaci `5bc26321`; gaps 11 (extraction SSE, `d73682e9`) and 12 (queue and cost
-stats, migration `0016_cost_record`, streamed turns now report usage) built. `plan_plato_authoring_review.md` P1-P7 built (user decision via opus-xrepo; decisions in its section 13):
-P1 review and roles `a62d710a`, P2 draft history `f25e922c`, P3 comments `01e64ebe`, P4 lint runs and
-triage `ec0f2ea5` (migration 0020), P5 JTBDSet export `86372470`, P6 user directory seam `5d33a93d`,
-P7 adjudication eval entity over a pinned draft `421c0ff3`. Deviations for the plan's section 13a:
-P4 has no `lint_run_id` column on `pack_review` (it is in the submit answer), P5 export-only (J1),
-P6 default directory is ids seen in reviews and drafts, P7 needs no client method and adds
-`before_start` on the experiments router plus `PLATO_ADJUDICATOR_URL`. RESUME with the close: full-range
-review (`REVIEW_UPSTREAM=origin/dev`, user runs it) and its fixes, then `git mv` the plan to
-`status/done_`. Version not bumped.
-Candidates: fastapi/starlette to extras (juno, macer, jazzx-assistant declare their own),
-the two low review notes, `TODO(bare-tool-route-requires-defaults)`. v2.6.0 history below.
-
-**Was `v2.6.0`** (begun as `v2.5.8`, renamed 2026-09-30 when the user made the client
-package a minor: SDK 2.6.0, Plato 0.2.0, `jazzx-plato-client` 0.2.0; cut from `dev` at `2a2ad60b`,
-PR #86's 2.5.7 squash; plan `plans/plan_v2_6_0.md` has the item table). Built on it, local and
-unpushed: human checkpoints (case runs suspend/resume, run outcomes), config audit trail +
-conditional activation + assistant releases, queue cancellation, split identity veto, one token-bucket
-declaration, anthropic 1.x compatibility, sqlite claim compare-and-set, tiered materialize, and
-`jazzx-plato-client` (own distribution, Phases 1-2), and Plato's reusable logic moved into the SDK
-(`d9666060..f6c9f367`: loader/check, pack lookup and gates, activation, case runs, formal worker,
-chat helpers, drafts, feedback factory, upload cap, kernel converter). Reviewed clean (two halves,
-`b91b3f90..7ed64fa3` and `7ed64fa3..HEAD`); full suite 7485 passed. Release script
-`/tmp/japes_release_260_to_plato.sh` (one commit on plato with parents origin/plato + origin/dev,
-push, PR to dev) is for the user to run; it supersedes `/tmp/japes_record_dev_after_86.sh`.
-Then jaci-37's batch 1 (routes `/packs/{id}/active`, `/describe`, `/whoami`, `/info/catalog`,
-`/assistants`, session progress/chain, run chain, scripted sessions; eval `case_run` and
-`assistant_session`; path scorers; client contracts) and the loop fixes (governor policy registry,
-`rich_evidence_requests`, `pre_loop_reasoning`). Then, all on 2026-10-01 and each reviewed clean:
-jaci-37's two reviews of that work (client `pydantic` dep, sink token, scripted-session guards,
-retire guard, session evals that close, SSE parser, one pack-content rule); multi-replica
-activation (merge into the stored `PLATO_ACTIVE_PACK`, If-Match on `stored_version`); governed-route
-idempotency that replays (`server.idempotency`, table `japes_request_idempotency`, migration 0014);
-recovered step failures logged; per-model agent cost (`ModelCallLedger`, client `TurnUsage`); the
-review's open items (stale citations become governor required actions, fail-soft metered
-`pre_loop_reasoning` with `pre_loop_model` and `CaseResult.pre_loop`, eval `pack_version` +
-`MaterializedPacks`, `PlatoError` also a `RuntimeError`); five import cycles a fresh package import
-hit (`tests/test_import_each_package.py`); leaf modules under `jazzx_sdk.util` (`utc`, `digest`,
-`math.ratios`; breaking paths, accepted). Suite 7555 green. The release script still applies (it
-squashes the `v2.6.0` tip). jazzx-assistant review note: `/tmp/jazzx_assistant_dev_to_japes_review.md`.
-Then (runtime session, 2026-10-02, after the user's decisions in `plans/plan_plato_phases_3_4.md`):
-Plato Phase 4 (each chat turn's `CanonicalTrace` with release/skill versions, `GET /traces/{id}`,
-`release_id` on the stream end), Phase 3 stage 1 (skill invoke as a governed turn pinned to the
-skill, 202 actions + `/operations/{id}`, per-assistant OpenAPI), the batch-tier and executor fixes;
-`7bba88aa..b23c4663`, adversarial review over `cd61f0f4..` clean after 3 rounds (the older
-`b694cf1a..040092c9` range reviewed in a worktree, fixes folded into the tip). Suite 7857 green
-before the review fixes. Phase 3 stage 2 (typed skill tools) is `df5e7755` (built by the policy
-session; suite 7878); the v2.6.0-wide comment trim is `d6f8a869` (190 files, AST-equal), `common`
-is at `0cc5712` (`8bf39f98`); urllib3 2.8.0; review fixes `fe40a989`, `deae5380`, `27508db8`.
-Adversarial review over `b23c4663..27508db8` clean (full pass, then incremental); suite 7881.
-Two low notes open (`facts-recursive-ref-unrefused`, `spec-ref-ignored-list-incomplete`).
-Released: PR #88 squash-merged to `dev` as `ec16ee93`; `dev` record of main's `ae974845` (`b316b5d3`)
-and `plato` merge-back of `ec16ee93` (`3218ce12`), both tree-unchanged, push via `/tmp/japes_plato_merge_dev_back.sh`. CI fix `a8ff86f8` on local `plato` (placeholder OpenAI key for 3 stubbed tests; `v2.6.0`
-`34582819`), push via `/tmp/japes_plato_ci_key_fix.sh`. Held for 2.6.1 on local branch
-`plato-held-2.6.1`: `7ec392af` (export
-docstring, also `v2.6.0` `b1ea1165`) (`db20cab7` dropped: the dev record replaces it).
-**Local Plato (:8000) runs from its own worktree** `/Users/sangit/src/japes-plato`, pinned to a commit,
-so a branch switch in the main checkout cannot break a running server (it did on 2026-10-11: a lazy import
-of a moved module failed every extraction run). `ape/local/plato_worktree.sh pin|start|stop|restart [rev]|status`;
-env file, pack blobs/cache and documents stay in the main checkout, named absolutely; log `.plato-local.log`.
-
-**Cross-repo session state (opus-xrepo, 2026-10-17).** Full detail in `scripts/local/restart/opus-xrepo.md` (read it first;
-sessions restart with `scripts/local/restart_session.sh <opus-xrepo|sonnet-runtime|sonnet-ui|sonnet-jaci>`, each reads
-its own `scripts/local/restart/<name>.md`). Routes work to `sonnet-runtime` (SDK, runtime, assessment, references),
-`sonnet-ui` (Plato pages, classification eval) and `sonnet-jaci` (jaci only through it).
-- Released: v2.6.2 on main (#95), v2.6.3 on dev (#92 squash `6277834e`); dev recorded on local plato (`0abeacdd`,
-  unpushed); `origin/plato` = `1a35ec41`. `v2.6.4` cut from dev (`417abf1c`: SDK 2.6.4, Plato and client 0.2.5); its
-  builder commits (assessment modes with hybrid the default, document catalog, jaci client gaps, UI pages) are
-  unpushed and unreviewed; the user runs the review before any push.
-- Active programme: Acra end-to-end on ONE real loan (our jobs, code, hybrid, both vs K-Studio JTBDs), led by
-  sonnet-runtime (`plans/plan_acra_end_to_end_run.md`); references acra-taxonomy@2026-10-17 and bytepro@2026-07-29
-  loaded on local Plato; classification eval planned by sonnet-ui. Loan files are real borrower data in
-  `docs/status/Acra/Acra Lending/` (gitignored in the scratch repo, never pushed, masked loan-N only). Each run that
-  sends documents to providers needs the user's OWN approval in the builder session.
-- Local Plato (:8000) runs from the pinned worktree `/Users/sangit/src/japes-plato` (`scripts/local/plato_worktree.sh
-  start|stop|restart|status`), database at 0035; it does not survive a reboot.
-- /tmp scripts and notes moved to `scripts/local/{release,acra,restart,notes}/` on 2026-10-17.
-
-**Pending for the cross-repo session (older):**
-1. (done) The user runs
-   `/tmp/japes_release_260_to_plato.sh` (it squashes the `v2.6.0` tip).
-2. (now R7) The executor's Linux layers: `/tmp/japes_executor_linux_check.sh` needs Docker running.
-3. `plans/plan_plato_phases_3_4.md`: all done but D3 (BPMN process-start, deferred until a consumer
-   and the runtime's URL/auth exist); move it to `status/` when D3 is settled or dropped.
-4. Not built, asked by jaci: `GET /decisions/{id}` (its Plato APIs note, line 216); per-call
-   latency / provider queue time on a turn's usage (unqueued, needs the user).
-5. Policy session's open asks (`/tmp/japes_policy_handoff.md`): CRE's `evidence.<type>.attested` fact
-   and deterministic `decision.conditions` (Mesa Verde / MAA gold cases, user-prioritised); the
-   ci-spread-core seed resync from jaci 65e1ed5; jaci's intake test expecting pre-ca92911c
-   `had_structured_view=False` (a jaci-session edit if the behaviour is intended).
-6. `TODO(inline-schema-refs-unresolved)` in `skill_invoke.skills_openapi`.
-7. jazzx-assistant: the dev-to-japes review note `/tmp/jazzx_assistant_dev_to_japes_review.md` was
-   written for them; confirm it reached them.
-
-Open, awaiting the user: `missing_inputs: default` for assess (schema defaults); refresh the
-`dscr_core` seed from jaci's 0.2.0 or leave it (jaci owns the pack); jaci's later batches
-(composition, asset keys, documents, finance, loop knobs;
-`jaci/docs/plans/note_JACI_CONFIG_FIRST_AND_PLATO_APIS.md`); eval step 7; Acra 4.9 and caps.
-Deferred: `TODO(activation-merge-lost-update)`, `TODO(python-rules-assessed-twice)`, streamed
-agentic usage, scripted sessions per replica, the anthropic lock bump and live smoke.
-
-**Working branch is `v2.5.6`**, on `dev` at the PR #78 formal squash (`7a7a0950`). Its first
-slice (python executor) is squashed to `dev` (`da9a709d`) and `plato` (`6701d711`). Plato stays
-0.1.7 by decision. Main release: `/tmp/japes_release_v255_to_main.sh` (v2.5.5 + formal to `main`
-without 2.5.6) is written, for the user to run.
-
-**Plato domain pack runtime** (`plans/plan_plato_domain_pack_runtime.md`, Rev 2): Phases 0, 1 and 2
-built on `v2.5.6`, local and unpushed, folded (with the PR #82 follow-ups and the chat lifecycle) into one commit `ab080492` on top of `acb22f78`; squashed to `plato` as `43c13d18` (pushed). PR #85 (formal checks over canonical policy, Sourav) squash-merged to `plato` as `a1c099e3` and brought into `v2.5.6` as `99a0ef16` (tree copy). The #85 follow-ups (threshold required, fact catalog via `pack.schemas`, Plato-compiled packs only) and jaci's Plato pilot findings 1-5 (`status/done_plato_pilot_findings.md`) are fixed on `v2.5.6`, `9d840189..d7afdddc`, reviewed clean; squashed to local `plato` as `54ad90de`, push script /tmp/japes_push_plato_256b.sh
-(the commit whose tree is dev's `da9a709d`); the 20 original commits are on
-`backup/v2.5.6-pre-squash` (tip `c1fd38d8`). Reviewed clean in two ranges (to `7e99aeb9`, then
-`4766c97a..c1fd38d8`). On top, `3c1cc377` answers PR #82's bot findings (reviewed clean);
-PR #82 (`release/v2.5.5` to main) squash-merges as is, reply text in `/tmp/pr82_triage.md`.
-Then the chat lifecycle for jazzx-assistant (their Notion ask, review in
-`/tmp/japes_256_chat_requirements_review.md`), `d7238eaa..df4bd2a6`, reviewed clean after 4 rounds:
-stream waits for its engine, `ChatRun`/`run_chat_lifecycle`/`stream_chat_lifecycle` with the old
-runners as adapters, `prepare`, `ChatError`/`chat_step_error`, completion on every path plus
-`cancel_after_answer`, `persistence="caller"` + `persist_failure`. Adoption note:
-`/tmp/jazzx_assistant_chat_lifecycle.md`. A full-range review
-(`REVIEW_UPSTREAM=origin/dev`) is still owed before squashing to `dev`/`plato`. Phase 3 (human checkpoints, `SUSPENDED`, `/resume`) next.
-
-**Acra DSCR programs** (2026-09-30, local, unpushed): in the v2.5.6 squash `fc48deb4` are the
-seed split (`DSCR_PROCESS` core, `DSCR_STANDARD`, `DSCR_PLATINUM_SELECT`) and `assess`'s refusal of
-omitted or non-nullable-null facts. On `v2.6.0` (was `v2.5.8`) as `eacaac6d`: lint reads a pack's
-own policies for program checks, `rule_repeated_across_programs`, `MatrixAxis.domain_extensions`
-band edges in the drift lint, the conductor raw-input decision, and the seed with PPP rules once in
-`DSCR_PROCESS` and linked loan bounds. jaci branch `acra-programs` tip
-`f3873da` needs it. Policy extraction fixes from jaci's first live run (`flex_` names, per-clause rule
-ids, gated thresholds, bounded segments, relevance gate, gpt-6-luna temperature) are `fab0793e`. Open: cap adjustments (declining market, Q-07/Q-08).
-
-**Chat runtime coordinator** (jazzx-assistant's second Notion page, `plans/plan_chat_runtime_coordinator.md`):
-Phase A (`b255d181..1da37c9d`) and Phase B B1-B5 (`aa59ddc6..cf3baa3a`: finish, admit, stop
-reasons/deadlines, lanes, `runs.ChatCoordinator`, `RunWorker`/`settle_runs`; Plato `chat/stream`
-runs on the coordinator) built on `v2.5.6`, local and unpushed; full Phase B review clean after 3
-rounds. Tests also run on Postgres via `JAPES_TEST_POSTGRES_URL` (`daa41fc9`). Squashed to local
-`plato` as `9a7042f2` (tree = v2.5.6 `9fae6002`, parent `origin/plato` `a1c099e3`, replacing the
-never-pushed `54ad90de`, kept as `backup/plato-54ad90de`); push script `/tmp/japes_push_plato_256c.sh`.
-Phase C (sessions/resources, outlets) not started.
-
-**v2.5.7** (branch cut from `dev` at `428ee718` on 2026-09-29, SDK 2.5.7, Plato 0.1.8; plan in
-`plans/plan_v2_5_7.md`). v2.5.6 is on `main` via PR #81 (squash-merged 2026-09-29); the user still
-runs steps 4-5 of `/tmp/japes_release_v256_to_main.sh` to record that squash on `dev`. Done on
-v2.5.7: section 1 (token accounting, held background tasks), 2 (KH policy/Rego surface removed;
-no policy table, the pack store is the policy store), 3 (runs: first terminal write wins,
-release on close, reaper TTL vs pool wait, claim headroom), 4 (audit items; 4.9, Platinum
-Select's optional inputs, waits on a decision with Acra), 5 (sibling finds: deterministic
-pack archive, caller headers on the feedback sink and eval-service client, MCP Host/Origin
-checks plus the mcp 1.x start fix, `InputFilter` elision stubs with content-derived reference
-ids), reviewed clean over `46c8e29a..d321abb9`; 6 (hybrid assessment `assess(reasoning_agent=)` +
-`?reason=true`, the `conditions` extraction representation, evaluator-vs-Z3 agreement test and the
-`JsonRulePack.overlays` fix), `a2aafc69..b518dd12`, reviewed clean. Then Z3 covers the whole DSCR
-seed (in/not_in, any_of, ratio, 512-rule cap, contradiction pruning; exact ratios in `evaluate_ratio`),
-`5d30990e..097c3015`; then the Postgres advisory-lock test, Plato extraction lint against the
-tenant's draft (`ExtractionRun.linted`), uncomputable ratios withheld per rule, `097c3015..4e2067cb`;
-all reviewed clean. Then the rest of the chat runtime page (the coordinator plan's Phase C, C1-C7:
-deadlines, indeterminate commits and reconcile, four persistence policies, duplicate turns and
-namespaced keys, sessions/single-flight/context providers, typed events and bounded outlets, a
-profile `lifecycle:` block Plato runs), Plato's blocking `/chat` on the lifecycle, and model cards
-(Sonnet 5.5 the Anthropic default, GPT-6.1 Sol), `4e2067cb..b3c1d36f`, reviewed clean. Then
-declarative grounding (`status/done_declarative_grounding.md`, G1-G4: `pipelines.grounding` kinds,
-`GroundedContext` to the agent per skill, `lifecycle.ground` on Plato, `knowledge:` compiled into
-ground sources; a skill-less agent gets files inline), `b3c1d36f..6ec19406`, reviewed clean. Then
-model defaults from the config table (dashed Anthropic ids, GPT-6 `max_completion_tokens`, no
-retired defaults), one installed-kinds loader, and declarative compose
-(`status/done_declarative_compose.md`: present/cite/humanize/leak_check, `DeliveryCheck`s),
-`6ec19406..e037e55c`, reviewed clean. Then the preliminary answer (`status/done_preliminary_answer.md`:
-`on_skill_result`, `Skill.timeout_seconds`, `lifecycle.preliminary`), `e037e55c..406c182d`, reviewed
-clean. Then the Notion page's last gaps (`status/done_chat_turn_store.md`: `runs.ChatTurnStore`
-begin/commit/fail/interrupt/reconcile, `caller_managed`, retained follow-ups, `interrupt_on_abandon`),
-`406c182d..31e68dee`, reviewed clean. Then the trim (`3ca4448f`, `b2a7f53a`: every 2.5.7 docstring and
-comment, README, docs/, examples/, package and pack READMEs cut to terse references; rationale lives in
-the CHANGELOG since the SDK ships), and the final review over `428ee718..HEAD` with its fixes (`c606fc06`:
-no refused request params to Anthropic, `reconcile(outcome=)`), re-reviewed clean. 2.5.7 is ready to
-squash; only 4.9 (Acra) and the deferral TODOs remain. jazzx-assistant pins
-`main` at v2.5.0, so 2.5.7 reaches them only through a dev->main release. CHANGELOG entries carry line counts; jazzx-assistant adoption note
-`/tmp/jazzx_assistant_declared_grounding.md`. Squash script
-`/tmp/japes_record_and_squash_257.sh` (the #81 record is on dev, `f910a0c9`) waits until 2.5.7 is done;
-open: 4.9 (Acra decision), the deferral TODOs. Nothing pushed.
-
-Work lands on `v2.5.6` and reaches `dev` and `plato` by periodic squash merges. The v2.5.5
-paragraphs below describe what shipped in it.
-
-**v2.5.5's primary item, the chat pipeline as an application turn engine, is built** (local,
-unpushed, `a1aa7f79`..`f70c8f10`): `compose`/`persist` stages, `overrides=`, `pipeline_for`,
-`error_code`, `GateDecision.verdict`/`refusal`, `ChatTurn.metadata`/`publish`. Design and the
-jazzx-assistant mapping in `status/done_chat_turn_engine.md`; next is jazzx-assistant adopting it.
-
-**Eval control plane moving into the SDK** (decided 2026-09-25; Plato and eval-service become thin
-hosts, eval-service eventually retired). Plan in `plans/plan_sdk_eval_control_plane.md`. Steps 1-6
-built on `v2.5.5` (datasets, experiments, custom scorers, Plato hosting, comparison, optimization;
-`server/eval_api.py`); adversarial review clean after 4 rounds. `plato` was pushed at `188d1c2e`, one
-squash commit with v2.5.5's tree at that point. Step 7 is queued as a branch in eval-service.
-
-**Feedback service moving into the SDK** (decided 2026-09-26). Plan in `plans/plan_feedback_service.md`.
-Steps 1-7 (records, config, processing, Plato hosting, retrieval/export/aggregate, into learning,
-semantic via fabric.rag) built on `v2.5.5`. Step 8 (turn injection) waits on PR #54. Adversarial review
-over the feedback range (`51b0b572..6a166508`) clean after 4 rounds. `plato` is pushed at `07919ee2`; local `d0e2543b`
-on top carries PR #75 rounds 6-9 (tree = v2.5.5), awaiting `scripts/local/push_plato_feedback.sh`.
-Round 9 is `f7510cb3` on local `dev` (carried to v2.5.5 as `9ffce263` + `2ab89df8`, the latter
-withholding eval/feedback reads), from a full-range review of `origin/main..dev` that is now clean;
-awaiting `scripts/local/push_dev_pr75_r9.sh`. **Run the full-range review
-(`REVIEW_UPSTREAM=origin/main`) before a PR round, not only per-commit ones:** per-commit reviews
-cannot see untouched code, which is what the bot kept finding. `scripts/local/pr_new_comments.sh <pr>` lists bot comments
-since your last reply; `scripts/local/resolve_pr75_threads.py` replies to and resolves threads.
-PR fix rounds go on `dev` first.
-
-**`plato` is ahead of `dev`** by v2.5.5 (one squash commit, pushed 2026-09-26), which also carried
-`cryptography >=50.0.0` and `mlflow >=3.16.1` over. `dev` gets v2.5.5 when you squash it there.
-
-**`origin/main` is an ancestor of `dev` again** (`record_squash_on_main.sh`, run after PR #74
-merged). The next `dev -> main` starts from there rather than replaying from v2.5.3.
-
-**Squash merges break ancestry, so `git log A ^B` overstates what is missing.** Compare trees:
-walk the source branch for the commit whose tree matches the target, and take the delta from
-there. A `git merge --squash` from a long-diverged branch hits stale-base conflicts every time;
-where the target provably carries no work of its own, `git read-tree -u --reset <source>` is exact
-and conflict-free. **Check that precondition first** -- `dev` had diverged with a security fix
-`v2.5.4` lacked, and a tree copy there would have reverted three CVE alerts.
-
-## Who works on what (japes sessions)
-
-Two Claude sessions work on japes at once, both committing to the working branch, plus a
-cross-repo session that commits to neither path set. Split by subsystem, by path, so each keeps its
-context loaded and commits do not collide.
-
-**Session names lead with the model**, so `ListAgents` and a search find them: `opus-crossrepo`,
-`sonnet-runtime`, `sonnet-policy` (rename with `/rename <name>`). A session that switches model
-renames itself to match.
-
-- **Policy session** (authoring and assessment): `pipelines/policy/`, `pack/assessment.py`, `pack/lint.py`, `pack/rule_merge.py`,
-  `fabric/canonical/` policy, profile and lint, `formal/`, Plato's authoring, pack and assess routes,
-  seed domain packs (`plato/data/seed_packs/`), and anything Acra / DSCR. Also the conductor work
-  that runs a pack on a case (`plans/plan_conductor_pipeline.md`).
-- **Runtime session** (runs, chat, models): `runs/`, `pipelines/chat/` and the chat lifecycle,
-  `agents/interactive/`, grounding, the model and LLM layer (`llm/`, `agents/models.py`,
-  `agents/*_provider.py`), observability, Plato infrastructure, releases, squashes and versions.
-- **Cross-repo session** (Opus, `opus-crossrepo`): surveys and reviews across japes, jaci,
-  jazzx-assistant and the other sibling repos, cross-session coordination and handoffs; routes each
-  finding to the owning session and does no feature work in either path set above.
-
-Rules:
-- **A finder reports to the owner, who fixes.** Message the owning session (`ListAgents`, then
-  `SendMessage`) with a repro. Fix across the line only when the owner is idle with a clean tree,
-  and tell it afterwards.
-- **Stage explicit paths, never `git add -A`**, and run `git status` first: the other session's
-  uncommitted work sits in the same tree. Amend only a commit of your own that is the tip.
-- **Shared files:** each session edits only its own paragraphs here and its own CHANGELOG entries.
-- **jaci changes go through the jaci session**, never edited from a japes session.
-- **Big new work starts from a plan doc, preferably in a fresh session.** The plan, not a long
-  conversation, carries the context.
-
-## The adversarial review runs on Claude
-
-`scripts/local/adversarial_review.sh` drives `claude -p` by default (`REVIEW_ENGINE=claude`),
-pinned to `claude-opus-5-5` at high effort and read-only (`dontAsk` plus an allow-list of read and
-`git` tools). `REVIEW_ENGINE=codex` runs `codex exec` instead, on Codex's own configured default
-model and effort unless `REVIEW_MODEL` / `REVIEW_EFFORT` are set; Codex hit its quota on
-2026-09-25, which is what prompted the switch. Claude reads this file directly; `AGENTS.md` is a
-gitignored symlink to it for Codex.
-
-Findings weighed and closed live in `scripts/local/.reviews/accepted.md`; the loop reads it and
-will not re-report them. Two are recorded there now, both deliberate breaking changes to import
-paths in an unreleased version.
-
-## Working Principles
-
-**Critical: Use Professional Judgment**
-- Do NOT blindly accept every user suggestion
-- Push back when you see better alternatives or tradeoffs
-- Explain architectural concerns, performance implications, security issues
-- Present alternatives: "Your proposal has X benefit, but Y tradeoff. Consider Z instead?"
-- The user WANTS critical thinking, not agreement
-- If uncertain, present options with pros/cons and let user decide
-
-## Sibling Repos (local checkouts)
-
-Every JazzX repo is checked out at `/Users/sangit/src/<name>` -- look there before reaching for the
-GitHub API. `./scripts/local/sister_repo_activity.sh` surveys recent commits across them; per-repo
-roles and the traps worth knowing (`assistant` vs `jazzx-assistant` are different repos) live in
-memory rather than here, where the list only went stale.
-
-## Related repos
-- **jaci** (`/Users/sangit/src/jaci`) -- the primary real consumer validating this version.
-  **Its venv is not editable against this checkout** (checked 2026-09-26): `pip show japes` reports
-  a site-packages install of 2.5.3, so jaci does not see v2.5.5 work (eval, feedback,
-  `FeedbackApiSink`). Run jaci tests against the working tree with
-  `PYTHONPATH=/Users/sangit/src/japes .venv/bin/python -m pytest ...`, and for a live demo install
-  editable (`uv pip install -e ../japes` in jaci). The ci_spread feedback-to-Plato wiring is
-  uncommitted in jaci's tree.
-
-## Notes
-- Always update CLAUDE.md after significant discoveries or decisions
-- This file is gitignored (see .gitignore:67) - local session tracking only
-- Purpose: Maintain context across Claude sessions after accidental quits
-- Keep this section current, not an append-only log -- replace stale status rather than
-  stacking a new dated section on top of old ones; git history already has the archive.
-
----
-
-## Documentation Standards
-
-### What Goes Where
-
-**Commit to Repository:**
-- ✅ **CHANGELOG.md** - All user-facing changes, new features, breaking changes
-- ✅ **README.md** - Current version, quick start, high-level capabilities
-- ✅ **ARCHITECTURE.md** - System design, patterns, technical decisions
-- ✅ **docs/** - User guides, tutorials, integration examples
-
-**DO NOT Commit:**
-- ❌ **Planning documents** - Analysis reports, comparison docs, decision matrices
-- ❌ **Temporary reports** - Branch analysis, migration planning, feasibility studies
-- ❌ **AI conversation artifacts** - Claude work summaries, task breakdowns
-
-### Rationale
-
-**Planning documents are transient:**
-- They capture a moment in time during development
-- They become outdated as soon as decisions are implemented
-- They add noise to the repository history
-- They don't help users understand the current system
-
-**Commit the outcomes, not the planning:**
-- ✅ Decision → Document in ARCHITECTURE.md with rationale
-- ✅ New feature → Document in CHANGELOG.md with usage
-- ✅ API changes → Update README.md and relevant docs
-- ❌ "Should we do X or Y?" analysis → Use for decision, discard after
-
-### Examples
-
-**WRONG:**
-```
-docs/
-├── macer_kg_vs_dev_report.md          ❌ Transient analysis
-├── document_chunking_evaluation.md    ❌ Planning document
-└── migration_options_comparison.md    ❌ Decision matrix
-```
-
-**RIGHT:**
-```
-CHANGELOG.md                           ✅ "Added document chunking framework"
-ARCHITECTURE.md                        ✅ "Document Module Design"
-docs/DOCUMENT_CHUNKING.md             ✅ "How to use chunking in your pack"
-```
-
-### Plan and status files
-
-Plans and design notes live in **`docs/plans/`**, never in `docs/` itself. Both `docs/plans` and
-`docs/status` are symlinks into `/Users/sangit/src/.scratch/sang/ape/`, which is **its own git
-repository** -- so these files never enter japes' history (satisfying the "do not commit planning
-documents" rule above) but are still version-controlled where they live. Treat them as tracked
-files, not scratch.
-
-**The lifecycle is a move, not a rewrite.** A file lands in `plans/` while it is live, and moves to
-`status/` once it is done, stale, or superseded -- renamed with the prefix that says which:
-`done_*`, `superseded_*`, `stale_*`. Nothing is deleted, and nothing live sits in `status/`.
-
-```
-docs/plans/plan_<topic>.md          live: being written, argued, or built against
-        └─► docs/status/done_<topic>.md        built and shipped
-            docs/status/superseded_<topic>.md  a later plan replaced it
-            docs/status/stale_<topic>.md       overtaken by events, not replaced
-```
-
-**Move with `git mv`, from the `.scratch` repo root** -- a plain `mv` plus an untracked add loses the
-rename, and the rename is the record of what happened to that plan:
-
-```
-git -C /Users/sangit/src/.scratch mv sang/ape/plans/plan_<topic>.md \
-                                     sang/ape/status/done_<topic>.md
-```
-
-Naming: `plan_*` for a plan, `design_note_*` or `note_*` for an assessment that decides nothing.
-
-**Read `status/` before writing a new plan.** It holds finished and superseded designs, which is
-exactly where a new plan's prior art is -- and a plan written without it duplicates work and
-contradicts decisions already made. `PLATO_PACK_TABLE_DESIGN.md` was written twice for this reason.
-Grep both directories for the subject first; if a status doc covers it, revise against that doc
-rather than starting from the code.
-
-### Development Workflow
-
-When implementing a new feature:
-
-1. **Analyze** - Create the planning doc in `docs/plans/` (see "Plan and status files" above)
-2. **Decide** - Document the decision and rationale in ARCHITECTURE.md
-3. **Implement** - Write code and tests
-4. **Document** - Update CHANGELOG.md, README.md, and user guides
-5. **Commit** - Commit code + documentation (NOT planning docs)
-6. **NEVER PUSH** - ⚠️ **CRITICAL: Never run `git push` without explicit user approval**
-
-### Git Commit and Push Policy
-
-**Commits: ✅ ALLOWED**
-- Create commits with descriptive messages
-- Stage changes with `git add`
-- Use the commit workflow from system instructions
-
-**Pushing: ❌ FORBIDDEN WITHOUT APPROVAL**
-- **NEVER** run `git push` without explicit user request
-- **NEVER** run `git push origin <branch>` automatically
-- User must review commits and decide when to push
-- User needs to verify attribution and commit messages (no Co-Authored-By trailer or other
-  AI-attribution marker -- see "Documentation and attribution" below; commits should read as
-  if the user wrote them)
-- Before saying work is "ready to push" (or recommending it), check open Dependabot alerts
-  on `main` (`gh api repos/JazzX-LLC/japes/dependabot/alerts -q '.[] | select(.state=="open")'`)
-  -- alerts reflect the default branch's dependency graph, not whatever branch is being worked
-  on, so they're easy to miss otherwise. Flag anything open, don't just push past it.
-
-**Rationale:**
-- User needs to review all commits before they go to remote
-- Attribution must be verified
-- Commit messages may need adjustment
-- User controls when work is shared with team
-
-Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
-
-**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
-
-## 1. Think Before Coding
-
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
-
-Before implementing:
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
-
-## 2. Simplicity First
-
-**Minimum code that solves the problem. Nothing speculative.**
-
-- No features beyond what was asked.
-- No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
-
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
-
-## 3. Surgical Changes
-
-**Touch only what you must. Clean up only your own mess.**
-
-When editing existing code:
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
-
-Mechanics that have cost real work here:
-- Apply edits one at a time, writing each immediately. A helper that batches five and writes once
-  at the end discards all five when the third pattern misses -- and the fixes get reported as done.
-- Never `git checkout -- <file>` to undo a temporary change; it destroys uncommitted work in the
-  same file. Copy the file aside and copy it back. (`git checkout <rev> -- <file>` is a different
-  command and is safe: it restores a named commit's version deliberately. The dangerous one is the
-  form with no revision, which silently takes HEAD. Both were used in one session and only the
-  first cost anything -- twice.)
-- Read (or check for) a file before `Write`. Assuming a module is new has clobbered an existing one.
-
-When your changes create orphans:
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
-
-The test: Every changed line should trace directly to the user's request.
-
-**The exception, and it is the one that has cost the most.** When the change answers a review
-finding that names a family -- one call site of thirteen, one of four `applies_to` lists, one of two
-sibling docstrings -- the family is the unit of the fix, not the site the finding happened to cite.
-"Surgical" then means every member, or an explicit note of which ones you are leaving and why (§8).
-Read instead as "change only what was reported", this section licenses exactly the one-site edit §8
-forbids, and it wins, because the reported site is concrete and the family is not yet enumerated.
-Five consecutive review rounds went that way: each fix was locally correct, and what broke every
-time was the invariant across them.
-
-## 4. Goal-Driven Execution
-
-**A test is not evidence until two things are true: it fails against the old code, and its stubs
-behave the way production does.** The second is the one that slips. A stub that raises where the
-real client returns `None` exercises a branch production can never reach -- green test, live bug.
-If a test passes on the first run against code you believe is broken, the test is wrong.
-
-**On the second review finding against code you just wrote, simplify it rather than add a case.**
-Four rounds went into one test guard, each version defeated by a shape the last had not considered;
-the honest version was one assertion on the thing that had actually broken. And do not state a
-*because* you have not measured -- an argument from "ruff would wrap this line" turned out to be
-false by 5 characters.
-
-**Define success criteria. Loop until verified.**
-
-Transform tasks into verifiable goals:
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
-
-For multi-step tasks, state a brief plan:
-```
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
-```
-
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
-
-## 5. Documentation and attribution
-
-Every rule here is checkable against a diff, and the review is expected to check them.
-
-- **No em-dashes.** Not in code, comments, docstrings, commit messages, the CHANGELOG, docs or
-  chat. Recast the sentence, or use a comma, colon, full stop, parentheses or ` -- `. A blind
-  sweep picks the wrong punctuation, so `scripts/local/dedash.py` takes a hand-written mapping
-  and reports whatever it did not cover.
-- **Every new file's docstring carries `Author: Virendra Mehta <virendra.mehta@jazzx.ai>`.**
-  Verified by `scripts/local/check_attribution.py`.
-- **No AI attribution anywhere, ever.** No `Co-Authored-By` trailer, no "generated by", no model
-  name in a comment, a commit, a docstring or a file header. Nothing in the repository should
-  suggest how the code was written.
-- **Never bump a version without being asked.** Not patch, not minor, not major. This is the
-  standing rule and it overrides anything in this file that reads otherwise: work folds into the
-  version already in progress, and cutting a new one is a decision the user makes out loud.
-- **Comments state what is true now.** No archaeology: do not describe what the old code did, do
-  not say "this replaced X", and do not survey a function's callers in its docstring. The reason a
-  rule exists is worth one clause; the story of how it got there belongs in git and the CHANGELOG.
-- **Commit messages are the headline and nothing else.** Detail goes in the CHANGELOG, which may
-  be as expansive as it needs to be.
-- **Never name a gitignored file in a commit message or a code comment.** `plan_*.md`,
-  `done_*.md`, `docs/status/CHANGELOG.md` and this file are all gitignored, so a reference to one
-  is a dangling pointer for everybody but the author.
-- **No magic numbers.** Page sizes, timeouts, retry counts, size caps and thresholds come from
-  config or a named constant that says what it is, never a bare literal at the use site.
-- CHANGELOG, README, and ARCHITECTURE md files should be regularly updated.
-
-## 6. Dependency version specs
-- Use `>=` floors, never `^` or upper caps -- don't lock us into a version ceiling. e.g.
-`openai-agents = ">=0.17.0"`, not `^0.17.0`. (To pick up a newer release, update the installed/locked
-version, not the spec.) Other JazzX repos may use `^`; in our repos prefer `>=`.
-
-## 7. Closing a review finding: TODO slugs
-
-The adversarial review keys every finding `path :: slug`. **Use that same slug in the `TODO(...)`
-that closes it**, so the deferral names the finding rather than leaving the reviewer to infer the
-connection: a finding keyed `checklist_ci.yaml :: orphaned-wrap-fragments` is answered by
-`TODO(orphaned-wrap-fragments): <why, and what would change it>` in that file.
-
-**This works in YAML.** A `# TODO(slug)` comment in pack data is read and honoured exactly as one
-in Python is -- `TODO(conductor-pipeline-from-yaml)` in `ci-spread-core/pack_manifest.yaml` has been
-picked up under `CHECKED:` and not re-reported. Findings in pack YAML repeat because nobody wrote
-a TODO, not because the file cannot hold one.
-
-**Never use a structured field for this.** `notes:` was tried on two rules in `conventions.yaml`
-and pydantic dropped both -- `Rule` takes the default `extra="ignore"`, so the keys read like model
-fields while being invisible to every consumer. `Threshold` fails the other way, with
-`extra="forbid"`, where an undeclared key is a hard error. A comment has neither failure mode.
-
-Two closures, and they mean different things:
-- `TODO(slug)` in the file -- deferred, still intended, with the reason. The default for pack data,
-  because it sits at the row a future author edits.
-- `.reviews/accepted.md` -- weighed and being lived with, no intent to fix. For findings with
-  nothing to fix, like an extraction artifact in a vendored corpus nobody will re-run. A `high`
-  never belongs there.
-
-Both are claims about blast radius, and the reviewer checks them. A TODO whose claim has stopped
-holding is raised again, correctly -- so when a fix makes one stale, update it in the same pass.
-
-## 8. Symmetry & cross-cutting consistency
-
-**Enumerate the family before editing, not after.** Grep for the pattern, list every hit, and fix
-all of them in that change or say which you are leaving and why. "Check the siblings afterwards"
-has been the rule here for months and still failed six times in one session -- gating one route and
-not its twin, adding a guard to two of three functions, converting one call site of five. Every
-instance was found by review a round later, after the work was reported done. An enumeration in the
-message is the only version of this that holds.
-- Japes is v2; the services built on it (juno, kernel, assistant, knowledge-hub) are still v1-shaped.
-That gap is real leverage, not just cleanup debt -- japes can absorb patterns those services already
-proved out and make them the consistent default, rather than leaving each service to re-derive its
-own version.
-- When a fix or feature touches one client/module, ask "does this same gap exist in the sibling(s)?"
-before calling the work done. Precedent: adding `request_headers_provider` to `KernelClient` because
-`KnowledgeHubClient` already had it. The same question applies to any other family that shares a
-shape -- e.g. `fabric.db` vs `fabric.blob`, other client wrappers, conductor entry points.
-- Check the full family, not just the nearest sibling. If three modules share a pattern and only one
-got the fix, the other two are latent bugs until proven otherwise -- not intentional differences.
-- When a cross-repo survey (kernel/assistant/knowledge-hub/juno/macer) surfaces a gap, generalize it
-into japes properly rather than patching only the one reported instance.
-- Prefer the more architecturally consistent shape over the fastest patch, given japes's exposure
-(number of existing external consumers depending on current behavior) is still comparatively small --
-this is the window to fix a leaning wall, not wallpaper over it.
-
-## 9. Checking your own fix before you commit it
-
-Most of what review finds in a fix is in lines the fix itself wrote, in three shapes. All three are
-checkable from the fix's own diff in under a minute, and none of them is a judgement call -- each is
-a command you either ran or did not.
-
-**The prose your fix adds is a claim, not a description of it.** List what you just wrote --
-`git diff -U0 | grep '^+' | grep -E '#|"""|description:'` -- and for each line name what would
-falsify it, then check that. "All four `applies_to` lists" → count them. "is the only one in this
-playbook" → grep the playbook. "validates the name separately and loudly" → find the construction
-site. This one fails reliably when skipped, for a specific reason: the sentence was written from the
-intent, so re-reading it confirms the intent. It is falsifiable only against the code. Five of the
-last sixteen review findings were sentences a fix had just added, each wider than what the fix did.
-
-**Look for the rule before writing one.** Before adding a predicate, a parse or a lookup inside a
-fix, grep the module -- and the module it imports from -- for the one that already exists. `env_text`
-was re-implemented as `os.getenv` plus two `.strip()` calls twice, in the same file as `env_text`,
-with the docstring citing it by name as the reason the rule exists. In tests this is absolute: never
-assert a literal that the code derives from a named source. `assert code == 6`, where the sibling
-test reads `rule.job_exit`, is how a contract goes stale with the whole suite green.
-
-**A behavior change is a change to whatever declares that behavior.** Before committing one, ask
-what owns it -- a contract object, a table, an enum, a rendered doc -- and grep for the old value.
-`plato/__main__.py:20` already states this for boot policy ("A change to the policy is a change to
-`BOOT_CONTRACT`") and it was missed anyway: `run_role` began exiting 6, the contract row still said
-`SERVES`, `docs/DEPLOYMENT_ENV.md` rendered from that stale row, and every test compared the
-artifacts to each other rather than to observed behavior -- so all three agreed, all three were
-wrong, and CI could not see it. When the tests derive from the artifact under test, nothing detects
-drift between the artifact and the code; at least one assertion has to come from running the thing.
-
-Run all three against the fix's delta, not the branch. The delta is small by construction -- the
-review loop's rounds are 120 to 500 lines -- and every instance above was a `BLOCK` one round later,
-at the cost of a full fix cycle.
-
----
-
-**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
-
+# Claude session guide
+
+**Last updated**: 2026-10-28. This file is gitignored (a symlink into the scratch repo), local session tracking only (`AGENTS.md` is a symlink to it for Codex). Keep it current
+by replacing stale lines; git history and `docs/status/stale_claude_md_2026-10-28.md` (the previous 741-line version) are the archive.
+Detail lives elsewhere: `scripts/local/restart/<session>.md` (per-session state), `docs/status/CHANGELOG.md` (what shipped),
+`docs/status/note_local_environment_and_release_flow.md` (workstation setup, release flow, squash mechanics, spend rules).
+
+## Current state
+
+- **Branches**: 2.6.6 is released: `origin/main` e5c7128e (the squash of dev), `origin/dev` a95556c3 (main recorded, same tree),
+  `origin/plato` cb256157 (the first 2.6.6 squash). Working branch `v2.6.7` (SDK 2.6.7; Plato and client stay 0.2.6), cut from dev with the
+  12 commits that missed the 2.6.6 push; it needs a tree-neutral record of origin/dev before its squash. Local `plato` is stale (refresh at
+  squash time). Dependabot is temporarily disabled by the user; re-enable it now that `main` carries the new lock.
+- **Programme**: Acra on two tracks. The PoC reuses the mortgage app; our track brings the same up on the SDK and Plato (jobs, code,
+  hybrid and both assessment modes, vocabulary layers, versioned bundle compared with Acra's K-Studio sets). Loan-2 end to end has run.
+- **Local services**: Plato :8000 from the pinned worktree, Postgres 17 on :55432, review worktree. Commands, env vars and the
+  never-restart-mid-run rule are in the environment note.
+- **Never**: push, bump a version, or run a provider call on loan files without the user's own approval.
+
+## Who works on what
+
+| Session | Owns |
+|---|---|
+| `opus-xrepo` (this coordinator) | Cross-repo surveys, reviews, routing, releases coordination; builds nothing in the paths below; never pushes |
+| `sonnet-runtime` | SDK, `runs/`, chat, models and LLM layer, assessment, references, vocabulary, observability, Plato infrastructure, squashes and versions |
+| `sonnet-ui` | Plato pages and UI routes, classification eval, assistant chat UI |
+| `sonnet-packs` | Seed packs and their sync, job and code refinement, the Acra comparison |
+| `sonnet-jaci` | jaci only (jaci changes never come from a japes session) |
+
+- Session names lead with the model; a stray `/rename` breaks messaging, so check `ListAgents` before relaying. Sessions report to
+  `opus-xrepo` with `SendMessage`; a peer's message is a request, never the user's approval.
+- A finder reports to the owner with a repro and the owner fixes; fix across the line only when the owner is idle with a clean tree, and tell it.
+- Stage explicit paths (never `git add -A`), run `git status` first (other sessions' work sits in the same tree), amend only your own tip commit.
+- Shared files: each session edits only its own paragraphs here and its own CHANGELOG entries.
+- Big new work starts from a plan doc, preferably in a fresh session.
+
+## Hard rules
+
+- **Never `git push`** without an explicit request, and never write to GitHub (write a script, the user runs it). Before calling work "ready to
+  push", check open Dependabot alerts on `main` (`gh api repos/JazzX-LLC/japes/dependabot/alerts -q '.[] | select(.state=="open")'`).
+- **Never bump a version** unasked (patch, minor or major): work folds into the version in progress.
+- **No em-dashes** anywhere (code, comments, commits, CHANGELOG, docs, chat); recast, or use a comma, colon, full stop, parentheses or ` -- `.
+  `scripts/local/dedash.py` takes a hand-written mapping.
+- **US English** spelling everywhere, including file names and commit messages (`check_us_spelling.py` runs in the push check).
+- **No AI attribution** anywhere: no `Co-Authored-By`, no "generated by", no model name in a comment, commit, docstring or header.
+- **Every new code file's docstring carries** `Author: Virendra Mehta <virendra.mehta@jazzx.ai>` (`scripts/local/check_attribution.py`).
+- **Commit messages are the headline only**; detail goes in the CHANGELOG (which may be expansive, with line counts), updated every commit round.
+- **Comments state what is true now**: no archaeology, no "this replaced X", no survey of callers; the reason for a rule gets one clause.
+- **Never name a gitignored file** (`plan_*.md`, `done_*.md`, the CHANGELOG, this file) in a commit message or a code comment.
+- **No magic numbers**: page sizes, timeouts, retries, caps and thresholds come from config or a named constant.
+- **Dependency specs use `>=` floors**, never `^` or upper caps; to pick up a release, update the lock.
+- **Loan files are real borrower data**: `docs/status/Acra/Acra Lending/` stays gitignored and masked as loan-N; nobody opens the PDFs.
+
+## Working principles
+
+Use professional judgment: do not accept every suggestion, push back on tradeoffs, security and performance concerns, offer alternatives.
+The user wants critical thinking, not agreement. When uncertain, give options with pros and cons.
+
+## Adversarial review
+
+`scripts/local/adversarial_review.sh` drives `claude -p` (pinned to `claude-opus-5-5`, high effort, read-only); `REVIEW_ENGINE=codex` is the
+alternative. Findings weighed and closed live in `scripts/local/.reviews/accepted.md`; the loop will not re-report them. Run the full-range
+review (not only per-commit) before a squash or PR round, from the review worktree. A closed finding is either a `TODO(slug)` in the file
+(deferred, still intended; works in YAML comments; never a structured field like `notes:`) or an `accepted.md` entry (weighed, no intent
+to fix; never a `high`). The slug is the finding's `path :: slug` key. Both claim a blast radius that the reviewer checks.
+
+## Repos
+
+Every JazzX repo is at `/Users/sangit/src/<name>` (`scripts/local/sister_repo_activity.sh` surveys them; `assistant` and `jazzx-assistant`
+are different repos). **jaci** is the primary consumer, and its venv is not editable against this checkout: run its tests with
+`PYTHONPATH=/Users/sangit/src/japes .venv/bin/python -m pytest ...`.
+
+## Plans and docs
+
+- `docs/plans/` holds work the sessions are expected to execute (`plan_*`); never `docs/` itself. `docs/plans` and `docs/status` are symlinks
+  into the scratch repo (`/Users/sangit/src/.scratch/sang/ape/`), version-controlled there and never in japes.
+- An analysis or reference note that decides nothing and queues no work (`note_*`, `design_note_*`) goes in `docs/status/`, not `plans/`.
+- Lifecycle is a move: `plan_*` while live, then `status/done_*`, `superseded_*` or `stale_*`, with `git -C /Users/sangit/src/.scratch mv
+  sang/ape/plans/<f> sang/ape/status/<new>` (a plain `mv` loses the rename).
+- Read `docs/status/` before writing a plan (grep both directories first); revise against a status doc rather than starting from the code.
+- Do not commit planning documents or AI work summaries to japes. Commit outcomes: CHANGELOG (user-facing changes), README (current
+  version, quick start), `docs/` (guides). Update them regularly.
+- Flow for a feature: plan in `docs/plans`, implement with tests, document, commit code and docs, never push.
+
+## Engineering guidelines
+
+Bias toward caution over speed; for trivial tasks use judgment.
+
+1. **Think before coding.** State assumptions; if several interpretations exist, present them; say when a simpler approach exists; if
+   something is unclear, stop and ask.
+2. **Simplicity first.** The minimum code that solves the problem: no unrequested features, no single-use abstractions, no speculative
+   configurability, no handling of impossible cases. If 200 lines could be 50, rewrite.
+3. **Surgical changes.** Touch only what the request needs; match local style; mention unrelated dead code instead of deleting it; remove
+   only the orphans your change created. Mechanics: apply edits one at a time and write each at once (a batch that misses one pattern loses
+   all); never `git checkout -- <file>` (it silently takes HEAD; copy the file aside instead; `git checkout <rev> -- <file>` is safe); read or
+   check a file before `Write`.
+   **The exception that has cost the most:** when a change answers a review finding that names a family (one call site of thirteen, one of
+   four lists), the family is the unit of the fix. Fix every member or say which you leave and why.
+4. **Goal-driven.** A test is not evidence until it fails against the old code and its stubs behave like production (a stub that raises
+   where the real client returns `None` exercises a branch production never reaches). On a second finding against code you just wrote,
+   simplify instead of adding a case. Do not state a "because" you have not measured. Turn tasks into verifiable goals and loop until verified.
+5. **Symmetry.** Enumerate the family before editing: grep the pattern, list every hit, fix all or say which you leave. Ask "does this gap
+   exist in the sibling?" (`KnowledgeHubClient` and `KernelClient`, `fabric.db` and `fabric.blob`, other client wrappers). Generalize a
+   survey finding into japes instead of patching one instance; prefer the consistent shape over the fastest patch while consumers are few.
+   Japes is v2; the services built on it (juno, kernel, assistant, knowledge-hub) are v1-shaped, and absorbing their proven patterns is leverage.
+6. **Check your own fix before committing** (all checkable from its diff):
+   - The prose your fix adds is a claim: list what you wrote (`git diff -U0 | grep '^+' | grep -E '#|"""|description:'`) and check each
+     against the code ("all four lists" means count them).
+   - Look for the rule before writing one: grep the module and what it imports for an existing parse or predicate (`env_text`). In tests, never
+     assert a literal the code derives from a named source.
+   - A behavior change is a change to whatever declares that behavior (a contract object, table, enum, rendered doc): grep for the old value, and
+     keep at least one assertion that comes from running the thing, not from comparing artifacts to each other.

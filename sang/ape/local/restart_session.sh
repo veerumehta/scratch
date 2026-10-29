@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Start one of the four japes Claude sessions by name, in its own tmux session, after a reboot.
+# Start one of the five japes Claude sessions by name, in its own tmux session, after a reboot.
 #
 # Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 #
 #   scripts/local/restart_session.sh opus-xrepo        # fresh session told to read its restart file
 #   scripts/local/restart_session.sh sonnet-ui --resume   # reopen its last conversation by name instead
-#   scripts/local/restart_session.sh all               # start all four (detached), then attach one
+#   scripts/local/restart_session.sh all               # start all five (detached), then attach one
 #   scripts/local/restart_session.sh list              # names, tmux sessions, restart files, live or not
 #
 # Each session saves its state in scripts/local/restart/<name>.md before a shutdown (a restart file
@@ -15,7 +15,7 @@
 # conversation is still wanted, the restart file otherwise.
 #
 # Names and where they run: opus-xrepo (tmux japes), sonnet-runtime (jrun), sonnet-ui (jui),
-# sonnet-jaci (jaci, in the jaci repo). A tmux session that already exists is attached, never
+# sonnet-jaci (jaci, in the jaci repo), sonnet-packs (jpacks). A tmux session that already exists is attached, never
 # started twice. Local Plato does not come back by itself:
 #   /Users/sangit/src/japes/scripts/local/plato_worktree.sh start      (pinned worktree, :8000)
 set -euo pipefail
@@ -26,7 +26,7 @@ RESTART_DIR="$HERE/restart"
 PROMPT_DIR="/Users/sangit/src/japes/scripts/local/restart"
 OPUS="claude-opus-5-5"
 SONNET="claude-sonnet-5-5"
-NAMES=(opus-xrepo sonnet-runtime sonnet-ui sonnet-jaci)
+NAMES=(opus-xrepo sonnet-runtime sonnet-ui sonnet-jaci sonnet-packs)
 
 # name -> "tmux-session working-directory model"
 spec() {
@@ -35,6 +35,7 @@ spec() {
         sonnet-runtime) echo "jrun /Users/sangit/src/japes $SONNET" ;;
         sonnet-ui)      echo "jui /Users/sangit/src/japes $SONNET" ;;
         sonnet-jaci)    echo "jaci /Users/sangit/src/jaci $SONNET" ;;
+        sonnet-packs)   echo "jpacks /Users/sangit/src/japes $SONNET" ;;
         *) return 1 ;;
     esac
 }
@@ -90,7 +91,7 @@ case "$target" in
     -h|--help) usage ;;
     all)
         for name in "${NAMES[@]}"; do start "$name" "$mode" || true; done
-        echo; list; echo; echo "attach with: tmux attach -t japes | jrun | jui | jaci" ;;
+        echo; list; echo; echo "attach with: tmux attach -t japes | jrun | jui | jaci | jpacks" ;;
     *)
         spec "$target" >/dev/null 2>&1 || { echo "unknown name '$target'; one of: ${NAMES[*]}" >&2; exit 2; }
         start "$target" "$mode"

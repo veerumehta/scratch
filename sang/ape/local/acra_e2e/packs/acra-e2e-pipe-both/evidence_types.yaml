@@ -1,0 +1,72 @@
+# DSCR — evidence type vocabulary (authored as data).
+#
+# The evidence the Investigator may request, owned by the pack as YAML rather than a Python enum.
+# Loaded via jazzx_sdk and passed to the tool registry, which validates its tools against this
+# list and derives the requestable set from it.
+#
+# Every id here is one that a policy in `policies/` already names in a rule's
+# `parameters.evidence_types`; the rule that asks for each is recorded beside it. Until this file
+# existed the manifest declared no `evidence_types:` block, so `Pack.evidence_types` was empty and
+# a tool registry built from this pack derived a requestable set of nothing — the same gap
+# ci-spread-core's manifest had, and the reason its own declaration carries that argument.
+#
+# To add a source: add an entry here + register a tool for its id. No schema or enum edit.
+
+evidence_types:
+  - id: nmls_verification
+    label: NMLS verification
+    description: NMLS lookup confirming the broker and loan officer are licensed and in good
+      standing. Requested by DSCR-NMLS-VERIFIED, which fails closed when unrecorded.
+    requestable: true
+
+  - id: hoa_budget
+    label: HOA budget
+    description: The association's current operating budget, used to evidence the reserve
+      contribution a condo project must show. Requested by DSCR-CONDO-HOA-RESERVES.
+    requestable: true
+
+  - id: hoa_financials
+    label: HOA financial statements
+    description: The association's financial statements, the second half of the condo reserve
+      test. Requested by DSCR-CONDO-HOA-RESERVES.
+    requestable: true
+
+  - id: operating_agreement
+    label: Operating agreement
+    description: The borrowing entity's operating agreement. One of the three entity documents
+      DSCR-ENTITY-DOCS requires on file.
+    requestable: true
+
+  - id: articles_of_organization
+    label: Articles of organization
+    description: The entity's formation document. Requested by DSCR-ENTITY-DOCS.
+    requestable: true
+
+  - id: certificate_of_good_standing
+    label: Certificate of good standing
+    description: Confirmation the entity is active with its state of formation. Requested by
+      DSCR-ENTITY-DOCS.
+    requestable: true
+
+  - id: bank_statement
+    label: Bank statement
+    description: Depository statements evidencing months of reserves. Requested by
+      DSCR-HIGH-LTV-RESERVES, where the reserve requirement rises with LTV.
+    requestable: true
+
+  - id: asset_statement
+    label: Asset statement
+    description: Brokerage or retirement statements counted toward reserves alongside deposits.
+      Requested by DSCR-HIGH-LTV-RESERVES.
+    requestable: true
+
+  - id: credit_report
+    label: Credit report
+    description: Borrower credit report (FICO, delinquencies, bankruptcies). Answered from a
+      fixture by evidence_tools.yaml.
+    requestable: true
+
+  - id: appraisal
+    label: Appraisal
+    description: Property appraisal (value, date). Answered from a fixture by evidence_tools.yaml.
+    requestable: true

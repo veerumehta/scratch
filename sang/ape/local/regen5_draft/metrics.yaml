@@ -1,0 +1,33 @@
+# DSCR derived fields, for the pack's policy_assessment (jazzx_sdk.pack.assessment).
+# Author: Virendra Mehta <virendra.mehta@jazzx.ai>
+#
+# Fields carry the production mortgage ontology's Entity.field names (provisional where it has
+# none; ENCODING_NOTES, 0.2.17).
+#
+# LoanCore.cltv_percent is a book-LTV proxy: 100 * loan amount / appraised value. A zero or
+# missing value refuses the metric rather than dividing, so the cap rules reading it are
+# unevaluable.
+#
+# RatioSet.dscr is monthly rental income / PITIA, the same ratio the DSCR ratio rules compute
+# themselves. It is derived here so a page shows the pack's figure rather than a model's: the
+# decision schema carries no ratios.
+
+metrics:
+  - id: LoanCore.cltv_percent
+    name: Combined Loan-to-Value
+    formula: "100 * LoanCore.total_loan_amount_usd / SubjectProperty.appraised_value_usd"
+    unit: "%"
+    polarity: lower_is_better
+    rounding_places: 2
+    inputs:
+      - {name: LoanCore.total_loan_amount_usd, kind: document_field, ref: LoanCore.total_loan_amount_usd}
+      - {name: SubjectProperty.appraised_value_usd, kind: document_field, ref: SubjectProperty.appraised_value_usd}
+  - id: RatioSet.dscr
+    name: Debt Service Coverage Ratio
+    formula: "RatioSet.total_monthly_income_usd / RatioSet.total_monthly_obligation_usd"
+    unit: "x"
+    polarity: higher_is_better
+    rounding_places: 2
+    inputs:
+      - {name: RatioSet.total_monthly_income_usd, kind: document_field, ref: RatioSet.total_monthly_income_usd}
+      - {name: RatioSet.total_monthly_obligation_usd, kind: document_field, ref: RatioSet.total_monthly_obligation_usd}

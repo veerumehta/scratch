@@ -1,0 +1,191 @@
+# Policy-authoring template: what Plato's rule extraction (POST /authoring/extract/{pack}/runs)
+# reads from the pack's draft as `jtbd_template.yaml` (japes `JtbdTemplate`). `reads` are the case
+# fields a drafted rule may read -- every field this pack's policies read, plus the inputs of its
+# derived CLTV and DSCR -- so a clause reading none of them is not proposed. `units` say how a
+# ratio field holds its value. Keep in step with schemas/loan_application.json and metrics.yaml.
+reads:
+  - Borrower.has_bankruptcy_or_foreclosure
+  - Borrower.entity_type
+  - UnderwritingSummary.broker_nmls_verified
+  - LoanCore.channel
+  - Borrower.citizenship_status
+  - LoanCore.cltv_percent
+  - CreditReport.score_count
+  - SubjectProperty.has_current_lease
+  - LoanCore.is_delayed_financing
+  - LoanCore.dscr_qualification_method
+  - UnderwritingSummary.duplicate_ssn_cleared
+  - Borrower.entity_documents_complete
+  - Borrower.is_entity_borrower_1
+  - LoanCore.is_escrow_waived
+  - CreditReport.representative_score
+  - Borrower.is_first_time_homebuyer
+  - RatioSet.total_monthly_income_usd
+  - CondoProject.hoa_litigation_pending
+  - CondoProject.hoa_reserves_adequate
+  - CreditReport.housing_history_rating
+  - LoanCore.is_interest_only_10_40
+  - LoanCore.note_rate_percent
+  - SubjectProperty.listed_for_sale_last_6_months
+  - LoanCore.total_loan_amount_usd
+  - UnderwritingSummary.loan_officer_nmls_verified
+  - LoanCore.loan_purpose
+  - SubjectProperty.is_mixed_use
+  - Borrower.months_since_bankruptcy_or_foreclosure
+  - Borrower.months_since_short_sale_dil_or_modification
+  - CreditReport.mortgage_0x30x24
+  - SubjectProperty.occupancy_subtype
+  - SubjectProperty.ownership_months
+  - RatioSet.total_monthly_obligation_usd
+  - LoanCore.prepayment_penalty_structure
+  - MortgageLoanInformation.is_interest_only
+  - SubjectProperty.is_listed_for_sale
+  - SubjectProperty.state
+  - SubjectProperty.property_type
+  - SubjectProperty.appraised_value_usd
+  - RatioSet.reserves_months
+  - SubjectProperty.number_of_units
+  - SubjectProperty.is_rural
+  - LoanCore.seller_concession_percent
+  - Borrower.has_short_sale_dil_or_modification
+  - TitleInformation.has_related_party_transfers
+  - CreditReport.tradelines_meet_requirement
+  - SubjectProperty.is_vacant
+units:
+  LoanCore.cltv_percent: percent
+  LoanCore.note_rate_percent: percent
+  LoanCore.seller_concession_percent: percent
+
+# How jobs to be done are filed and named for this pack (from japes' seed, built from the
+# policy-workbench guide): the families, types and limits follow the JTBD ontology guide and the
+# policy writer's constraints; a job's COMMON text follows `requirement_template`.
+sections:
+  - Appraisal Review
+  - Asset Assessment
+  - Compliance and Closing
+  - Credit Review & Analysis
+  - Identification Requirements
+  - Income Stability & Sufficiency Analysis
+  - Insurance Coverage Sufficiency & Policy Assessment
+  - Liabilities Assessment
+  - Loan Program Eligibility
+  - Property Tax Calculation
+  - Title Review
+
+section_types:
+  Appraisal Review: Collateral
+  Asset Assessment: Assets
+  Compliance and Closing: Compliance
+  Credit Review & Analysis: Credit
+  Identification Requirements: Identification
+  Income Stability & Sufficiency Analysis: Income
+  Insurance Coverage Sufficiency & Policy Assessment: Insurance
+  Liabilities Assessment: Liabilities
+  Loan Program Eligibility: Eligibility
+  Property Tax Calculation: Taxes
+  Title Review: Title
+
+# A mnemonic is <prefix>-<topic>: the topic is an abbreviation of what the job is about, never a
+# sequence number.
+mnemonics:
+  prefixes:
+    Appraisal Review: APR
+    Asset Assessment: AST
+    Compliance and Closing: CMP
+    Credit Review & Analysis: CRD
+    Identification Requirements: IDR
+    Income Stability & Sufficiency Analysis: INC
+    Insurance Coverage Sufficiency & Policy Assessment: INS
+    Liabilities Assessment: LIA
+    Loan Program Eligibility: LPE
+    Property Tax Calculation: TAX
+    Title Review: TTL
+  # Where a section files jobs under several families, as Acra's hand-built sets (both programs)
+  # do; a section not listed here keeps its one prefix above.
+  families:
+    Appraisal Review:
+      PRE: "property eligibility: property types and their caps, location, rural, vacant and mixed use, declining markets, listing history"
+    Asset Assessment:
+      AFC: "assets and funds to close: reserves by CLTV, FICO and transaction, gift funds, seasoning, acceptable sources"
+    Compliance and Closing:
+      BET: "the borrowing entity and title: entity types and documents, EIN, good standing, operating agreement, guarantors, power of attorney, vesting"
+      CMP: "compliance housekeeping, such as the guideline version a job follows"
+    Credit Review & Analysis:
+      CRD: "credit: scores, tradelines, mortgage and housing history, bankruptcy, foreclosure, short sale and deed-in-lieu seasoning, escrows"
+    Identification Requirements:
+      BOR: "borrower identity and status: citizenship, foreign nationals, ITIN, non-permanent residents, first-time homebuyers"
+      FN: "foreign national requirements: business purpose, credit reference, OFAC, funds in escrow, currency review, closing documents"
+    Income Stability & Sufficiency Analysis:
+      DSCR: "DSCR income: qualifying rent, the 1007, leases, short-term rentals, PITIA, the ratio and its minimums"
+      LFC: "the final DSCR check against the program's limits"
+    Insurance Coverage Sufficiency & Policy Assessment:
+      RLI: "rent-loss insurance: when purpose, LTV, CLTV or reserves require it"
+    Loan Program Eligibility:
+      LPE: "program eligibility: occupancy, purpose, channel, loan amount, qualification method, seller concessions, business purpose"
+      LFC: "loan limits: FICO and CLTV matrices, loan amount step-downs, cash in hand, delayed financing"
+      PPT: "product terms: interest-only, ARM and prepayment penalty structures"
+      BOR: "borrower eligibility: citizenship, foreign nationals, first-time homebuyers, guarantor attestation"
+  max_length: 20
+
+# Jobs vary by program; each value is a block of an exported set. Investor blocks are filled at
+# export from the consumer's profile (export_profiles/).
+variants: {name: program, values: [Standard, Platinum]}
+
+# What a job's extraction targets say beyond the entity. Targets appear once the registry's
+# documents yield Entity.field names.
+extraction:
+  operations: [UPDATE]
+  mode: ASK_USER
+  auto_mode: AUTO_APPROVE
+  auto_approve_kinds: []
+  exclude_fields: [id, created_at, updated_at, provenance]
+
+roles: [Underwriter, Officer, Processor]
+
+# What a job is, and what it becomes in code. Only `maps_to: derived_field` is read by code (a
+# determination goes on the derivation backlog); `expects_code` makes an uncoded job of that kind a
+# stronger coverage gap.
+kinds:
+  determination: {description: "a named fact about the case, e.g. a borrower is a foreign national", maps_to: derived_field, expects_code: true}
+  limit: {description: "a cap, threshold or matrix", maps_to: threshold_or_matrix_rule, expects_code: true}
+  verification: {description: "a document proves a fact", maps_to: per_check_rule_or_procedure, expects_code: false}
+  condition: {description: "something to obtain or clear", maps_to: procedure, expects_code: false}
+  judgment: {description: "a call a person makes", maps_to: procedure, expects_code: false}
+
+limits:
+  skill_max_chars: 500
+  section_type_min_chars: 3
+
+step_outline:
+  - Initial Document Review
+  - Eligibility Verification
+  - Validation and Verification
+  - Final Determination
+
+requirement_template: |
+  # <Skill Name> - Base Version
+
+  ## Purpose
+
+  ## Reference Documents
+  ### <Document category>
+  - <Document name>: <what it proves>
+
+  ## Steps
+  ### Step 1 - Initial Document Review
+  ### Step 2 - Eligibility Verification
+  ### Step 3 - Validation and Verification
+  ### Step 4 - Final Determination
+
+  ## Deterministic Validation Rules
+  - <observable condition>: TRUE = <result>, FALSE = <result>
+
+  ## Outcomes
+  ### Pass
+  ### Conditional
+  ### Fail
+  ### Not Applicable
+
+instructions: >-
+  Every outcome category is written. Where no case grounds one, write exactly: There is no case for
+  this outcome.

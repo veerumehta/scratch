@@ -4,7 +4,7 @@ policies:
   name: platinum_select overlay
   description: platinum_select overlay
   policy_type: institutional
-  effective_date: '2026-10-17T22:02:30.575178Z'
+  effective_date: '2026-10-27T16:15:58.014136Z'
   status: active
   rules:
   - rule_id: PRE-CONDO-CLTV.platinum_select

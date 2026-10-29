@@ -1,0 +1,43 @@
+{
+  "default": {
+    "source": "fixture.credit_bureau",
+    "fico_score": 720,
+    "delinquencies_24mo": 0,
+    "bankruptcies": []
+  },
+  "DSCR-DEMO-001": {
+    "source": "fixture.credit_bureau",
+    "fico_score": 740,
+    "scores_reported": 3,
+    "delinquencies_24mo": 0,
+    "bankruptcies": []
+  },
+  "DSCR-DEMO-002": {
+    "source": "fixture.credit_bureau",
+    "fico_score": 700,
+    "scores_reported": 3,
+    "delinquencies_24mo": 0,
+    "bankruptcies": []
+  },
+  "DSCR-DEMO-003": {
+    "source": "fixture.credit_bureau",
+    "fico_score": 550,
+    "scores_reported": 3,
+    "delinquencies_24mo": 0,
+    "bankruptcies": []
+  },
+  "DSCR-DEMO-004": {
+    "source": "fixture.credit_bureau",
+    "fico_score": 760,
+    "scores_reported": 3,
+    "delinquencies_24mo": 0,
+    "bankruptcies": []
+  },
+  "DSCR-DEMO-005": {
+    "source": "fixture.credit_bureau",
+    "fico_score": 700,
+    "scores_reported": 3,
+    "delinquencies_24mo": 0,
+    "bankruptcies": []
+  }
+}

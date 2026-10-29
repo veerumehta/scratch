@@ -1,0 +1,177 @@
+# Draft of acra_dscr_policy/job_examples.yaml (sonnet-packs, 2026-10-28). Not wired in: holds for the 2.6.7 cut.
+# Figures are invented on purpose (not Acra's) so a constant that shows up in generated code and not in its clause
+# is an anchoring defect the scan can find. Field names are the pack's own.
+# `examples` load today (one per job kind, the loader refuses a second). `held` is ignored by the loader: shapes
+# the one-per-kind rule cannot carry, to move in when the SDK takes several per kind or a shape key.
+label: acra-job-examples-draft-1
+examples:
+  - kind: limit
+    note: A printed grid (rows by minimum score, columns by purpose). A score below the first row has no row, so it fails; a missing input is unknown, never False.
+    job: |
+      Check 1: CreditReport.representative_score is at least 680.
+      Check 2: For purchase, rate & term and cash-out refinance, LoanCore.cltv_percent does not exceed the maximum in
+      the printed row for the score and the column for the purpose.
+      Clause: Each row is a minimum score; a score at or above it and below the next row takes that row. No row is printed below 680.
+      | Min score | Purchase | Rate & term | Cash-out |
+      |-----------|----------|-------------|----------|
+      | 720       | 85%      | 85%         | 70%      |
+      | 700       | 85%      | 85%         | 60%      |
+      | 680       | 80%      | 80%         | 50%      |
+    rule: |
+      import rules_lib
+
+      GRID = [  # (minimum score, maximum CLTV by purpose), highest row first
+          (720, {'purchase': 85, 'rate & term': 85, 'cash-out': 70}),
+          (700, {'purchase': 85, 'rate & term': 85, 'cash-out': 60}),
+          (680, {'purchase': 80, 'rate & term': 80, 'cash-out': 50}),
+      ]
+
+
+      def check(ctx):
+          score = ctx['CreditReport.representative_score']
+          purpose = ctx['LoanCore.loan_purpose']
+          cltv = ctx['LoanCore.cltv_percent']
+          missing = rules_lib.gaps(representative_score=score, loan_purpose=purpose, cltv_percent=cltv)
+          if missing:
+              return rules_lib.unknown(*missing)
+          if rules_lib.at_least(score, 0) is None:
+              return rules_lib.unknown('representative_score')
+          limits = next((row for floor, row in GRID if rules_lib.at_least(score, floor)), None)
+          if limits is None:
+              return (False, {'score': score, 'row': None})
+          if rules_lib.same(purpose, 'purchase'):
+              maximum = limits['purchase']
+          elif rules_lib.same(purpose, 'rate & term refinance', 'rate & term'):
+              maximum = limits['rate & term']
+          elif rules_lib.same(purpose, 'cash-out refinance', 'cash-out'):
+              maximum = limits['cash-out']
+          else:
+              return True
+          value = rules_lib.percent(cltv, 'percent')
+          if value is None:
+              return rules_lib.unknown('cltv_percent')
+          return (value <= maximum, {'score': score, 'maximum': maximum, 'cltv': value})
+    cases:
+      - {context: {CreditReport.representative_score: 725, LoanCore.loan_purpose: purchase, LoanCore.cltv_percent: 85}, satisfied: true}
+      - {context: {CreditReport.representative_score: 725, LoanCore.loan_purpose: purchase, LoanCore.cltv_percent: 85.5}, satisfied: false}
+      - {context: {CreditReport.representative_score: 700, LoanCore.loan_purpose: Cash-Out Refinance, LoanCore.cltv_percent: 60}, satisfied: true}
+      - {context: {CreditReport.representative_score: 700, LoanCore.loan_purpose: Cash-Out Refinance, LoanCore.cltv_percent: 61}, satisfied: false}
+      - {context: {CreditReport.representative_score: 699, LoanCore.loan_purpose: cash-out, LoanCore.cltv_percent: 50}, satisfied: true}
+      - {context: {CreditReport.representative_score: 679, LoanCore.loan_purpose: purchase, LoanCore.cltv_percent: 50}, satisfied: false}
+      - {context: {CreditReport.representative_score: 720, LoanCore.loan_purpose: construction, LoanCore.cltv_percent: 90}, satisfied: true}
+      - {context: {CreditReport.representative_score: null, LoanCore.loan_purpose: purchase, LoanCore.cltv_percent: 80}, satisfied: null}
+  - kind: determination
+    note: A list of ineligible values. Compare with same() so case and spelling do not matter; an unstated value is unknown, never False.
+    job: |
+      Check 1: SubjectProperty.state is not an ineligible location.
+      Clause: Ineligible locations: ND and the U.S. territories (Guam, Puerto Rico).
+    rule: |
+      import rules_lib
+
+
+      def check(ctx):
+          state = ctx['SubjectProperty.state']
+          missing = rules_lib.gaps(state=state)
+          if missing:
+              return rules_lib.unknown(*missing)
+          return not rules_lib.same(state, 'ND', 'North Dakota', 'GU', 'Guam', 'PR', 'Puerto Rico')
+    cases:
+      - {context: {SubjectProperty.state: tx}, satisfied: true}
+      - {context: {SubjectProperty.state: ND}, satisfied: false}
+      - {context: {SubjectProperty.state: north dakota}, satisfied: false}
+      - {context: {SubjectProperty.state: Guam}, satisfied: false}
+      - {context: {SubjectProperty.state: null}, satisfied: null}
+held:
+  - shape: threshold by channel
+    suggested_kind: limit
+    job: |
+      Check 1: For a Retail loan, the ratio is at least 1.25. Check 2: For a Broker loan, the ratio is at least 1.0.
+      Clause: Minimum ratio: Retail 1.25; Broker 1.0.
+    rule: |
+      import rules_lib
+
+
+      def check(ctx):
+          channel = ctx['LoanCore.channel']
+          income = ctx['RatioSet.total_monthly_income_usd']
+          obligation = ctx['RatioSet.total_monthly_obligation_usd']
+          missing = rules_lib.gaps(channel=channel, income=income, obligation=obligation)
+          if missing:
+              return rules_lib.unknown(*missing)
+          if rules_lib.same(channel, 'Retail'):
+              minimum = 1.25
+          elif rules_lib.same(channel, 'Broker'):
+              minimum = 1.0
+          else:
+              return True
+          ratio = rules_lib.ratio(income, obligation)
+          if ratio is None:
+              return rules_lib.unknown('income', 'obligation')
+          return (ratio >= minimum, {'ratio': ratio, 'minimum': minimum})
+    cases:
+      - {context: {LoanCore.channel: Retail, RatioSet.total_monthly_income_usd: 1250, RatioSet.total_monthly_obligation_usd: 1000}, satisfied: true}
+      - {context: {LoanCore.channel: Retail, RatioSet.total_monthly_income_usd: 1240, RatioSet.total_monthly_obligation_usd: 1000}, satisfied: false}
+      - {context: {LoanCore.channel: Broker, RatioSet.total_monthly_income_usd: 1000, RatioSet.total_monthly_obligation_usd: 1000}, satisfied: true}
+      - {context: {LoanCore.channel: Broker, RatioSet.total_monthly_income_usd: 1000, RatioSet.total_monthly_obligation_usd: null}, satisfied: null}
+  - shape: aggregate cap (several caps, the clause says which governs)
+    suggested_kind: limit
+    job: |
+      Check 1: LoanCore.cltv_percent does not exceed the governing cap.
+      Clause: The base cap is 80%. A condo has a cap of 70%. A loan with two caps takes the lower one.
+    rule: |
+      import rules_lib
+
+      BASE_CAP = 80
+      CONDO_CAP = 70
+
+
+      def check(ctx):
+          cltv = ctx['LoanCore.cltv_percent']
+          kind = ctx['SubjectProperty.property_type']
+          missing = rules_lib.gaps(cltv_percent=cltv, property_type=kind)
+          if missing:
+              return rules_lib.unknown(*missing)
+          value = rules_lib.percent(cltv, 'percent')
+          if value is None:
+              return rules_lib.unknown('cltv_percent')
+          caps = {'base': BASE_CAP}
+          if rules_lib.same(kind, 'condo', 'warrantable condo'):
+              caps['condo'] = CONDO_CAP
+          governing = min(caps.values())
+          return (value <= governing, {'caps': caps, 'governing': governing, 'cltv': value})
+    cases:
+      - {context: {LoanCore.cltv_percent: 70, SubjectProperty.property_type: Condo}, satisfied: true}
+      - {context: {LoanCore.cltv_percent: 71, SubjectProperty.property_type: Condo}, satisfied: false}
+      - {context: {LoanCore.cltv_percent: 80, SubjectProperty.property_type: SFR}, satisfied: true}
+      - {context: {LoanCore.cltv_percent: 81, SubjectProperty.property_type: SFR}, satisfied: false}
+      - {context: {LoanCore.cltv_percent: 75, SubjectProperty.property_type: null}, satisfied: null}
+  - shape: conditional footnote (applies only when its trigger is true)
+    suggested_kind: limit
+    job: |
+      Check 1: For an interest-only loan, the representative score is at least 700.
+      Clause: Footnote 2: interest-only loans require a score of at least 700.
+    rule: |
+      import rules_lib
+
+      INTEREST_ONLY_MINIMUM_SCORE = 700
+
+
+      def check(ctx):
+          interest_only = ctx['LoanCore.is_interest_only']
+          if rules_lib.gaps(is_interest_only=interest_only):
+              return rules_lib.unknown('is_interest_only')
+          if not rules_lib.flag(interest_only):
+              return True
+          score = ctx['CreditReport.representative_score']
+          missing = rules_lib.gaps(representative_score=score)
+          if missing:
+              return rules_lib.unknown(*missing)
+          result = rules_lib.at_least(score, INTEREST_ONLY_MINIMUM_SCORE)
+          if result is None:
+              return rules_lib.unknown('representative_score')
+          return result
+    cases:
+      - {context: {LoanCore.is_interest_only: true, CreditReport.representative_score: 700}, satisfied: true}
+      - {context: {LoanCore.is_interest_only: true, CreditReport.representative_score: 699}, satisfied: false}
+      - {context: {LoanCore.is_interest_only: false, CreditReport.representative_score: 600}, satisfied: true}
+      - {context: {LoanCore.is_interest_only: null, CreditReport.representative_score: 700}, satisfied: null}

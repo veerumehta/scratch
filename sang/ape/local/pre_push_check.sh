@@ -49,11 +49,46 @@ PUSH_REFS=""
 [[ -t 0 ]] || PUSH_REFS=$(cat)
 export PUSH_REFS
 
-# Steps 1 to 3 run on the checked-out tree; say so when the pushed ref is a different commit.
-while read -r _ lsha _ _; do
-    [[ -z "${lsha:-}" || "$lsha" == 0000000000000000000000000000000000000000 ]] && continue
-    [[ "$lsha" == "$(git rev-parse HEAD)" ]] || echo "pre-push: pushing ${lsha:0:8}, not HEAD: lock, drift and suite check HEAD; spelling and review check the pushed ref."
-done <<< "$PUSH_REFS"
+# Every step checks the pushed commit, not whatever is checked out: a ref whose tree differs from
+# a clean HEAD (another branch, or uncommitted edits in the tree) is re-run here in a throwaway
+# worktree at its sha. The inner run sees HEAD == the pushed sha, so the range logic below is
+# unchanged, and stamps land in the main checkout's directory.
+ZERO_SHA=0000000000000000000000000000000000000000
+if [[ -z "${JAPES_PREPUSH_IN_WORKTREE:-}" && -n "$PUSH_REFS" ]]; then
+    root=$(git rev-parse --show-toplevel)
+    needs_worktree=0
+    while read -r _ lsha _ _; do
+        [[ -z "${lsha:-}" || "$lsha" == "$ZERO_SHA" ]] && continue
+        if [[ "$(git rev-parse "$lsha^{tree}")" != "$(git rev-parse 'HEAD^{tree}')" ]] || ! git diff --quiet HEAD --; then
+            needs_worktree=1
+        fi
+    done <<< "$PUSH_REFS"
+    if [[ "$needs_worktree" == "1" ]]; then
+        outer_fail=0
+        while read -r lref lsha rref rsha; do
+            [[ -z "${lsha:-}" || "$lsha" == "$ZERO_SHA" ]] && continue
+            wt=$(mktemp -d "${TMPDIR:-/tmp}/pre-push.XXXXXX")
+            if ! git worktree add -q --detach "$wt" "$lsha"; then
+                echo "pre-push: could not check out $lsha"
+                outer_fail=1
+                continue
+            fi
+            echo "pre-push: checking ${lsha:0:8} (${lref}) in a throwaway worktree"
+            mkdir -p "$wt/scripts"
+            ln -s "$root/scripts/local" "$wt/scripts/local"
+            (
+                cd "$wt" || exit 1
+                unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE
+                export JAPES_PREPUSH_IN_WORKTREE=1
+                export STAMP_DIR="$(cd "$root" && cd "$(git rev-parse --git-common-dir)" && pwd)/japes-prepush"
+                export PYTHONPATH="$wt/jazzx_plato_client:$wt${PYTHONPATH:+:$PYTHONPATH}"
+                scripts/local/pre_push_check.sh "$@" <<< "$lref $lsha $rref $rsha"
+            ) || outer_fail=1
+            git worktree remove --force "$wt"
+        done <<< "$PUSH_REFS"
+        exit "$outer_fail"
+    fi
+fi
 
 QUICK=0
 CI_VERSIONS=0
@@ -62,7 +97,7 @@ CI_VERSIONS=0
 # idle long enough for github to close it -- the checks pass and the push dies anyway. Running the
 # script by hand and then pushing is the normal workflow, and the second run has nothing new to
 # look at: same commit, same tree, same answer.
-STAMP_DIR="$(git rev-parse --git-dir)/japes-prepush"
+STAMP_DIR="${STAMP_DIR:-$(git rev-parse --git-dir)/japes-prepush}"
 mkdir -p "$STAMP_DIR"
 for arg in "$@"; do
     case "$arg" in

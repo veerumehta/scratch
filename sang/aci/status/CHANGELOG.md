@@ -5,6 +5,11 @@ Entries are terse; the plans in `docs/plans` and `git log` carry the detail.
 
 ## [Unreleased]
 
+### Changed: Acra DSCR pack vocabulary (`acra-dscr-policy` 0.2.19)
+- Adopted the seed's `aliases.yaml` (Acra terms over the SDK layers `jazzx-core` and `jazzx-finance`) and the manifest's
+  `vocabulary:` block, so jaci's pack and Plato's seed copy match; `SYNCED_FROM` stays seed-only.
+- Relocked japes at `plato` cb256157 (2.6.6, jazzx-plato-client 0.2.6); opentelemetry 1.45.1 comes with it.
+
 ### Changed: workshop bank Expert packs (branch `cl-experts-p1`)
 - Relocked japes at `plato` 116ac14e (2.6.5) for the Expert surface (`41fa263`).
 - `workshop_bank_cl_of` declares its policy Expert as an advisory `api_service` surface binding, checked with japes'

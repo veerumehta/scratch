@@ -31,3 +31,18 @@ Anything that shows "400 X-Trace-Id required", a red error bar, or "[object Obje
    - Job table, click a job: history popup. Click a rule link: its code.
    - Tick "the open draft": the table switches to the draft; "Download table (xlsx)" works; the bundle link says "the published version: not the draft".
    - Untick it and download the bundle (zip).
+
+6. Page lists (every page)
+   - The page list shows at the head and at the foot of every page, including /docs.
+
+7. Ontology page compare: /ontology/ui
+   - "Compare versions": pick a reference (or pack:<id>), the newest two versions are prefilled; Compare shows counts, a filter, rows opening to before and after. A pack lists only its newest version, so type the other.
+
+8. Code page: /code/ui
+   - Pick a domain pack and a version, Load: the rules table fills; Library cells are amber where the rule's rules_lib differs from the current one.
+   - Tick "written for another library version" and "needs a field": the table narrows. Click a row: the rule's source opens.
+   - Compare two versions: counts, rows, and "Rules to re-test" when a rule's library or a read field changed.
+
+9. Vocabulary page: /vocabulary/ui
+   - Core catalog: a reference whose id holds "core" is first (none exists until the core is loaded; any reference works). Show lists Entity.field, type, unit.
+   - Compare two versions as above. A pack id, "Open aliases.yaml": the draft file opens in the editor; Save writes the draft (no publish); Changes shows its diff; with no draft, "Open a draft" appears.

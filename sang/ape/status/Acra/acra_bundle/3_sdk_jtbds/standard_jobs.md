@@ -1,955 +1,1196 @@
-# Our jobs, standard (121)
+# Our jobs, standard (114)
 
-## acra-standard.appraisal_review.actual_rent_evidence
+## acra-standard.appraisal_review_property_eligibility.2_4_unit_cltv_cap
 
-**Purpose:** Verify the specified evidence of actual rent receipt and continuing lease term when actual rents exceed market rents.
+**Purpose:** Determine whether a 2-4 Unit property meets the STD-8.1 maximum CLTV.
 
-1. Step 1 - Initial Document Review: Review the rent evidence and lease agreements for actual rents, market rents, receipt history, and lease term.
-2. Step 2 - Eligibility Verification: Determine whether actual rents exceed market rents.
-3. Step 3 - Validation and Verification: If actual rents exceed market rents, verify documentation of two (2) consecutive months proof of rental income receipt and lease agreement(s) to continue at a minimum of three (3) months after closing. Verify that security deposit does not count towards receipt and that rents are not prepaid.
-4. Step 4 - Final Determination: Record whether the stated actual-rent evidence and lease conditions are met. Do not resolve whether STD-3.5 or STD-3.6 governs.
-
-**Checks:**
-- When actual rents exceed market rents, evidence documents two (2) consecutive months proof of rental income receipt and lease agreement(s) to continue at a minimum of three (3) months after closing; security deposit is not counted towards receipt, and rents are not prepaid.
-**Missing data:** Actual rent and market rent amounts., The dates and amounts of rental income receipts and whether they represent two (2) consecutive months., Whether any receipt is a security deposit or prepaid rent., The lease end date and closing date., Which of STD-3.5 and STD-3.6 governs qualifying rent, and whether the stated evidence is sufficient or further approval is required.
-
-## acra-standard.appraisal_review.excessive_lease_rent_support
-
-**Purpose:** Determine whether documentation supports that excessive monthly rent reflected on the lease is typical for the area.
-
-1. Step 1 - Initial Document Review: Review the lease for monthly rent and review any documentation submitted to support typical rent for the area.
-2. Step 2 - Eligibility Verification: Determine whether the property is a single-family investment property and whether the lease reflects excessive monthly rent payments.
-3. Step 3 - Validation and Verification: Verify that documentation supporting that the monthly rent is typical for the area is provided. Acceptable documentation may include classified ads from local newspapers, a Form 1007 completed by the appraiser, or a market rent survey completed by a local real estate company or rental management company familiar with market rents in the area.
-4. Step 4 - Final Determination: Record whether the stated rent-support requirement is met.
+1. Step 1 - Initial Document Review: Review the appraisal_report for property type and loan records for CLTV.
+2. Step 2 - Eligibility Verification: Apply the printed “Max CLTV: 80%” without a purpose split.
+3. Step 3 - Validation and Verification: Verify property type and CLTV in the case record.
+4. Step 4 - Final Determination: Record whether CLTV is within the printed maximum.
 
 **Checks:**
-- If a single-family investment property's lease reflects excessive monthly rent payments, documentation supporting that the monthly rent is typical for the area is provided.
+- For a 2-4 Unit property, CLTV does not exceed 80%.
+
+**Reads:** SubjectProperty.property_type, LoanCore.cltv_percent
+
+## acra-standard.appraisal_review_property_eligibility.above_80_00_ltv_property_type
+
+**Purpose:** Determine whether a property with LTV above 80.00% is one of the types permitted by STD-8.2.
+
+1. Step 1 - Initial Document Review: Review the appraisal_report for property type and appraised value, and review loan records for LTV.
+2. Step 2 - Eligibility Verification: Apply the STD-8.2 restriction if LTV is above 80.00%.
+3. Step 3 - Validation and Verification: Verify the loan's LTV and property type in the case record.
+4. Step 4 - Final Determination: Record whether the property type meets the restriction.
+
+**Checks:**
+- If LTV is above 80.00%, the property type is SFR, Warrantable Condo outside of Florida, Townhome, or PUD.
+
+**Reads:** SubjectProperty.property_type, SubjectProperty.state, SubjectProperty.appraised_value_usd
+**Missing data:** LTV; whether the property is a Warrantable Condo; whether the property is outside of Florida.
+
+## acra-standard.appraisal_review_property_eligibility.condotel_or_pudtel_caps
+
+**Purpose:** Determine whether a Condotel / PUDtel meets the applicable STD-8.1 limits and printed conditions.
+
+1. Step 1 - Initial Document Review: Review the appraisal_report for property type and location, and review loan records for loan purpose and CLTV.
+2. Step 2 - Eligibility Verification: Identify the purchase, Refi R/T, or Refi C/O cap and the Florida condition printed in STD-8.1.
+3. Step 3 - Validation and Verification: Verify CLTV, loan purpose, state, and minimum DSCR information.
+4. Step 4 - Final Determination: Record whether the applicable cap and conditions are met.
+
+**Checks:**
+- For a Condotel / PUDtel, CLTV does not exceed 75% for Purchase, 70% for Refi R/T, or 65% for Refi C/O; for Florida properties, apply “-5% CLTV” and “Min DSCR: 1.0”.
+
+**Reads:** SubjectProperty.property_type, SubjectProperty.state, LoanCore.loan_purpose, LoanCore.cltv_percent
+**Missing data:** Whether loan purpose is Purchase, Refi R/T, or Refi C/O; minimum DSCR; how the Florida “-5% CLTV” applies.
+
+## acra-standard.appraisal_review_property_eligibility.declining_market_reduction
+
+**Purpose:** Determine how the stated declining-market reduction applies to the property and borrower full profile and whether confirmation is needed for its combination with other caps.
+
+1. Step 1 - Initial Document Review: Review the appraisal_report and other applicable property and borrower information for declining-market status.
+2. Step 2 - Eligibility Verification: Apply “-5% CLTV property/borrower full profile”.
+3. Step 3 - Validation and Verification: Request Acra confirmation on how this reduction combines with other caps, as directed to Q-07.
+4. Step 4 - Final Determination: Record the reduction and the confirmation result.
+
+**Checks:**
+- For a declining market, “-5% CLTV property/borrower full profile” is applied.
+- Acra confirmation is obtained on how the reduction combines with other caps.
+
+**Reads:** SubjectProperty.appraised_value_usd, LoanCore.cltv_percent
+**Missing data:** Whether the market is declining; property/borrower full profile; Acra confirmation on combination with other caps (Q-07).
+
+## acra-standard.appraisal_review_property_eligibility.eligible_property_type
+
+**Purpose:** Establish the property's eligibility classification under STD-8.1.
+
+1. Step 1 - Initial Document Review: Review the appraisal_report for the subject property type.
+2. Step 2 - Eligibility Verification: Compare the property type with the types listed in STD-8.1.
+3. Step 3 - Validation and Verification: Verify the property type in the case record.
+4. Step 4 - Final Determination: Record whether the type is listed as eligible.
+
+**Checks:**
+- SubjectProperty.property_type is SFR, Townhome, PUD, Warrantable Condo, Non-Warrantable Condo, Condotel / PUDtel, 2-4 Units, or Manufactured.
 
 **Reads:** SubjectProperty.property_type
-**Missing data:** Whether the property is an investment property., Whether monthly rent payments reflected on the lease are excessive., Whether any market rent survey provider is a local real estate company or rental management company familiar with market rents in the area.
 
-## acra-standard.appraisal_review.listed_property_appraisal_limits
+## acra-standard.appraisal_review_property_eligibility.ineligible_state
 
-**Purpose:** Determine whether a loan on a property listed for sale in the last six months meets the stated appraisal-based maximum LTV/CLTV and related loan characteristics.
+**Purpose:** Establish whether the subject property is located in SD, which STD-1.13 identifies as ineligible.
 
-1. Step 1 - Initial Document Review: Review the appraisal report and listing history for appraised value, the last date listed, and the lowest recent listing price.
-2. Step 2 - Eligibility Verification: Determine whether the property has been listed for sale in the last six months, measured from the last date of being listed to the Application Date.
-3. Step 3 - Validation and Verification: If the property meets the listing-period test, verify that the loan meets the stated characteristics: the property is not in default or otherwise delinquent on lien(s); for investment properties, the subject is occupied by a tenant and is not vacant; the loan qualifies as either ≥ 1.0 DSCR or 43% maximum DTI; a prepayment penalty of at least three (3) years is present unless the property is in a state that does not allow prepayment penalties; twenty-four (24) months of reserves are present, with cash-in-hand considered if otherwise consistent with the Guide; the term is fully amortizing and not interest only; maximum LTV / CLTV is 65% based on the lesser of appraised value or lowest recent listing price; no subordinate financing is present; and impounds are present.
-4. Step 4 - Final Determination: Record whether the listing-period test and all applicable stated loan characteristics are met.
+1. Step 1 - Initial Document Review: Review the appraisal_report for the subject property location.
+2. Step 2 - Eligibility Verification: Identify the subject property's state.
+3. Step 3 - Validation and Verification: Verify the state against the case record.
+4. Step 4 - Final Determination: Record whether the subject property is in SD.
+
+**Checks:**
+- SubjectProperty.state is SD.
+
+**Reads:** SubjectProperty.state
+
+## acra-standard.appraisal_review_property_eligibility.listed_for_sale_determination
+
+**Purpose:** Establish whether the property is considered listed for sale under STD-8.8.
+
+1. Step 1 - Initial Document Review: Review listing_history for the listing dates.
+2. Step 2 - Eligibility Verification: Measure from the last date of being listed to the Application Date.
+3. Step 3 - Validation and Verification: Verify the listing lookback against the case record.
+4. Step 4 - Final Determination: Record whether the property is considered listed for sale under §11.5.
 
 **Checks:**
 - The property has been listed for sale in the last six months, measured from the last date of being listed to the Application Date.
-- For a property meeting the listing-period test, the property is not in default or otherwise delinquent on lien(s).
-- For an investment property meeting the listing-period test, the subject is occupied by a tenant and is not vacant.
-- For a property meeting the listing-period test, the loan qualifies as either ≥ 1.0 DSCR or 43% maximum DTI.
-- For a property meeting the listing-period test, a prepayment penalty of at least three (3) years is present unless the property is in a state that does not allow prepayment penalties.
-- For a property meeting the listing-period test, twenty-four (24) months of reserves are present, and cash-in-hand is considered only if otherwise consistent with the Guide.
-- For a property meeting the listing-period test, the loan has a fully amortizing term and is not interest only.
-- For a property meeting the listing-period test, maximum LTV / CLTV is 65% based on the lesser of appraised value or lowest recent listing price.
-- For a property meeting the listing-period test, no subordinate financing is present.
-- For a property meeting the listing-period test, impounds are present.
 
-**Reads:** SubjectProperty.listed_for_sale_last_6_months, SubjectProperty.is_listed_for_sale, SubjectProperty.is_vacant, SubjectProperty.occupancy_subtype, SubjectProperty.appraised_value_usd, LoanCore.cltv_percent, LoanCore.is_interest_only_10_40, MortgageLoanInformation.is_interest_only, SubjectProperty.state, RatioSet.reserves_months, LoanCore.prepayment_penalty_structure
-**Missing data:** The last date of being listed and the Application Date., Whether the property is in default or otherwise delinquent on lien(s)., Whether the loan qualifies as either ≥ 1.0 DSCR or 43% maximum DTI., Prepayment penalty duration and whether the property is in a state that does not allow prepayment penalties., Whether reserves meet twenty-four (24) months and whether cash-in-hand is otherwise consistent with the Guide., Whether the loan term is fully amortizing., Whether subordinate financing is present., Whether impounds are present., The lowest recent listing price and the LTV / CLTV calculated using the lesser of that price or appraised value.
+**Reads:** SubjectProperty.listed_for_sale_last_6_months
+**Missing data:** Last date of being listed; Application Date.
 
-## acra-standard.appraisal_review.property_type_appraisal_caps
+## acra-standard.appraisal_review_property_eligibility.listed_property_eligibility_conditions
 
-**Purpose:** Determine whether the property type and transaction meet the printed CLTV limits and eligibility restriction.
+**Purpose:** Determine whether a property considered listed for sale meets the stated lien, occupancy, qualification, prepayment, reserves, amortization, LTV/CLTV, subordinate-financing, and impound requirements.
 
-1. Step 1 - Initial Document Review: Review the appraisal report for property type and any property-specific classification relevant to the printed caps.
-2. Step 2 - Eligibility Verification: Identify the property type, transaction purpose, and whether the property is in Florida or LTV is above 80.00%.
-3. Step 3 - Validation and Verification: Verify the applicable printed cap: Non-Warrantable Condo — 80% purchase, 75% refinance R/T, 75% refinance C/O, with -5% CLTV for Florida properties and Min DSCR: 1.0; Condotel / PUDtel — 75% purchase, 70% refinance R/T, 65% refinance C/O, with -5% CLTV for Florida properties and Min DSCR: 1.0; 2-4 Unit — Max CLTV: 80%; Manufactured Home — 65% purchase, 60% refinance R/T, 60% refinance C/O. Verify that above 80.00% LTV only SFR, Warrantable Condos outside of Florida, Townhome and PUD are eligible.
-4. Step 4 - Final Determination: Record whether the applicable printed cap and above-80.00% LTV eligibility restriction are met.
+1. Step 1 - Initial Document Review: Review listing_history, appraisal_report, credit and loan records, and documents establishing lien status, occupancy, prepayment penalty, reserves, subordinate financing, and impounds.
+2. Step 2 - Eligibility Verification: Verify each applicable STD-8.9 condition, including the lesser-of value basis for the 65% maximum LTV / CLTV.
+3. Step 3 - Validation and Verification: Verify qualification by ≥ 1.0 DSCR or 43% maximum DTI, and verify the property's state for the prepayment-penalty exception.
+4. Step 4 - Final Determination: Record whether all applicable listed-property conditions are met.
 
 **Checks:**
-- For a Non-Warrantable Condo, CLTV does not exceed 80% for purchase, 75% for refinance R/T, or 75% for refinance C/O, with -5% CLTV for Florida properties; Min DSCR: 1.0.
-- For a Condotel / PUDtel, CLTV does not exceed 75% for purchase, 70% for refinance R/T, or 65% for refinance C/O, with -5% CLTV for Florida properties; Min DSCR: 1.0.
-- For a 2-4 Unit property, CLTV does not exceed Max CLTV: 80%.
-- For a Manufactured Home, CLTV does not exceed 65% for purchase, 60% for refinance R/T, or 60% for refinance C/O.
-- Above 80.00% LTV, the property is only SFR, Warrantable Condo outside of Florida, Townhome or PUD.
+- The property is not in default or otherwise delinquent on lien(s).
+- For investment properties, the subject is occupied by a tenant and is not vacant.
+- The loan qualifies as either ≥ 1.0 DSCR or 43% maximum DTI (Q-14).
+- A prepayment penalty of at least three (3) years is required unless the property is in a state that does not allow prepayment penalties.
+- Twenty-four (24) months of reserves are required; cash-in-hand may be considered if otherwise consistent with the Guide.
+- The loan has a fully amortizing term; interest only is not available.
+- Maximum LTV / CLTV is 65% based on the lesser of appraised value or lowest recent listing price.
+- No subordinate financing is allowed.
+- Impounds are required.
+
+**Reads:** SubjectProperty.listed_for_sale_last_6_months, SubjectProperty.is_vacant, SubjectProperty.occupancy_subtype, SubjectProperty.appraised_value_usd, SubjectProperty.state, LoanCore.cltv_percent, MortgageLoanInformation.is_interest_only, LoanCore.prepayment_penalty_structure, RatioSet.reserves_months
+**Missing data:** Lien default or delinquency status; whether the property is an investment property and tenant occupied; DSCR or DTI; whether the state allows prepayment penalties; prepayment-penalty term; reserves and whether cash-in-hand is consistent with the Guide; amortization; lowest recent listing price; subordinate financing; impounds.
+
+## acra-standard.appraisal_review_property_eligibility.manufactured_home_caps
+
+**Purpose:** Determine whether a Manufactured Home meets the applicable STD-8.1 CLTV cap.
+
+1. Step 1 - Initial Document Review: Review the appraisal_report for property type and loan records for loan purpose and CLTV.
+2. Step 2 - Eligibility Verification: Identify the purchase, Refi R/T, or Refi C/O cap in STD-8.1.
+3. Step 3 - Validation and Verification: Verify property type, loan purpose, and CLTV in the case record.
+4. Step 4 - Final Determination: Record whether CLTV is within the applicable cap.
+
+**Checks:**
+- For a Manufactured Home, CLTV does not exceed 65% for Purchase, 60% for Refi R/T, or 60% for Refi C/O.
+
+**Reads:** SubjectProperty.property_type, LoanCore.loan_purpose, LoanCore.cltv_percent
+**Missing data:** Whether loan purpose is Purchase, Refi R/T, or Refi C/O.
+
+## acra-standard.appraisal_review_property_eligibility.mixed_use_determination
+
+**Purpose:** Establish whether part of the property's space is dedicated to commercial use and the rest to residential use.
+
+1. Step 1 - Initial Document Review: Review the appraisal_report for the property's use and space allocation.
+2. Step 2 - Eligibility Verification: Determine whether a portion is dedicated to commercial use and the rest to residential use.
+3. Step 3 - Validation and Verification: Verify the mixed-use classification in the case record.
+4. Step 4 - Final Determination: Record whether the property meets the stated mixed-use definition.
+
+**Checks:**
+- A portion of the property's space is dedicated to commercial use and the rest is dedicated to residential use.
+
+**Reads:** SubjectProperty.is_mixed_use
+
+## acra-standard.appraisal_review_property_eligibility.mixed_use_requirements
+
+**Purpose:** Determine whether a mixed-use property meets the stated minimum DSCR and the conditions referenced in STD-8.10.
+
+1. Step 1 - Initial Document Review: Review the appraisal_report and loan records for DSCR and the applicable §10.7 requirements.
+2. Step 2 - Eligibility Verification: Apply the minimum DSCR ratio of 1.2 and the conditions outlined in §10.7, including restrictions regarding Adult Care / Assisted Living Facilities.
+3. Step 3 - Validation and Verification: Verify the DSCR and obtain the requirements from §10.7, which is not reproduced in the source excerpt.
+4. Step 4 - Final Determination: Record whether the requirements are met or remain subject to the missing §10.7 requirements.
+
+**Checks:**
+- The property meets a minimum DSCR ratio of 1.2.
+- The property meets the conditions outlined in §10.7, including all restrictions regarding Adult Care / Assisted Living Facilities.
+
+**Reads:** SubjectProperty.is_mixed_use
+**Missing data:** DSCR; the conditions and restrictions in §10.7, which is not reproduced.
+
+## acra-standard.appraisal_review_property_eligibility.non_warrantable_condo_caps
+
+**Purpose:** Determine whether a Non-Warrantable Condo meets the applicable STD-8.1 limits and printed conditions.
+
+1. Step 1 - Initial Document Review: Review the appraisal_report for property type and location, and review loan records for loan purpose and CLTV.
+2. Step 2 - Eligibility Verification: Identify the purchase, Refi R/T, or Refi C/O cap and the Florida condition printed in STD-8.1.
+3. Step 3 - Validation and Verification: Verify CLTV, loan purpose, state, and minimum DSCR information.
+4. Step 4 - Final Determination: Record whether the applicable cap and conditions are met.
+
+**Checks:**
+- For a Non-Warrantable Condo, CLTV does not exceed 80% for Purchase, 75% for Refi R/T, or 75% for Refi C/O; for Florida properties, apply “-5% CLTV” and “Min DSCR: 1.0”.
 
 **Reads:** SubjectProperty.property_type, SubjectProperty.state, LoanCore.loan_purpose, LoanCore.cltv_percent
-**Missing data:** DSCR for a Non-Warrantable Condo or Condotel / PUDtel., Whether a Warrantable Condo is outside of Florida., The property type classification where it is not stated in the case fields or appraisal report.
+**Missing data:** Whether loan purpose is Purchase, Refi R/T, or Refi C/O; minimum DSCR; how the Florida “-5% CLTV” applies.
 
-## acra-standard.appraisal_review.required_rent_schedule
+## acra-standard.appraisal_review_property_eligibility.rural_or_unique_property_limits
 
-**Purpose:** Determine whether the required Form 1007 has been provided for a DSCR transaction or an applicable single-family transaction.
+**Purpose:** Determine whether a rural or unique property meets the limits and stated review conditions in STD-8.3.
 
-1. Step 1 - Initial Document Review: Review the appraisal report for a Form 1007 and identify the property type and transaction information.
-2. Step 2 - Eligibility Verification: Determine whether the transaction is a DSCR transaction or a single-family transaction that meets one of the stated Form 1007 triggers.
-3. Step 3 - Validation and Verification: Verify that a required Form 1007 is provided. If a Form 1007 is provided, verify that it is from the original appraiser or any state licensed appraiser.
-4. Step 4 - Final Determination: Record whether the applicable Form 1007 requirement is met.
-
-**Checks:**
-- A Form 1007 is provided for every DSCR transaction.
-- For a single-family property, a Form 1007 is provided if the file is a DSCR qualifying file, the transaction is a lease-option purchase where the required down payment is generated from excess monthly rent contributions, or proposed rental income is being used to qualify.
-- A provided Form 1007 is from the original appraiser or any state licensed appraiser.
-
-**Reads:** SubjectProperty.property_type, LoanCore.dscr_qualification_method
-**Missing data:** Whether the transaction is a DSCR transaction., Whether the file is a DSCR qualifying file., Whether a lease-option purchase down payment is generated from excess monthly rent contributions., Whether proposed rental income is being used to qualify., The appraiser's licensing status, if not stated in the appraisal report.
-
-## acra-standard.appraisal_review.rural_or_unique_property_limits
-
-**Purpose:** Determine whether a rural or unique property meets the stated maximum CLTV and minimum FICO and DSCR requirements, and identify when marketing time or functionality may require a further LTV reduction.
-
-1. Step 1 - Initial Document Review: Review the appraisal report for rural or unique property characteristics, marketing time, and functionality.
-2. Step 2 - Eligibility Verification: Determine whether the property is rural or unique and identify the transaction purpose.
-3. Step 3 - Validation and Verification: Verify the applicable maximum CLTV, minimum FICO 700, and minimum DSCR 1.00. If marketing time is excessive or the property exhibits unusual, inadequate or peculiar functionality, determine whether LTV may be further reduced.
-4. Step 4 - Final Determination: Record whether the applicable stated limits are met and whether a further LTV reduction is required.
+1. Step 1 - Initial Document Review: Review the appraisal_report for rural or unusual, inadequate, or peculiar functionality; review loan records for loan purpose, CLTV, score, and DSCR.
+2. Step 2 - Eligibility Verification: Apply the purchase, refinance rate & term, or refinance cash-out maximum CLTV, minimum FICO 700, and minimum DSCR 1.00.
+3. Step 3 - Validation and Verification: Verify the stated limits and determine whether marketing time is excessive or functionality may call for further LTV reduction.
+4. Step 4 - Final Determination: Record whether the stated limits are met and whether further review is needed.
 
 **Checks:**
-- For a rural or unique property, CLTV does not exceed 80% for purchase, 75% for refinance — rate & term, or 70% for refinance — cash-out, as applicable.
-- For a rural or unique property, FICO is at least 700.
-- For a rural or unique property, DSCR is at least 1.00.
-- If marketing time is excessive or the property exhibits unusual, inadequate or peculiar functionality, any further LTV reduction required by the review is applied.
+- For a rural / unique property, CLTV does not exceed 80% for purchase, 75% for refinance — rate & term, or 70% for refinance — cash-out.
+- Minimum FICO is 700.
+- Minimum DSCR is 1.00.
+- If marketing time is excessive or property exhibits unusual, inadequate or peculiar functionality, any further LTV reduction is addressed.
 
-**Reads:** SubjectProperty.is_rural, SubjectProperty.state, LoanCore.loan_purpose, LoanCore.cltv_percent
-**Missing data:** Whether the property is unique., Marketing time and whether it is excessive., Whether the property exhibits unusual, inadequate or peculiar functionality., FICO score., DSCR., Whether a further LTV reduction is required.
+**Reads:** SubjectProperty.is_rural, LoanCore.loan_purpose, LoanCore.cltv_percent, CreditReport.representative_score
+**Missing data:** Whether the property is unique; whether loan purpose is purchase, refinance — rate & term, or refinance — cash-out; FICO; DSCR; marketing time assessment; assessment of unusual, inadequate or peculiar functionality; any further LTV reduction.
 
-## acra-standard.appraisal_review.short_term_rental_appraisal_form
+## acra-standard.appraisal_review_property_eligibility.vacant_property_cash_out_refinance
 
-**Purpose:** Determine whether an STRpro or similar appraisal form is acceptable as a replacement to a Form 1007 for a property occupied as a short-term rental.
+**Purpose:** Determine whether a vacant-property cash-out refinance meets the requirements stated in STD-8.7 and the Summary.
 
-1. Step 1 - Initial Document Review: Review the appraisal report for the appraisal form used and its signature.
-2. Step 2 - Eligibility Verification: Determine whether the property is occupied as a short-term rental.
-3. Step 3 - Validation and Verification: If an STRpro or similar form is used as a replacement to a Form 1007, verify that it is signed by an appropriately licensed appraiser.
-4. Step 4 - Final Determination: Record whether the stated short-term-rental appraisal-form requirement is met.
-
-**Checks:**
-- For a property occupied as a short-term rental, an STRpro or similar appraisal form used as a replacement to a Form 1007 is signed by an appropriately licensed appraiser.
-
-**Reads:** SubjectProperty.property_type
-**Missing data:** Whether the property is occupied as a short-term rental., Whether the appraisal form is an STRpro or similar form., The appraiser's licensing status, if not stated in the appraisal report.
-
-## acra-standard.appraisal_review.vacant_purchase_rent_appraisal
-
-**Purpose:** Determine whether qualifying rents for a vacant property purchase are taken from the applicable Form 1007 or Form 1025 appraisal report.
-
-1. Step 1 - Initial Document Review: Review the appraisal report for a Form 1007 or Form 1025 and the stated qualifying rents.
-2. Step 2 - Eligibility Verification: Determine whether the property is vacant and is being purchased.
-3. Step 3 - Validation and Verification: Verify that qualifying rents are taken from the Form 1007 or Form 1025 appraisal report, as applicable.
-4. Step 4 - Final Determination: Record whether the stated vacant-purchase qualifying-rent requirement is met.
+1. Step 1 - Initial Document Review: Review property, credit, loan, ownership, prepayment-penalty, impound, and reserve records.
+2. Step 2 - Eligibility Verification: Apply the stated score, DSCR, prepayment penalty, interest-only, impound, reserves, CLTV, and ownership requirements.
+3. Step 3 - Validation and Verification: Request Acra confirmation for loans of $1,500,000 or more and for how the 15 months are measured, as directed to Q-10.
+4. Step 4 - Final Determination: Record whether the applicable requirements are met and any confirmation remains outstanding.
 
 **Checks:**
-- If a vacant property is being purchased, qualifying rents are taken from the Form 1007 or Form 1025 appraisal report, as applicable.
+- Minimum 700 FICO.
+- DSCR ≥ 1.15.
+- ≥ 3-year PPP (where allowable).
+- No interest only.
+- Impounds required.
+- 6 months reserves.
+- “Max CLTV 60% for loan amounts under $1,500,000”; loans of $1,500,000 or more require Acra confirmation (Q-10).
+- Requires ≥15 months ownership; how the 15 months are measured requires Acra confirmation (Q-10).
+
+**Reads:** SubjectProperty.is_vacant, LoanCore.loan_purpose, LoanCore.cltv_percent, LoanCore.total_loan_amount_usd, CreditReport.representative_score, MortgageLoanInformation.is_interest_only, LoanCore.prepayment_penalty_structure, RatioSet.reserves_months, SubjectProperty.ownership_months
+**Missing data:** Whether the transaction is cash-out refinance; FICO; DSCR; whether prepayment penalties are allowable; PPP term; impounds; reserves; confirmation for loan amount of $1,500,000 or more; ownership months and confirmation on how the 15 months are measured.
+
+## acra-standard.appraisal_review_property_eligibility.vacant_property_purchase_rents
+
+**Purpose:** Establish that qualifying rents for a vacant property purchase are taken from the 1007 or 1025.
+
+1. Step 1 - Initial Document Review: Review the 1007 or 1025 for qualifying rents.
+2. Step 2 - Eligibility Verification: Confirm the transaction is a purchase of a vacant property.
+3. Step 3 - Validation and Verification: Verify that qualifying rents are taken from the 1007 or 1025.
+4. Step 4 - Final Determination: Record whether the rent source requirement is met.
+
+**Checks:**
+- For a vacant property purchase, qualifying rents are taken from the 1007 or 1025.
 
 **Reads:** SubjectProperty.is_vacant, LoanCore.loan_purpose
-**Missing data:** Whether the transaction is a purchase., Which appraisal form is applicable.
+**Missing data:** 1007 or 1025 qualifying-rent information.
 
-## acra-standard.asset_assessment.first_time_homebuyer_reserves
+## acra-standard.appraisal_review_property_eligibility.vacant_property_rate_and_term_refinance
 
-**Purpose:** Determine whether the stated reserve requirement is met for a first-time homebuyer.
+**Purpose:** Determine whether a vacant-property rate and term refinance meets STD-8.6.
 
-1. Initial Document Review: Review the case record and reserves documentation.
-2. Eligibility Verification: Determine whether the borrower is a first-time homebuyer.
-3. Validation and Verification: If the trigger applies, verify minimum six months reserves (“Requires 6mos Reserves”).
-4. Final Determination: Pass only if the applicable reserve requirement is met.
+1. Step 1 - Initial Document Review: Review property, credit, loan, and reserve records; obtain required prepayment-penalty and impound information.
+2. Step 2 - Eligibility Verification: Apply the stated FICO, loan-amount/CLTV, DSCR or DTI, prepayment penalty, amortization, impound, and reserves requirements.
+3. Step 3 - Validation and Verification: Verify whether the loan amount is exactly $1,000,000 or $2,000,000 and request Acra confirmation as directed to Q-10.
+4. Step 4 - Final Determination: Record whether the applicable requirements are met and any confirmation remains outstanding.
 
 **Checks:**
-- When the borrower is a first-time homebuyer, reserves are at least six months.
+- Minimum 700 FICO score.
+- Maximum $1,000,000 to maximum 70% CLTV; maximum $2,000,000 to maximum 65% CLTV; treatment at exactly $1,000,000 and $2,000,000 requires Acra confirmation (Q-10).
+- Minimum 1.000 DSCR or maximum 40.0% DTI (Q-14).
+- Minimum two-year prepayment penalty (where allowable).
+- Full amortization required; no interest-only programs.
+- Impounds required.
+- Minimum six months reserves.
+
+**Reads:** SubjectProperty.is_vacant, LoanCore.loan_purpose, LoanCore.cltv_percent, LoanCore.total_loan_amount_usd, CreditReport.representative_score, MortgageLoanInformation.is_interest_only, LoanCore.prepayment_penalty_structure, RatioSet.reserves_months
+**Missing data:** Whether the transaction is rate and term refinance; FICO; loan-amount boundary treatment confirmation (Q-10); DSCR or DTI; whether prepayment penalties are allowable; prepayment-penalty term; amortization; impounds; reserves.
+
+## acra-standard.asset_assessment_assets_and_funds_to_close.borrower_contribution_with_gift_funds
+
+**Purpose:** Determine whether the applicant contributes a minimum of 10% of the purchase price from their own sourced and seasoned funds when gift funds are used.
+
+1. Step 1 - Initial Document Review: Review bank_statement and the loan_application for gift funds and the applicant's own funds contributed to the transaction.
+2. Step 2 - Eligibility Verification: If gift funds are used, identify the applicant's own sourced and seasoned funds and the purchase price.
+3. Step 3 - Validation and Verification: Verify the applicant's own sourced and seasoned contribution is at least 10% of the purchase price.
+4. Step 4 - Final Determination: Determine whether the required own-funds contribution is established, or whether the job does not apply because gift funds are not used.
+
+**Checks:**
+- If gift funds are used, the applicant contributes own sourced and seasoned funds of at least 10% of the purchase price.
+**Missing data:** Whether gift funds are used, Amount of applicant's own funds contributed, Source and seasoning of applicant's own funds, Purchase price
+
+## acra-standard.asset_assessment_assets_and_funds_to_close.fico_reserve_trigger
+
+**Purpose:** Determine whether the stated reserve requirement is met when FICO is below 620.
+
+1. Step 1 - Initial Document Review: Review credit_report and bank_statement for FICO and reserves.
+2. Step 2 - Eligibility Verification: Determine whether FICO is below 620.
+3. Step 3 - Validation and Verification: If FICO is below 620, verify 12 Months reserves.
+4. Step 4 - Final Determination: Determine whether the applicable reserve requirement is met, or whether the job does not apply.
+
+**Checks:**
+- If FICO is below 620, 12 Months reserves are established.
+
+**Reads:** RatioSet.reserves_months
+**Missing data:** FICO
+
+## acra-standard.asset_assessment_assets_and_funds_to_close.first_time_homebuyer_reserves
+
+**Purpose:** Determine whether a first-time homebuyer has the stated minimum six months reserves.
+
+1. Step 1 - Initial Document Review: Review bank_statement for reserve funds.
+2. Step 2 - Eligibility Verification: Determine whether the borrower is a first-time homebuyer.
+3. Step 3 - Validation and Verification: If the borrower is a first-time homebuyer, verify minimum six months reserves.
+4. Step 4 - Final Determination: Determine whether the reserve requirement is met, or whether the job does not apply.
+
+**Checks:**
+- Borrower.is_first_time_homebuyer is true only if RatioSet.reserves_months is at least 6.
 
 **Reads:** Borrower.is_first_time_homebuyer, RatioSet.reserves_months
-**Missing data:** Acra confirmation requested on the payment basis where only “months” is stated and treatment of overlapping triggers (Q-07)
 
-## acra-standard.asset_assessment.foreign_account_currency_verification
+## acra-standard.asset_assessment_assets_and_funds_to_close.forbearance_or_mortgage_late_reserves
 
-**Purpose:** Determine whether assets held in foreign accounts are verified in U.S. Dollar equivalency at the current exchange rate.
+**Purpose:** Determine whether the stated 12 months of the subject's payment in reserve is met when the forbearance or mortgage-late trigger applies.
 
-1. Initial Document Review: Review the account statement and the currency and amount of the assets held.
-2. Eligibility Verification: Apply this requirement when assets are held in foreign accounts.
-3. Validation and Verification: Verify the U.S. Dollar equivalency at the current exchange rate via www.xe.com or the Wall Street Journal conversion table.
-4. Final Determination: Pass only if the required equivalency is verified.
-
-**Checks:**
-- Assets held in foreign accounts are verified in U.S. Dollar equivalency at the current exchange rate via www.xe.com or the Wall Street Journal conversion table.
-**Missing data:** Whether the account is a foreign account, Account currency and asset amount, Current exchange rate from www.xe.com or the Wall Street Journal conversion table, U.S. Dollar equivalency
-
-## acra-standard.asset_assessment.foreign_account_statement_translation
-
-**Purpose:** Determine whether required translations are provided for foreign-account bank statements.
-
-1. Initial Document Review: Review the language of the foreign-account bank statements.
-2. Eligibility Verification: Identify statements in any language other than English.
-3. Validation and Verification: Verify that each statement in a language other than English is translated into English.
-4. Final Determination: Pass if all applicable statements are translated into English.
+1. Step 1 - Initial Document Review: Review credit_report, lease_agreement, rent_roll, and bank_statement for mortgage history, occupancy, rent receipt, and reserves.
+2. Step 2 - Eligibility Verification: Determine whether there was forbearance or mortgage lates in the last 12 months, the subject is tenant-occupied, and the prior two months' rent was not received timely.
+3. Step 3 - Validation and Verification: If all stated trigger conditions apply, verify 12 months of the subject's payment in reserve, which may be from the transaction's cash-in-hand.
+4. Step 4 - Final Determination: Determine whether the applicable reserve requirement is met, or whether the job does not apply.
 
 **Checks:**
-- Bank statements in any language other than English are translated into English.
-**Missing data:** Language of each bank statement, English translation of each statement in a language other than English
+- If there was forbearance or mortgage lates in the last 12 months, the subject is tenant-occupied, and the prior two months' rent was not received timely, 12 months of the subject's payment are in reserve, which may be from the transaction's cash-in-hand.
+**Missing data:** Whether there was forbearance or mortgage lates in the last 12 months, Whether the subject is tenant-occupied, Whether the prior two months' rent was received timely, Subject payment amount, Whether transaction cash-in-hand is included in reserves
 
-## acra-standard.asset_assessment.foreign_account_statements_and_seasoning
+## acra-standard.asset_assessment_assets_and_funds_to_close.foreign_funds_repatriation
 
-**Purpose:** Determine whether the required documentation is provided for funds in a foreign account.
+**Purpose:** Determine whether funds held in a foreign bank or currency are repatriated at minimum three (3) business days prior to Closing.
 
-1. Initial Document Review: Review the two (2) most recent statements for the account serving as the source of funds.
-2. Eligibility Verification: Determine whether the funds are seasoned for a minimum of sixty (60) days.
-3. Validation and Verification: If the funds are not seasoned for a minimum of sixty (60) days, review a letter of explanation and information comprising a sixty (60) day chain of funds.
-4. Final Determination: Pass only if the statements are provided and any required explanation and chain of funds are documented.
-
-**Checks:**
-- A copy of the two (2) most recent statements of the account is provided.
-- If funds are not seasoned a minimum of sixty (60) days, a letter of explanation and information to comprise a sixty (60) day chain of funds are provided.
-**Missing data:** Account seasoning period, Letter of explanation when funds are not seasoned a minimum of sixty (60) days, Information comprising a sixty (60) day chain of funds when required
-
-## acra-standard.asset_assessment.foreign_funds_repatriation
-
-**Purpose:** Determine whether the stated repatriation timing requirement is met for funds held in a foreign bank / currency.
-
-1. Initial Document Review: Review account and repatriation documentation and the Closing date.
-2. Eligibility Verification: Determine whether funds are held in a foreign bank / currency and whether the borrower is a Foreign National.
-3. Validation and Verification: Verify repatriation at minimum three (3) business days prior to Closing where the requirement applies.
-4. Final Determination: Determine whether the applicable repatriation requirement is met; obtain Acra confirmation on the stated scope and evidence question where needed.
+1. Step 1 - Initial Document Review: Review bank_statement and closing records for funds held in a foreign bank or currency and their transfer to the closing account.
+2. Step 2 - Eligibility Verification: Determine whether funds to close are held in a foreign bank or currency.
+3. Step 3 - Validation and Verification: If funds are held in a foreign bank or currency, verify they are repatriated at minimum three (3) business days prior to Closing.
+4. Step 4 - Final Determination: Determine whether the repatriation timing requirement is met, or whether the job does not apply.
 
 **Checks:**
-- Where applicable, funds held in a foreign bank / currency are repatriated at minimum three (3) business days prior to Closing.
+- If funds to close are held in a foreign bank or currency, they are repatriated at minimum three (3) business days prior to Closing.
+**Missing data:** Whether funds to close are held in a foreign bank or currency, Date funds are repatriated, Closing date
 
-**Reads:** Borrower.citizenship_status
-**Missing data:** Whether the borrower holds funds abroad and whether the borrower is a Foreign National, Acra confirmation on whether the repatriation requirement applies to any borrower holding funds abroad or only to Foreign Nationals, Acra confirmation on what evidence applies, Repatriation date, Closing date
+## acra-standard.asset_assessment_assets_and_funds_to_close.foreign_national_funds_seasoning
 
-## acra-standard.asset_assessment.foreign_national_funds_seasoning
+**Purpose:** Determine whether a Foreign National has documented a minimum of 60 days seasoning of funds held in a foreign bank or currency.
 
-**Purpose:** Determine whether a Foreign National documents the required minimum seasoning of funds.
-
-1. Initial Document Review: Review the borrower's status and the documentation establishing the seasoning of funds.
-2. Eligibility Verification: Apply this requirement to Foreign Nationals regardless of LTV / CLTV.
-3. Validation and Verification: Verify documentation of a minimum of 60 days seasoning.
-4. Final Determination: Pass only if the minimum seasoning is documented.
+1. Step 1 - Initial Document Review: Review bank_statement for funds to close and their seasoning.
+2. Step 2 - Eligibility Verification: Determine whether the applicant is a Foreign National and whether funds to close are held in a foreign bank or currency.
+3. Step 3 - Validation and Verification: For Foreign Nationals, verify a minimum of 60 days seasoning regardless of LTV / CLTV.
+4. Step 4 - Final Determination: Determine whether the stated seasoning is documented, or whether the job does not apply.
 
 **Checks:**
-- A Foreign National documents a minimum of 60 days seasoning, regardless of LTV / CLTV.
+- For a Foreign National, funds held in a foreign bank or currency are documented with a minimum of 60 days seasoning, regardless of LTV / CLTV.
+**Missing data:** Whether the applicant is a Foreign National, Whether funds to close are held in a foreign bank or currency, Dates establishing funds seasoning
 
-**Reads:** Borrower.citizenship_status
-**Missing data:** Whether the borrower is a Foreign National, Documentation of at least 60 days seasoning
+## acra-standard.asset_assessment_assets_and_funds_to_close.funds_to_close_documentation_minimum
 
-## acra-standard.asset_assessment.funds_documentation_minimum
+**Purpose:** Determine whether the required minimum 30-days documentation for funds to close is provided.
 
-**Purpose:** Determine whether all transactions have a minimum of 30-days documentation.
-
-1. Initial Document Review: Review the available documentation of funds.
-2. Eligibility Verification: Apply the minimum documentation requirement to all transactions.
-3. Validation and Verification: Verify that documentation covers a minimum of 30-days.
-4. Final Determination: Pass only if the minimum documentation is provided.
+1. Step 1 - Initial Document Review: Review bank_statement or other account documentation for the source of funds to close.
+2. Step 2 - Eligibility Verification: Identify the account or accounts serving as the source of funds to close.
+3. Step 3 - Validation and Verification: Verify that documentation covers a minimum of 30 days.
+4. Step 4 - Final Determination: Determine whether the minimum documentation requirement is met.
 
 **Checks:**
-- The transaction has a minimum of 30-days documentation.
-**Missing data:** Documentation covering a minimum of 30-days
+- Documentation for funds to close covers a minimum of 30 days.
+**Missing data:** Dates covered by funds-to-close documentation
 
-## acra-standard.asset_assessment.funds_on_deposit_before_closing
+## acra-standard.asset_assessment_assets_and_funds_to_close.funds_to_close_seasoning_trigger
 
-**Purpose:** Determine whether sufficient funds to close are on deposit with the Escrow / Closing Agent at least three (3) business days before closing, counting Saturdays.
+**Purpose:** Determine whether the loan meets a stated seasoning trigger and, if it does, verify seasoning of funds to close.
 
-1. Initial Document Review: Review evidence of funds to close, the deposit, and the closing date.
-2. Eligibility Verification: Determine the amount of funds required to close and the applicable closing date.
-3. Validation and Verification: Verify that sufficient funds are on deposit with the Escrow / Closing Agent at least three (3) business days prior to closing, including Saturdays in the calculation.
-4. Final Determination: Pass only if both sufficiency and timing are verified.
-
-**Checks:**
-- Sufficient funds to close are on deposit with the Escrow / Closing Agent at least three (3) business days prior to the closing date, including Saturdays in the calculation.
-**Missing data:** Funds required to close, Amount deposited with the Escrow / Closing Agent, Deposit date, Closing date, Business-day calculation including Saturdays
-
-## acra-standard.asset_assessment.funds_seasoning_verification_trigger
-
-**Purpose:** Identify loans for which verification of seasoning of funds to close is required.
-
-1. Initial Document Review: Review the CLTV, transaction type, and funds to close.
-2. Eligibility Verification: Apply the stated trigger for consumer transactions and business purpose loans.
-3. Validation and Verification: Determine whether the loan is over 70% CLTV and whether the applicable transaction and funds-to-close conditions are met.
-4. Final Determination: Record whether verification of seasoning of funds to close is required.
+1. Step 1 - Initial Document Review: Review bank_statement and transaction records for funds to close and their seasoning.
+2. Step 2 - Eligibility Verification: Determine whether this is a consumer transaction with CLTV over 70%, or a business purpose loan with funds to close over $50,000 and CLTV over 70%.
+3. Step 3 - Validation and Verification: If either stated trigger applies, verify seasoning of funds to close.
+4. Step 4 - Final Determination: Determine whether the applicable trigger and its seasoning verification requirement are met.
 
 **Checks:**
-- For a consumer transaction, the loan is over 70% CLTV.
-- For a business purpose loan, funds to close are over $50,000 and the loan is over 70% CLTV.
+- The loan is a consumer transaction with CLTV over 70%, or is a business purpose loan with funds to close over $50,000 and CLTV over 70%.
+- If a stated trigger applies, seasoning of funds to close is verified.
 
-**Reads:** LoanCore.cltv_percent, LoanCore.loan_purpose
-**Missing data:** Whether the loan is a consumer transaction or a business purpose loan, Funds to close, Acra confirmation requested on whether any loan on this program is a consumer transaction (Q-27)
+**Reads:** LoanCore.cltv_percent
+**Missing data:** Whether the transaction is a consumer transaction or business purpose loan, Funds-to-close amount, Evidence of funds-to-close seasoning
 
-## acra-standard.asset_assessment.listed_property_reserves
+## acra-standard.asset_assessment_assets_and_funds_to_close.listed_property_reserves
 
-**Purpose:** Determine whether the stated reserve requirement is met for a property listed for sale within six months.
+**Purpose:** Determine whether the stated Twenty-four (24) months of reserves requirement is met when the property was listed for sale within six months.
 
-1. Initial Document Review: Review listing history and documentation of reserves or cash-in-hand.
-2. Eligibility Verification: Determine whether the property was listed for sale within six months.
-3. Validation and Verification: Verify Twenty-four (24) months of reserves; assess cash-in-hand only if otherwise consistent with the Guide.
-4. Final Determination: Pass only if the applicable reserve requirement is met.
+1. Step 1 - Initial Document Review: Review listing_history and bank_statement for listing history and reserve funds; identify any cash-in-hand offered as reserves.
+2. Step 2 - Eligibility Verification: Determine whether the property was listed for sale within six months.
+3. Step 3 - Validation and Verification: If the property was listed for sale within six months, verify Twenty-four (24) months of reserves; cash-in-hand may be considered if otherwise consistent with the Guide.
+4. Step 4 - Final Determination: Determine whether the stated reserve requirement is met, or whether the job does not apply.
 
 **Checks:**
-- When the property was listed for sale within six months, Twenty-four (24) months of reserves are verified, with cash-in-hand considered only if otherwise consistent with the Guide.
+- If the property was listed for sale within six months, Twenty-four (24) months of reserves are established, including cash-in-hand only if it is otherwise consistent with the Guide.
 
 **Reads:** SubjectProperty.listed_for_sale_last_6_months, RatioSet.reserves_months
-**Missing data:** Whether cash-in-hand is otherwise consistent with the Guide, Acra confirmation requested on treatment of overlapping triggers (Q-07)
+**Missing data:** Whether any cash-in-hand is otherwise consistent with the Guide
 
-## acra-standard.asset_assessment.loan_amount_limits
+## acra-standard.asset_assessment_assets_and_funds_to_close.loan_amount_limits
 
-**Purpose:** Determine whether the loan amount meets STD-1.10.
+**Purpose:** Determine whether the loan amount meets the stated loan amount limits.
 
-1. Initial Document Review: Review the loan amount in the case record.
-2. Eligibility Verification: Apply the minimum, maximum, and increment requirements to the loan amount.
-3. Validation and Verification: Compare the loan amount with each stated requirement.
-4. Final Determination: Pass only if all three requirements are met.
+1. Step 1 - Initial Document Review: Review the loan_application for the loan amount.
+2. Step 2 - Eligibility Verification: Confirm the loan amount is at least $100,000 and no more than $3,000,000.
+3. Step 3 - Validation and Verification: Confirm the loan amount is in $50 increments.
+4. Step 4 - Final Determination: Determine whether all loan amount requirements are met.
 
 **Checks:**
-- The loan amount is at least $100,000.
-- The loan amount is no more than $3,000,000.
-- The loan amount is in $50 increments.
+- LoanCore.total_loan_amount_usd is at least $100,000.
+- LoanCore.total_loan_amount_usd is no more than $3,000,000.
+- LoanCore.total_loan_amount_usd is in $50 increments.
 
 **Reads:** LoanCore.total_loan_amount_usd
 
-## acra-standard.asset_assessment.own_funds_contribution
+## acra-standard.asset_assessment_assets_and_funds_to_close.ltv_reserve_trigger
 
-**Purpose:** Determine whether the applicant contributes the required own funds when gift funds, an investment property, or a second home is involved.
+**Purpose:** Determine whether the stated reserve requirement is met when LTV is over 80.00%.
 
-1. Initial Document Review: Review the transaction details and documentation of the applicant's funds and any gift funds.
-2. Eligibility Verification: Apply this requirement to gift funds, investment property, or second homes.
-3. Validation and Verification: Verify that the applicant's own sourced and seasoned funds contributed to the transaction are at least 10% of the purchase price.
-4. Final Determination: Pass only if the minimum own-funds contribution is verified.
-
-**Checks:**
-- For a transaction involving gift funds, an investment property, or a second home, the applicant contributes own sourced and seasoned funds of at least 10% of the purchase price.
-
-**Reads:** LoanCore.loan_purpose, SubjectProperty.occupancy_subtype
-**Missing data:** Whether the transaction involves gift funds, an investment property, or a second home, Purchase price, Amount of the applicant's own funds contributed, Evidence that the applicant's funds are sourced and seasoned, Seller's Guide gift-fund documentation requirements (Appendix B)
-
-## acra-standard.asset_assessment.rent_loss_insurance_reserves
-
-**Purpose:** Determine whether the stated reserve requirement is met when required rent loss insurance cannot be obtained.
-
-1. Initial Document Review: Review the rent loss insurance requirement, evidence of coverage obtained or not obtained, and reserves documentation.
-2. Eligibility Verification: Determine whether rent loss insurance is required but cannot be obtained.
-3. Validation and Verification: Verify Two (2) months reserves for every one (1) month of coverage not provided.
-4. Final Determination: Pass only if the stated reserves are verified; determine whether substituted reserves are additional only as directed by Acra confirmation.
+1. Step 1 - Initial Document Review: Review bank_statement for reserves and loan records for LTV and the payment amount.
+2. Step 2 - Eligibility Verification: Determine whether LTV is over 80.00%.
+3. Step 3 - Validation and Verification: If LTV is over 80.00%, verify 6 months PITIA reserves.
+4. Step 4 - Final Determination: Determine whether the applicable reserve requirement is met, or whether the job does not apply.
 
 **Checks:**
-- When rent loss insurance is required but cannot be obtained, reserves are Two (2) months for every one (1) month of coverage not provided.
+- If LTV is over 80.00%, 6 months PITIA reserves are established.
+**Missing data:** LTV, PITIA amount and evidence that reserves are measured against PITIA
 
-**Reads:** RatioSet.reserves_months
-**Missing data:** Whether rent loss insurance is required, Whether the insurance cannot be obtained, Number of months of coverage not provided, Documentation of the corresponding reserves, Acra confirmation requested on whether reserves substituted for rent loss insurance are additional (Q-07)
-
-## acra-standard.asset_assessment.reserves_for_fico_below_620
-
-**Purpose:** Determine whether the stated reserve requirement is met for FICO < 620.
-
-1. Initial Document Review: Review credit and reserves documentation.
-2. Eligibility Verification: Determine whether FICO < 620.
-3. Validation and Verification: If the trigger applies, verify 12 Months reserves.
-4. Final Determination: Pass only if the applicable reserve requirement is verified.
-
-**Checks:**
-- When FICO < 620, 12 Months reserves are verified.
-
-**Reads:** CreditReport.representative_score, RatioSet.reserves_months
-**Missing data:** FICO score, Documentation of 12 Months reserves, Acra confirmation requested on the payment basis where only “months” is stated and treatment of overlapping triggers (Q-07)
-
-## acra-standard.asset_assessment.reserves_for_ltv_over_80_00
-
-**Purpose:** Determine whether the stated reserve requirement is met for LTV > 80.00%.
-
-1. Initial Document Review: Review the LTV and reserves documentation.
-2. Eligibility Verification: Determine whether LTV > 80.00%.
-3. Validation and Verification: If the trigger applies, verify 6 months PITIA reserves.
-4. Final Determination: Pass only if the applicable reserve requirement is verified.
-
-**Checks:**
-- When LTV > 80.00%, 6 months PITIA reserves are verified.
-
-**Reads:** LoanCore.cltv_percent, RatioSet.reserves_months
-**Missing data:** LTV, PITIA amount and documentation of 6 months PITIA reserves, Acra confirmation requested on the base requirement where no trigger applies, the payment basis where only “months” is stated, and treatment of overlapping triggers (Q-07)
-
-## acra-standard.asset_assessment.seller_concession_cap
+## acra-standard.asset_assessment_assets_and_funds_to_close.seller_concession_limit
 
 **Purpose:** Determine whether seller concessions and other contributions are limited to 3% of the sale price.
 
-1. Initial Document Review: Review the reported seller concession and other contributions and the sale price.
-2. Eligibility Verification: Apply the 3% limit to the sale price.
-3. Validation and Verification: Compare the total seller concession and other contributions with 3% of the sale price.
-4. Final Determination: Pass only if the limit is met.
+1. Step 1 - Initial Document Review: Review the loan_application for the seller concession or other contribution.
+2. Step 2 - Eligibility Verification: Identify the sale price and the seller concession or other contribution amount.
+3. Step 3 - Validation and Verification: Compare the contribution with the 3% limit.
+4. Step 4 - Final Determination: Determine whether the contribution is within the stated limit.
 
 **Checks:**
 - Seller concessions and other contributions do not exceed 3% of the sale price.
+**Missing data:** Sale price, Seller concession or other contribution amount
 
-**Reads:** LoanCore.seller_concession_percent
-**Missing data:** Sale price, Total seller concession and other contributions
+## acra-standard.asset_assessment_assets_and_funds_to_close.unavailable_rent_loss_insurance_reserves
 
-## acra-standard.asset_assessment.source_account_verification
+**Purpose:** Determine whether the required reserves for rent loss insurance coverage not provided are established.
 
-**Purpose:** Determine whether a source account that must be verified is supported by an allowed form of verification.
-
-1. Initial Document Review: Review whether the account serving as the source of funds must be verified.
-2. Eligibility Verification: Apply this requirement to accounts serving as the source of funds that must be verified.
-3. Validation and Verification: Verify the account with either a copy of the borrower's bank statement(s) for the most recent month(s), or a VOD reflecting a current and average balance for the most recent month(s).
-4. Final Determination: Pass if either stated verification method is provided for the most recent month(s).
+1. Step 1 - Initial Document Review: Review hazard_insurance and bank_statement for required rent loss insurance, coverage obtained, and reserves.
+2. Step 2 - Eligibility Verification: Determine whether rent loss insurance is required and cannot be obtained, and identify the month(s) of coverage not provided.
+3. Step 3 - Validation and Verification: If rent loss insurance is required but cannot be obtained, verify Two (2) months reserves for every one (1) month of coverage not provided.
+4. Step 4 - Final Determination: Determine whether the applicable reserve requirement is met, or whether the job does not apply.
 
 **Checks:**
-- A source account that must be verified is supported by a bank statement for the most recent month(s) or a VOD reflecting a current and average balance for the most recent month(s).
-**Missing data:** Whether the account must be verified, The most recent month(s) of bank statements or a VOD showing current and average balances for the most recent month(s)
+- If rent loss insurance is required but cannot be obtained, reserves equal Two (2) months for every one (1) month of coverage not provided.
+**Missing data:** Whether rent loss insurance is required, Whether required rent loss insurance cannot be obtained, Number of months of coverage not provided
 
-## acra-standard.asset_assessment.tenant_rent_receipt_reserves
+## acra-standard.asset_assessment_assets_and_funds_to_close.vacant_property_refinance_reserves
 
-**Purpose:** Determine whether the stated reserve requirement is met when the trigger conditions apply.
+**Purpose:** Determine whether the stated reserve requirement is met for a vacant property rate & term refinance or cash-out refinance.
 
-1. Initial Document Review: Review the subject's occupancy, mortgage payment history, rent receipts, and reserves documentation.
-2. Eligibility Verification: Determine whether there is forbearance or mortgage lates in the last 12 months, the subject is tenant-occupied, and the prior two months' rent was not received timely.
-3. Validation and Verification: If all trigger conditions apply, verify 12 months of the subject's payment in reserve, which may be from the transaction's cash-in-hand.
-4. Final Determination: Pass only if the applicable reserve amount is verified.
-
-**Checks:**
-- When there is forbearance or mortgage lates in the last 12 months, the subject is tenant-occupied, and the prior two months' rent was not received timely, 12 months of the subject's payment are in reserve, which may be from the transaction's cash-in-hand.
-
-**Reads:** SubjectProperty.has_current_lease, CreditReport.mortgage_0x30x24, RatioSet.reserves_months
-**Missing data:** Whether there was forbearance or a mortgage late in the last 12 months, Whether the prior two months' rent was received timely, Subject's payment amount, Whether cash-in-hand is from the transaction, Acra confirmation requested on the payment basis where only “months” is stated and treatment of overlapping triggers (Q-07)
-
-## acra-standard.asset_assessment.vacant_cash_out_refinance_reserves
-
-**Purpose:** Determine whether the stated reserve requirement is met for this vacant-property refinance trigger.
-
-1. Initial Document Review: Review occupancy, refinance type, and reserves documentation.
-2. Eligibility Verification: Determine whether the property is vacant and the transaction is a cash-out refinance.
-3. Validation and Verification: If the trigger applies, verify 6 months reserves.
-4. Final Determination: Pass only if the applicable reserve requirement is verified.
+1. Step 1 - Initial Document Review: Review bank_statement for reserve funds and the loan_application for refinance purpose.
+2. Step 2 - Eligibility Verification: Determine whether the property is vacant and whether the refinance is rate & term or cash-out.
+3. Step 3 - Validation and Verification: For a vacant property rate & term refinance, verify minimum six months reserves; for a vacant property cash-out refinance, verify 6 months reserves.
+4. Step 4 - Final Determination: Determine whether the applicable reserve requirement is met, or whether the job does not apply.
 
 **Checks:**
-- For a vacant property with a cash-out refinance, 6 months reserves are verified.
+- A vacant property rate & term refinance has minimum six months reserves.
+- A vacant property cash-out refinance has 6 months reserves.
 
-**Reads:** SubjectProperty.is_vacant, LoanCore.loan_purpose, RatioSet.reserves_months
-**Missing data:** Whether the refinance is cash-out, Acra confirmation requested on the payment basis where only “months” is stated and treatment of overlapping triggers (Q-07)
+**Reads:** SubjectProperty.is_vacant, RatioSet.reserves_months, LoanCore.loan_purpose
+**Missing data:** Whether the refinance is rate & term or cash-out
 
-## acra-standard.asset_assessment.vacant_rate_and_term_refinance_reserves
+## acra-standard.compliance_and_closing_the_borrowing_entity_and_title.borrower_and_guarantor_due_diligence_currency
 
-**Purpose:** Determine whether the stated reserve requirement is met for this vacant-property refinance trigger.
+**Purpose:** Determine whether required borrower and guarantor due diligence is current at the specified time.
 
-1. Initial Document Review: Review occupancy, refinance type, and reserves documentation.
-2. Eligibility Verification: Determine whether the property is vacant and the transaction is a rate & term refinance.
-3. Validation and Verification: If the trigger applies, verify minimum six months reserves.
-4. Final Determination: Pass only if the applicable reserve requirement is verified.
-
-**Checks:**
-- For a vacant property with a rate & term refinance, reserves are at least six months.
-
-**Reads:** SubjectProperty.is_vacant, LoanCore.loan_purpose, RatioSet.reserves_months
-**Missing data:** Whether the refinance is rate & term, Acra confirmation requested on the payment basis where only “months” is stated and treatment of overlapping triggers (Q-07)
-
-## acra-standard.compliance_and_closing.entity_documentation
-
-**Purpose:** Determine whether the required entity documents are complete and meet the stated requirements.
-
-1. Initial Document Review: Review the entity documents and identification for the required formation, governance, ownership, qualification, tax-identification, and transaction-authorization documents.
-2. Eligibility Verification: Verify that the documents required for the entity type are provided, complete, legible, and include the contents specified by the policy.
-3. Validation and Verification: Verify that entity names match identification or that a letter of explanation addresses a discrepancy; verify that the Certificate of Good Standing or equivalent is valid within ninety (90) days of the closing date; and review any applicable foreign qualification, EIN exception, or lost-stock-certificate documentation.
-4. Final Determination: Determine whether the required entity documentation meets the stated requirements.
+1. Step 1 - Initial Document Review: Review the lender-held due diligence record and identify the applicable loan approval or draw date.
+2. Step 2 - Eligibility Verification: Identify the due diligence required by the applicable schedule.
+3. Step 3 - Validation and Verification: Compare the due diligence record dates with the applicable schedule and the date of any loan approval or draw.
+4. Step 4 - Final Determination: Record whether borrower and guarantor due diligence is current as of the relevant date.
 
 **Checks:**
-- All required entity documentation applicable to the entity type is provided and meets the stated requirements.
-- The entity documents state whether the entity is member or manager managed, authorize borrowing money and entering into contracts for mortgage assets, and designate signers, where those requirements apply.
-- Ownership documentation accounts for the ownership interests as required for the entity type.
-- The Certificate of Good Standing or equivalent is valid within ninety (90) days of the closing date.
-- A Unanimous Written Consent / Board Resolution signed by all members authorizes the transaction with Acra Lending and identifies who is authorized to sign the loan documents on behalf of and to bind the entity.
+- Borrower and guarantor due diligence is current as of the date of any loan approval or draw as outlined in the applicable schedule.
+**Missing data:** applicable due diligence schedule, due diligence completion dates and results, loan approval date or draw date
 
-**Reads:** Borrower.entity_type, Borrower.entity_documents_complete, Borrower.is_entity_borrower_1
-**Missing data:** Complete, legible Certificate of Formation / Articles of Organization and all amendments, Complete, legible Operating Agreement with referenced exhibits, or Bylaws, and all amendments, Ownership-interest evidence applicable to the entity type, Stock certificates or stock ledger, and Affidavit of Lost Stock Certificate if required, For the stated S-corporation or Partnership circumstance, K-1 statements and CPA or Tax Preparer letter, Identification, Letter of explanation for any name discrepancy, Certificate of Good Standing or equivalent, Certificate of Foreign Qualification or other qualification, if applicable, IRS Form SS4, Federal Taxpayer Identification Number (TIN), or EIN issuance letter, Acra Legal Department review and letter of explanation for an EIN exception request, if applicable, Unanimous Written Consent / Board Resolution, Power of Attorney for an attorney in fact executing a personal guarantee, if applicable, Additional supporting documentation required by Legal, if any
+## acra-standard.compliance_and_closing_the_borrowing_entity_and_title.direct_title_owners_as_borrowers
 
-## acra-standard.compliance_and_closing.foreign_account_funds
+**Purpose:** Determine whether all direct-owner entities required by the rule are borrowing entities.
 
-**Purpose:** Determine whether foreign-account funds are documented and available as required.
-
-1. Initial Document Review: Review the two (2) most recent statements for the account and the evidence of funds to close.
-2. Eligibility Verification: Verify U.S. Dollar equivalency at the current exchange rate for assets held in foreign accounts.
-3. Validation and Verification: Verify that funds are seasoned a minimum of sixty (60) days or, if they are not, that a letter of explanation and information comprising a sixty (60) day chain of funds are provided; verify that statements in a language other than English are translated into English; and verify the required deposit or repatriation timing where applicable.
-4. Final Determination: Determine whether the foreign-account funds meet the stated documentation and timing requirements.
+1. Step 1 - Initial Document Review: Review the title commitment and entity_documents to identify every direct owner of the subject property shown on title and each owner’s type.
+2. Step 2 - Eligibility Verification: Identify each direct owner that is an entity and verify whether it is a borrowing entity.
+3. Step 3 - Validation and Verification: Reconcile the direct owners shown in the title commitment with the entity ownership information in the entity documents.
+4. Step 4 - Final Determination: Record whether every entity holding direct ownership on title is a borrowing entity.
 
 **Checks:**
-- Foreign-account assets are verified in U.S. Dollar equivalency at the current exchange rate via www.xe.com or the Wall Street Journal conversion table.
+- Every entity with direct ownership of the subject property that is on title as a direct owner is a borrowing entity.
+**Missing data:** identity and type of each direct owner on title, whether each direct-owner entity is a borrowing entity
+
+## acra-standard.compliance_and_closing_the_borrowing_entity_and_title.entity_documentation
+
+**Purpose:** Determine whether the entity has provided the required documentation without relying on borrower letters excusing missing documents.
+
+1. Step 1 - Initial Document Review: Obtain and review the entity_documents, including formation documents and amendments, the applicable Operating Agreement or Bylaws and amendments, ownership evidence, and all other documents required by STD-6.10.
+2. Step 2 - Eligibility Verification: Verify that the entity has provided the complete, legible documents applicable to its legal form, including the required ownership evidence and any applicable corporation or tax-year ownership evidence.
+3. Step 3 - Validation and Verification: Verify name matching or a letter of explanation; the good-standing validity period; any required foreign qualification; the entity’s SS4, TIN, or EIN issuance letter or a submitted exception request; unanimous written consent or board resolution; and any required power of attorney. Do not accept a borrower letter stating required documents are not required, available, or excused.
+4. Step 4 - Final Determination: Record whether all applicable required documents and contents are present; refer any additional supporting-documentation condition to Legal as stated.
+
+**Checks:**
+- A complete, legible Certificate of Formation or Articles of Organization and all amendments is provided.
+- For an LLC or Partnership, a complete, legible Operating Agreement with all referenced exhibits and amendments is provided; for a corporation, complete, legible Bylaws with all referenced exhibits and amendments are provided.
+- The Operating Agreement or Bylaws states whether the entity is member or manager managed, contains authorization to borrow money and enter into contracts for mortgage assets, and designates signers.
+- All documentation evidencing ownership interests is provided; for LLCs and Partnerships, the Operating Agreement identifies or attaches all persons by name with their ownership interest, or membership interest certificates or units compliant with the Operating Agreement are provided.
+- For an S or C Corporation, compliant shareholder or stockholder certificates are provided, if any, or the stock ledger is provided if certificates are lost or unavailable; the certificate or ledger accounts for all outstanding shares noted in the formation documents, including those held by the corporation; and an Affidavit of Lost Stock Certificate is provided if stock certificates are lost, destroyed, mutilated, or otherwise unavailable.
+- For an S-corporation or Partnership where both stock certificate and stock ledger are unavailable, the most recent preceding tax year's K-1 statement for all members with 20% or more interest and a letter from the CPA or Tax Preparer affirming current ownership interest are provided; if the preceding year's taxes have not been filed, the letter includes a statement to that effect.
+- Names on the entity documents match the identification, or a letter of explanation addresses any discrepancy.
+- A Certificate of Good Standing or equivalent document valid within ninety (90) days of the closing date is provided.
+- If the entity is formed in a state other than where business is conducted or where the property is located, a Certificate of Foreign Qualification or other qualification to operate in the applicable state is provided.
+- The entity’s IRS Form SS4, Federal Taxpayer Identification Number (TIN), or Employer Identification Number (EIN) issuance letter is provided, or an EIN exception request is submitted for review by Acra's Legal Department with a letter of explanation stating the applicable grounds.
+- A Unanimous Written Consent or Board Resolution signed by all members regardless of their percentage of interest authorizes the transaction with Acra Lending and identifies who is authorized to sign the loan documents on behalf of and to bind the entity.
+- A Power of Attorney is utilized by the principal to designate an attorney in fact to execute a personal guarantee when required for that purpose.
+- A borrower letter is not used to state that required entity documents are not required, available, or excused.
+
+**Reads:** Borrower.entity_documents_complete
+**Missing data:** entity legal form, formation documents and all amendments, Operating Agreement or Bylaws, referenced exhibits, and amendments, entity management structure, borrowing and contracting authority, and designated signers, ownership interests and supporting ownership records, applicable corporation stock records and any Affidavit of Lost Stock Certificate, availability of stock certificates and stock ledger; preceding tax-year filing status; K-1 statements; CPA or Tax Preparer letter, identification names and entity document names, closing date and Certificate of Good Standing or equivalent validity date, formation state, business state, and property state, entity tax identification documentation or EIN exception request and grounds, all-member consent or board resolution and authorized signers, principal, attorney in fact, and applicable Power of Attorney, any additional supporting documentation required by Legal
+
+## acra-standard.compliance_and_closing_the_borrowing_entity_and_title.entity_form_and_status_eligibility
+
+**Purpose:** Determine whether the entity meets Acra’s stated entity-type and US-status requirements.
+
+1. Step 1 - Initial Document Review: Review entity_documents for the entity’s legal form, formation, and business location; review the loan application for the entity’s ownership.
+2. Step 2 - Eligibility Verification: Compare the entity’s legal form with the allowed types and exclusions in STD-6.7 and STD-6.8. Verify that the entity is US formed and based and is not foreign owned.
+3. Step 3 - Validation and Verification: Resolve any discrepancy between the entity documents and the application using the entity documents; do not treat an excluded entity type as eligible.
+4. Step 4 - Final Determination: Record whether the entity meets the entity-type and US-status requirements.
+
+**Checks:**
+- The entity is a Domestic Corporation (C or S Corp), a single purpose Limited Liability Company (LLC) other than a series LLC, an LLP, an LLLP, a GP, an LP, or a Sole Proprietorship.
+- The entity is not a Cooperative, Irrevocable Trust, Land Trust, IRA, Non-Profit, or Joint Venture.
+- The entity is US formed and based and is not foreign owned.
+**Missing data:** entity legal form, entity formation location, entity business location, entity ownership and foreign-ownership status
+
+## acra-standard.compliance_and_closing_the_borrowing_entity_and_title.entity_ownership_structure
+
+**Purpose:** Determine whether the entity ownership structure meets Acra’s stated nesting limits.
+
+1. Step 1 - Initial Document Review: Review entity_documents identifying the entity’s direct and indirect owners and any subsidiary relationships.
+2. Step 2 - Eligibility Verification: Trace the ownership structure and identify the number of subsidiary levels and the owners of any subsidiary.
+3. Step 3 - Validation and Verification: Verify from the entity documents whether any subsidiary is wholly owned and whether it is owned by individuals; identify any ownership by multiple entities or trusts.
+4. Step 4 - Final Determination: Record whether the structure is within the stated nesting limit.
+
+**Checks:**
+- Business entity nesting is limited to only one wholly-owned subsidiary, which in turn is owned by individual(s), with no multiple nesting or ownership by multiple entities, trusts, etcetera.
+**Missing data:** entity ownership structure, including direct and indirect owners, subsidiary ownership percentages and owners
+
+## acra-standard.compliance_and_closing_the_borrowing_entity_and_title.guarantor_homeownership_experience
+
+**Purpose:** Determine whether the required prior-homeownership experience is attested and supported as required.
+
+1. Step 1 - Initial Document Review: Review the loan application for the borrower or guarantor attestation and review the loan file for evidence of prior homeownership.
+2. Step 2 - Eligibility Verification: Verify that at least one borrower or guarantor attests on the application that they are not a first-time homebuyer.
+3. Step 3 - Validation and Verification: If prior homeownership is not evident within the loan file, condition for supporting documentation and verify that it is provided.
+4. Step 4 - Final Determination: Record whether the attestation is present and whether required supporting documentation has been provided.
+
+**Checks:**
+- At least one borrower or guarantor on the loan attests on the application that they are not a first-time homebuyer.
+- If prior homeownership is not evident within the loan file, supporting documentation required by the underwriter is provided.
+
+**Reads:** Borrower.is_first_time_homebuyer
+**Missing data:** identity of borrower or guarantor making the attestation, application attestation, evidence of prior homeownership in the loan file, supporting documentation if conditioned
+
+## acra-standard.compliance_and_closing_the_borrowing_entity_and_title.key_principal_and_entity_background_review
+
+**Purpose:** Determine whether the required background review covers the parties identified in the guideline.
+
+1. Step 1 - Initial Document Review: Review the lender-held background review record and the entity ownership and control information.
+2. Step 2 - Eligibility Verification: For an entity borrower, identify the entity, recourse guarantors, and any individual or entity owning 20% or more directly or indirectly or having managing control; for an individual borrower, identify all such individuals.
+3. Step 3 - Validation and Verification: Verify that the background review covers the applicable parties and review its stated scope, which may include criminal history, OFAC searches, litigation, judgment, and lien searches.
+4. Step 4 - Final Determination: Record whether the background review covers the applicable Key Principals and Entities.
+
+**Checks:**
+- The background review covers the entity, recourse guarantors, and any party (individual or entity) that owns 20% or more of the entity directly or indirectly or has managing control for an entity borrower; for an individual borrower, it covers all such individuals.
+
+**Reads:** Borrower.entity_type
+**Missing data:** recourse guarantors, direct and indirect owners and ownership percentages, parties with managing control, background review results and parties covered
+
+## acra-standard.compliance_and_closing_the_borrowing_entity_and_title.ownership_change_lookback
+
+**Purpose:** Determine whether a stated ownership change is subject to Acra’s non-recognition rule.
+
+1. Step 1 - Initial Document Review: Review entity_documents for operating agreement or bylaw changes to ownership percentages and review the application record for the Application Date and application-process period.
+2. Step 2 - Eligibility Verification: Identify whether an ownership-percentage change was made with the intent of changing ownership percentages to circumvent required personal guarantors.
+3. Step 3 - Validation and Verification: For such a change, compare its effective date with the 30 days prior to an Application Date and determine whether it occurred throughout the application process.
+4. Step 4 - Final Determination: Do not recognize a change meeting the stated intent and timing rule; record the result.
+
+**Checks:**
+- A change to the operating agreement or bylaws intended to change ownership percentages to circumvent required personal guarantors is not recognized by Acra if it occurred within 30 days prior to an Application Date or throughout the application process.
+**Missing data:** ownership-percentage change and its intent, date of ownership change, Application Date, application-process period
+
+## acra-standard.compliance_and_closing_the_borrowing_entity_and_title.recourse_guarantees_for_entity_owners
+
+**Purpose:** Determine whether the entity borrower’s required owner guarantees are provided under the stated terms.
+
+1. Step 1 - Initial Document Review: Review entity_documents for all direct and indirect individual owners, their ownership interests, and the recourse guarantees provided.
+2. Step 2 - Eligibility Verification: Identify every individual with direct or indirect ownership ≥ 20% and verify that each is required to provide a recourse guarantee.
+3. Step 3 - Validation and Verification: Verify that each required guarantee is Acra approved or on Exhibit 7; where there are multiple guarantors, verify that recourse is joint and several.
+4. Step 4 - Final Determination: Record whether all required guarantees and the applicable recourse terms are present.
+
+**Checks:**
+- Every individual with direct or indirect ownership ≥ 20% provides a recourse guarantee that is Acra approved or on Exhibit 7.
+- If there are multiple guarantors, all recourse is joint and several.
+**Missing data:** identity and direct and indirect ownership percentage of each individual owner, recourse guarantees and whether they are Acra approved or on Exhibit 7, number of guarantors and recourse terms
+
+## acra-standard.compliance_and_closing_the_borrowing_entity_and_title.revocable_living_trust_vesting
+
+**Purpose:** Determine whether title vesting in the trust meets the stated conditions.
+
+1. Step 1 - Initial Document Review: Review the title commitment and the complete trust or Certification of Trust, together with any supporting documentation and written exception.
+2. Step 2 - Eligibility Verification: Verify the trust document contents, trust validity and revocability, trustors, beneficiaries, trustee powers, and any required written exception.
+3. Step 3 - Validation and Verification: Verify the required provisions concerning title, mortgage authority, beneficiary consent, lender rights, and whether the trust has been revoked, modified, or amended; identify any additional documentation Legal requires.
+4. Step 4 - Final Determination: Record whether every applicable trust condition is met and whether any required written exception or conditioned supporting documentation remains outstanding.
+
+**Checks:**
+- A complete, legible copy of the Trust or a Certification of Trust is provided, stating the Trust’s existence and date; Trustor(s) and current Trustee(s); Trustee powers; whether the Trust is revocable and, if so, who holds the right to revoke; names and number of Trustees required to sign; Trust identification number (a Social Security number or an IRS-issued Tax Identification Number); how title to Trust assets should be taken; and that the Trust has not been revoked, modified, or amended in any manner.
+- The Trust is valid under the laws of the state in which it is established.
+- The Trust is revocable, meaning it can be changed or canceled at any time for any reason during a Trustor's lifetime; it is not irrevocable.
+- The Trust is established by one or more natural persons, solely or jointly (Grantor, Trustor, or Settlor), and becomes effective during the lifetime of the person(s) establishing it.
+- The primary beneficiary of the Trust is the individual(s) establishing the Trust.
+- If the Trustor(s) and Trustee(s) are not the same, written exception by Acra Senior Management is obtained.
+- The Trust specifies that the Trustee has the power to hold title and mortgage the property; that the beneficiary does not need to grant written consent for the Trust to borrow money, or that such consent has been granted in writing for purposes of the mortgage; that there is no unusual risk or impairment to the lender's rights; and that holding title in the Trust does not diminish the lender's rights as a creditor.
+- Any additional supporting documentation for which Legal conditions is provided.
+**Missing data:** trust document or Certification of Trust and all required contents, state where the Trust is established and evidence of validity under that state’s laws, revocability and right to revoke, Trustor(s), Trustee(s), and beneficiary identities, Trustee powers and required signing number, Trust identification number and title-taking instructions, Trust effective date and Trustor lifetime status, written Acra Senior Management exception if Trustor(s) and Trustee(s) differ, required trust provisions on title, mortgage authority, beneficiary consent, unusual risk, and lender creditor rights, any additional supporting documentation required by Legal
+
+## acra-standard.compliance_and_closing_the_borrowing_entity_and_title.single_purpose_entity_eligibility
+
+**Purpose:** Determine whether an entity borrower meets the stated SPE requirements.
+
+1. Step 1 - Initial Document Review: Review entity_documents for the entity’s assets and business activities and identify whether it is a series limited liability company.
+2. Step 2 - Eligibility Verification: Verify that the entity has no assets other than residential investment or rental properties and is engaged in owning and operating residential investment or rental properties.
+3. Step 3 - Validation and Verification: Compare the asset and business-activity information in the entity documents and resolve any discrepancies relevant to the SPE requirement.
+4. Step 4 - Final Determination: Record whether the entity meets the SPE requirement and is not a series limited liability company.
+
+**Checks:**
+- The entity has no assets other than residential investment or rental properties and is engaged in the business of owning and operating residential investment or rental properties.
+- The entity is not a series limited liability company.
+**Missing data:** entity assets, entity business activities, whether the LLC is a series LLC
+
+## acra-standard.compliance_and_closing_the_borrowing_entity_and_title.title_holder_acceptability
+
+**Purpose:** Determine whether the proposed title holder is permitted under the stated title-holding rule.
+
+1. Step 1 - Initial Document Review: Review the title commitment to identify the proposed title holder and review entity_documents if the title holder is an entity.
+2. Step 2 - Eligibility Verification: Determine whether the title holder is an individual person or an entity requiring Acra’s acceptance.
+3. Step 3 - Validation and Verification: For an entity title holder, obtain and review Acra’s decision on acceptability; do not substitute a reviewer’s acceptance for Acra’s sole discretion.
+4. Step 4 - Final Determination: Record whether the title holder is an individual or an entity accepted by Acra.
+
+**Checks:**
+- The collateral title is held either directly by an individual person or persons, or by an entity acceptable to Acra in its sole discretion.
+**Missing data:** identity and legal form of the proposed title holder, Acra’s acceptability decision if the title holder is an entity
+
+## acra-standard.credit_review_analysis_credit.bankruptcy_and_foreclosure_cltv_limits
+
+**Purpose:** Determine whether CLTV meets the printed bankruptcy and foreclosure restriction for the applicable seasoning and purpose.
+
+1. Initial Document Review: Review the credit report and file for bankruptcy or foreclosure history and its seasoning.
+2. Eligibility Verification: Establish whether the borrower has had bankruptcy or foreclosure and identify the applicable loan purpose.
+3. Validation and Verification: Apply the printed limits: ≥ 36 Mo—No Restrictions for both purposes; 24-35 Mo—80% Purchase, 75% Refi R/T, Refi C/O; 12-23 Mo—65% for both; < 12 Mo—Ineligible for both.
+4. Final Determination: Determine whether the applicable printed restriction is met.
+
+**Checks:**
+- For the applicable printed seasoning and loan-purpose column, CLTV does not exceed the listed maximum; < 12 Mo is Ineligible.
+
+**Reads:** Borrower.has_bankruptcy_or_foreclosure, Borrower.months_since_bankruptcy_or_foreclosure, LoanCore.loan_purpose, LoanCore.cltv_percent
+**Missing data:** the applicable seasoning as printed, whether the reported event is bankruptcy or foreclosure
+
+## acra-standard.credit_review_analysis_credit.correct_itin_or_ssn_reporting
+
+**Purpose:** Confirm the credit-reporting identity requirement for scores and tradelines.
+
+1. Initial Document Review: Review the credit report and loan application for reported scores, tradelines, and the borrower's ITIN or SSN.
+2. Eligibility Verification: Identify the ITIN or SSN that applies to the borrower.
+3. Validation and Verification: Compare the identity under which scores and tradelines are reported with the borrower's correct ITIN or SSN.
+4. Final Determination: Confirm that scores and tradelines are reported under the correct ITIN or SSN.
+
+**Checks:**
+- Scores and tradelines are reported under the correct ITIN or SSN.
+**Missing data:** the borrower's correct ITIN or SSN, the ITIN or SSN under which scores and tradelines are reported
+
+## acra-standard.credit_review_analysis_credit.dscr_housing_history_documentation_scope
+
+**Purpose:** Confirm the housing-history documentation scope stated for DSCR loans.
+
+1. Initial Document Review: Review the file for housing-history documentation and any documents suggesting a major credit event.
+2. Eligibility Verification: Establish whether the loan is a DSCR loan and identify the borrower's and/or guarantors' subject property, principal residence, second home (if any), and additional properties.
+3. Validation and Verification: Verify payment history documentation for the primary residence, subject property, and second homes, if applicable. Do not require documentation for additional properties unless documents in the file suggest a major credit event has occurred.
+4. Final Determination: Confirm that the DSCR housing-history documentation scope is met.
+
+**Checks:**
+- For a DSCR loan, payment history is documented for the primary residence, subject property, and second homes, if applicable; additional properties are documented only if documents in the file suggest a major credit event has occurred.
+**Missing data:** whether the loan is a DSCR loan, the primary residence, subject property, and any second homes of the borrower and/or guarantors, whether documents in the file suggest a major credit event has occurred, whether payment history documentation is present for each required property
+
+## acra-standard.credit_review_analysis_credit.escrow_waiver_cltv_maximum
+
+**Purpose:** Verify that an escrow-waiver loan does not exceed the stated maximum CLTV.
+
+1. Initial Document Review: Review the loan file for escrow-waiver status and CLTV.
+2. Eligibility Verification: Establish whether an escrow waiver is requested.
+3. Validation and Verification: Compare CLTV with the maximum CLTV 80%.
+4. Final Determination: Confirm whether the maximum CLTV is met.
+
+**Checks:**
+- If an escrow waiver is requested, CLTV is no more than 80%.
+
+**Reads:** LoanCore.is_escrow_waived, LoanCore.cltv_percent
+
+## acra-standard.credit_review_analysis_credit.escrow_waiver_maximum_loan_amount
+
+**Purpose:** Verify that an escrow-waiver loan does not exceed the stated maximum loan amount.
+
+1. Initial Document Review: Review the loan file for escrow-waiver status and total loan amount.
+2. Eligibility Verification: Establish whether an escrow waiver is requested.
+3. Validation and Verification: Compare the total loan amount with the maximum loan amount $1.5M.
+4. Final Determination: Confirm whether the maximum loan amount is met.
+
+**Checks:**
+- If an escrow waiver is requested, total loan amount is no more than $1.5M.
+
+**Reads:** LoanCore.is_escrow_waived, LoanCore.total_loan_amount_usd
+
+## acra-standard.credit_review_analysis_credit.escrow_waiver_minimum_fico
+
+**Purpose:** Verify that an escrow-waiver loan meets the stated minimum FICO.
+
+1. Initial Document Review: Review the credit report for the applicable FICO and the loan file for escrow-waiver status.
+2. Eligibility Verification: Establish whether an escrow waiver is requested.
+3. Validation and Verification: Verify that FICO is at least 700.
+4. Final Determination: Confirm whether the minimum FICO is met.
+
+**Checks:**
+- If an escrow waiver is requested, FICO is at least 700.
+
+**Reads:** LoanCore.is_escrow_waived, CreditReport.representative_score
+**Missing data:** which FICO is used for the escrow waiver requirement
+
+## acra-standard.credit_review_analysis_credit.escrow_waiver_mortgage_history
+
+**Purpose:** Confirm the stated mortgage-history requirement for an escrow waiver.
+
+1. Initial Document Review: Review the credit report for mortgage history and the loan file for escrow-waiver status.
+2. Eligibility Verification: Establish whether an escrow waiver is requested.
+3. Validation and Verification: Verify that mortgage history is no worse than 0x30x24.
+4. Final Determination: Confirm whether the mortgage-history requirement is met.
+
+**Checks:**
+- If an escrow waiver is requested, mortgage history is no worse than 0x30x24.
+
+**Reads:** LoanCore.is_escrow_waived, CreditReport.mortgage_0x30x24
+**Missing data:** whether mortgage history is no worse than 0x30x24
+
+## acra-standard.credit_review_analysis_credit.foreign_national_escrow_waiver_exclusion
+
+**Purpose:** Apply the stated Foreign National exclusion from escrow-waiver eligibility.
+
+1. Initial Document Review: Review the loan file for escrow-waiver status and citizenship status.
+2. Eligibility Verification: Establish whether the borrower is a Foreign National.
+3. Validation and Verification: Verify that a Foreign National is not eligible for the escrow waiver.
+4. Final Determination: Confirm whether the Foreign National exclusion is met.
+
+**Checks:**
+- A Foreign National is not eligible for the escrow waiver.
+
+**Reads:** Borrower.citizenship_status, LoanCore.is_escrow_waived
+**Missing data:** whether Borrower.citizenship_status identifies the borrower as a Foreign National
+
+## acra-standard.credit_review_analysis_credit.low_or_no_score_cltv_limit
+
+**Purpose:** Verify the stated Max 65% LTV/CLTV overlay where the 1 or No Score / Deficient Tradelines rule applies.
+
+1. Initial Document Review: Review the credit report for score and tradeline information.
+2. Eligibility Verification: Establish whether the file is within 1 or No Score / Deficient Tradelines.
+3. Validation and Verification: Compare the loan's CLTV with the printed Max 65% LTV/CLTV.
+4. Final Determination: Confirm whether the applicable CLTV limit is met.
+
+**Checks:**
+- If 1 or No Score / Deficient Tradelines applies, CLTV does not exceed 65%.
+
+**Reads:** LoanCore.cltv_percent, CreditReport.score_count
+**Missing data:** whether the file has deficient tradelines
+
+## acra-standard.credit_review_analysis_credit.low_or_no_score_dscr_minimum
+
+**Purpose:** Verify the stated DSCR Ratio ≥ 1.1 overlay where the 1 or No Score / Deficient Tradelines rule applies.
+
+1. Initial Document Review: Review the credit report for score and tradeline information and the file for the DSCR Ratio.
+2. Eligibility Verification: Establish whether the file is within 1 or No Score / Deficient Tradelines.
+3. Validation and Verification: Verify that the DSCR Ratio is ≥ 1.1.
+4. Final Determination: Confirm whether the applicable DSCR Ratio requirement is met.
+
+**Checks:**
+- If 1 or No Score / Deficient Tradelines applies, DSCR Ratio is ≥ 1.1.
+
+**Reads:** CreditReport.score_count
+**Missing data:** whether the file has deficient tradelines, the DSCR Ratio
+
+## acra-standard.credit_review_analysis_credit.low_or_no_score_housing_history
+
+**Purpose:** Verify the stated housing-history overlay where the 1 or No Score / Deficient Tradelines rule applies.
+
+1. Initial Document Review: Review the credit report for score, tradeline, and housing-history information.
+2. Eligibility Verification: Establish whether the file is within 1 or No Score / Deficient Tradelines.
+3. Validation and Verification: Verify the printed requirement of 24mos 0x30 housing history.
+4. Final Determination: Confirm whether the applicable housing-history requirement is met.
+
+**Checks:**
+- If 1 or No Score / Deficient Tradelines applies, the file meets 24mos 0x30 housing history.
+
+**Reads:** CreditReport.score_count, CreditReport.mortgage_0x30x24
+**Missing data:** whether the file has deficient tradelines, whether the file meets 24mos 0x30 housing history
+
+## acra-standard.credit_review_analysis_credit.matured_loan_rating_date
+
+**Purpose:** Confirm the stated mortgage-rating basis for loans that have matured.
+
+1. Initial Document Review: Review loan records and any written maturity extensions.
+2. Eligibility Verification: Establish whether the loan has matured.
+3. Validation and Verification: For a loan that has matured, verify that it is rated based on the maturity date and that any extension of the maturity date is in writing.
+4. Final Determination: Confirm that the stated maturity-date basis and written-extension requirement are met.
+
+**Checks:**
+- A loan that has matured is rated based on its maturity date, and any extension of the maturity date is in writing.
+**Missing data:** whether the loan has matured, the loan's maturity date, whether an extension exists, whether any extension is in writing, the rating based on the maturity date
+
+## acra-standard.credit_review_analysis_credit.mortgage_and_rental_rating_review
+
+**Purpose:** Verify the required evaluation of mortgage and rental ratings for mortgage pricing.
+
+1. Initial Document Review: Review credit reports and file documentation for properties the borrower owns and/or rents over the last twelve (12) months.
+2. Eligibility Verification: Identify all reported mortgages and identify mortgages that are not reported.
+3. Validation and Verification: Consider all reported mortgages. Where the applicant has mortgages that are not reported, verify that the file contains documentation to evaluate history on the applicant's primary residence(s), any secondary residence(s), and the subject property. Evaluate the ratings for properties the borrower owns and/or rents over the last twelve (12) months.
+4. Final Determination: Confirm that the rating used for determining mortgage pricing reflects the required evaluation.
+
+**Checks:**
+- The mortgage / rental rating for determining mortgage pricing is determined by evaluating ratings for properties the borrower owns and/or rents over the last twelve (12) months, considering all reported mortgages and, where mortgages are not reported, the specified property-history documentation.
+**Missing data:** which properties the borrower owns and/or rents over the last twelve (12) months, all reported mortgages, whether the applicant has mortgages that are not reported, whether documentation evaluates history on the applicant's primary residence(s), any secondary residence(s), and the subject property, the rating used for determining mortgage pricing
+
+## acra-standard.credit_review_analysis_credit.mortgage_history_cltv_limits
+
+**Purpose:** Determine whether CLTV meets the mortgage history restriction printed for the applicable label and purpose.
+
+1. Initial Document Review: Review the credit report for the mortgage-history label.
+2. Eligibility Verification: Identify the applicable loan purpose and printed mortgage-history label. The labels are Acra's; their definitions and how seasoning is measured are identified as Acra confirmation requested → Q-05.
+3. Validation and Verification: Apply the printed limits: 1x30x12—80% Purchase, 75% Refi R/T, Refi C/O; 0x60x12—75% Purchase, 70% Refi R/T, Refi C/O; 0x90x12—65% for both; 0x120x12—Ineligible for both. Where the Summary prints a single figure without a purpose split (“Max CLTV: 65%”), it is shown in both columns.
+4. Final Determination: Determine whether the applicable printed limit is met.
+
+**Checks:**
+- For the applicable printed mortgage-history label and loan-purpose column, CLTV does not exceed the listed maximum; 0x120x12 is Ineligible.
+
+**Reads:** CreditReport.housing_history_rating, LoanCore.loan_purpose, LoanCore.cltv_percent
+**Missing data:** the applicable printed mortgage-history label, the loan-purpose column applicable to the printed table, the definitions of Acra's labels and how seasoning is measured (Acra confirmation requested → Q-05)
+
+## acra-standard.credit_review_analysis_credit.no_score_pricing
+
+**Purpose:** Confirm that a No Score file is priced as 700 Tier.
+
+1. Initial Document Review: Review the credit report and file pricing information.
+2. Eligibility Verification: Establish whether the file has No Score.
+3. Validation and Verification: Verify that the file is priced as 700 Tier.
+4. Final Determination: Confirm the printed instruction is applied to the file.
+
+**Checks:**
+- For No Score, the file is priced as 700 Tier.
+
+**Reads:** CreditReport.score_count
+**Missing data:** whether the file is priced as 700 Tier
+
+## acra-standard.credit_review_analysis_credit.one_reported_score_pricing
+
+**Purpose:** Confirm that the stated instruction for 1 Reported Score is applied, without resolving which score is the decisioning score.
+
+1. Initial Document Review: Review the credit report and file pricing information.
+2. Eligibility Verification: Establish whether the file has 1 Reported Score.
+3. Validation and Verification: Verify that the instruction “Use Actual to Max 700” is applied; do not decide which score is the decisioning score, an issue identified as Acra confirmation requested → Q-19.
+4. Final Determination: Confirm the printed instruction is applied to the file.
+
+**Checks:**
+- For 1 Reported Score, pricing follows “Use Actual to Max 700”.
+
+**Reads:** CreditReport.score_count
+**Missing data:** the score used for pricing, whether pricing follows “Use Actual to Max 700”, which score is the decisioning score (Acra confirmation requested → Q-19)
+
+## acra-standard.credit_review_analysis_credit.rental_payment_or_reserve_evidence
+
+**Purpose:** For an Applicant with forbearance or mortgage lates within the last 12-months, verify the required documentation for a Tenant occupied property.
+
+1. Initial Document Review: Review the file for documentation of the subject property's rental payments or payment reserve.
+2. Eligibility Verification: Establish whether the Applicant has had forbearance or mortgage lates within the last 12-months and whether the property is Tenant occupied.
+3. Validation and Verification: If both conditions apply, verify documentation of either timely receipt for the prior two (2) months rental payments or 12-months of subject's payment in reserve, which may be from transaction's cash-in-hand.
+4. Final Determination: Confirm that an applicable documentation alternative is met; do not resolve whether Applicant includes guarantors of an entity borrower, which is identified as Acra confirmation requested → Q-20.
+
+**Checks:**
+- If the condition applies, documentation establishes either timely receipt for the prior two (2) months rental payments or 12-months of subject's payment in reserve.
+**Missing data:** whether the Applicant has had forbearance or mortgage lates within the last 12-months, whether the property is Tenant occupied, whether timely receipt for the prior two (2) months rental payments is documented, whether 12-months of subject's payment in reserve is documented, whether Applicant includes guarantors of an entity borrower (Acra confirmation requested → Q-20)
+
+## acra-standard.credit_review_analysis_credit.reserves_for_fico_below_620
+
+**Purpose:** Confirm that a file with FICO below 620 has 12 months of reserves.
+
+1. Initial Document Review: Review the credit report and reserve documentation.
+2. Eligibility Verification: Establish whether FICO is below 620.
+3. Validation and Verification: Verify that reserves are 12 months when FICO is below 620.
+4. Final Determination: Confirm whether the reserve requirement is met.
+
+**Checks:**
+- If FICO is below 620, reserves are 12 months.
+
+**Reads:** CreditReport.representative_score, RatioSet.reserves_months
+**Missing data:** whether reserves are 12 months, which FICO is used for this requirement
+
+## acra-standard.credit_review_analysis_credit.short_sale_deed_in_lieu_and_modification_cltv_limits
+
+**Purpose:** Determine whether CLTV meets the printed restriction for an applicable short sale, deed-in-lieu or modification.
+
+1. Initial Document Review: Review the credit report and file for short sale, deed-in-lieu or modification history and its seasoning.
+2. Eligibility Verification: Establish whether the borrower has had a short sale, deed-in-lieu or modification and identify the applicable loan purpose.
+3. Validation and Verification: Apply the printed limits: ≥ 24 Mo—No Restrictions for both purposes; 12-23 Mo—80% Purchase, 75% Refi R/T, Refi C/O; < 12 Mo—75% Purchase, 70% Refi R/T, Refi C/O.
+4. Final Determination: Determine whether the applicable printed restriction is met.
+
+**Checks:**
+- For the applicable printed seasoning and loan-purpose column, CLTV does not exceed the listed maximum.
+
+**Reads:** Borrower.has_short_sale_dil_or_modification, Borrower.months_since_short_sale_dil_or_modification, LoanCore.loan_purpose, LoanCore.cltv_percent
+**Missing data:** the applicable seasoning as printed, whether the reported event is a short sale, deed-in-lieu or modification
+
+## acra-standard.credit_review_analysis_credit.three_repository_scores
+
+**Purpose:** Determine whether the applicant meets the stated three-repository credit rule.
+
+1. Initial Document Review: Review the credit report for the repositories reporting scores.
+2. Eligibility Verification: Establish whether scores are reported from 3 repositories.
+3. Validation and Verification: Verify the repository count from the credit report.
+4. Final Determination: Treat applicants with scores from 3 repositories as acceptable with no tradeline overlay.
+
+**Checks:**
+- If scores are reported from 3 repositories, the file is treated as acceptable with no tradeline overlay.
+**Missing data:** the number of repositories reporting scores
+
+## acra-standard.credit_review_analysis_credit.two_or_fewer_scores_tradelines
+
+**Purpose:** Determine whether the stated tradeline rule is met when an applicant has 2 or fewer scores.
+
+1. Initial Document Review: Review the credit report and supporting file documentation for score count, tradeline count, and history.
+2. Eligibility Verification: Establish whether the applicant has 2 or fewer scores.
+3. Validation and Verification: Verify either 2 tradelines & 24 month history or 3 tradelines & 12 month history.
+4. Final Determination: Treat an applicant meeting either alternative as acceptable with no tradeline overlay.
+
+**Checks:**
+- If the applicant has 2 or fewer scores, the file establishes either 2 tradelines & 24 month history or 3 tradelines & 12 month history.
+
+**Reads:** CreditReport.score_count
+**Missing data:** the number and history of tradelines
+
+## acra-standard.identification_requirements.approved_foreign_national_closing_agent
+
+**Purpose:** Verify the title and closing agent requirement in STD-5.11.
+
+1. Initial Document Review: Review the title and closing agent information.
+2. Eligibility Verification: Identify the agent who will handle the closing.
+3. Validation and Verification: Verify that the title and closing agent is approved and / or vetted by Acra.
+4. Final Determination: Record whether the agent requirement is met.
+
+**Checks:**
+- The loan closes with a title and closing agent approved and / or vetted by Acra.
+
+**Reads:** Borrower.citizenship_status
+**Missing data:** Title and closing agent identity, Acra approval and / or vetting verification
+
+## acra-standard.identification_requirements.borrower_citizenship_type
+
+**Purpose:** Identify the borrower's citizenship type and determine whether it is an eligible type.
+
+1. Initial Document Review: Review the case's recorded borrower citizenship type.
+2. Eligibility Verification: Determine whether it is US Citizen, Permanent Resident, Non-Permanent Resident, Foreign National, or ITIN.
+3. Validation and Verification: Compare Borrower.citizenship_status with the eligible types.
+4. Final Determination: Record whether the borrower's citizenship type is eligible under STD-4.1.
+
+**Checks:**
+- Borrower.citizenship_status is US Citizen, Permanent Resident, Non-Permanent Resident, Foreign National, or ITIN.
+
+**Reads:** Borrower.citizenship_status
+
+## acra-standard.identification_requirements.foreign_account_currency_conversion
+
+**Purpose:** Verify foreign-account assets in U.S. Dollar equivalency at the current exchange rate.
+
+1. Initial Document Review: Review evidence of assets held in foreign accounts and the exchange-rate source used.
+2. Eligibility Verification: Confirm that the assets are held in a foreign account.
+3. Validation and Verification: Verify U.S. Dollar equivalency at the current exchange rate via www.xe.com or the Wall Street Journal conversion table.
+4. Final Determination: Record whether the currency conversion is verified as required.
+
+**Checks:**
+- Assets held in foreign accounts are verified in U.S. Dollar equivalency at the current exchange rate via www.xe.com or the Wall Street Journal conversion table.
+
+**Reads:** Borrower.citizenship_status
+**Missing data:** Current exchange rate from www.xe.com or the Wall Street Journal conversion table, Foreign-account asset amount and its U.S. Dollar equivalency
+
+## acra-standard.identification_requirements.foreign_account_statements
+
+**Purpose:** Verify receipt of the account statements required by STD-5.8.
+
+1. Initial Document Review: Review the statements for the account holding the funds.
+2. Eligibility Verification: Confirm that two (2) statements are provided and identify their dates.
+3. Validation and Verification: Verify that they are the two (2) most recent statements of that account.
+4. Final Determination: Record whether the required statements are present.
+
+**Checks:**
 - A copy of the two (2) most recent statements of the account is provided.
-- If funds are not seasoned a minimum of sixty (60) days, a letter of explanation and information to comprise a sixty (60) day chain of funds are provided.
-- Bank statements in a language other than English are translated into English.
-- Sufficient funds to close are on deposit with the Escrow / Closing Agent at least three (3) business days, including Saturdays for this calculation, prior to any closing date.
-- Funds held in a foreign bank / currency are repatriated at minimum three (3) business days prior to Closing where the stated requirement applies.
 
-**Reads:** Borrower.citizenship_status, LoanCore.cltv_percent
-**Missing data:** Current exchange-rate conversion from www.xe.com or the Wall Street Journal conversion table, Two (2) most recent account statements, Letter of explanation and sixty (60) day chain of funds, if required, English translations of statements, if required, Closing date and evidence of funds deposited with the Escrow / Closing Agent, Evidence of repatriation and the applicable borrower status
+**Reads:** Borrower.citizenship_status
+**Missing data:** Two (2) most recent statements of the account
 
-## acra-standard.compliance_and_closing.foreign_national_closing_documents
+## acra-standard.identification_requirements.foreign_bank_statement_translation
 
-**Purpose:** Determine whether the stated foreign-national closing requirements are met.
+**Purpose:** Apply the translation requirement in STD-5.8.
 
-1. Initial Document Review: Review the current Passport, Visa, or ITIN; executed W-8 (BEN) IRS form; and title and closing agent evidence.
-2. Eligibility Verification: Verify that the loan closes with a title and closing agent approved and / or vetted by Acra.
-3. Validation and Verification: Review any Power of Attorney for conformity with Acra requirements and title-company acceptability; review any documents signed outside of the U.S. for the applicable notarization, acknowledgment, seal or apostille, and title-company acceptance requirements.
-4. Final Determination: Determine whether the stated closing-document requirements are met.
+1. Initial Document Review: Review the language of each bank statement.
+2. Eligibility Verification: Identify whether any statement is in a language other than English.
+3. Validation and Verification: If a statement is in a language other than English, verify that it has been translated into English.
+4. Final Determination: Record whether the applicable translation requirement is met.
+
+**Checks:**
+- Each bank statement in a language other than English is translated into English.
+
+**Reads:** Borrower.citizenship_status
+**Missing data:** English translation of each bank statement written in a language other than English
+
+## acra-standard.identification_requirements.foreign_funds_deposit_timing
+
+**Purpose:** Verify the funds-to-close deposit timing required by STD-5.7.
+
+1. Initial Document Review: Review evidence of funds to close on deposit with the Escrow / Closing Agent and the closing date.
+2. Eligibility Verification: Confirm the funds are sufficient to close.
+3. Validation and Verification: Verify that the funds were on deposit at least three (3) business days before any closing date, including Saturdays in the calculation.
+4. Final Determination: Record whether the deposit timing requirement is met.
+
+**Checks:**
+- Sufficient funds to close are on deposit with the Escrow / Closing Agent at least three (3) business days before closing, including Saturdays in the calculation.
+
+**Reads:** Borrower.citizenship_status
+**Missing data:** Amount of funds to close and amount on deposit, Deposit date, Closing date
+
+## acra-standard.identification_requirements.foreign_funds_repatriation
+
+**Purpose:** Verify the foreign-funds repatriation timing specified by STD-5.9.
+
+1. Initial Document Review: Review evidence of funds held in a foreign bank or currency, repatriation, and the Closing date.
+2. Eligibility Verification: Confirm that funds are held in a foreign bank or currency.
+3. Validation and Verification: Verify that the funds were repatriated at least three (3) business days prior to Closing.
+4. Final Determination: Record whether the repatriation timing requirement is met.
+
+**Checks:**
+- Funds held in a foreign bank or currency are repatriated at least three (3) business days prior to Closing.
+
+**Reads:** Borrower.citizenship_status
+**Missing data:** Evidence that funds held in a foreign bank or currency were repatriated, Repatriation date, Closing date
+
+## acra-standard.identification_requirements.foreign_funds_seasoning
+
+**Purpose:** Verify the seasoning requirement and any applicable supporting documentation.
+
+1. Initial Document Review: Review account statements and the available funds history.
+2. Eligibility Verification: For Foreign Nationals, apply the minimum 60 days seasoning requirement regardless of LTV / CLTV.
+3. Validation and Verification: If funds are not seasoned a minimum of sixty (60) days, verify a letter of explanation and information to comprise a sixty (60) day chain of funds.
+4. Final Determination: Record whether the seasoning requirement and any applicable supporting documentation are verified.
+
+**Checks:**
+- Foreign National funds are seasoned a minimum of 60 days, or, if not seasoned a minimum of sixty (60) days, a letter of explanation and information to comprise a sixty (60) day chain of funds are provided.
+
+**Reads:** Borrower.citizenship_status
+**Missing data:** Funds history establishing seasoning period, Letter of explanation if funds are not seasoned a minimum of sixty (60) days, Information to comprise a sixty (60) day chain of funds if funds are not seasoned a minimum of sixty (60) days
+
+## acra-standard.identification_requirements.foreign_national_business_purpose
+
+**Purpose:** Determine whether a Foreign National transaction is a business purpose transaction, i.e. an investment property transaction.
+
+1. Initial Document Review: Review the transaction purpose and property use information.
+2. Eligibility Verification: For a Foreign National, confirm that the transaction is for business purpose only; STD-5.1 gives investment properties as the example.
+3. Validation and Verification: Verify the transaction's business-purpose status.
+4. Final Determination: Record whether the business-purpose requirement is met.
+
+**Checks:**
+- The Foreign National transaction is for business purpose only.
+
+**Reads:** Borrower.citizenship_status, LoanCore.loan_purpose, SubjectProperty.occupancy_subtype
+**Missing data:** Evidence establishing whether the transaction is for business purpose
+
+## acra-standard.identification_requirements.foreign_national_credit_reference
+
+**Purpose:** Verify that a Foreign National provides one accepted credit-reference alternative.
+
+1. Initial Document Review: Review the available U.S. credit report, international credit report, original international financial institution credit reference letter, and bank statement evidence.
+2. Eligibility Verification: Determine whether at least one STD-5.10 alternative is provided.
+3. Validation and Verification: For the U.S. credit report alternative, verify at least two (2) trade lines and a minimum age of two (2) years for one trade line. For the other alternatives, verify that the document is an international credit report, an original credit reference letter from an internationally known financial institution, or a bank statement documenting a foreign financial banking relationship for the past 60 days.
+4. Final Determination: Record whether at least one alternative is verified.
+
+**Checks:**
+- At least one STD-5.10 credit-reference alternative is verified: a U.S. credit report with at least two (2) trade lines and minimum age of two (2) years for one trade line; an international credit report; an original credit reference letter from an internationally known financial institution; or a bank statement documenting a foreign financial banking relationship for the past 60 days.
+
+**Reads:** Borrower.citizenship_status, CreditReport.score_count, CreditReport.tradelines_meet_requirement
+**Missing data:** Age of at least one trade line on the U.S. credit report, International credit report, if used, Original credit reference letter from an internationally known financial institution, if used, Evidence that a bank statement documents a foreign financial banking relationship for the past 60 days, if used
+
+## acra-standard.identification_requirements.foreign_national_fico_pricing
+
+**Purpose:** Verify the Foreign National pricing requirement in STD-4.4.
+
+1. Initial Document Review: Review the representative score and loan pricing information.
+2. Eligibility Verification: Confirm that the borrower is a Foreign National.
+3. Validation and Verification: Verify that the loan is priced at FICO equal to 700.
+4. Final Determination: Record whether the pricing requirement is verified.
+
+**Checks:**
+- The Foreign National loan is priced at FICO equal to 700.
+
+**Reads:** Borrower.citizenship_status, CreditReport.representative_score
+**Missing data:** Loan pricing information establishing pricing at FICO equal to 700
+
+## acra-standard.identification_requirements.foreign_national_financial_position_review
+
+**Purpose:** Make the review required by STD-5.4.
+
+1. Initial Document Review: Review information relevant to the applicant's post-close financial position and exchange rate exposure.
+2. Eligibility Verification: Confirm that the review concerns a Foreign National applicant.
+3. Validation and Verification: Review with scrutiny the post-close financial position and the applicant's ability to mitigate exchange rate fluctuations.
+4. Final Determination: Record whether the required scrutiny review was completed.
+
+**Checks:**
+- The applicant's post-close financial position and ability to mitigate exchange rate fluctuations have been reviewed with scrutiny.
+
+**Reads:** Borrower.citizenship_status
+**Missing data:** Information establishing the applicant's post-close financial position, Information establishing the applicant's ability to mitigate exchange rate fluctuations
+
+## acra-standard.identification_requirements.foreign_national_identity_document
+
+**Purpose:** Verify the identity document required by STD-5.11.
+
+1. Initial Document Review: Review the submitted copy of a Passport, Visa, or ITIN.
+2. Eligibility Verification: Confirm that the document is current.
+3. Validation and Verification: Verify the document copy and its current status.
+4. Final Determination: Record whether a current required document is verified.
 
 **Checks:**
 - A copy of a current Passport, Visa, or ITIN is provided.
-- The loan closes with a title and closing agent approved and / or vetted by Acra.
-- Any Power of Attorney conforms to Acra requirements and is acceptable to the title company.
-- An executed W-8 (BEN) IRS form is provided.
-- Documents signed outside of the U.S. meet the applicable acknowledgment and title-company acceptance requirements stated in the policy.
 
 **Reads:** Borrower.citizenship_status
-**Missing data:** Current Passport, Visa, or ITIN, Evidence that the title and closing agent is approved and / or vetted by Acra, Power of Attorney and evidence of title-company acceptance, if applicable, Executed W-8 (BEN) IRS form, Executed documents signed outside of the U.S., Embassy or consular acknowledgment certificate and seal, or authorized notary acknowledgment and English apostille, as applicable, Title-company acceptance
+**Missing data:** Copy of a current Passport, Visa, or ITIN
 
-## acra-standard.compliance_and_closing.gift_funds_contribution
+## acra-standard.identification_requirements.foreign_national_maximum_cltv
 
-**Purpose:** Determine whether applicant(s) contribute the required portion of their own sourced and seasoned funds to the transaction.
+**Purpose:** Determine whether the Foreign National transaction meets the stated maximum CLTV.
 
-1. Initial Document Review: Review the purchase-price and funds-to-close evidence.
-2. Eligibility Verification: Determine whether the transaction is for an investment property or second home and includes gift funds.
-3. Validation and Verification: Verify that applicant(s) contribute a portion of their own sourced and seasoned funds to the transaction at a minimum of 10% of the purchase price; review gift documentation requirements in the Seller's Guide gift-fund section.
-4. Final Determination: Determine whether the stated gift-funds contribution requirement is met.
-
-**Checks:**
-- Applicant(s) contribute a portion of their own sourced and seasoned funds to the transaction at a minimum of 10% of the purchase price.
-
-**Reads:** SubjectProperty.occupancy_subtype, LoanCore.loan_purpose
-**Missing data:** Purchase price, Evidence of applicant(s)’ own sourced and seasoned funds, Gift-fund documentation requirements in the Seller's Guide gift-fund section
-
-## acra-standard.compliance_and_closing.investment_occupancy
-
-**Purpose:** Determine whether the subject property meets the stated investment-property definition.
-
-1. Initial Document Review: Review the loan application and lease evidence for the subject property’s occupancy and use.
-2. Eligibility Verification: Verify that the property is a one- to four-unit residential dwelling or a unit in a condominium complex or a PUD, is owned by an individual who does not occupy it, and is leased and occupied as a principal year-round residence to individuals other than the owner.
-3. Validation and Verification: Confirm the occupancy and lease information against the reviewed evidence.
-4. Final Determination: Determine whether the investment-property occupancy requirements are met.
+1. Initial Document Review: Review the transaction type and CLTV.
+2. Eligibility Verification: Confirm that the borrower is a Foreign National and identify whether the transaction is purchase or refinance — rate & term and cash-out.
+3. Validation and Verification: Compare CLTV with the stated maximum: 70% for purchase or 65% for refinance — rate & term and cash-out.
+4. Final Determination: Record whether the applicable stated maximum is met.
 
 **Checks:**
-- The subject property is investment property and is not owner-occupied.
-- The property meets the stated investment-property definition.
-
-**Reads:** SubjectProperty.number_of_units, SubjectProperty.property_type, SubjectProperty.occupancy_subtype, SubjectProperty.has_current_lease, SubjectProperty.is_vacant
-**Missing data:** Evidence that the property is a unit in a condominium complex or a PUD, if applicable, Evidence of the owner’s identity and non-occupancy, Evidence that the tenant occupies the dwelling as a principal year-round residence
-
-## acra-standard.compliance_and_closing.listed_property_amortization
-
-**Purpose:** Determine whether the loan meets the listed-property amortization requirement.
-
-1. Initial Document Review: Review the loan terms.
-2. Eligibility Verification: Determine whether the property is subject to the listed-for-sale requirements.
-3. Validation and Verification: Verify that the loan has a fully amortizing term and is not interest only.
-4. Final Determination: Determine whether the listed-property amortization requirement is met.
-
-**Checks:**
-- The loan has a fully amortizing term.
-- The loan is not interest only.
-
-**Reads:** SubjectProperty.listed_for_sale_last_6_months, MortgageLoanInformation.is_interest_only
-**Missing data:** Loan term and amortization schedule
-
-## acra-standard.compliance_and_closing.listed_property_maximum_cltv
-
-**Purpose:** Determine whether the listed-property loan’s maximum LTV / CLTV requirement is met.
-
-1. Initial Document Review: Review the appraisal and listing history.
-2. Eligibility Verification: Determine whether the property is subject to the listed-for-sale requirements.
-3. Validation and Verification: Determine the lesser of the appraised value and the lowest recent listing price and verify that the maximum LTV / CLTV is 65% based on that value.
-4. Final Determination: Determine whether the listed-property maximum LTV / CLTV requirement is met.
-
-**Checks:**
-- The maximum LTV / CLTV is 65% based on the lesser of the appraised value or the lowest recent listing price.
-
-**Reads:** SubjectProperty.listed_for_sale_last_6_months, SubjectProperty.appraised_value_usd, LoanCore.cltv_percent
-**Missing data:** Lowest recent listing price, Evidence supporting the LTV / CLTV calculation using the lesser of the appraised value or lowest recent listing price
-
-## acra-standard.compliance_and_closing.listed_property_reserves
-
-**Purpose:** Determine whether the required reserves are documented for a listed property.
-
-1. Initial Document Review: Review the evidence of reserves.
-2. Eligibility Verification: Determine whether the property is subject to the listed-for-sale requirements.
-3. Validation and Verification: Verify that twenty-four (24) months of reserves are available.
-4. Final Determination: Determine whether the listed-property reserve requirement is met.
-
-**Checks:**
-- Twenty-four (24) months of reserves are available.
-
-**Reads:** SubjectProperty.listed_for_sale_last_6_months, RatioSet.reserves_months
-**Missing data:** Evidence supporting the reserve-month amount
-
-## acra-standard.compliance_and_closing.listed_property_tenant_occupancy
-
-**Purpose:** Determine whether an investment property listed for sale is occupied by a tenant and is not vacant.
-
-1. Initial Document Review: Review the listing history and lease evidence.
-2. Eligibility Verification: Determine whether the property has been listed for sale in the last six months, measured from the last date of being listed to the Application Date.
-3. Validation and Verification: For an investment property subject to the listed-property requirements, verify that the subject is occupied by a tenant and is not vacant.
-4. Final Determination: Determine whether the listed-property tenant-occupancy requirement is met.
-
-**Checks:**
-- The property has been listed for sale in the last six months, measured from the last date of being listed to the Application Date.
-- If the listed property is an investment property, the subject is occupied by a tenant and is not vacant.
-
-**Reads:** SubjectProperty.listed_for_sale_last_6_months, SubjectProperty.is_vacant, SubjectProperty.has_current_lease, SubjectProperty.occupancy_subtype
-**Missing data:** Last date the property was listed for sale, Application Date, Evidence that the tenant occupies the subject property
-
-## acra-standard.credit_review_analysis.bankruptcy_and_foreclosure_seasoning_limits
-
-**Purpose:** Check the printed maximum CLTV or ineligible result for the stated bankruptcy and foreclosure seasoning bands.
-
-1. Step 1 - Initial Document Review: Review the loan application and credit information for bankruptcy or foreclosure history, seasoning, loan purpose, and CLTV.
-2. Step 2 - Eligibility Verification: Apply this provision when the borrower has a bankruptcy or foreclosure.
-3. Step 3 - Validation and Verification: Compare seasoning and loan purpose with the printed table: ≥ 36 Mo, No Restrictions; 24-35 Mo, 80% purchase / 75% refinance; 12-23 Mo, 65% purchase / 65% refinance; < 12 Mo, Ineligible.
-4. Step 4 - Final Determination: Record whether the applicable printed restriction is met.
-
-**Checks:**
-- For seasoning ≥ 36 Mo, the table states No Restrictions.
-- For seasoning 24-35 Mo, CLTV is no more than 80% for purchase or 75% for refinance — rate & term and cash-out.
-- For seasoning 12-23 Mo, CLTV is no more than 65% for purchase or 65% for refinance — rate & term and cash-out.
-- For seasoning < 12 Mo, the case is Ineligible.
-
-**Reads:** Borrower.has_bankruptcy_or_foreclosure, Borrower.months_since_bankruptcy_or_foreclosure, LoanCore.loan_purpose, LoanCore.cltv_percent
-**Missing data:** Bankruptcy or foreclosure seasoning as measured under Acra’s labels; definitions and measurement are subject to Acra confirmation → Q-05
-
-## acra-standard.credit_review_analysis.citizenship_type_eligibility
-
-**Purpose:** Determine whether the borrower’s citizenship type is eligible under STD-4.1.
-
-1. Step 1 - Initial Document Review: Review the loan application for the borrower’s citizenship type.
-2. Step 2 - Eligibility Verification: Compare the citizenship type with the types eligible under STD-4.1.
-3. Step 3 - Validation and Verification: Verify the stated citizenship type from the application information.
-4. Step 4 - Final Determination: Record whether the citizenship type is eligible.
-
-**Checks:**
-- Borrower citizenship type is US Citizen, Permanent Resident, Non-Permanent Resident, Foreign National, or ITIN.
-
-**Reads:** Borrower.citizenship_status
-**Missing data:** Borrower citizenship type as documented
-
-## acra-standard.credit_review_analysis.credit_score_count_requirements
-
-**Purpose:** Verify the applicable credit score-count requirement: 3 repositories, or the stated alternatives for applicants with 2 or fewer scores.
-
-1. Step 1 - Initial Document Review: Review the credit report for the number of repository scores and the reported tradelines and their histories.
-2. Step 2 - Eligibility Verification: For 3 repositories, apply the no-tradeline-overlay provision. For 2 or fewer scores, verify either 2 tradelines & 24 month history, or 3 tradelines & 12 month history.
-3. Step 3 - Validation and Verification: Verify the score count and, where applicable, the tradeline counts and histories from the credit report.
-4. Step 4 - Final Determination: Record whether the applicable score-count requirement is met.
-
-**Checks:**
-- If applicants have scores from 3 repositories, the score-count requirement is acceptable with no tradeline overlay.
-- If applicants have 2 or fewer scores, they have 2 tradelines & 24 month history, or 3 tradelines & 12 month history.
-
-**Reads:** CreditReport.score_count, CreditReport.tradelines_meet_requirement
-**Missing data:** Repository score count and tradeline history details, if not held in the case fields
-
-## acra-standard.credit_review_analysis.escrow_waiver_eligibility
-
-**Purpose:** Determine whether the case meets the requirements printed for an escrow waiver.
-
-1. Step 1 - Initial Document Review: Review the loan application and credit report for the waiver request, loan amount, CLTV, FICO, mortgage history, and citizenship type.
-2. Step 2 - Eligibility Verification: Apply the printed escrow-waiver requirements to a requested waiver.
-3. Step 3 - Validation and Verification: Verify each requirement: maximum loan amount $1.5M; maximum CLTV 80%; minimum FICO 700; mortgage history no worse than 0x30x24; Foreign National ineligible.
-4. Step 4 - Final Determination: Record whether the waiver requirements are met. Separately note that interaction with impound requirements is referred for Acra confirmation → Q-15.
-
-**Checks:**
-- Loan amount is no more than $1.5M.
-- CLTV is no more than 80%.
-- FICO is at least 700.
-- Mortgage history is no worse than 0x30x24.
-- The borrower is not a Foreign National.
-
-**Reads:** LoanCore.total_loan_amount_usd, LoanCore.cltv_percent, CreditReport.representative_score, CreditReport.mortgage_0x30x24, Borrower.citizenship_status, LoanCore.is_escrow_waived
-**Missing data:** Whether an impound requirement interacts with an otherwise eligible waiver; Acra confirmation requested → Q-15
-
-## acra-standard.credit_review_analysis.first_time_homebuyer_status
-
-**Purpose:** Determine whether all Applicants have never previously owned a home (real property).
-
-1. Step 1 - Initial Document Review: Review the loan application for information about each Applicant’s prior homeownership.
-2. Step 2 - Eligibility Verification: Determine whether every Applicant has never previously owned a home (real property).
-3. Step 3 - Validation and Verification: Verify the stated homeownership history using available application information.
-4. Step 4 - Final Determination: Record whether the application meets Acra’s definition of a First Time Home Buyer.
-
-**Checks:**
-- Every Applicant has never previously owned a home (real property).
-
-**Reads:** Borrower.is_first_time_homebuyer
-**Missing data:** Each Applicant’s prior homeownership history
-
-## acra-standard.credit_review_analysis.foreign_national_cltv_limit
-
-**Purpose:** Check the Foreign National maximum CLTV limit: 70% for purchase and 65% for refinance — rate & term and cash-out.
-
-1. Step 1 - Initial Document Review: Review the loan application for citizenship type, loan purpose, and the stated primary residence location.
-2. Step 2 - Eligibility Verification: Apply this limit when the borrower is a Foreign National; the printed definition is borrowers whose Primary Residence is not located in the United States of America.
-3. Step 3 - Validation and Verification: Compare the applicable maximum CLTV with the loan’s CLTV.
-4. Step 4 - Final Determination: Record whether the applicable Foreign National maximum CLTV is met.
-
-**Checks:**
-- For a Foreign National, CLTV is no more than 70% for purchase or 65% for refinance — rate & term and cash-out.
+- For a purchase, CLTV is no more than 70%; for a refinance — rate & term and cash-out, CLTV is no more than 65%.
 
 **Reads:** Borrower.citizenship_status, LoanCore.loan_purpose, LoanCore.cltv_percent
-**Missing data:** Whether the borrower’s Primary Residence is located in the United States of America
 
-## acra-standard.credit_review_analysis.interest_only_loan_amount_and_fico
+## acra-standard.identification_requirements.foreign_national_power_of_attorney
 
-**Purpose:** Check that an interest-only loan meets the STD-2.7 loan amount and FICO limits.
+**Purpose:** Verify the conditional Power of Attorney requirement in STD-5.11.
 
-1. Step 1 - Initial Document Review: Review the loan application and credit report for interest-only status, loan amount, and FICO.
-2. Step 2 - Eligibility Verification: Apply the limits to an interest-only loan.
-3. Step 3 - Validation and Verification: Compare the loan amount and FICO with the printed limits.
-4. Step 4 - Final Determination: Record whether all three limits are met.
-
-**Checks:**
-- For an interest-only loan, loan amount is at least $250,000.
-- For an interest-only loan, loan amount is no more than $3,000,000.
-- For an interest-only loan, FICO is at least 640.
-
-**Reads:** MortgageLoanInformation.is_interest_only, LoanCore.total_loan_amount_usd, CreditReport.representative_score
-**Missing data:** Decisioning FICO, if not held in the case fields
-
-## acra-standard.credit_review_analysis.itin_loan_amount_and_fico_limits
-
-**Purpose:** Check the ITIN maximum loan amount of $1.0M and minimum FICO 640.
-
-1. Step 1 - Initial Document Review: Review the loan application and credit report for ITIN status, loan amount, and FICO information.
-2. Step 2 - Eligibility Verification: Apply these limits to an ITIN borrower, subject to the source’s stated unresolved eligibility questions for US-resident ITIN holders.
-3. Step 3 - Validation and Verification: Compare the loan amount and FICO with the printed limits.
-4. Step 4 - Final Determination: Record whether the maximum loan amount and minimum FICO are met.
+1. Initial Document Review: Determine whether a Power of Attorney is used and, if so, review it.
+2. Eligibility Verification: If a Power of Attorney is used, assess conformity with Acra requirements and title company acceptability.
+3. Validation and Verification: Verify both required conditions for a Power of Attorney that is used.
+4. Final Determination: Record whether the conditional requirement is met.
 
 **Checks:**
-- For an ITIN borrower, loan amount is no more than $1.0M.
-- For an ITIN borrower, FICO is at least 640.
-
-**Reads:** Borrower.citizenship_status, LoanCore.total_loan_amount_usd, CreditReport.representative_score
-**Missing data:** Decisioning FICO, if not held in the case fields, Whether a US-resident ITIN holder is eligible; Acra confirmation requested → Q-03
-
-## acra-standard.credit_review_analysis.loan_amount_below_200_000_cltv_limit
-
-**Purpose:** Check the maximum CLTV of 80% for purchase and 75% for refinance — rate & term and cash-out when loan amount is below $200,000.
-
-1. Step 1 - Initial Document Review: Review the loan application for loan amount and purpose.
-2. Step 2 - Eligibility Verification: Apply this limit when loan amount is below $200,000.
-3. Step 3 - Validation and Verification: Compare CLTV with the maximum for the loan purpose.
-4. Step 4 - Final Determination: Record whether the applicable maximum CLTV is met.
-
-**Checks:**
-- If loan amount is below $200,000, CLTV is no more than 80% for purchase or 75% for refinance — rate & term and cash-out.
-
-**Reads:** LoanCore.total_loan_amount_usd, LoanCore.loan_purpose, LoanCore.cltv_percent
-
-## acra-standard.credit_review_analysis.loan_amount_over_2_000_000_dscr
-
-**Purpose:** Check that a loan amount over $2,000,000 has 1.0 or greater DSCR.
-
-1. Step 1 - Initial Document Review: Review the loan application and underwriting information for loan amount and DSCR.
-2. Step 2 - Eligibility Verification: Apply this requirement when loan amount is over $2,000,000.
-3. Step 3 - Validation and Verification: Verify the DSCR and compare it with 1.0.
-4. Step 4 - Final Determination: Record whether the minimum DSCR is met.
-
-**Checks:**
-- If loan amount is over $2,000,000, DSCR is 1.0 or greater.
-
-**Reads:** LoanCore.total_loan_amount_usd
-**Missing data:** DSCR
-
-## acra-standard.credit_review_analysis.non_permanent_resident_proof
-
-**Purpose:** Verify the legal-residency proof required for a Non-Permanent Resident.
-
-1. Step 1 - Initial Document Review: Review the provided proof of legal residency, which may include an unexpired employment authorization document (EAD) or valid visa.
-2. Step 2 - Eligibility Verification: Confirm that the proof relates to the borrower identified as a Non-Permanent Resident.
-3. Step 3 - Validation and Verification: Verify that proof of legal residency is provided and that an EAD, if used, is unexpired or a visa, if used, is valid.
-4. Step 4 - Final Determination: Record whether proof of legal residency is provided.
-
-**Checks:**
-- The Non-Permanent Resident has proof of legal residency.
+- If a Power of Attorney is used, it conforms to Acra requirements and is acceptable to the title company.
 
 **Reads:** Borrower.citizenship_status
-**Missing data:** Proof of legal residency and, where applicable, document expiration or validity
+**Missing data:** Power of Attorney, if used, Acra conformity verification, if a Power of Attorney is used, Title company acceptance, if a Power of Attorney is used
 
-## acra-standard.credit_review_analysis.one_or_no_score_deficient_tradelines
+## acra-standard.identification_requirements.foreign_national_residence_status
 
-**Purpose:** Verify the requirements printed for 1 or No Score / Deficient Tradelines.
+**Purpose:** Determine whether the Foreign National borrower resides outside the U.S. and is not authorized to live or work in the U.S.
 
-1. Step 1 - Initial Document Review: Review the credit report and underwriting information for score count, tradeline status, CLTV, DSCR, and housing history.
-2. Step 2 - Eligibility Verification: Apply this provision when the case has 1 or No Score / Deficient Tradelines.
-3. Step 3 - Validation and Verification: Verify the printed requirements: Max 65% LTV/CLTV; DSCR Ratio ≥ 1.1; 24mos 0x30 housing history. Apply “1 Reported Score: Use Actual to Max 700; No Score: Price as 700 Tier”.
-4. Step 4 - Final Determination: Record whether each applicable printed requirement is met; do not infer which score is the decisioning score.
-
-**Checks:**
-- For 1 or No Score / Deficient Tradelines, LTV/CLTV is no more than 65%.
-- For 1 or No Score / Deficient Tradelines, DSCR Ratio is at least 1.1.
-- For 1 or No Score / Deficient Tradelines, housing history is 24mos 0x30.
-- For 1 Reported Score, use Actual to Max 700; for No Score, price as 700 Tier.
-
-**Reads:** CreditReport.score_count, CreditReport.tradelines_meet_requirement, LoanCore.cltv_percent, CreditReport.housing_history_rating
-**Missing data:** DSCR, Whether the case has deficient tradelines, The housing-history period and payment history, The score used for decisioning; Acra confirmation requested → Q-19
-
-## acra-standard.credit_review_analysis.permanent_resident_documents
-
-**Purpose:** Verify the required Permanent Resident identification and Social Security documentation.
-
-1. Step 1 - Initial Document Review: For a Permanent Resident, review the unexpired PRA ID and SSA card / SSA-89.
-2. Step 2 - Eligibility Verification: Confirm that the reviewed documents are for the borrower identified as a Permanent Resident.
-3. Step 3 - Validation and Verification: Verify that the PRA ID is unexpired and that the SSA card / SSA-89 is provided.
-4. Step 4 - Final Determination: Record whether both document requirements are met.
+1. Initial Document Review: Review available information about the borrower's primary residence and authorization to live or work in the U.S.
+2. Eligibility Verification: Assess the STD-4.4 description that the borrower's Primary Residence is not located in the United States of America and the STD-5.2 description of a Non-Resident Alien not authorized to live or work in the U.S. who must reside outside the U.S.
+3. Validation and Verification: Resolve whether the borrower meets those stated facts; do not treat periodic U.S. visits, limited personal use or investment, or ownership of a U.S.-based business entity as disqualifying by themselves.
+4. Final Determination: Record whether the borrower meets the stated Foreign National residence and authorization description.
 
 **Checks:**
-- The Permanent Resident has an unexpired PRA ID and SSA card / SSA-89.
+- The borrower resides outside the U.S., has a Primary Residence not located in the United States of America, and is not authorized to live or work in the U.S.
 
 **Reads:** Borrower.citizenship_status
-**Missing data:** PRA ID and its expiration date, SSA card or SSA-89
+**Missing data:** Borrower's country of residence and location of Primary Residence, Whether the borrower is authorized to live or work in the U.S.
 
-## acra-standard.credit_review_analysis.short_sale_dil_and_modification_seasoning_limits
+## acra-standard.identification_requirements.foreign_national_w_8
 
-**Purpose:** Check the printed maximum CLTV for short sale, deed-in-lieu, and modification seasoning bands.
+**Purpose:** Verify the executed W-8 (BEN) IRS form required by STD-5.11.
 
-1. Step 1 - Initial Document Review: Review the loan application and credit information for short sale, deed-in-lieu, or modification history, seasoning, loan purpose, and CLTV.
-2. Step 2 - Eligibility Verification: Apply this provision when the borrower has a short sale, deed-in-lieu, or modification.
-3. Step 3 - Validation and Verification: Compare seasoning and loan purpose with the printed table: ≥ 24 Mo, No Restrictions; 12-23 Mo, 80% purchase / 75% refinance; < 12 Mo, 75% purchase / 70% refinance.
-4. Step 4 - Final Determination: Record whether the applicable printed restriction is met. Treat “FB Taken ≤6 Mos: Case-by-case” as requiring a case-by-case determination; the meaning and timing are subject to Acra confirmation → Q-05.
-
-**Checks:**
-- For seasoning ≥ 24 Mo, the table states No Restrictions.
-- For seasoning 12-23 Mo, CLTV is no more than 80% for purchase or 75% for refinance — rate & term and cash-out.
-- For seasoning < 12 Mo, CLTV is no more than 75% for purchase or 70% for refinance — rate & term and cash-out.
-
-**Reads:** Borrower.has_short_sale_dil_or_modification, Borrower.months_since_short_sale_dil_or_modification, LoanCore.loan_purpose, LoanCore.cltv_percent
-**Missing data:** Short sale, deed-in-lieu, or modification seasoning as measured under Acra’s labels; definitions and measurement are subject to Acra confirmation → Q-05, Whether “FB Taken ≤6 Mos” applies and its meaning and timing; Acra confirmation requested → Q-05
-
-## acra-standard.identification_requirements.entity_certificate_of_good_standing
-
-**Purpose:** Apply the Certificate of Good Standing requirement in U45.
-
-1. Initial Document Review: Obtain and review the entity’s Certificate of Good Standing or equivalent document and the closing date.
-2. Eligibility Verification: Confirm that the borrower is an entity borrower.
-3. Validation and Verification: Verify that the document is valid within ninety (90) days of the closing date.
-4. Final Determination: Record whether the required document is valid within the stated period.
-
-**Checks:**
-- A Certificate of Good Standing or equivalent document is valid within ninety (90) days of the closing date.
-
-**Reads:** Borrower.is_entity_borrower_1, Borrower.entity_type
-**Missing data:** Certificate of Good Standing or equivalent document, Document validity date, Closing date
-
-## acra-standard.identification_requirements.entity_document_name_match
-
-**Purpose:** Apply the entity document name requirement in U45.
-
-1. Initial Document Review: Review the entity documents and identification.
-2. Eligibility Verification: Confirm that the borrower is an entity borrower.
-3. Validation and Verification: Compare names on the entity documents with identification; if they do not match exactly, verify that a letter of explanation addresses the discrepancy.
-4. Final Determination: Record whether names match or the discrepancy is addressed by a letter of explanation.
-
-**Checks:**
-- Names on the entity documents match the identification, or a letter of explanation addresses any discrepancy.
-
-**Reads:** Borrower.is_entity_borrower_1, Borrower.entity_type
-**Missing data:** Names on entity documents, Names on identification, Letter of explanation addressing any name discrepancy, if applicable
-
-## acra-standard.identification_requirements.entity_foreign_qualification
-
-**Purpose:** Apply the entity qualification requirement in U45 when the entity is formed in a different state.
-
-1. Initial Document Review: Review entity formation information and the state where business is being conducted or the property is located.
-2. Eligibility Verification: Determine whether the entity was formed in a state other than where business is being conducted or where the property is located.
-3. Validation and Verification: If the entity was formed in a different state, verify a Certificate of Foreign Qualification or other qualification to operate in the state where business is being conducted.
-4. Final Determination: Record whether the applicable qualification document is provided.
-
-**Checks:**
-- If the entity is formed in a state other than where business is being conducted or where the property is located, a Certificate of Foreign Qualification or other qualification to operate in the state where business is being conducted is provided.
-
-**Reads:** Borrower.is_entity_borrower_1, Borrower.entity_type, SubjectProperty.state
-**Missing data:** Entity formation state, State where business is being conducted, Certificate of Foreign Qualification or other qualification to operate in the state where business is being conducted, if applicable
-
-## acra-standard.identification_requirements.entity_power_of_attorney_for_personal_guarantee
-
-**Purpose:** Apply the entity Power of Attorney requirement in U45 when a Power of Attorney is used for a personal guarantee.
-
-1. Initial Document Review: Review any Power of Attorney used to execute a personal guarantee.
-2. Eligibility Verification: Confirm that the borrower is an entity borrower and whether a Power of Attorney is used for the personal guarantee.
-3. Validation and Verification: If used, verify that the principal utilizes the Power of Attorney to designate an attorney in fact to execute the personal guarantee; see §23.5(C).
-4. Final Determination: Record whether the applicable Power of Attorney requirement is met.
-
-**Checks:**
-- If a Power of Attorney is used to execute a personal guarantee, the principal utilizes it to designate an attorney in fact to execute the personal guarantee.
-
-**Reads:** Borrower.is_entity_borrower_1, Borrower.entity_type
-**Missing data:** Power of Attorney used for a personal guarantee, if applicable, §23.5(C)
-
-## acra-standard.identification_requirements.entity_tax_identification_document
-
-**Purpose:** Apply the entity tax identification document requirement in U45.
-
-1. Initial Document Review: Obtain and review the entity’s IRS Form SS4, Federal Taxpayer Identification Number (TIN), or Employer Identification Number (EIN) issuance letter.
-2. Eligibility Verification: Confirm that the borrower is an entity borrower.
-3. Validation and Verification: Verify that one of the listed entity tax identification items is provided. If an EIN exception is requested, verify that the request is submitted for review by Acra’s Legal Department with a letter of explanation stating the applicable grounds.
-4. Final Determination: Record whether a listed item is provided or an EIN exception request has been submitted as stated.
-
-**Checks:**
-- The entity provides IRS Form SS4 or a Federal Taxpayer Identification Number (TIN) or Employer Identification Number (EIN) issuance letter, or an EIN exception request is submitted for review by Acra’s Legal Department with a letter of explanation stating the applicable grounds.
-
-**Reads:** Borrower.is_entity_borrower_1, Borrower.entity_type
-**Missing data:** IRS Form SS4 or Federal Taxpayer Identification Number (TIN) or Employer Identification Number (EIN) issuance letter, EIN exception request and letter of explanation stating the applicable grounds, if requested
-
-## acra-standard.identification_requirements.entity_unanimous_written_consent_or_board_resolution
-
-**Purpose:** Apply the entity authorization requirement in U45.
-
-1. Initial Document Review: Obtain and review the Unanimous Written Consent / Board Resolution and the entity’s membership information.
-2. Eligibility Verification: Confirm that the borrower is an entity borrower.
-3. Validation and Verification: Verify that all members signed regardless of their percentage of interest, that the transaction with Acra Lending is authorized, and that the person authorized to sign the loan documents on behalf of and bind the entity is identified. Account for the stated possibility that the Operating Agreement or Bylaws may require it even where ownership is held by one individual. Verify that it does not designate a signor on a personal guarantee.
-4. Final Determination: Record whether the consent or resolution contains the required signatures and authorizations.
-
-**Checks:**
-- The Unanimous Written Consent / Board Resolution is signed by all members regardless of their percentage of interest.
-- The Unanimous Written Consent / Board Resolution authorizes the transaction with Acra Lending and identifies who is authorized to sign the loan documents on behalf of and to bind the entity.
-- The Unanimous Written Consent / Board Resolution does not designate a signor on a personal guarantee.
-
-**Reads:** Borrower.is_entity_borrower_1, Borrower.entity_type
-**Missing data:** Unanimous Written Consent / Board Resolution, Entity membership and member signatures, Operating Agreement or Bylaws, if needed to determine whether the consent or resolution is required
-
-## acra-standard.identification_requirements.foreign_national_approved_closing_agent
-
-**Purpose:** Verify the closing agent requirement in STD-5.11.
-
-1. Initial Document Review: Obtain and review evidence identifying the title and closing agent and its Acra approval and / or vetting.
-2. Eligibility Verification: Confirm that the loan is being closed under the Foreign National Program.
-3. Validation and Verification: Verify that the title and closing agent is approved and / or vetted by Acra.
-4. Final Determination: Record whether the loan closes with an agent meeting the requirement.
-
-**Checks:**
-- The loan closes with a title and closing agent approved and / or vetted by Acra.
-
-**Reads:** Borrower.citizenship_status
-**Missing data:** Acra approval and / or vetting status of the title and closing agent
-
-## acra-standard.identification_requirements.foreign_national_cltv_and_fico
-
-**Purpose:** Verify the Foreign National Program CLTV and FICO requirements in STD-4.4.
-
-1. Initial Document Review: Review the loan purpose, CLTV, and representative FICO score.
-2. Eligibility Verification: Confirm that the borrower is a Foreign National.
-3. Validation and Verification: Verify maximum CLTV 70% for purchase and 65% for refinance — rate & term and cash-out; verify that the loan is priced at FICO equal to 700.
-4. Final Determination: Record whether the applicable maximum CLTV and FICO pricing requirement are met.
-
-**Checks:**
-- For a purchase, CLTV is no greater than 70%.
-- For a refinance — rate & term and cash-out, CLTV is no greater than 65%.
-- The loan is priced at FICO equal to 700.
-
-**Reads:** Borrower.citizenship_status, LoanCore.loan_purpose, LoanCore.cltv_percent, CreditReport.representative_score
-
-## acra-standard.identification_requirements.foreign_national_documents_signed_outside_u_s
-
-**Purpose:** Apply the document execution requirements in STD-5.12 when documents are signed outside of the U.S.
-
-1. Initial Document Review: Identify documents signed outside of the U.S., where they were signed, and their acknowledgment and authentication documents.
-2. Eligibility Verification: Confirm whether the documents were signed outside of the U.S. and whether the country is party to the Hague Convention Treaty Abolishing the Requirement of Legalization for Foreign Public Documents.
-3. Validation and Verification: For documents notarized by a U.S. embassy or consular official, verify that the certificate of acknowledgement includes the embassy or consular seal and is acceptable to the title company. For documents signed in a Hague Convention country, verify an authorized notary public’s completed and signed certificate of acknowledgment, authentication by apostille in English attached to the executed documents, and title company acceptance.
-4. Final Determination: Record whether the applicable execution route’s requirements are met.
-
-**Checks:**
-- For documents notarized by a U.S. embassy or consular official, the certificate of acknowledgement includes the embassy or consular seal and is acceptable to the title company.
-- For documents signed in a Hague Convention country, an authorized notary public has completed and signed the certificate of acknowledgment, authentication by apostille in English is attached to the executed documents, and the title company accepts it.
-
-**Reads:** Borrower.citizenship_status
-**Missing data:** Place of signing and whether the country is party to the Hague Convention Treaty Abolishing the Requirement of Legalization for Foreign Public Documents, Certificate of acknowledgment, Embassy or consular seal, if applicable, Apostille in English attached to executed documents, if applicable, Title company acceptance
-
-## acra-standard.identification_requirements.foreign_national_executed_w_8_ben
-
-**Purpose:** Verify the executed form required by STD-5.11.
-
-1. Initial Document Review: Obtain and review the W-8 (BEN) IRS form.
-2. Eligibility Verification: Confirm that the loan is being closed under the Foreign National Program.
-3. Validation and Verification: Verify that the W-8 (BEN) IRS form is executed.
-4. Final Determination: Record whether the executed form is provided.
+1. Initial Document Review: Review the submitted W-8 (BEN) IRS form.
+2. Eligibility Verification: Confirm that the form is executed.
+3. Validation and Verification: Verify the executed form.
+4. Final Determination: Record whether the executed form is verified.
 
 **Checks:**
 - An executed W-8 (BEN) IRS form is provided.
@@ -957,989 +1198,537 @@
 **Reads:** Borrower.citizenship_status
 **Missing data:** Executed W-8 (BEN) IRS form
 
-## acra-standard.identification_requirements.foreign_national_financial_position_review
+## acra-standard.identification_requirements.foreign_signed_documents_acknowledgment
 
-**Purpose:** Apply the review scrutiny stated for applicants under the Foreign National Program.
+**Purpose:** Verify the STD-5.12 acknowledgment requirements for documents signed outside the U.S.
 
-1. Initial Document Review: Review information bearing on the applicant’s post-close financial position and exchange-rate exposure.
-2. Eligibility Verification: Confirm that the application is being reviewed under the Foreign National Program.
-3. Validation and Verification: Review the applicant’s post-close financial position and ability to mitigate exchange rate fluctuations with scrutiny.
-4. Final Determination: Record the review conclusion.
+1. Initial Document Review: Identify whether documents are signed outside the U.S. and review the acknowledgment and authentication provided.
+2. Eligibility Verification: Determine which stated route applies: notarization by a U.S. embassy or consular official, or signing in a country that is party to the Hague Convention Treaty Abolishing the Requirement of Legalization for Foreign Public Documents.
+3. Validation and Verification: For the embassy or consular route, verify the certificate of acknowledgement includes the embassy or consular seal and is acceptable to the title company. For the Hague Convention route, verify an authorized notary public completed and signed the certificate of acknowledgment, authentication by apostille in English is attached to the executed documents, and the title company accepts it.
+4. Final Determination: Record whether the applicable route's stated requirements are verified.
 
 **Checks:**
-- The applicant’s post-close financial position and ability to mitigate exchange rate fluctuations have been reviewed with scrutiny.
+- For documents signed outside the U.S., the applicable STD-5.12 acknowledgment route and its stated requirements are met.
 
 **Reads:** Borrower.citizenship_status
-**Missing data:** Applicant’s post-close financial position, Applicant’s ability to mitigate exchange rate fluctuations
+**Missing data:** Whether documents were signed outside the U.S. and, if so, the country of signing, Certificate of acknowledgement and embassy or consular seal, if the embassy or consular route is used, Title company acceptance, if the embassy or consular route is used, Authorized notary public's completed and signed certificate of acknowledgment, English apostille attached to the executed documents, and title company acceptance, if the Hague Convention route is used
 
-## acra-standard.identification_requirements.foreign_national_identity_document
+## acra-standard.identification_requirements.itin_foreign_national_eligibility
 
-**Purpose:** Verify the identity document required by STD-5.11.
+**Purpose:** Apply STD-5.3's stated condition for ITIN holders' eligibility for the Foreign National Program.
 
-1. Initial Document Review: Obtain and review a copy of a current Passport, Visa, or ITIN.
-2. Eligibility Verification: Confirm that the loan is being closed under the Foreign National Program.
-3. Validation and Verification: Verify that the copy is of one of the listed documents and is current.
-4. Final Determination: Record whether the required copy is provided and current.
+1. Initial Document Review: For an ITIN holder reviewed for the Foreign National Program, review information about residence.
+2. Eligibility Verification: Confirm whether the ITIN holder resides outside of the U.S.
+3. Validation and Verification: Verify the residence information.
+4. Final Determination: Record whether the STD-5.3 residence condition is met.
 
 **Checks:**
-- A copy of a current Passport, Visa, or ITIN is provided.
+- The ITIN holder resides outside of the U.S.
 
 **Reads:** Borrower.citizenship_status
-**Missing data:** Copy of current Passport, Visa, or ITIN, Current status of the provided document
+**Missing data:** ITIN holder's country of residence
 
-## acra-standard.identification_requirements.foreign_national_ofac_and_state_restrictions
+## acra-standard.identification_requirements.itin_loan_amount_and_minimum_fico
 
-**Purpose:** Resolve the Foreign National Program restrictions referenced in STD-5.5, which are not reproduced in the supplied text.
+**Purpose:** Determine whether the ITIN loan amount and representative score meet the stated limits.
 
-1. Initial Document Review: Identify whether the case is being reviewed under the Foreign National Program.
-2. Eligibility Verification: Locate §3.10 for OFAC restrictions and state specific exclusions.
-3. Validation and Verification: Review the applicable restrictions and exclusions in §3.10, Appendix B.
-4. Final Determination: Record whether the case meets the applicable restrictions and exclusions.
-
-**Checks:**
-- The applicable OFAC restrictions and state specific exclusions in §3.10 have been reviewed and met.
-
-**Reads:** Borrower.citizenship_status, SubjectProperty.state
-**Missing data:** §3.10 OFAC restrictions and state specific exclusions (Appendix B)
-
-## acra-standard.identification_requirements.foreign_national_power_of_attorney
-
-**Purpose:** Apply the Foreign National Power of Attorney requirement in STD-5.11 when a Power of Attorney is provided.
-
-1. Initial Document Review: Review any Power of Attorney used for the closing.
-2. Eligibility Verification: Confirm that the loan is being closed under the Foreign National Program and whether a Power of Attorney is provided.
-3. Validation and Verification: If provided, verify that the Power of Attorney conforms to Acra requirements and is acceptable to the title company.
-4. Final Determination: Record whether a provided Power of Attorney meets both requirements.
-
-**Checks:**
-- If a Power of Attorney is provided, it conforms to Acra requirements and is acceptable to the title company.
-
-**Reads:** Borrower.citizenship_status
-**Missing data:** Power of Attorney, if provided, Acra requirements for the Power of Attorney, Title company acceptance
-
-## acra-standard.identification_requirements.foreign_national_program_eligibility
-
-**Purpose:** Verify the Foreign National Program eligibility requirements in STD-5.1 through STD-5.3.
-
-1. Initial Document Review: Review the loan application and supporting information for citizenship type, place of residence, authorization to live or work in the U.S., and transaction purpose.
-2. Eligibility Verification: For a Foreign National, verify that the transaction is business purpose only (i.e. investment property), that the borrower is a Non-Resident Alien not authorized to live or work in the U.S., and that the borrower resides outside of the U.S.
-3. Validation and Verification: For an ITIN holder relying on the Foreign National Program, verify that the borrower resides outside of the U.S. For a true Foreign National, account for the stated allowance for periodic U.S. visits, limited personal use or investment property, and ownership of a U.S.-based business entity, while confirming residence outside the U.S.
-4. Final Determination: Record whether the applicable Foreign National Program eligibility requirements are met.
-
-**Checks:**
-- A Foreign National’s transaction is business purpose only (i.e. investment property).
-- A Foreign National is a Non-Resident Alien not authorized to live or work in the U.S. and resides outside of the U.S.
-- An ITIN holder relying on the Foreign National Program resides outside of the U.S.
-
-**Reads:** Borrower.citizenship_status, LoanCore.loan_purpose
-**Missing data:** Borrower’s residence location, Whether the borrower is authorized to live in the U.S., Whether the borrower is authorized to work in the U.S., Whether the borrower is a Non-Resident Alien
-
-## acra-standard.identification_requirements.itin_cltv_tier
-
-**Purpose:** Verify the ITIN CLTV limits printed in STD-4.5 without interpreting the “FICO 700” tier beyond the text.
-
-1. Initial Document Review: Review the representative FICO score, loan purpose, and CLTV.
+1. Initial Document Review: Review the ITIN borrower's loan amount and representative score.
 2. Eligibility Verification: Confirm that the borrower is an ITIN holder.
-3. Validation and Verification: Apply the printed tier and maximum CLTV: “FICO 700” — 70% purchase and 65% refinance — R/T and cash-out; “FICO 660 to 699” — 65% purchase and 60% refinance — R/T and cash-out; “FICO 640 to 659” — 60% purchase and 60% refinance — R/T and cash-out. Do not resolve the stated “FICO 700” ambiguity without Acra confirmation.
-4. Final Determination: Record whether the applicable printed tier limit is met.
+3. Validation and Verification: Compare the loan amount with the maximum loan amount $1.0M and the FICO score with minimum FICO 640.
+4. Final Determination: Record whether both stated limits are met.
 
 **Checks:**
-- For “FICO 700”, purchase CLTV is no greater than 70%.
-- For “FICO 700”, refinance — R/T and cash-out CLTV is no greater than 65%.
-- For “FICO 660 to 699”, purchase CLTV is no greater than 65%.
-- For “FICO 660 to 699”, refinance — R/T and cash-out CLTV is no greater than 60%.
-- For “FICO 640 to 659”, purchase CLTV is no greater than 60%.
-- For “FICO 640 to 659”, refinance — R/T and cash-out CLTV is no greater than 60%.
+- The ITIN loan amount is no more than $1.0M and the representative FICO score is at least 640.
+
+**Reads:** Borrower.citizenship_status, LoanCore.total_loan_amount_usd, CreditReport.representative_score
+
+## acra-standard.identification_requirements.itin_maximum_cltv
+
+**Purpose:** Preserve the printed ITIN CLTV matrix and route its unresolved tier interpretation for Acra confirmation.
+
+1. Initial Document Review: Review the ITIN borrower's FICO, transaction type, and CLTV.
+2. Eligibility Verification: Confirm that the borrower is an ITIN holder.
+3. Validation and Verification: Preserve the printed tiers: “FICO 700” — 70% purchase and 65% refinance — R/T and cash-out; “FICO 660 to 699” — 65% purchase and 60% refinance — R/T and cash-out; “FICO 640 to 659” — 60% purchase and 60% refinance — R/T and cash-out. Do not interpret whether “FICO 700” means 700 and above; obtain Acra confirmation.
+4. Final Determination: Apply the tier only as confirmed by Acra.
+
+**Checks:**
+- Acra confirmation resolves whether the printed “FICO 700” tier means 700 and above before that tier is applied.
 
 **Reads:** Borrower.citizenship_status, CreditReport.representative_score, LoanCore.loan_purpose, LoanCore.cltv_percent
+**Missing data:** Acra confirmation on whether the printed “FICO 700” tier means 700 and above
 
-## acra-standard.identification_requirements.itin_maximum_loan_amount
+## acra-standard.identification_requirements.itin_u_s_residence_eligibility_clarification
 
-**Purpose:** Apply the ITIN maximum loan amount in STD-4.5.
+**Purpose:** Preserve the source's unresolved question about whether a U.S.-resident ITIN holder is eligible.
 
-1. Initial Document Review: Review the total loan amount and borrower citizenship type.
-2. Eligibility Verification: Confirm that the borrower is an ITIN holder.
-3. Validation and Verification: Compare the total loan amount with the maximum loan amount $1.0M.
-4. Final Determination: Record whether the loan amount is within the stated maximum.
-
-**Checks:**
-- The total loan amount is no greater than $1.0M.
-
-**Reads:** Borrower.citizenship_status, LoanCore.total_loan_amount_usd
-
-## acra-standard.identification_requirements.itin_minimum_fico
-
-**Purpose:** Apply the ITIN minimum FICO in STD-4.5.
-
-1. Initial Document Review: Review the representative credit score and borrower citizenship type.
-2. Eligibility Verification: Confirm that the borrower is an ITIN holder.
-3. Validation and Verification: Compare the representative credit score with the minimum FICO 640.
-4. Final Determination: Record whether the minimum FICO is met.
+1. Initial Document Review: Review the ITIN borrower's residence information.
+2. Eligibility Verification: Determine whether the borrower resides in the U.S. or outside the U.S.
+3. Validation and Verification: For a U.S.-resident ITIN holder, do not determine eligibility from the unresolved source text; obtain Acra confirmation.
+4. Final Determination: Record the residence and any Acra confirmation.
 
 **Checks:**
-- The representative credit score is at least 640.
-
-**Reads:** Borrower.citizenship_status, CreditReport.representative_score
-
-## acra-standard.identification_requirements.itin_or_ssn_credit_reporting
-
-**Purpose:** Apply STD-4.6’s credit reporting requirement for ITIN or SSN.
-
-1. Initial Document Review: Review the credit report and the borrower’s applicable ITIN or SSN identification.
-2. Eligibility Verification: Confirm that scores and tradelines are being used to meet requirements.
-3. Validation and Verification: Verify that scores and tradelines are reported under the correct ITIN or SSN.
-4. Final Determination: Record whether the reporting requirement is met.
-
-**Checks:**
-- Scores and tradelines are reported under the correct ITIN or SSN to meet requirements.
-
-**Reads:** Borrower.citizenship_status, CreditReport.tradelines_meet_requirement
-**Missing data:** Borrower’s ITIN or SSN identification and verification that the credit report’s scores and tradelines are reported under that correct identifier
-
-## acra-standard.identification_requirements.itin_program_eligibility_clarification
-
-**Purpose:** Resolve the two ITIN eligibility and tier ambiguities identified in STD-4.5.
-
-1. Initial Document Review: Review the borrower’s ITIN status, residence, and applicable FICO tier.
-2. Eligibility Verification: Identify whether the ITIN holder resides in the U.S. and whether the applicable tier is printed “FICO 700”.
-3. Validation and Verification: Obtain Acra confirmation on whether a US-resident ITIN holder is eligible and whether “FICO 700” means 700 and above.
-4. Final Determination: Record Acra’s confirmation before relying on either interpretation.
-
-**Checks:**
-- Acra has confirmed whether a US-resident ITIN holder is eligible.
-- Acra has confirmed whether the “FICO 700” tier means 700 and above.
+- For a U.S.-resident ITIN holder, Acra confirmation resolves whether the borrower is eligible.
 
 **Reads:** Borrower.citizenship_status
-**Missing data:** Acra confirmation on US-resident ITIN holder eligibility, Acra confirmation on whether the “FICO 700” tier means 700 and above
+**Missing data:** ITIN holder's country of residence, Acra confirmation of whether a U.S.-resident ITIN holder is eligible
 
-## acra-standard.identification_requirements.non_permanent_resident_legal_residency
+## acra-standard.identification_requirements.non_permanent_resident_limits
 
-**Purpose:** Verify the legal residency documentation required under STD-4.3.
+**Purpose:** Address the STD-4.3 printed limits while preserving the source's unresolved question about their meaning.
 
-1. Initial Document Review: For a Non-Permanent Resident, obtain and review proof of legal residency.
-2. Eligibility Verification: Confirm that the borrower’s citizenship type is Non-Permanent Resident.
-3. Validation and Verification: Verify that proof of legal residency is provided; examples may include an unexpired employment authorization document (EAD) or valid visa.
-4. Final Determination: Record whether proof of legal residency is provided.
+1. Initial Document Review: Review the Non-Permanent Resident loan terms and the printed limit text.
+2. Eligibility Verification: Confirm that the borrower is recorded as a Non-Permanent Resident.
+3. Validation and Verification: Preserve the printed text “Max Loan Amount: $1.5M: Max CLTV 80%” without deciding whether it states two independent limits or one conditional limit.
+4. Final Determination: Obtain or record Acra confirmation of the limit's meaning before applying it.
+
+**Checks:**
+- Acra confirmation resolves whether the printed text “Max Loan Amount: $1.5M: Max CLTV 80%” is two independent limits or one conditional limit.
+
+**Reads:** Borrower.citizenship_status
+**Missing data:** Acra confirmation of the meaning of the printed Non-Permanent Resident limits
+
+## acra-standard.identification_requirements.non_permanent_resident_residency_proof
+
+**Purpose:** Verify the legal-residency proof required by STD-4.3.
+
+1. Initial Document Review: For a borrower recorded as a Non-Permanent Resident, review proof of legal residency.
+2. Eligibility Verification: Check whether the proof includes an unexpired employment authorization document (EAD) or valid visa, which are examples listed in STD-4.3.
+3. Validation and Verification: Verify the residency proof and any stated expiration or validity.
+4. Final Determination: Record whether proof of legal residency is verified.
 
 **Checks:**
 - The Non-Permanent Resident provides proof of legal residency.
 
 **Reads:** Borrower.citizenship_status
-**Missing data:** Proof of legal residency
+**Missing data:** Proof of legal residency, such as an unexpired employment authorization document (EAD) or valid visa
 
-## acra-standard.identification_requirements.non_permanent_resident_limits_clarification
+## acra-standard.identification_requirements.permanent_resident_documents
 
-**Purpose:** Resolve the stated ambiguity in the Non-Permanent Resident limits before applying them.
+**Purpose:** Verify the Permanent Resident documentation required by STD-4.2.
 
-1. Initial Document Review: Review the Non-Permanent Resident limit printed as “Max Loan Amount: $1.5M: Max CLTV 80%”.
-2. Eligibility Verification: Confirm that the borrower’s citizenship type is Non-Permanent Resident.
-3. Validation and Verification: Obtain Acra confirmation on whether the printed amount and CLTV are two independent limits or one conditional limit.
-4. Final Determination: Record the confirmation before applying the limit.
+1. Initial Document Review: For a borrower recorded as a Permanent Resident, obtain and review the PRA ID and SSA card or SSA-89.
+2. Eligibility Verification: Confirm that the PRA ID is unexpired and that an SSA card or SSA-89 is present.
+3. Validation and Verification: Verify the documents and their stated validity.
+4. Final Determination: Record whether both required items are verified.
 
 **Checks:**
-- Acra has confirmed whether “Max Loan Amount: $1.5M: Max CLTV 80%” means two independent limits or one conditional limit.
+- The Permanent Resident has an unexpired PRA ID and an SSA card or SSA-89.
 
 **Reads:** Borrower.citizenship_status
-**Missing data:** Acra confirmation on the interpretation of the printed Non-Permanent Resident limits
+**Missing data:** PRA ID and its expiration date, SSA card or SSA-89
 
-## acra-standard.identification_requirements.permanent_resident_identification
+## acra-standard.income_stability_sufficiency_analysis.apply_dscr_below_one_or_no_ratio_limits
 
-**Purpose:** Verify the identification documents required for a Permanent Resident under STD-4.2.
+**Purpose:** Determine whether a DSCR below 1.0 or No Ratio transaction meets the applicable CLTV and FICO limits.
 
-1. Initial Document Review: For a Permanent Resident, obtain and review a PRA ID and an SSA card / SSA-89.
-2. Eligibility Verification: Confirm that the borrower’s citizenship type is Permanent Resident.
-3. Validation and Verification: Verify that the PRA ID is unexpired and that the required SSA card / SSA-89 is provided.
-4. Final Determination: Record whether both required items are provided and the PRA ID is unexpired.
-
-**Checks:**
-- A Permanent Resident provides an unexpired PRA ID and SSA card / SSA-89.
-
-**Reads:** Borrower.citizenship_status
-**Missing data:** PRA ID, PRA ID expiration status, SSA card / SSA-89
-
-## acra-standard.income_stability_sufficiency_analysis.apply_minimum_dscr_requirements
-
-**Purpose:** Determine whether a calculated DSCR meets the stated minimum for each applicable situation.
-
-1. Initial Document Review: Review the DSCR calculation and information identifying the loan amount, credit file, property, occupancy, purpose, and borrower status.
-2. Eligibility Verification: Identify each applicable situation: LTV above 80.00%; loan amount over $2,000,000; 1 or no score / deficient tradelines; rural / unique property; non-warrantable condo or condotel / PUDtel; first-time homebuyer; vacant-property rate & term refinance; vacant-property cash-out refinance; property listed for sale within six months; or mixed use, adult care or assisted living.
-3. Validation and Verification: Verify the calculated DSCR against each applicable stated minimum: 1.20 for LTV above 80.00%; 1.0 for loan amount over $2,000,000; 1.1 for 1 or no score / deficient tradelines; 1.00 for rural / unique property; 1.0 for non-warrantable condo or condotel / PUDtel; 1.150 for first-time homebuyer; 1.000 for vacant-property rate & term refinance; 1.15 for vacant-property cash-out refinance; 1.0 for property listed for sale within six months; and 1.2 for mixed use, adult care or assisted living.
-4. Final Determination: Record whether the calculated DSCR meets every minimum that applies. The stated DTI alternatives for vacant-property rate & term refinance and properties listed for sale are not resolved here; Acra confirmation is requested on those provisions.
+1. Initial Document Review: Review the loan_application and credit_report for transaction and credit information.
+2. Eligibility Verification: Determine whether DSCR is below 1.0 or the file is No Ratio, and identify purchase, rate & term refinance, or cash-out refinance.
+3. Validation and Verification: Compare CLTV with the applicable maximum and FICO with the minimum.
+4. Final Determination: Record whether all applicable limits are met.
 
 **Checks:**
-- If LTV is above 80.00%, calculated DSCR is at least 1.20.
-- If the loan amount is over $2,000,000, calculated DSCR is at least 1.0.
-- If there is 1 or no score / deficient tradelines, calculated DSCR is at least 1.1.
-- If the property is rural / unique, calculated DSCR is at least 1.00.
-- If the property is a non-warrantable condo or condotel / PUDtel, calculated DSCR is at least 1.0.
-- If the borrower is a first-time homebuyer, calculated DSCR is at least 1.150.
-- If the property is vacant and the transaction is a rate & term refinance, calculated DSCR is at least 1.000.
-- If the property is vacant and the transaction is a cash-out refinance, calculated DSCR is at least 1.15.
-- If the property was listed for sale within six months, calculated DSCR is at least 1.0.
-- If the property is mixed use, adult care or assisted living, calculated DSCR is at least 1.2.
+- For DSCR below 1.0 or No Ratio, purchase CLTV is no more than 75%.
+- For DSCR below 1.0 or No Ratio, refinance — rate & term CLTV is no more than 70%.
+- For DSCR below 1.0 or No Ratio, refinance — cash-out CLTV is no more than 65%.
+- For DSCR below 1.0 or No Ratio, FICO is at least 640.
 
-**Reads:** LoanCore.total_loan_amount_usd, LoanCore.loan_purpose, LoanCore.cltv_percent, SubjectProperty.property_type, SubjectProperty.is_rural, SubjectProperty.is_vacant, SubjectProperty.listed_for_sale_last_6_months, SubjectProperty.is_listed_for_sale, SubjectProperty.is_mixed_use, SubjectProperty.occupancy_subtype, CreditReport.score_count, CreditReport.tradelines_meet_requirement, Borrower.is_first_time_homebuyer
-**Missing data:** Calculated DSCR, LTV, Whether the transaction is a refinance and whether it is rate & term or cash-out, Whether the property is a non-warrantable condo or condotel / PUDtel, Whether a vacant-property refinance is being considered, Whether the property was listed for sale within six months, measured from the last date of being listed to the Application Date, Whether the property is adult care or assisted living
+**Reads:** LoanCore.cltv_percent, LoanCore.loan_purpose, CreditReport.representative_score, LoanCore.dscr_qualification_method
+**Missing data:** Calculated DSCR, Whether the file is No Ratio, FICO
+
+## acra-standard.income_stability_sufficiency_analysis.apply_scenario_specific_minimum_dscr
+
+**Purpose:** Determine whether the loan meets the minimum DSCR and reserve requirements stated for the applicable program scenarios.
+
+1. Initial Document Review: Review the loan_application, appraisal_report, and credit_report for transaction, property, and credit information.
+2. Eligibility Verification: Identify each applicable scenario listed in the checks, including any scenario requiring data not held in the case fields.
+3. Validation and Verification: Compare DSCR with each applicable minimum and verify the stated reserves requirement when LTV is above 80.00%.
+4. Final Determination: Record whether every applicable minimum DSCR and reserve requirement is met. Do not resolve the stated Q-14 alternatives by assumption.
+
+**Checks:**
+- If LTV is above 80.00%, DSCR is at least 1.20.
+- If LTV is above 80.00%, reserves are at least 6 months PITIA.
+- If loan amount is over $2,000,000, DSCR is at least 1.0.
+- If there is 1 or no score / deficient tradelines, DSCR is at least 1.1.
+- If the property is rural / unique, DSCR is at least 1.00.
+- If the property is a non-warrantable condo; condotel / PUDtel, DSCR is at least 1.0.
+- If the borrower is a first-time homebuyer, DSCR is at least 1.150.
+- For a vacant property, rate & term refinance, DSCR is at least 1.000; the stated “OR Maximum 40.0% DTI” alternative is not resolved here.
+- For a vacant property, cash-out refinance, DSCR is at least 1.15.
+- If the property was listed for sale within six months, DSCR is at least 1.0; the stated “or (b) 43% maximum DTI” alternative is not resolved here.
+- For mixed use, adult care or assisted living, DSCR is at least 1.2.
+
+**Reads:** LoanCore.total_loan_amount_usd, CreditReport.score_count, CreditReport.tradelines_meet_requirement, Borrower.is_first_time_homebuyer, SubjectProperty.is_vacant, LoanCore.loan_purpose, SubjectProperty.listed_for_sale_last_6_months, SubjectProperty.is_mixed_use, SubjectProperty.is_rural, LoanCore.cltv_percent, RatioSet.reserves_months
+**Missing data:** LTV, Calculated DSCR, PITIA reserves amount, Whether the property is unique, Whether the property is a non-warrantable condo, condotel, or PUDtel, Whether the property is used for adult care or assisted living, Whether “OR Maximum 40.0% DTI” or “or (b) 43% maximum DTI” applies
+
+## acra-standard.income_stability_sufficiency_analysis.apply_short_term_rental_limits
+
+**Purpose:** Determine whether a short-term-rental purchase or refinance meets the stated CLTV and FICO limits.
+
+1. Initial Document Review: Review the loan_application and credit_report for transaction and credit information.
+2. Eligibility Verification: Determine whether the property qualifies with short-term rentals and whether the transaction is a purchase or refinance.
+3. Validation and Verification: Compare CLTV with the applicable maximum and compare FICO with the minimum.
+4. Final Determination: Record whether all applicable short-term rental limits are met.
+
+**Checks:**
+- For a purchase qualifying with short-term rentals, CLTV is no more than 75%.
+- For a refinance qualifying with short-term rentals, CLTV is no more than 70%.
+- For a transaction qualifying with short-term rentals, FICO is at least 640.
+
+**Reads:** LoanCore.cltv_percent, LoanCore.loan_purpose, CreditReport.representative_score
+**Missing data:** Whether the property qualifies with short-term rentals, Whether the transaction is a purchase or refinance, FICO
 
 ## acra-standard.income_stability_sufficiency_analysis.calculate_dscr
 
-**Purpose:** Determine the calculated DSCR for a file qualifying using a calculated DSCR.
+**Purpose:** Determine the DSCR for the loan using the stated formula and payment basis.
 
-1. Initial Document Review: Review the rental-income and property-expense information used for the calculation.
-2. Eligibility Verification: Confirm that the file qualifies using a calculated DSCR, rather than No Ratio DSCR.
-3. Validation and Verification: Calculate DSCR by dividing the lesser of annual in-place rent or market rent by the sum of annual principal, interest, real estate taxes, property insurance, homeowner's / condominium association fees, and subordinate financing, if applicable. Use the first payment due under the terms of the Note.
-4. Final Determination: Record the calculated DSCR. Do not calculate a DSCR for a No Ratio DSCR file. The guidelines do not resolve which payment enters the denominator for an interest-only loan.
+1. Initial Document Review: Review the appraisal_report and any lease_agreement, bank_statement, hazard_insurance, and hoa_questionnaire available for the rent and PITIA information.
+2. Eligibility Verification: Identify annual in-place rent, market rent, and the first payment due under the Note; include subordinate financing, if applicable, in the denominator.
+3. Validation and Verification: Calculate annual PITIA as annual principal, interest, real estate taxes, property insurance, and homeowner's / condominium association fees; use the lesser of annual in-place rent or market rent as the numerator.
+4. Final Determination: Divide the qualifying annual rent by annual PITIA and record the resulting DSCR. Do not resolve the stated interest-only payment question by assumption.
 
 **Checks:**
-- For a file qualifying using a calculated DSCR, the calculated DSCR divides the lesser of annual in-place rent or market rent by annual PITIA, including subordinate financing if applicable.
-
-**Reads:** LoanCore.dscr_qualification_method
-**Missing data:** DSCR qualification method, if not recorded in the case field, Annual in-place rent, Market rent, Annual principal, Annual interest, Annual real estate taxes, Annual property insurance, Annual homeowner's / condominium association fees, Annual subordinate financing payment, if applicable, The applicable interest-only loan payment for the DSCR denominator, if applicable
+- The numerator is the lesser of annual in-place rent or market rent.
+- The denominator is the sum of annual principal, interest, real estate taxes, property insurance, homeowner's / condominium association fees, and subordinate financing if applicable.
+- The DSCR uses the first payment due under the terms of the Note.
+**Missing data:** Annual in-place rent, Market rent, Annual principal, Annual interest, Annual real estate taxes, Annual property insurance, Annual homeowner's / condominium association fees, Subordinate financing amount, if applicable, First payment due under the Note, Which payment enters the denominator for an interest-only loan
 
 ## acra-standard.income_stability_sufficiency_analysis.verify_higher_actual_rent_evidence
 
-**Purpose:** Determine whether the documentation stated for actual rents exceeding market rents is present.
+**Purpose:** Determine whether the stated evidence for actual rents exceeding market rents is documented.
 
-1. Initial Document Review: Review the actual-rent and market-rent information, rental-income receipt evidence, and lease agreement(s).
-2. Eligibility Verification: Determine whether actual rents exceed market rents.
-3. Validation and Verification: If actual rents exceed market rents, verify two (2) consecutive months proof of rental income receipt and lease agreement(s) to continue at a minimum of three (3) months after closing. Do not count a Security Deposit towards receipt; rents cannot be prepaid.
-4. Final Determination: Record whether the stated evidence and lease conditions are met. The guidelines do not select between the formula using the lesser of annual in-place rent or market rent and the provision allowing use of the higher of actual or market rents.
-
-**Checks:**
-- If actual rents exceed market rents, two (2) consecutive months proof of rental income receipt is documented, lease agreement(s) continue at a minimum of three (3) months after closing, no Security Deposit is counted towards receipt, and rents are not prepaid.
-**Missing data:** Actual rent amount, Market rent amount, Closing date, Rental-income receipt dates and amounts, Whether any receipt is a Security Deposit, Whether rents have been prepaid, Lease end date
-
-## acra-standard.income_stability_sufficiency_analysis.verify_rent_schedule
-
-**Purpose:** Verify the required Single-Family Comparable Rent Schedule or the stated short-term-rental replacement.
-
-1. Initial Document Review: Review the appraisal and rental-income evidence in the file.
-2. Eligibility Verification: Determine whether the property is single family on a DSCR qualifying file, the transaction is a lease-option purchase using excess monthly rent contributions for the required down payment, or proposed rental income is being used to qualify.
-3. Validation and Verification: For a single-family property, verify that a Single-Family Comparable Rent Schedule (FNMA Form 1007) is present. For a property occupied as a short-term rental, an STRpro or similar appraisal form may replace a 1007 if signed by an appropriately licensed appraiser. A 1007 may be from the original appraiser or any state licensed appraiser.
-4. Final Determination: Record whether the applicable rent-schedule requirement is met.
+1. Initial Document Review: Review the lease_agreement and bank_statement for the rental income evidence.
+2. Eligibility Verification: Establish whether actual rents exceed market rents.
+3. Validation and Verification: If actual rents exceed market rents, verify two consecutive months proof of rental income receipt and lease agreement(s) continuing at a minimum of three (3) months after closing. Verify that security deposits are not counted toward receipt and rents are not prepaid.
+4. Final Determination: Record whether each applicable evidence requirement is met.
 
 **Checks:**
-- A 1007 is present when required for a single-family DSCR qualifying file, a lease-option purchase using excess monthly rent contributions for the required down payment, or when proposed rental income is used to qualify, unless the stated short-term-rental replacement applies.
+- If actual rents exceed market rents, two (2) consecutive months proof of rental income receipt is documented, excluding security deposits and prepaid rents.
+- If actual rents exceed market rents, lease agreement(s) continue at a minimum of three (3) months after closing.
+**Missing data:** Actual rent, Market rent, Rental receipt dates and amounts, Lease end date or dates, Closing date, Whether a receipt is a security deposit or prepaid rent
 
-**Reads:** SubjectProperty.property_type, SubjectProperty.occupancy_subtype
-**Missing data:** Whether proposed rental income is being used to qualify, Whether lease-option purchase down-payment funds are generated from excess monthly rent contributions, Whether the property is occupied as a short-term rental, Appraiser licensing status, Appraiser identity, to establish whether the appraiser is the original appraiser
+## acra-standard.income_stability_sufficiency_analysis.verify_required_1007
+
+**Purpose:** Determine whether the required 1007 is provided in the applicable DSCR and single-family scenarios.
+
+1. Initial Document Review: Review the appraisal_report for a Form 1007.
+2. Eligibility Verification: Determine whether the loan is a DSCR transaction, including No Ratio DSCR, or whether it is a single-family file with proposed rental income or a lease-option transaction where the down payment required in §3.45 is generated from excess monthly rent contributions.
+3. Validation and Verification: For a single-family property, verify that the Form 1007 is from the original appraiser or any state licensed appraiser. Do not treat a Form 1025 as satisfying the requirement unless that is confirmed by Acra.
+4. Final Determination: Record whether the applicable 1007 requirement is met.
+
+**Checks:**
+- A Form 1007 is provided on every DSCR transaction, including No Ratio DSCR.
+- For a single-family property in a stated §14.12 scenario, the required Form 1007 is provided and is from the original appraiser or any state licensed appraiser.
+
+**Reads:** LoanCore.dscr_qualification_method, SubjectProperty.property_type
+**Missing data:** Whether the transaction is a DSCR transaction, Whether proposed rental income is being used to qualify, Whether the transaction is a lease-option purchase whose required down payment is generated from excess monthly rent contributions, Whether the property is single-family
+
+## acra-standard.income_stability_sufficiency_analysis.verify_short_term_rental_appraisal
+
+**Purpose:** Determine whether an appraisal form used instead of a 1007 for a short-term rental meets the stated form and signature requirements.
+
+1. Initial Document Review: Review the appraisal_report for an STRpro or similar appraisal form.
+2. Eligibility Verification: Determine whether the property is occupied as a short-term rental.
+3. Validation and Verification: If it is, verify that the STRpro or similar appraisal form is signed by an appropriately licensed appraiser.
+4. Final Determination: Record whether the applicable short-term rental appraisal-form requirement is met.
+
+**Checks:**
+- For a property occupied as a short-term rental, an STRpro or similar appraisal form used as a replacement to a 1007 is signed by an appropriately licensed appraiser.
+**Missing data:** Whether the property is occupied as a short-term rental, Whether the appraisal form is being used as a replacement to a 1007, Whether the appraiser is appropriately licensed
+
+## acra-standard.income_stability_sufficiency_analysis.verify_short_term_rental_ledger
+
+**Purpose:** Determine whether the stated short-term rental ledger documentation is present when it is used to document actual rents.
+
+1. Initial Document Review: Review any 12-month rental ledger provided by a condotel management company, property manager, AirBnB, VRBO, or similar source.
+2. Eligibility Verification: Determine whether actual rents for a short-term rental are being documented with the ledger.
+3. Validation and Verification: Verify that the ledger covers 12 months and is from a stated or similar source.
+4. Final Determination: Record the ledger as documentation for actual rents; do not infer how it establishes qualifying rent or how the receipt and lease conditions apply.
+
+**Checks:**
+- A ledger used as documentation for actual rents for a short-term rental covers 12 months and is from a condotel management company, property manager, AirBnB, VRBO, or similar source.
+**Missing data:** Whether actual rents for a short-term rental are being documented with a ledger, Ledger period, Ledger source
+
+## acra-standard.income_stability_sufficiency_analysis.verify_vacant_property_rent_source
+
+**Purpose:** Determine whether qualifying rents for a vacant-property purchase are taken from the applicable appraisal rent schedule.
+
+1. Initial Document Review: Review the appraisal_report for a Form 1007 or Form 1025, as applicable.
+2. Eligibility Verification: Determine whether the property is vacant and being purchased.
+3. Validation and Verification: Verify that qualifying rents are taken from the applicable Form 1007 or Form 1025. For rental income from the purchase of a vacant property that is the subject of an Acra loan, verify the 1007 survey requirement.
+4. Final Determination: Record whether the applicable appraisal rent-source requirement is met.
+
+**Checks:**
+- For a vacant-property purchase, qualifying rents are taken from the applicable Form 1007 or Form 1025.
+- Rental income from the purchase of a vacant property that is the subject of an Acra loan has a 1007 survey.
+
+**Reads:** SubjectProperty.is_vacant, LoanCore.loan_purpose
+**Missing data:** Which appraisal form is applicable, Whether the property is the subject of an Acra loan
+
+## acra-standard.insurance_coverage_sufficiency_policy_assessment.rent_loss_coverage_scope
+
+**Purpose:** Verify the stated coverage scope of rent loss insurance when the requirement applies.
+
+1. Initial Document Review: Review the hazard insurance declarations for rent loss coverage terms.
+2. Eligibility Verification: Confirm that the rent loss insurance requirement applies to the case.
+3. Validation and Verification: Verify that the coverage is for rental losses incurred during rehabilitation following a casualty.
+4. Final Determination: Record whether the insurance evidence establishes the stated rent loss coverage scope.
+
+**Checks:**
+- The policy covers rental losses incurred during rehabilitation following a casualty.
+**Missing data:** Whether the policy covers rental losses incurred during rehabilitation following a casualty
 
 ## acra-standard.insurance_coverage_sufficiency_policy_assessment.rent_loss_insurance_applicability
 
-**Purpose:** Determine whether six (6) months' rent loss insurance is required for the subject property under the stated property, LTV, and rent-qualification conditions.
+**Purpose:** Determine whether six (6) months' rent loss insurance is required for the subject property.
 
-1. Step 1 - Initial Document Review: Review the case information for the subject property's number of units, occupancy subtype, CLTV, and DSCR qualification method.
-2. Step 2 - Eligibility Verification: Establish whether the property is a one- to four-unit, non-owner-occupied income property; establish whether LTV is > 70% and subject property rents are used to qualify. The stated requirement includes No Ratio DSCR.
-3. Step 3 - Validation and Verification: Check whether the loan has ≤ 70% CLTV. If LTV is at or below 70% while CLTV is above 70%, preserve the stated unresolved case for Acra confirmation.
-4. Step 4 - Final Determination: Record whether the rent loss insurance requirement applies, does not apply, or cannot be determined without Acra confirmation or missing trigger information.
+1. Initial Document Review: Review the available case information for the subject property's occupancy, unit count, and qualification method.
+2. Eligibility Verification: Determine whether the subject property is a one- to four-unit non-owner occupied income property and whether subject property rents are used to qualify; include No Ratio DSCR when assessing rent use.
+3. Validation and Verification: Determine whether LTV is > 70% and whether CLTV is ≤ 70%. If LTV is at or below 70% while CLTV is above 70%, request Acra confirmation.
+4. Final Determination: Record whether the six (6) months' rent loss insurance requirement applies, does not apply, or awaits the requested Acra confirmation.
 
 **Checks:**
-- The subject property has one to four units.
 - The subject property is non-owner occupied.
 - The subject property is an income property.
-- The subject property's LTV is > 70%.
-- Subject property rents are used to qualify.
-- The loan has ≤ 70% CLTV.
+- The subject property has one to four units.
+- Subject property rents are used to qualify, including No Ratio DSCR.
+- LTV is > 70%.
+- CLTV is ≤ 70%.
+- LTV is at or below 70% while CLTV is above 70%.
 
-**Reads:** SubjectProperty.number_of_units, SubjectProperty.occupancy_subtype, LoanCore.cltv_percent, LoanCore.dscr_qualification_method
-**Missing data:** Subject property's LTV, Whether the subject property is an income property, Whether subject property rents are used to qualify
+**Reads:** SubjectProperty.occupancy_subtype, SubjectProperty.number_of_units, LoanCore.dscr_qualification_method, LoanCore.cltv_percent
+**Missing data:** Whether the subject property is an income property, Whether subject property rents are used to qualify, LTV, Acra confirmation for the case where LTV is at or below 70% and CLTV is above 70%
 
-## acra-standard.insurance_coverage_sufficiency_policy_assessment.rent_loss_insurance_coverage_sufficiency
+## acra-standard.insurance_coverage_sufficiency_policy_assessment.rent_loss_reserve_substitution
 
-**Purpose:** Determine whether the rent loss insurance requirement is met by six (6) months' coverage or by the stated reserve substitution when the coverage cannot be obtained.
+**Purpose:** Determine whether the borrower has the reserves required for the permitted rent loss insurance substitution.
 
-1. Step 1 - Initial Document Review: Review hazard insurance declarations for rent loss coverage and its duration.
-2. Step 2 - Eligibility Verification: Confirm that the rent loss insurance requirement applies, using the Rent Loss Insurance Applicability determination.
-3. Step 3 - Validation and Verification: Verify that rent loss insurance covers rental losses incurred during the period the property is being rehabilitated following a casualty. If six (6) months' coverage is not provided, establish whether the required coverage cannot be obtained and whether reserves provide two (2) months for every one (1) month of rent loss coverage not provided.
-4. Step 4 - Final Determination: Record whether the required coverage or permitted reserve substitution is established.
+1. Initial Document Review: Review the hazard insurance declarations for the amount of rent loss coverage not provided.
+2. Eligibility Verification: Confirm that rent loss insurance is required and cannot be obtained.
+3. Validation and Verification: Compare reserves with the requirement of two (2) months reserves for every one (1) month of rent loss coverage not provided.
+4. Final Determination: Record whether the reserve substitution meets the stated amount.
 
 **Checks:**
-- Rent loss insurance covers rental losses incurred during the period the property is being rehabilitated following a casualty.
-- The hazard insurance evidence establishes six (6) months' rent loss insurance coverage.
-- Required rent loss insurance cannot be obtained.
-- Reserves provide two (2) months for every one (1) month of rent loss coverage not provided.
+- Reserves are at least two (2) months for every one (1) month of rent loss coverage not provided.
 
 **Reads:** RatioSet.reserves_months
-**Missing data:** Whether required rent loss insurance can be obtained, Duration of rent loss insurance coverage provided, Number of months of rent loss coverage not provided
+**Missing data:** Number of months of rent loss coverage not provided
 
-## acra-standard.liabilities_assessment.dscr_calculation
+## acra-standard.insurance_coverage_sufficiency_policy_assessment.six_month_rent_loss_coverage
 
-**Purpose:** Determine the DSCR using the calculation rule in STD-3.1 and the first-payment rule in STD-3.2.
+**Purpose:** Determine whether the required six (6) months' rent loss insurance coverage is provided.
 
-1. Step 1 - Initial Document Review: Identify the rent, payment, PITIA, and, if applicable, subordinate-financing data needed for the calculation.
-2. Step 2 - Eligibility Verification: Apply the lesser of annual in-place rent or market rent as the numerator.
-3. Step 3 - Validation and Verification: Use the first payment due under the terms of the Note and include annual principal, interest, real estate taxes, property insurance, homeowner's / condominium association fees, and subordinate financing if applicable in the denominator.
-4. Step 4 - Final Determination: Calculate the DSCR only when the required calculation inputs and market-rent method are available; otherwise identify the unresolved inputs or reference.
-
-**Checks:**
-- The numerator is the lesser of annual in-place rent or market rent.
-- The denominator is the sum of annual principal, interest, real estate taxes, property insurance, and homeowner's / condominium association fees (PITIA), with subordinate financing included if applicable.
-- The calculation utilizes the first payment due under the terms of the Note.
-**Missing data:** annual in-place rent, market rent, the §14.14 market-rent method, the first payment due under the terms of the Note, annual principal, annual interest, annual real estate taxes, annual property insurance, annual homeowner's / condominium association fees, annual subordinate-financing amount, if applicable
-
-## acra-standard.liabilities_assessment.heloc_cltv_basis
-
-**Purpose:** Apply the stated HELOC CLTV calculation rule when subordinate/secondary financing is allowable.
-
-1. Step 1 - Initial Document Review: Identify whether the subordinate/secondary financing is a HELOC and obtain its credit line limit and current credit line balance.
-2. Step 2 - Eligibility Verification: Apply this rule only when the subordinate/secondary financing is allowable.
-3. Step 3 - Validation and Verification: Compare the credit line limit with the current credit line balance and use the greater amount for CLTV eligibility.
-4. Step 4 - Final Determination: Record the greater amount as the HELOC CLTV basis for eligibility.
+1. Initial Document Review: Review the hazard insurance declarations for the rent loss coverage period.
+2. Eligibility Verification: Confirm that the rent loss insurance requirement applies to the case.
+3. Validation and Verification: Verify whether six (6) months' rent loss insurance coverage is provided.
+4. Final Determination: Record whether the required coverage period is provided or whether the borrower may use the reserve substitution addressed by the separate reserve-substitution job.
 
 **Checks:**
-- For allowable subordinate/secondary financing that is a HELOC, CLTV for eligibility is calculated on the greater of the credit line limit or current credit line balance.
-**Missing data:** whether the subordinate/secondary financing is a HELOC, credit line limit, current credit line balance, whether subordinate/secondary financing is allowable
+- Six (6) months' rent loss insurance coverage is provided.
+**Missing data:** Number of months of rent loss insurance coverage provided
 
-## acra-standard.liabilities_assessment.interest_only_dscr_payment_basis_confirmation
+## acra-standard.loan_program_eligibility.delayed_financing_loan_amount_cap
 
-**Purpose:** Resolve the payment-basis question identified for interest-only loans in STD-3.2.
+**Purpose:** Determine whether a delayed-financing loan is capped at $1.5MM.
 
-1. Step 1 - Initial Document Review: Determine whether the loan is interest-only.
-2. Step 2 - Eligibility Verification: For an interest-only loan, identify the unresolved question of which payment enters the DSCR denominator.
-3. Step 3 - Validation and Verification: Obtain Acra confirmation of the payment basis for the DSCR denominator on an interest-only loan.
-4. Step 4 - Final Determination: Record whether that confirmation has been obtained; do not select a payment basis without it.
-
-**Checks:**
-- Acra confirmation identifies which payment enters the DSCR denominator for an interest-only loan.
-
-**Reads:** MortgageLoanInformation.is_interest_only
-**Missing data:** Acra confirmation of the DSCR denominator payment basis for an interest-only loan
-
-## acra-standard.liabilities_assessment.subordinate_financing_eligibility
-
-**Purpose:** Determine whether subordinate financing may be used, subject to the stated prohibition and the requested Acra confirmation.
-
-1. Step 1 - Initial Document Review: Identify whether subordinate financing is proposed and the relevant lien type and transaction.
-2. Step 2 - Eligibility Verification: Do not allow subordinate financing on a property listed for sale.
-3. Step 3 - Validation and Verification: For other cases, obtain Acra confirmation of whether subordinate financing is allowed on this program and for the relevant lien types and transactions.
-4. Step 4 - Final Determination: Determine whether the proposed subordinate financing is prohibited, confirmed allowable, or remains subject to confirmation.
+1. Initial Document Review: Review the loan application for delayed-financing status and loan amount.
+2. Eligibility Verification: Determine whether the transaction is delayed financing.
+3. Validation and Verification: If delayed financing applies, verify that the loan amount does not exceed $1.5MM.
+4. Final Determination: Record whether the delayed-financing cap is met.
 
 **Checks:**
-- Subordinate financing is not used on a property listed for sale.
-- Acra confirmation establishes whether the proposed subordinate financing is allowed on this program for the relevant lien type and transaction.
+- If the loan is delayed financing, the loan amount does not exceed $1.5MM.
 
-**Reads:** SubjectProperty.is_listed_for_sale
-**Missing data:** whether subordinate financing is proposed, proposed subordinate-financing lien type, transaction type, Acra confirmation of program allowance for the relevant lien type and transaction
+**Reads:** LoanCore.is_delayed_financing, LoanCore.total_loan_amount_usd
 
-## acra-standard.loan_program_eligibility.additional_loan_amount_limits
+## acra-standard.loan_program_eligibility.first_time_homebuyer_dscr_conditions
 
-**Purpose:** Determine whether the loan meets the additional loan-amount conditions below $200,000 and above $2,000,000.
+**Purpose:** Determine whether a First Time Home Buyers DSCR loan meets the stated FICO, CLTV, DSCR, loan amount, amortization, impound, and reserve requirements.
 
-1. Step 1 - Initial Document Review: Review the loan_application and underwriting qualification for loan amount, purpose, CLTV, and DSCR.
-2. Step 2 - Eligibility Verification: For a loan amount < $200,000, apply maximum CLTV 80% for purchase and 75% for refinance — rate & term and cash-out. For a loan amount > $2,000,000, apply minimum DSCR 1.0 or greater.
-3. Step 3 - Validation and Verification: Verify each applicable cap or minimum against the loan's values.
-4. Step 4 - Final Determination: Determine whether all applicable additional loan-amount conditions are met.
+1. Initial Document Review: Review the loan application, credit_report, and available DSCR and reserve information.
+2. Eligibility Verification: Apply this job only when the application is a First Time Home Buyers application and the loan qualifies by DSCR.
+3. Validation and Verification: Verify minimum 700 FICO, maximum 70% CLTV, minimum DSCR of 1.150, maximum loan amount of $1,000,000, full amortization with no interest-only programs, impounds, and minimum six months reserves.
+4. Final Determination: Record whether every stated first-time-homebuyer DSCR condition is met.
 
 **Checks:**
-- If loan amount is < $200,000, CLTV does not exceed 80% for purchase or 75% for refinance — rate & term and cash-out.
-- If loan amount is > $2,000,000, DSCR is 1.0 or greater.
-
-**Reads:** LoanCore.total_loan_amount_usd, LoanCore.loan_purpose, LoanCore.cltv_percent
-**Missing data:** DSCR qualification result., Transaction-purpose classification if necessary to distinguish purchase from refinance.
-
-## acra-standard.loan_program_eligibility.citizenship_category
-
-**Purpose:** Identify whether the borrower has an eligible citizenship type and the applicable category-specific documentation requirements.
-
-1. Step 1 - Initial Document Review: Review the loan_application and relevant borrower documentation for citizenship or residency category.
-2. Step 2 - Eligibility Verification: Confirm whether the category is US Citizen, Permanent Resident, Non-Permanent Resident, Foreign National, or ITIN.
-3. Step 3 - Validation and Verification: For a Permanent Resident, verify an unexpired PRA ID and SSA card / SSA-89. For a Non-Permanent Resident, verify proof of legal residency, which may include an unexpired employment authorization document (EAD) or valid visa.
-4. Step 4 - Final Determination: Record the eligible category and whether its stated documentation requirement is met.
-
-**Checks:**
-- The borrower is a US Citizen, Permanent Resident, Non-Permanent Resident, Foreign National, or ITIN holder.
-- A Permanent Resident has an unexpired PRA ID and SSA card / SSA-89.
-- A Non-Permanent Resident has proof of legal residency.
-
-**Reads:** Borrower.citizenship_status
-**Missing data:** Borrower citizenship or residency evidence., For a Permanent Resident, PRA ID expiration and SSA card / SSA-89 evidence., For a Non-Permanent Resident, proof of legal residency.
-
-## acra-standard.loan_program_eligibility.eligible_property_type
-
-**Purpose:** Determine whether the property type is eligible and whether its stated CLTV cap is met.
-
-1. Step 1 - Initial Document Review: Review the appraisal_report and loan_application for property type, units, location, purpose, and CLTV.
-2. Step 2 - Eligibility Verification: Confirm the property type is SFR, Townhome, PUD, Warrantable Condo, Non-Warrantable Condo, Condotel / PUDtel, 2-4 Units, or Manufactured.
-3. Step 3 - Validation and Verification: Apply the printed caps: Non-Warrantable Condo 80% purchase / 75% refinance and minimum DSCR 1.0; Condotel / PUDtel 75% purchase / 70% refinance rate & term / 65% refinance cash-out and minimum DSCR 1.0; 2-4 Unit maximum CLTV 80%; Manufactured Home 65% purchase / 60% refinance. Apply the Florida -5% CLTV adjustment for Non-Warrantable Condo and Condotel / PUDtel. Apply rural / unique property maximum CLTV 80% purchase / 75% refinance rate & term / 70% refinance cash-out, minimum FICO 700, and minimum DSCR 1.00. Above 80.00% LTV, only SFR, Warrantable Condos outside of Florida, Townhome and PUD are eligible.
-4. Step 4 - Final Determination: Determine whether the property type is eligible and every applicable printed condition is met.
-
-**Checks:**
-- The property type is among the published eligible property types.
-- The applicable printed property-type CLTV cap is met.
-- For a Non-Warrantable Condo or Condotel / PUDtel, the applicable minimum DSCR is met.
-- For rural / unique property, the minimum FICO and minimum DSCR are met and the applicable CLTV cap is met.
-- If LTV is above 80.00%, the property is SFR, a Warrantable Condo outside of Florida, Townhome, or PUD.
-
-**Reads:** SubjectProperty.property_type, SubjectProperty.number_of_units, SubjectProperty.state, SubjectProperty.is_rural, LoanCore.loan_purpose, LoanCore.cltv_percent, CreditReport.representative_score
-**Missing data:** Appraisal evidence establishing the property type and, if applicable, rural / unique characteristics., DSCR result for applicable property-type minimums., FICO and transaction-purpose classification for applicable property-type limits.
-
-## acra-standard.loan_program_eligibility.eligible_state
-
-**Purpose:** Determine whether the subject property's state is eligible under the published location restriction.
-
-1. Step 1 - Initial Document Review: Review the loan_application and appraisal_report for the subject property's location.
-2. Step 2 - Eligibility Verification: Compare the subject property's state with the published ineligible state, SD.
-3. Step 3 - Validation and Verification: Validate the state shown for the subject property.
-4. Step 4 - Final Determination: Determine whether the property is outside SD.
-
-**Checks:**
-- The subject property is not located in SD.
-
-**Reads:** SubjectProperty.state
-
-## acra-standard.loan_program_eligibility.entity_borrower_eligibility
-
-**Purpose:** Determine whether an entity borrower and its entity structure meet the stated entity eligibility requirements.
-
-1. Step 1 - Initial Document Review: Review entity_documents and the loan_application for entity type, formation and base, purpose, assets, ownership, and title-holding entities.
-2. Step 2 - Eligibility Verification: Verify that the entity is a permitted type, US formed and based, and not a foreign-owned entity; verify that an entity borrower is an SPE engaged in owning and operating residential investment or rental properties and has no assets other than residential investment or rental properties.
-3. Step 3 - Validation and Verification: Verify that all entities holding direct ownership of the subject property are borrowing entities; exclude Cooperatives, Irrevocable Trusts, Land Trusts, IRAs, Non-Profit, and Joint Ventures; verify that nesting is limited to one (1) wholly-owned subsidiary owned by individual(s).
-4. Step 4 - Final Determination: Determine whether the entity borrower and structure meet the stated requirements.
-
-**Checks:**
-- The entity is an allowed entity type and is US formed and based, and is not foreign owned.
-- The entity borrower meets the stated SPE description and is not a series LLC.
-- Every entity holding direct ownership of the subject property is a borrowing entity.
-- The structure is not a prohibited entity type and does not exceed the stated nesting limit.
-
-**Reads:** Borrower.entity_type, Borrower.is_entity_borrower_1, Borrower.entity_documents_complete
-**Missing data:** Entity formation, base, ownership, entity type, assets, business activities, and nesting structure., Evidence identifying every direct owner of the subject property.
-
-## acra-standard.loan_program_eligibility.entity_guarantees
-
-**Purpose:** Determine whether required guarantees and the prior-homeownership attestation are present for an entity borrower.
-
-1. Step 1 - Initial Document Review: Review the loan_application and entity_documents for direct and indirect ownership, guarantor identities, guarantees, homeownership attestation, and ownership changes.
-2. Step 2 - Eligibility Verification: Verify that all individuals with direct or indirect ownership ≥ 20% provide a recourse guarantee, Acra approved or Exhibit 7; multiple guarantors' recourse is joint and several.
-3. Step 3 - Validation and Verification: Verify that at least one guarantor has prior homeownership experience and that at least one borrower / guarantor attests on the application that they are not a first-time homebuyer. If prior home ownership is not evident within the loan file, the underwriter may condition for supporting documentation. Verify that ownership changes intended to circumvent required personal guarantors are not recognized if made within 30 days prior to an Application Date or throughout the application process.
-4. Step 4 - Final Determination: Determine whether the applicable guarantees, attestation, and ownership-change requirements are met.
-
-**Checks:**
-- Every individual with direct or indirect ownership ≥ 20% provides the required recourse guarantee.
-- At least one guarantor has prior homeownership experience.
-- At least one borrower / guarantor attests on the application that they are not a first-time homebuyer.
-- An ownership change intended to circumvent required personal guarantors made within 30 days prior to an Application Date or throughout the application process is not recognized.
-
-**Reads:** Borrower.is_entity_borrower_1, Borrower.entity_documents_complete, Borrower.is_first_time_homebuyer
-**Missing data:** Ownership percentages and dates and purposes of operating-agreement or bylaw changes., Executed guarantees and evidence of guarantor prior homeownership or the required application attestation.
-
-## acra-standard.loan_program_eligibility.first_time_homebuyer_conditions
-
-**Purpose:** Determine whether a first-time homebuyer meets the program's stated DSCR conditions.
-
-1. Step 1 - Initial Document Review: Review the loan_application, credit_report, and supporting loan records for all applicants' homeownership history and the loan terms.
-2. Step 2 - Eligibility Verification: Apply the definition that all Applicants have never previously owned a home (real property).
-3. Step 3 - Validation and Verification: Verify minimum 700 FICO, maximum 70% CLTV, minimum DSCR of 1.150, maximum loan amount of $1,000,000, full amortization with no interest-only programs, impounds, and minimum six months reserves.
-4. Step 4 - Final Determination: Determine whether the first-time homebuyer definition and all applicable DSCR conditions are met.
-
-**Checks:**
-- All Applicants have never previously owned a home (real property).
-- FICO is at least 700.
-- CLTV does not exceed 70%.
+- Representative FICO is at least 700.
+- CLTV is no greater than 70%.
 - DSCR is at least 1.150.
-- Loan amount does not exceed $1,000,000.
-- The loan is fully amortizing and is not interest-only.
+- Loan amount is no greater than $1,000,000.
+- The loan is fully amortizing and is not an interest-only program.
 - Impounds are required.
 - Reserves are at least six months.
 
-**Reads:** Borrower.is_first_time_homebuyer, CreditReport.representative_score, LoanCore.cltv_percent, LoanCore.total_loan_amount_usd, MortgageLoanInformation.is_interest_only, LoanCore.is_escrow_waived, RatioSet.reserves_months
-**Missing data:** All-applicant homeownership history., DSCR calculation or supporting qualification result., Evidence that impounds are required.
+**Reads:** Borrower.is_first_time_homebuyer, LoanCore.dscr_qualification_method, CreditReport.representative_score, LoanCore.cltv_percent, LoanCore.total_loan_amount_usd, MortgageLoanInformation.is_interest_only, LoanCore.is_escrow_waived, RatioSet.reserves_months
+**Missing data:** Calculated DSCR
 
-## acra-standard.loan_program_eligibility.foreign_national_eligibility
+## acra-standard.loan_program_eligibility.first_time_homebuyer_status
 
-**Purpose:** Determine whether a Foreign National meets the stated residence and transaction-purpose requirements and apply the published CLTV limits.
+**Purpose:** Establish the First Time Home Buyers fact used by the program's first-time-homebuyer requirements.
 
-1. Step 1 - Initial Document Review: Review the loan_application and supporting borrower documentation for residence, authorization to live or work in the U.S., and transaction purpose.
-2. Step 2 - Eligibility Verification: Verify that the borrower resides outside the U.S., is not authorized to live or work in the U.S., and the transaction is for a business purpose (investment property).
-3. Step 3 - Validation and Verification: Apply the stated Foreign National CLTV maximums: 70% for purchase and 65% for refinance — rate & term and cash-out. Verify the loan is priced at FICO equal to 700.
-4. Step 4 - Final Determination: Determine whether the stated Foreign National requirements are met.
-
-**Checks:**
-- The borrower resides outside of the U.S.
-- The borrower is not authorized to live or work in the U.S.
-- The transaction is for a business purpose (investment property).
-- The applicable CLTV does not exceed 70% for purchase or 65% for refinance — rate & term and cash-out.
-- The loan is priced at FICO equal to 700.
-
-**Reads:** Borrower.citizenship_status, LoanCore.loan_purpose, LoanCore.cltv_percent
-**Missing data:** Evidence of the borrower's residence and authorization to live or work in the U.S., Evidence establishing transaction business purpose., The loan's FICO pricing and applicable transaction-purpose classification.
-
-## acra-standard.loan_program_eligibility.interest_only_eligibility
-
-**Purpose:** Determine whether an interest-only loan meets the applicable published product and eligibility conditions.
-
-1. Step 1 - Initial Document Review: Review the loan_application, credit_report, and appraisal_report for interest-only term, product, loan amount, FICO, CLTV, and property and borrower characteristics.
-2. Step 2 - Eligibility Verification: Confirm the selected product is one of the published eligible interest-only products: 5 Yr / 30 year term on 5/1 or 7/1 ARM; 5 Yr / 30 Year Fixed; or 10 Yr / 40 Year Term.
-3. Step 3 - Validation and Verification: Apply minimum loan amount $250,000 and minimum 640 credit score. For 10 Yr / 40 Year Term, also apply maximum 80% LTV / CLTV and maximum $3M loan amount. Interest-only is not available to first-time homebuyers, on vacant-property refinances, or on properties listed for sale.
-4. Step 4 - Final Determination: Determine whether the applicable interest-only product conditions are met.
+1. Initial Document Review: Review the loan application for each Applicant's prior homeownership history.
+2. Eligibility Verification: Apply Acra's definition that all Applicants must have never previously owned a home (real property).
+3. Validation and Verification: Verify the reported history for all Applicants.
+4. Final Determination: Record whether the application is a First Time Home Buyers application under Acra's definition.
 
 **Checks:**
-- The selected interest-only product is a published eligible product.
-- The loan amount is at least $250,000 and FICO is at least 640.
-- For 10 Yr / 40 Year Term, loan amount does not exceed $3M and LTV / CLTV does not exceed 80%.
-- The borrower is not a first-time homebuyer.
-- The loan is not a refinance of a vacant property.
-- The property is not listed for sale.
+- All Applicants have never previously owned a home (real property).
 
-**Reads:** MortgageLoanInformation.is_interest_only, LoanCore.total_loan_amount_usd, CreditReport.representative_score, LoanCore.cltv_percent, Borrower.is_first_time_homebuyer, SubjectProperty.is_vacant, SubjectProperty.is_listed_for_sale
-**Missing data:** Evidence of selected product and term., The loan's LTV for the 10 Yr / 40 Year Term, if not represented by CLTV.
+**Reads:** Borrower.is_first_time_homebuyer
+**Missing data:** Prior homeownership history for all Applicants
 
-## acra-standard.loan_program_eligibility.investment_occupancy
+## acra-standard.loan_program_eligibility.interest_only_10_yr_40_year_term_limits
 
-**Purpose:** Determine whether the subject meets the program's investment-property occupancy requirement.
+**Purpose:** Verify the maximum 80% LTV / CLTV and maximum $3M loan amount for the 10 Yr / 40 Year Term interest-only product.
 
-1. Step 1 - Initial Document Review: Review the loan_application and any lease_agreement or rent_roll for evidence of the subject's occupancy and rental use.
-2. Step 2 - Eligibility Verification: Verify that the property is investment property (non-owner occupied) and that it is a one- to four-unit residential dwelling, a condominium unit, or a PUD unit owned by an individual who does not occupy it.
-3. Step 3 - Validation and Verification: Verify that the dwelling is leased and occupied as a principal year-round residence by individuals other than the owner.
-4. Step 4 - Final Determination: Determine whether the investment-property occupancy requirement is met.
+1. Initial Document Review: Review the loan application for 10 Yr / 40 Year Term interest-only status, CLTV, and loan amount.
+2. Eligibility Verification: Determine whether the loan is Interest Only, 10 Yr / 40 Year Term.
+3. Validation and Verification: Verify maximum 80% LTV / CLTV and maximum $3M loan amount.
+4. Final Determination: Record whether both stated limits are met.
 
 **Checks:**
-- The subject is an investment property (non-owner occupied).
-- The dwelling is leased and occupied as a principal year-round residence by individuals other than the owner.
-- The dwelling or unit is within the eligible investment-property description.
+- If the loan is Interest Only, 10 Yr / 40 Year Term, CLTV is no greater than 80%.
+- If the loan is Interest Only, 10 Yr / 40 Year Term, loan amount is no greater than $3M.
 
-**Reads:** SubjectProperty.occupancy_subtype, SubjectProperty.number_of_units, SubjectProperty.has_current_lease
-**Missing data:** Evidence establishing whether the owner occupies the dwelling., Evidence establishing year-round tenant occupancy and the dwelling's principal-residence use.
+**Reads:** LoanCore.is_interest_only_10_40, LoanCore.cltv_percent, LoanCore.total_loan_amount_usd
 
-## acra-standard.loan_program_eligibility.itin_limits
+## acra-standard.loan_program_eligibility.interest_only_availability_restrictions
 
-**Purpose:** Determine whether an ITIN loan meets the limits expressly printed for the ITIN program.
+**Purpose:** Determine whether an interest-only loan is barred because the borrower is a first-time homebuyer, the refinance is on a vacant property, or the property is listed for sale.
 
-1. Step 1 - Initial Document Review: Review the loan_application and credit_report for ITIN status, loan amount, score, purpose, and CLTV.
-2. Step 2 - Eligibility Verification: Apply the maximum loan amount of $1.0M and minimum FICO 640.
-3. Step 3 - Validation and Verification: Apply the printed ITIN CLTV tier for the FICO and transaction purpose: “FICO 700” is 70% purchase and 65% refinance; FICO 660 to 699 is 65% purchase and 60% refinance; FICO 640 to 659 is 60% purchase and 60% refinance. Do not infer whether “FICO 700” means 700 and above or whether a US-resident ITIN holder is eligible.
-4. Step 4 - Final Determination: Determine whether the stated limits are met and refer the unresolved eligibility questions for confirmation where they affect the case.
+1. Initial Document Review: Review the loan application for interest-only status, first-time-homebuyer status, loan purpose, vacancy, and listing status.
+2. Eligibility Verification: Determine whether the loan is interest-only and whether any stated restriction applies.
+3. Validation and Verification: Verify that an interest-only loan is not for a first-time homebuyer, a vacant-property refinance, or a property listed for sale.
+4. Final Determination: Record whether any stated restriction makes interest-only unavailable.
 
 **Checks:**
-- The loan amount does not exceed $1.0M.
-- The borrower's FICO is at least 640.
-- The CLTV does not exceed the applicable printed ITIN tier and transaction-purpose limit.
-- Any determination of eligibility for a US-resident ITIN holder or application of the “FICO 700” tier is supported by Acra confirmation.
+- If the loan is interest-only, the borrower is not a first-time homebuyer.
+- If the loan is interest-only and the loan purpose is a refinance, the property is not vacant.
+- If the loan is interest-only, the property is not listed for sale.
 
-**Reads:** Borrower.citizenship_status, LoanCore.total_loan_amount_usd, CreditReport.representative_score, LoanCore.loan_purpose, LoanCore.cltv_percent
-**Missing data:** Acra confirmation on whether a US-resident ITIN holder is eligible and whether the tier printed “FICO 700” means 700 and above, if either question affects the case.
+**Reads:** MortgageLoanInformation.is_interest_only, Borrower.is_first_time_homebuyer, LoanCore.loan_purpose, SubjectProperty.is_vacant, SubjectProperty.is_listed_for_sale
 
-## acra-standard.loan_program_eligibility.loan_amount
+## acra-standard.loan_program_eligibility.interest_only_loan_amount_and_credit_minimums
 
-**Purpose:** Determine whether the loan amount meets the published minimum, maximum, and increment requirements, including the delayed-financing cap.
+**Purpose:** Apply the interest-only minimum and maximum loan amounts and minimum FICO stated in the program and product requirements.
 
-1. Step 1 - Initial Document Review: Review the loan_application for the requested loan amount and transaction purpose.
-2. Step 2 - Eligibility Verification: Verify the amount against the published program range and increment requirement; for interest-only loans, also apply the interest-only amount limits.
-3. Step 3 - Validation and Verification: For delayed financing, verify that the amount does not exceed the stated delayed-financing cap.
-4. Step 4 - Final Determination: Determine whether all applicable loan-amount requirements are met.
+1. Initial Document Review: Review the loan application and credit_report for interest-only status, loan amount, and representative FICO.
+2. Eligibility Verification: Determine whether the loan is an interest-only loan.
+3. Validation and Verification: Verify minimum loan amount $250,000, maximum loan amount $3,000,000, and minimum FICO 640.
+4. Final Determination: Record whether the applicable interest-only amount and credit requirements are met.
 
 **Checks:**
-- The loan amount is from $100,000 to $3,000,000 and is in $50 increments.
-- For an interest-only loan, the loan amount is at least $250,000 and no more than $3,000,000.
-- For delayed financing, the loan amount is no more than $1.5MM.
+- If the loan is interest-only, the loan amount is at least $250,000.
+- If the loan is interest-only, the loan amount is no greater than $3,000,000.
+- If the loan is interest-only, representative FICO is at least 640.
 
-**Reads:** LoanCore.total_loan_amount_usd, LoanCore.loan_purpose, LoanCore.is_delayed_financing, MortgageLoanInformation.is_interest_only
+**Reads:** MortgageLoanInformation.is_interest_only, LoanCore.is_interest_only_10_40, LoanCore.total_loan_amount_usd, CreditReport.representative_score
 
-## acra-standard.loan_program_eligibility.matrix_fico_and_cltv
+## acra-standard.loan_program_eligibility.investment_property_fico_and_cltv_matrix
 
-**Purpose:** Determine whether the applicable published matrix row permits the loan's FICO and CLTV.
+**Purpose:** Determine the published matrix CLTV limit for the loan's loan-amount tier, representative FICO, and transaction column.
 
-1. Step 1 - Initial Document Review: Review the loan_application and credit_report for loan amount, representative score, transaction purpose, and CLTV.
-2. Step 2 - Eligibility Verification: Select the published loan-amount tier, FICO row, and Purchase, Rate & Term, or Cash-Out column; apply NA entries as printed.
-3. Step 3 - Validation and Verification: Verify that FICO and CLTV meet the applicable matrix entry. For loans ≤ $1,500,000 below 600, do not infer a published matrix value or eligibility; the source requests Acra confirmation.
-4. Step 4 - Final Determination: Determine whether the applicable published matrix value is met, or refer an unresolved no-value case for confirmation.
+1. Initial Document Review: Review the loan application and credit_report for loan amount, loan purpose, and representative FICO.
+2. Eligibility Verification: Select the printed loan-amount tier, minimum-FICO row, and Purchase, Rate & Term, or Cash-Out column that apply.
+3. Validation and Verification: Compare the proposed CLTV with the selected matrix value; treat NA as NA. For loans of $1,500,000 or less with a score below 600, note that no row is printed and the document requests Acra confirmation on eligibility.
+4. Final Determination: Record whether the published matrix value permits the proposed CLTV, or whether Acra confirmation is required because no row is printed.
 
 **Checks:**
-- The loan's FICO meets a published matrix row for the loan amount and transaction purpose.
-- The loan's CLTV does not exceed the CLTV value in the applicable published matrix row.
-- If a loan ≤ $1,500,000 has FICO below 600, Acra confirmation is obtained before determining eligibility.
+- Where the matrix prints a value for the loan amount, representative FICO, and loan purpose, the proposed CLTV does not exceed that value.
+- For loans of $1,500,000 or less with a score below 600, Acra confirmation is obtained because no row is printed and eligibility is not stated.
 
 **Reads:** LoanCore.total_loan_amount_usd, CreditReport.representative_score, LoanCore.loan_purpose, LoanCore.cltv_percent
-**Missing data:** Acra confirmation if the loan amount is ≤ $1,500,000 and FICO is below 600., Clarification of transaction-purpose classification if the loan does not map to a Purchase, Rate & Term, or Cash-Out column.
+**Missing data:** Acra confirmation of eligibility for loans of $1,500,000 or less with a score below 600
 
-## acra-standard.loan_program_eligibility.mixed_use_property
+## acra-standard.loan_program_eligibility.investment_property_status
 
-**Purpose:** Determine whether the stated mixed-use minimum DSCR is met and identify the additional unreproduced conditions.
+**Purpose:** Establish whether the property is eligible as an investment property under STD-1.1 and STD-1.2.
 
-1. Step 1 - Initial Document Review: Review the appraisal_report and loan_application for commercial and residential use of the property.
-2. Step 2 - Eligibility Verification: Verify whether a portion of the property's space is dedicated to commercial use and the rest to residential use.
-3. Step 3 - Validation and Verification: For a mixed-use property, apply minimum DSCR ratio of 1.2 and identify that approval conditions in §10.7, including restrictions regarding Adult Care / Assisted Living Facilities, are not reproduced in the source.
-4. Step 4 - Final Determination: Determine whether the minimum DSCR is met and refer unreproduced §10.7 conditions for review.
+1. Initial Document Review: Review the loan application and lease_agreement for the subject property's occupancy and lease information.
+2. Eligibility Verification: Determine whether the property is a one- to four-unit residential dwelling or a unit in a condominium complex or a PUD.
+3. Validation and Verification: Verify that the dwelling is leased and occupied as a principal year-round residence to individuals other than the owner, and that the owner does not occupy it.
+4. Final Determination: Record whether the subject property meets the investment-property definition.
 
 **Checks:**
-- The mixed-use property meets the minimum DSCR ratio of 1.2.
-- The conditions in §10.7, which are not reproduced, have been reviewed before approval.
+- The property is a one- to four-unit residential dwelling or a unit in a condominium complex or a PUD.
+- The dwelling is not occupied by its owner.
+- The dwelling is leased and occupied as a principal year-round residence to individuals other than the owner.
 
-**Reads:** SubjectProperty.is_mixed_use
-**Missing data:** DSCR result., The unreproduced §10.7 conditions and evidence needed to assess them.
+**Reads:** SubjectProperty.property_type, SubjectProperty.number_of_units, SubjectProperty.occupancy_subtype, SubjectProperty.has_current_lease
+**Missing data:** Whether the owner occupies the dwelling, Whether the dwelling is occupied as a principal year-round residence by individuals other than the owner
+
+## acra-standard.loan_program_eligibility.loan_amount_above_2_000_000_dscr_requirement
+
+**Purpose:** Determine whether a loan amount above $2,000,000 has 1.0 or greater DSCR.
+
+1. Initial Document Review: Review the loan application and the DSCR calculation.
+2. Eligibility Verification: Determine whether the loan amount is above $2,000,000.
+3. Validation and Verification: For a loan amount above $2,000,000, verify that DSCR is 1.0 or greater.
+4. Final Determination: Record whether the required DSCR is met.
+
+**Checks:**
+- If the loan amount is above $2,000,000, DSCR is 1.0 or greater.
+
+**Reads:** LoanCore.total_loan_amount_usd, LoanCore.dscr_qualification_method
+**Missing data:** Calculated DSCR
+
+## acra-standard.loan_program_eligibility.loan_amount_below_200_000_cltv_limit
+
+**Purpose:** Verify the loan-specific CLTV cap for loan amounts below $200,000.
+
+1. Initial Document Review: Review the loan application for loan amount, loan purpose, and CLTV.
+2. Eligibility Verification: Determine whether the loan amount is below $200,000 and whether the transaction is purchase or refinance.
+3. Validation and Verification: Apply maximum CLTV 80% for purchase and 75% for refinance (rate & term and cash-out).
+4. Final Determination: Record whether the applicable maximum CLTV is met.
+
+**Checks:**
+- If the loan amount is below $200,000 and the loan purpose is purchase, CLTV is no greater than 80%.
+- If the loan amount is below $200,000 and the loan purpose is rate & term or cash-out refinance, CLTV is no greater than 75%.
+
+**Reads:** LoanCore.total_loan_amount_usd, LoanCore.loan_purpose, LoanCore.cltv_percent
+
+## acra-standard.loan_program_eligibility.prepayment_penalty_minimum_terms
+
+**Purpose:** Apply the minimum terms stated for the specified transactions, subject to the printed qualifications.
+
+1. Initial Document Review: Review the loan application for loan purpose, vacancy, listing status, state, and prepayment penalty term.
+2. Eligibility Verification: Determine whether the transaction is a vacant-property rate & term refinance, vacant-property cash-out refinance, or involves a property listed for sale.
+3. Validation and Verification: Verify at least two years for vacant-property rate & term refinance and at least three years for vacant-property cash-out refinance, each “where allowable”; verify at least three years for a property listed for sale unless the property is located in a state that does not allow prepayment penalties. Do not resolve the stated Acra-confirmation question about how a state restriction interacts with these minimums.
+4. Final Determination: Record compliance with an applicable minimum or identify that Acra confirmation is required for the state interaction.
+
+**Checks:**
+- If the transaction is a vacant-property rate & term refinance where allowable, the prepayment penalty term is at least two years.
+- If the transaction is a vacant-property cash-out refinance where allowable, the prepayment penalty term is at least three years.
+- If the property is listed for sale and is not in a state that does not allow prepayment penalties, the prepayment penalty term is at least three years.
+- If a state restriction applies to an applicable minimum, Acra confirmation is obtained on how the restriction interacts with that minimum.
+
+**Reads:** LoanCore.loan_purpose, SubjectProperty.is_vacant, SubjectProperty.is_listed_for_sale, SubjectProperty.state, LoanCore.prepayment_penalty_structure
+**Missing data:** Whether a vacant-property refinance is allowable, Whether the property is located in a state that does not allow prepayment penalties, Acra confirmation of how a state restriction interacts with the stated minimum terms, The selected prepayment penalty term as documented
 
 ## acra-standard.loan_program_eligibility.prepayment_penalty_structure
 
-**Purpose:** Determine whether the selected structure is published and meets stated transaction-specific minimum terms.
+**Purpose:** Determine whether the selected term and structure match a listed prepayment penalty structure.
 
-1. Step 1 - Initial Document Review: Review the loan_application for property state, transaction type, unit count, borrower or entity closing name, loan amount, interest rate, and selected prepayment penalty structure.
-2. Step 2 - Eligibility Verification: Verify that the selected structure is one of the published structures: 5 Year 5% Fixed or Sequential Stepdown; 4 Year 5% Fixed or 3% Fixed; 3 Year 5% Fixed or 3% Fixed; 2 Year 3% Fixed; 1 Year 3% Fixed; or No Prepay.
-3. Step 3 - Validation and Verification: Apply stated minimums: vacant-property rate & term refinance requires at least two years and vacant-property cash-out refinance at least three years, each where allowable; property listed for sale requires at least three years unless located in a state that does not allow prepayment penalties. Apply the printed state restrictions as written; the meaning of “BUY-OUT” and how state restrictions interact with the minimums require Acra confirmation.
-4. Step 4 - Final Determination: Determine whether the selected structure meets applicable stated minimums and refer unresolved state-restriction interpretation for confirmation.
-
-**Checks:**
-- The selected prepayment penalty structure is one of the published structures.
-- A vacant-property rate & term refinance has a prepayment penalty of at least two years where allowable.
-- A vacant-property cash-out refinance has a prepayment penalty of at least three years where allowable.
-- A property listed for sale has a prepayment penalty of at least three years unless the property is in a state that does not allow prepayment penalties.
-- Any applicable printed state restriction is reviewed and any unresolved “BUY-OUT” interpretation or interaction with a stated minimum is referred for Acra confirmation.
-
-**Reads:** LoanCore.prepayment_penalty_structure, SubjectProperty.state, SubjectProperty.number_of_units, LoanCore.loan_purpose, LoanCore.total_loan_amount_usd
-**Missing data:** Evidence of selected prepayment structure, property state, and transaction details relevant to the printed state restrictions., Acra confirmation of what “BUY-OUT” requires and how a state restriction interacts with stated minimum terms.
-
-## acra-standard.loan_program_eligibility.property_listed_for_sale
-
-**Purpose:** Determine whether a property listed within the stated period meets the applicable loan conditions.
-
-1. Step 1 - Initial Document Review: Review listing_history, loan_application, appraisal_report, and relevant lien and underwriting records for listing dates, occupancy, value, and loan terms.
-2. Step 2 - Eligibility Verification: Treat a property as listed for sale if it was listed in the last six months, measured from the last date of being listed to the Application Date.
-3. Step 3 - Validation and Verification: For a covered loan, verify that the property is not in default or delinquent on liens; an investment property is tenant-occupied and not vacant; qualification is ≥ 1.0 DSCR or 43% maximum DTI; PPP is at least three (3) years unless the property is in a state that does not allow prepayment penalties; reserves are twenty-four (24) months; the loan is fully amortizing and not interest only; maximum LTV / CLTV is 65% based on the lesser of appraised value or lowest recent listing price; no subordinate financing is allowed; and impounds are required.
-4. Step 4 - Final Determination: Determine whether the applicable listed-property conditions are met.
+1. Initial Document Review: Review the loan application for the selected prepayment penalty structure.
+2. Eligibility Verification: Compare the selected term and structure with the structures printed in the guidelines.
+3. Validation and Verification: Verify the structure against the printed 5 Year, 4 Year, 3 Year, 2 Year, 1 Year, or No Prepay entries.
+4. Final Determination: Record whether the selected structure is listed.
 
 **Checks:**
-- The property was listed for sale within the last six months as measured from the last listing date to the Application Date.
-- The property is not in default or otherwise delinquent on lien(s).
-- For an investment property, the subject is occupied by a tenant and is not vacant.
-- The loan qualifies as either ≥ 1.0 DSCR or 43% maximum DTI.
-- The loan has a prepayment penalty of at least three (3) years unless the property is in a state that does not allow prepayment penalties.
-- Reserves are twenty-four (24) months.
-- The loan is fully amortizing and is not interest only.
-- LTV / CLTV does not exceed 65% based on the lesser of appraised value or lowest recent listing price.
-- No subordinate financing is allowed and impounds are required.
+- The selected prepayment penalty term and structure match a structure printed in STD-11.1.
 
-**Reads:** SubjectProperty.listed_for_sale_last_6_months, SubjectProperty.is_listed_for_sale, SubjectProperty.is_vacant, SubjectProperty.has_current_lease, LoanCore.cltv_percent, LoanCore.prepayment_penalty_structure, MortgageLoanInformation.is_interest_only, RatioSet.reserves_months
-**Missing data:** Application Date and last date of being listed., Lien status, tenant occupancy, qualification result, PPP, subordinate financing status, impound requirement, appraised value, and lowest recent listing price., Applicable state determination for whether it allows prepayment penalties.
+**Reads:** LoanCore.prepayment_penalty_structure
+**Missing data:** The selected prepayment penalty term and structure as documented
 
-## acra-standard.loan_program_eligibility.seller_contributions
+## acra-standard.loan_program_eligibility.qualification_method
 
-**Purpose:** Determine whether seller concessions or other contributions are within the published limit.
+**Purpose:** Record the program's qualification method before applying the applicable qualification requirements.
 
-1. Step 1 - Initial Document Review: Review the loan_application for the sale price and seller concessions or other contributions.
-2. Step 2 - Eligibility Verification: Apply the 3% of sale price limit.
-3. Step 3 - Validation and Verification: Verify the reported contribution amount against the sale price and applicable limit.
-4. Step 4 - Final Determination: Determine whether the contribution limit is met.
+1. Initial Document Review: Review the loan application for the stated DSCR qualification method.
+2. Eligibility Verification: Identify whether the loan qualifies by a calculated DSCR or as No Ratio DSCR.
+3. Validation and Verification: Verify the method against the case record.
+4. Final Determination: Record the qualification method.
 
 **Checks:**
-- Seller concessions or other contributions do not exceed 3% of the sale price.
+- The loan qualification method is either calculated DSCR or No Ratio DSCR.
 
-**Reads:** LoanCore.seller_concession_percent
-**Missing data:** Sale price., Seller-concession or other-contribution amount.
-
-## acra-standard.loan_program_eligibility.vacant_property_refinance
-
-**Purpose:** Determine whether a vacant-property refinance meets the conditions stated for its refinance type.
-
-1. Step 1 - Initial Document Review: Review the loan_application, appraisal_report, and credit_report for vacancy, refinance type, loan amount, FICO, CLTV, and loan terms.
-2. Step 2 - Eligibility Verification: Apply the rate & term refinance conditions: minimum 700 FICO; maximum $1,000,000 to maximum 70% CLTV; maximum $2,000,000 to maximum 65% CLTV; minimum 1.000 DSCR or maximum 40.0% DTI; minimum two-year prepayment penalty (where allowable); full amortization, no interest-only programs; impounds; and minimum six months reserves. Apply the stated cash-out refinance summary conditions: minimum 700 FICO; DSCR ≥ 1.15; ≥ 3-year PPP (where allowable); no interest only; impounds; 6 months reserves; maximum CLTV 60% for loan amounts under $1,500,000; and ≥15 months ownership.
-3. Step 3 - Validation and Verification: Verify each applicable requirement. Refer the exact $1,000,000 and $2,000,000 rate & term treatment, cash-out loans of $1,500,000 or more, and how the 15 months are measured for Acra confirmation; the source does not resolve these points.
-4. Step 4 - Final Determination: Determine whether the stated conditions are met or whether an unresolved limit or measurement requires confirmation.
-
-**Checks:**
-- A vacant-property refinance satisfies its applicable stated FICO, CLTV, loan amount, qualification, prepayment, amortization, impound, reserve, and ownership conditions.
-- An unresolved exact loan-amount boundary, cash-out amount of $1,500,000 or more, or ownership-period measurement is referred for Acra confirmation.
-
-**Reads:** SubjectProperty.is_vacant, LoanCore.loan_purpose, LoanCore.total_loan_amount_usd, CreditReport.representative_score, LoanCore.cltv_percent, MortgageLoanInformation.is_interest_only, LoanCore.prepayment_penalty_structure, RatioSet.reserves_months
-**Missing data:** DSCR or DTI result, applicable PPP, impound requirement, and evidence of reserves and ownership period., Acra confirmation for treatment at exactly $1,000,000 and $2,000,000, cash-out loans of $1,500,000 or more, and how the 15 months are measured.
-
-## acra-standard.property_tax_calculation.dscr_calculation
-
-**Purpose:** Calculate DSCR with annual real estate taxes included in the denominator.
-
-1. Step 1 - Initial Document Review: Gather the data needed for the DSCR calculation: annual in-place rent, market rent, the annual denominator amounts, and the first payment due under the terms of the Note. Identify whether the loan is interest-only.
-2. Step 2 - Eligibility Verification: Use the lesser of annual in-place rent or market rent as the numerator. Include annual principal, interest, real estate taxes, property insurance, and homeowner's / condominium association fees in the denominator; include subordinate financing if applicable.
-3. Step 3 - Validation and Verification: Divide the numerator by the denominator. If the loan is interest-only, obtain Acra confirmation of which payment enters the denominator. Apply the market rent reference §14.14 only when its applicable method is available; it is not reproduced in the excerpt.
-4. Step 4 - Final Determination: Record the DSCR only when the required amounts and applicable calculation basis are available. Do not treat the subordinate-financing calculation rule as establishing that subordinate financing is permitted.
-
-**Checks:**
-- The numerator is the lesser of annual in-place rent or market rent.
-- The denominator includes annual principal, interest, real estate taxes, property insurance, and homeowner's / condominium association fees.
-- Subordinate financing is included in the denominator if applicable.
-- The DSCR is the numerator divided by the denominator.
-- The first payment due under the terms of the Note is used, subject to Acra confirmation of the payment basis for an interest-only loan.
-
-**Reads:** MortgageLoanInformation.is_interest_only
-**Missing data:** Annual in-place rent., Market rent and the applicable §14.14 method., Annual principal., Annual interest., Annual real estate taxes., Annual property insurance., Annual homeowner's / condominium association fees., Subordinate financing amount, if applicable., The first payment due under the terms of the Note., Acra confirmation of which payment enters the denominator for an interest-only loan, if applicable.
-
-## acra-standard.title_review.additional_trust_documentation
-
-**Purpose:** Determine whether any additional supporting documentation Legal conditions for has been provided.
-
-1. Initial Document Review: Review the trust file and any conditions from Legal.
-2. Eligibility Verification: Determine whether Legal has exercised its right to condition for additional supporting documentation.
-3. Validation and Verification: If Legal has conditioned for additional supporting documentation, obtain and review the specified supporting documentation.
-4. Final Determination: Record whether all additional documentation conditions have been cleared or no additional documentation was conditioned for.
-
-**Checks:**
-- If Legal has conditioned for additional supporting documentation, the specified supporting documentation has been provided.
-
-**Reads:** Borrower.entity_type
-**Missing data:** Whether Legal has conditioned for additional supporting documentation and, if so, the specified documentation.
-
-## acra-standard.title_review.approved_title_and_closing_agent
-
-**Purpose:** Determine whether the loan is closed with a title and closing agent approved and/or vetted by Acra.
-
-1. Initial Document Review: Review the title and closing agent information and the closing file.
-2. Eligibility Verification: Identify the title and closing agent for the loan.
-3. Validation and Verification: Verify from Acra's records or title agent verification that the agent is approved and/or vetted by Acra.
-4. Final Determination: Record whether the loan is closed with an approved and/or vetted agent.
-
-**Checks:**
-- The title and closing agent is approved and/or vetted by Acra.
-**Missing data:** Acra's approval or vetting confirmation for the title and closing agent.
-
-## acra-standard.title_review.business_entity_transaction
-
-**Purpose:** Determine whether the business entity financing is for a business purpose transaction on investment properties exclusively.
-
-1. Initial Document Review: Review the loan application and entity documents for the borrower type, transaction purpose, and subject-property use.
-2. Eligibility Verification: Determine whether the borrower is a Business Entity and whether the transaction is a business purpose transaction on investment properties exclusively.
-3. Validation and Verification: Compare the borrower type, loan purpose, and occupancy subtype recorded for the case with the reviewed documents.
-4. Final Determination: Record whether the business entity transaction meets the stated eligibility requirement.
-
-**Checks:**
-- The borrower is a Business Entity.
-- The transaction is a business purpose transaction on investment properties exclusively.
-
-**Reads:** Borrower.entity_type, LoanCore.loan_purpose, SubjectProperty.occupancy_subtype
-
-## acra-standard.title_review.closing_identification
-
-**Purpose:** Determine whether the required identification copy is in the closing file.
-
-1. Initial Document Review: Obtain and review a copy of the current Passport, Visa, or ITIN.
-2. Eligibility Verification: Determine whether the copy is of a current Passport, Visa, or ITIN.
-3. Validation and Verification: Verify the submitted copy is legible and identifies the document provided.
-4. Final Determination: Record whether the required copy is present.
-
-**Checks:**
-- A copy of a current Passport, Visa, or ITIN is present.
-**Missing data:** A copy of a current Passport, Visa, or ITIN.
-
-## acra-standard.title_review.direct_title_owners
-
-**Purpose:** Determine whether all entities that will hold direct ownership of the subject property and be on title as a direct owner are borrowing entities.
-
-1. Initial Document Review: Review the title commitment and entity documents to identify direct owners of the subject property.
-2. Eligibility Verification: Identify each entity that will hold direct ownership and be on title as a direct owner.
-3. Validation and Verification: Compare the identified direct owners with the borrowing entities in the loan documents.
-4. Final Determination: Record whether every such entity is a borrowing entity.
-
-**Checks:**
-- Every entity that will hold direct ownership of the subject property and be on title as a direct owner is a borrowing entity.
-
-**Reads:** Borrower.entity_type
-**Missing data:** The identity of each direct owner of the subject property and whether each is a borrowing entity, as established by the title commitment and entity documents.
-
-## acra-standard.title_review.entity_owner_guarantees
-
-**Purpose:** Determine whether an entity borrower has the required recourse guarantees from individuals with direct or indirect ownership ≥ 20%.
-
-1. Initial Document Review: Review entity ownership records and the executed guarantees.
-2. Eligibility Verification: Identify each individual with direct or indirect ownership ≥ 20% of the entity borrower.
-3. Validation and Verification: Verify that each identified individual provided an Acra approved recourse guarantee or Exhibit 7; where there are multiple guarantors, verify that all recourse is joint and several.
-4. Final Determination: Record whether the required guarantees are in place for all identified individuals.
-
-**Checks:**
-- Each individual with direct or indirect ownership ≥ 20% provided a recourse guarantee that is Acra approved or is Exhibit 7.
-- If there are multiple guarantors, all recourse is joint and several.
-
-**Reads:** Borrower.entity_type
-**Missing data:** Direct and indirect ownership percentages; the identity of each individual at ≥ 20%; executed guarantee forms and whether they are Acra approved or Exhibit 7; and whether multiple guarantors' recourse is joint and several.
-
-## acra-standard.title_review.entity_title_approval
-
-**Purpose:** Determine whether an entity that holds title to the collateral is acceptable to Acra in its sole discretion.
-
-1. Initial Document Review: Review the title commitment and entity documents to identify the proposed title holder.
-2. Eligibility Verification: Determine whether title to the collateral will be held by an individual person or an entity.
-3. Validation and Verification: If an entity will hold title, obtain and review Acra's determination of whether that entity is acceptable in its sole discretion.
-4. Final Determination: Record whether the title holder meets the stated requirement.
-
-**Checks:**
-- The collateral title is held either directly by an individual person or by an entity acceptable to Acra in its sole discretion.
-
-**Reads:** Borrower.entity_type
-**Missing data:** Identity of each proposed title holder and Acra's determination whether an entity title holder is acceptable.
-
-## acra-standard.title_review.executed_w8_form
-
-**Purpose:** Determine whether the required executed W-8 (BEN) IRS form is in the closing file.
-
-1. Initial Document Review: Obtain and review the W-8 (BEN) IRS form.
-2. Eligibility Verification: Determine whether the form is executed.
-3. Validation and Verification: Verify the form is the W-8 (BEN) IRS form and bears execution.
-4. Final Determination: Record whether the executed form is present.
-
-**Checks:**
-- An executed W-8 (BEN) IRS form is present.
-**Missing data:** The executed W-8 (BEN) IRS form.
-
-## acra-standard.title_review.foreign_document_notarization
-
-**Purpose:** Determine whether documents signed outside the U.S. have the required notarization and acknowledgment for the applicable signing location.
-
-1. Initial Document Review: Identify documents signed outside the U.S., where they were signed, and the acknowledgment and authentication attached to each.
-2. Eligibility Verification: Determine whether the signing country is a party to the Hague Convention Treaty Abolishing the Requirement of Legalization for Foreign Public Documents.
-3. Validation and Verification: For documents signed outside the U.S., verify either that a U.S. embassy or consular official notarized them and the certificate of acknowledgement includes the embassy or consular seal and is acceptable to the title company, or, for a Hague Convention country, that an authorized notary public completed and signed the certificate of acknowledgment, authentication by apostille in English is attached to the executed documents, and the title company accepts it.
-4. Final Determination: Record whether the applicable acknowledgment route and title company acceptance requirements are met.
-
-**Checks:**
-- If documents were signed outside the U.S. before a U.S. embassy or consular official, the certificate of acknowledgement includes the embassy or consular seal.
-- If documents were signed outside the U.S. before a U.S. embassy or consular official, the certificate of acknowledgement is acceptable to the title company.
-- If documents were signed in a country that is a party to the Hague Convention Treaty Abolishing the Requirement of Legalization for Foreign Public Documents, an authorized notary public completed and signed the certificate of acknowledgment.
-- For documents signed in a Hague Convention country, authentication by apostille in English is attached to the executed documents.
-- For documents signed in a Hague Convention country, the title company accepts the acknowledgment and apostille.
-**Missing data:** Whether documents were signed outside the U.S.; country of signing and its Hague Convention status; notarization and certificate of acknowledgment; embassy or consular seal if applicable; apostille in English attached to executed documents if applicable; and title company acceptance.
-
-## acra-standard.title_review.ownership_change_lookback
-
-**Purpose:** Determine whether changes to operating agreements or bylaws intended to change ownership percentages to circumvent required personal guarantors occurred within the stated lookback period or during the application process.
-
-1. Initial Document Review: Review the operating agreement or bylaws and their change history.
-2. Eligibility Verification: Determine whether a change was intended to change ownership percentages to circumvent required personal guarantors.
-3. Validation and Verification: Compare the effective dates of any such changes with the 30 days prior to an Application Date and the application process.
-4. Final Determination: Do not recognize a change within the stated period and record the resulting ownership percentages for guarantee review.
-
-**Checks:**
-- No change to the operating agreement or bylaws intended to change ownership percentages to circumvent required personal guarantors occurred within 30 days prior to an Application Date or throughout the application process.
-
-**Reads:** Borrower.entity_type
-**Missing data:** Purpose and effective date of each relevant operating agreement or bylaw change; Application Date; and application-process dates.
-
-## acra-standard.title_review.permitted_entity_type
-
-**Purpose:** Determine whether the entity or guarantor type is permitted, including the restriction on series limited liability companies.
-
-1. Initial Document Review: Review the entity documents for the entity or guarantor's legal type and formation details.
-2. Eligibility Verification: Compare the legal type with the types allowed by the guidelines: Domestic Corporations (C and S Corp); single purpose Limited Liability Companies (LLC), excluding series LLC; Limited Liability Partnership (LLP); Limited Liability Limited Partnership (LLLP); General Partnership (GP); Limited Partnership (LP); and Sole Proprietorship.
-3. Validation and Verification: Verify the legal type and whether an LLC is a series LLC from the entity documents.
-4. Final Determination: Record whether the type is allowed.
-
-**Checks:**
-- The entity or guarantor type is one of the types allowed by the guidelines.
-- If the type is a Limited Liability Company, it is not a series LLC.
-
-**Reads:** Borrower.entity_type
-**Missing data:** Entity or guarantor's legal type and whether a Limited Liability Company is a series LLC, as established by the entity documents.
-
-## acra-standard.title_review.power_of_attorney
-
-**Purpose:** Determine whether a Power of Attorney, if provided, meets both stated acceptability requirements.
-
-1. Initial Document Review: Review any Power of Attorney in the closing file.
-2. Eligibility Verification: Determine whether a Power of Attorney is being used.
-3. Validation and Verification: If provided, verify that it conforms to Acra requirements and is acceptable to the title company.
-4. Final Determination: Record whether the Power of Attorney meets both requirements or is not being used.
-
-**Checks:**
-- If a Power of Attorney is provided, it conforms to Acra requirements.
-- If a Power of Attorney is provided, it is acceptable to the title company.
-**Missing data:** Whether a Power of Attorney is used; Acra's requirements for the Power of Attorney; and title company acceptance.
-
-## acra-standard.title_review.single_purpose_entity
-
-**Purpose:** Determine whether an entity borrower meets the SPE requirement.
-
-1. Initial Document Review: Review the entity documents for the entity's assets and business activities.
-2. Eligibility Verification: Verify that the entity has no assets other than residential investment or rental properties and is engaged in owning and operating residential investment or rental properties.
-3. Validation and Verification: Verify from the entity documents whether the entity is a series limited liability company.
-4. Final Determination: Record whether the entity satisfies the SPE requirement and is not a series limited liability company.
-
-**Checks:**
-- The entity has no assets other than residential investment or rental properties.
-- The entity is engaged in the business of owning and operating residential investment or rental properties.
-- The entity is not a series limited liability company.
-
-**Reads:** Borrower.entity_type
-**Missing data:** The entity's assets, business activities, and whether it is a series limited liability company, as established by the entity documents.
-
-## acra-standard.title_review.trust_documentation
-
-**Purpose:** Determine whether the required trust document or certification and all listed trust details are present.
-
-1. Initial Document Review: Review the complete, legible Trust copy or Certification of Trust.
-2. Eligibility Verification: Determine whether the file contains one of those document forms.
-3. Validation and Verification: Verify that the document states the existence and date of the Trust; Trustor(s) and current Trustee(s); Trustee powers; revocability and, if revocable, who holds the right to revoke; names and number of Trustees required to sign on behalf of the Trust; Trust identification number (a Social Security number or an IRS-issued Tax Identification Number); how title to Trust assets should be taken; and that the Trust has not been revoked, modified, or amended in any manner.
-4. Final Determination: Record whether the Trust document or Certification of Trust is complete, legible, and includes every required item.
-
-**Checks:**
-- A complete, legible copy of the Trust or a Certification of Trust is provided.
-- The Trust document or Certification of Trust states the existence and date of the Trust.
-- The Trust document or Certification of Trust states the Trustor(s) and current Trustee(s).
-- The Trust document or Certification of Trust states the powers of the Trustee.
-- The Trust document or Certification of Trust states whether the Trust is revocable and, if revocable, who holds the right to revoke.
-- The Trust document or Certification of Trust states the names and number of the Trustees required to sign on behalf of the Trust.
-- The Trust document or Certification of Trust states the Trust identification number, which is a Social Security number or an IRS-issued Tax Identification Number.
-- The Trust document or Certification of Trust states how title to the Trust assets should be taken.
-- The Trust document or Certification of Trust states that the Trust has not been revoked, modified, or amended in any manner.
-
-**Reads:** Borrower.entity_type
-**Missing data:** A complete, legible Trust copy or Certification of Trust and each required statement in it.
-
-## acra-standard.title_review.trust_validity_and_structure
-
-**Purpose:** Determine whether the trust meets the stated validity, revocability, establishment, and primary beneficiary requirements.
-
-1. Initial Document Review: Review the Trust or Certification of Trust for governing state, revocability, trustors, effective date, and beneficiaries.
-2. Eligibility Verification: Verify that the Trust is valid under the laws of the state in which it is established; is revocable; was established by one or more natural persons, solely or jointly; and became effective during the lifetime of the person(s) establishing it.
-3. Validation and Verification: Verify that the primary beneficiary of the Trust is the individual(s) establishing the Trust.
-4. Final Determination: Record whether every stated trust structure requirement is met.
-
-**Checks:**
-- The Trust is valid under the laws of the state in which it is established.
-- The Trust is revocable and can be changed or canceled at any time for any reason during a Trustor's lifetime.
-- The Trust was established by one or more natural persons, solely or jointly.
-- The Trust became effective during the lifetime of the person(s) establishing it.
-- The primary beneficiary of the Trust is the individual(s) establishing the Trust.
-
-**Reads:** Borrower.entity_type
-**Missing data:** State of establishment and evidence of validity under that state's law; Trust revocability and terms; identity and status of establishing persons; effective date; and primary beneficiary.
-
-## acra-standard.title_review.trustee_powers_and_lender_rights
-
-**Purpose:** Determine whether the Trust contains all required terms concerning mortgage authority, beneficiary consent, risk, and lender rights.
-
-1. Initial Document Review: Review the Trust for provisions concerning Trustee authority, beneficiary consent, lender risk, and creditor rights.
-2. Eligibility Verification: Determine whether the Trust specifies that the Trustee has power to hold title and mortgage the property.
-3. Validation and Verification: Verify that the Trust specifies either that the beneficiary does not need to grant written consent for the Trust to borrow money or that consent has been granted in writing for purposes of the mortgage; that there is no unusual risk or impairment to the lender's rights; and that holding title in the Trust does not diminish the lender's rights as a creditor.
-4. Final Determination: Record whether all required terms are specified.
-
-**Checks:**
-- The Trust specifies that the Trustee has the power to hold title and mortgage the property.
-- The Trust specifies that the beneficiary does not need to grant written consent for the Trust to borrow money, or that such consent has been granted in writing for purposes of the mortgage.
-- The Trust specifies that there is no unusual risk or impairment to the lender's rights.
-- The Trust specifies that holding title in the Trust does not diminish the lender's rights as a creditor.
-
-**Reads:** Borrower.entity_type
-**Missing data:** Trust provisions on Trustee powers, beneficiary consent, unusual risk or impairment to lender rights, and whether trust title diminishes lender rights as a creditor.
-
-## acra-standard.title_review.trustor_trustee_exception
-
-**Purpose:** Determine whether the required written exception is present when the Trustor(s) and Trustee(s) differ.
-
-1. Initial Document Review: Review the Trust or Certification of Trust to identify the Trustor(s) and Trustee(s).
-2. Eligibility Verification: Determine whether the Trustor(s) and Trustee(s) are the same.
-3. Validation and Verification: If they are not the same, obtain and verify written exception by Acra Senior Management.
-4. Final Determination: Record whether the exception requirement is satisfied or whether no exception is required.
-
-**Checks:**
-- If the Trustor(s) and Trustee(s) are not the same, written exception by Acra Senior Management has been obtained.
-
-**Reads:** Borrower.entity_type
-**Missing data:** Identity of the Trustor(s) and Trustee(s), and written exception by Acra Senior Management if they are not the same.
-
-## acra-standard.title_review.us_entity_status
-
-**Purpose:** Determine whether the entity borrower meets the US formation, location, and ownership restriction.
-
-1. Initial Document Review: Review the entity documents for the entity's place of formation, place of business, and ownership.
-2. Eligibility Verification: Verify that the borrower is a US formed and based Entity and is not a foreign entity or foreign owned entity.
-3. Validation and Verification: Confirm the formation, base, and ownership information in the entity documents.
-4. Final Determination: Record whether the borrower meets the US entity restriction.
-
-**Checks:**
-- The borrower is a US formed and based Entity and is not a foreign entity or foreign owned entity.
-
-**Reads:** Borrower.entity_type
-**Missing data:** Entity formation location, entity base, and whether the entity is foreign owned, as established by the entity documents.
+**Reads:** LoanCore.dscr_qualification_method

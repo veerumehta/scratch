@@ -1,0 +1,1338 @@
+# Acra's Standard DSCR program, from its consolidated guidelines. Loaded with load_policies().
+# Author: Virendra Mehta <virendra.mehta@jazzx.ai>
+#
+# Rule descriptions cite the consolidation's STD-x.y numbers. Not encoded, pending Acra or a field
+# to read: the declining-market -5% (Q-07), cash-in-hand limits (STD-2.3, Q-17), $50 loan
+# increments, the 10% own-funds gift rule, minimum PPP terms for vacant refinances and listed
+# properties (Q-24), subordinate financing (Q-18), rent loss insurance (STD-8.12), qualifying rent
+# (Q-01), the forbearance reserve alternative (STD-3.15) and ARM margins. An unstated
+# housing_history imposes no Standard cap.
+policies:
+- policy_id: DSCR_STANDARD
+  version: 3.1.0
+  name: Acra Standard DSCR Program
+  description: 'Executable encoding of the Standard DSCR program from its consolidated guidelines:
+    loan-amount/FICO/purpose CLTV grid, DSCR gates and borrower/property/credit/transaction
+    overlays; the state PPP restrictions are in DSCR_PROCESS. Thresholds resolve from PolicyProfile dscr_v6_15_2026_v1_1; grid
+    cells resolve from profile tables.'
+  policy_type: institutional
+  pack_id: acra-regen-5
+  jurisdiction: US
+  effective_date: '2026-08-17T00:00:00Z'
+  status: draft
+  scope: product
+  overlay_id: standard
+  source_refs:
+  - ref_id: acra_standard_consolidated_v1_0
+    title: Acra DSCR Standard Consolidated Guidelines v1.0 (DSCR Program Summary 8.17.2026; DSCR
+      Seller's Guide excerpt 2026-08-28)
+    authority: Acra Lending
+    ref_type: guideline
+  rules:
+  - rule_id: DSCR-ELIG-CLTV-GRID
+    priority: 10
+    action: deny
+    description: 'STD-2.1: Primary DSCR eligibility grid: CLTV may not exceed the max for the loan-amount
+      band, FICO tier, and loan purpose (DSCR Program Summary, Investment Property grid).'
+    citations:
+    - acra_standard_consolidated_v1_0
+    condition:
+      kind: matrix
+      axes:
+      - field: LoanCore.total_loan_amount_usd
+        domain_extensions:
+          profile_custom_key: grid_loan_amount_band_edges
+        bands:
+        - key: la_le_1_5m
+          min: 100000
+          max: 1500001
+        - key: la_1_5m_2m
+          min: 1500001
+          max: 2000001
+        - key: la_2m_3m
+          min: 2000001
+          max: 3000001
+      - field: CreditReport.representative_score
+        bands:
+        - key: lt600
+          min: 0
+          max: 600
+        - key: '600'
+          min: 600
+          max: 620
+        - key: '620'
+          min: 620
+          max: 640
+        - key: '640'
+          min: 640
+          max: 660
+        - key: '660'
+          min: 660
+          max: 680
+        - key: '680'
+          min: 680
+          max: 700
+        - key: '700'
+          min: 700
+          max: 720
+        - key: '720'
+          min: 720
+          max: 740
+        - key: '740'
+          min: 740
+          max: 760
+        - key: '760'
+          min: 760
+          max: 780
+        - key: '780'
+          min: 780
+          max: 901
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_grid
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: DSCR-LA-MIN
+    priority: 5
+    action: deny
+    description: 'STD-1.10: Minimum loan amount $100,000.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    condition:
+      kind: expression
+      field: LoanCore.total_loan_amount_usd
+      operator: '>='
+      value: 100000
+      domain_extensions:
+        profile_custom_key: loan_amount_min
+  - rule_id: DSCR-LA-MAX
+    priority: 5
+    action: deny
+    description: 'STD-1.10: Maximum loan amount $3,000,000.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    condition:
+      kind: expression
+      field: LoanCore.total_loan_amount_usd
+      operator: <=
+      value: 3000000
+      domain_extensions:
+        profile_custom_key: loan_amount_max
+  - rule_id: DSCR-STATE-INELIGIBLE
+    priority: 5
+    action: deny
+    description: 'STD-1.13: Subject property may not be located in an ineligible state (SD).'
+    citations:
+    - acra_standard_consolidated_v1_0
+    condition:
+      kind: expression
+      field: SubjectProperty.state
+      operator: not_in
+      value:
+      - SD
+      domain_extensions:
+        profile_custom_key: ineligible_states
+  # No no-ratio twin for this one, unlike DSCR-OVER-2M-NO-RATIO below: its ratio condition is
+  # equally INDETERMINATE on a no-ratio file, but DSCR-NO-RATIO-CLTV caps such a file at 75%
+  # CLTV, below this rule's own `cltv_pct > 80` gate, so the case cannot arise (verified: a
+  # no-ratio file at 85% is denied by that cap). Masked, not absent -- raise the no-ratio CLTV
+  # cap above 80 and this rule starts skipping silently, so the twin becomes necessary then.
+  - rule_id: DSCR-HIGH-LTV-DSCR
+    priority: 20
+    action: deny
+    description: 'STD-3.16: LTV > 80% requires a minimum DSCR of 1.20.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: LoanCore.cltv_percent
+      operator: '>'
+      value: 80
+    condition:
+      kind: ratio
+      ratio_name: DSCR
+      numerator: RatioSet.total_monthly_income_usd
+      denominator: RatioSet.total_monthly_obligation_usd
+      threshold: profile:dscr_min_high_ltv
+      direction: '>='
+  - rule_id: DSCR-HIGH-LTV-RESERVES
+    priority: 20
+    action: require_evidence
+    description: 'STD-3.16: LTV > 80% requires 6 months PITIA reserves.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: LoanCore.cltv_percent
+      operator: '>'
+      value: 80
+    condition:
+      kind: expression
+      field: RatioSet.reserves_months
+      operator: '>='
+      value: 6
+      domain_extensions:
+        profile_custom_key: reserves_months_high_ltv
+    parameters:
+      evidence_types:
+      - bank_statement
+      - asset_statement
+  - rule_id: DSCR-HIGH-LTV-PROPERTY-TYPE
+    priority: 20
+    action: deny
+    description: 'STD-3.16/8.2: LTV > 80% is limited to SFR, townhome, PUD, and warrantable condo outside
+      Florida.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: LoanCore.cltv_percent
+      operator: '>'
+      value: 80
+    condition:
+      kind: any_of
+      conditions:
+      - kind: expression
+        field: SubjectProperty.property_type
+        operator: in
+        value:
+        - sfr
+        - townhome
+        - pud
+        domain_extensions:
+          profile_custom_key: high_ltv_eligible_property_types
+      - kind: all_of
+        conditions:
+        - kind: expression
+          field: SubjectProperty.property_type
+          operator: ==
+          value: warrantable_condo
+        - kind: expression
+          field: SubjectProperty.state
+          operator: '!='
+          value: FL
+  - rule_id: DSCR-SUB-1-DSCR-CLTV
+    priority: 25
+    action: deny
+    description: 'STD-3.17: DSCR < 1.0 or No Ratio: max CLTV 75% purchase / 70% R&T / 65% cash-out.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: ratio
+      ratio_name: DSCR
+      numerator: RatioSet.total_monthly_income_usd
+      denominator: RatioSet.total_monthly_obligation_usd
+      threshold: profile:dscr_sub_1_ceiling
+      direction: <=
+    condition:
+      kind: matrix
+      axes:
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_sub_1_dscr
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: DSCR-SUB-1-DSCR-FICO
+    priority: 25
+    action: deny
+    description: 'STD-3.17: DSCR < 1.0 or No Ratio: minimum FICO 640.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: ratio
+      ratio_name: DSCR
+      numerator: RatioSet.total_monthly_income_usd
+      denominator: RatioSet.total_monthly_obligation_usd
+      threshold: profile:dscr_sub_1_ceiling
+      direction: <=
+    condition:
+      kind: expression
+      field: CreditReport.representative_score
+      operator: '>='
+      value: 640
+      domain_extensions:
+        # Same sentence and same threshold as DSCR-NO-RATIO-FICO, so the same key: without it
+        # only the twin was covered by find_profile_literal_drift, and recalibrating the profile
+        # left this rule silently on the old number.
+        profile_custom_key: fico_min_no_ratio
+  - rule_id: DSCR-OVER-2M-DSCR
+    priority: 20
+    action: deny
+    description: 'STD-2.6: Loan amount > $2,000,000 must have DSCR of 1.0 or greater.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: LoanCore.total_loan_amount_usd
+      operator: '>'
+      value: 2000000
+      domain_extensions:
+        profile_custom_key: dscr_floor_loan_amount
+    condition:
+      kind: ratio
+      ratio_name: DSCR
+      numerator: RatioSet.total_monthly_income_usd
+      denominator: RatioSet.total_monthly_obligation_usd
+      threshold: profile:dscr_min_over_2m
+      direction: '>='
+  - rule_id: DSCR-OVER-2M-NO-RATIO
+    priority: 20
+    action: deny
+    description: 'STD-2.6: Loan amount > $2,000,000 must have DSCR of 1.0 or greater, so a No Ratio file
+      cannot qualify at that size. Separate from DSCR-OVER-2M-DSCR, as
+      DSCR-NO-RATIO-CLTV/-FICO already are: on a no-ratio file the ratio condition evaluates INDETERMINATE,
+      the rule is skipped, and a $2.5M no-ratio loan passed while the same loan with a documented DSCR
+      of 0.9 was denied.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: LoanCore.total_loan_amount_usd
+        operator: '>'
+        value: 2000000
+        domain_extensions:
+          profile_custom_key: dscr_floor_loan_amount
+      - kind: expression
+        field: LoanCore.dscr_qualification_method
+        operator: '=='
+        value: no_ratio
+    condition:
+      # Unsatisfiable under that gate by construction, which is the point: there is no DSCR to
+      # compare, so the size limit cannot be met. Same shape as the PPP rules' "must be X".
+      kind: expression
+      field: LoanCore.dscr_qualification_method
+      operator: '!='
+      value: no_ratio
+  - rule_id: DSCR-FICO-LT-620-RESERVES
+    priority: 25
+    action: require_evidence
+    description: 'STD-7.5: FICO below 620 requires 12 months reserves.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: CreditReport.representative_score
+      operator: <
+      value: 620
+    condition:
+      kind: expression
+      field: RatioSet.reserves_months
+      operator: '>='
+      value: 12
+      domain_extensions:
+        profile_custom_key: reserves_months_fico_lt_620
+  - rule_id: DSCR-STR-CLTV
+    priority: 30
+    action: deny
+    description: 'STD-3.14: Short-term rental: max CLTV 75% purchase / 70% refinance.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.occupancy_subtype
+      operator: '=='
+      value: short_term_rental
+    condition:
+      kind: matrix
+      axes:
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_short_term_rental
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: DSCR-PROPERTY-TYPE-CLTV
+    priority: 30
+    action: deny
+    description: 'STD-8.1: Property-type overlay caps (non-warrantable condo, condotel/PUDtel, manufactured,
+      2-4 unit); the Florida -5% is DSCR-FL-CONDO-CLTV.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.property_type
+      operator: in
+      value:
+      - non_warrantable_condo
+      - condotel
+      - manufactured
+      - two_to_four_unit
+    condition:
+      kind: matrix
+      axes:
+      - field: SubjectProperty.property_type
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_property_type
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: DSCR-ITIN-CLTV
+    priority: 30
+    action: deny
+    description: 'STD-4.5: ITIN borrower overlay: max CLTV by FICO tier and purpose; max loan amount $1.0M,
+      min FICO 640.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: Borrower.citizenship_status
+      operator: '=='
+      value: itin
+    condition:
+      kind: matrix
+      axes:
+      - field: CreditReport.representative_score
+        bands:
+        - key: lt600
+          min: 0
+          max: 600
+        - key: '600'
+          min: 600
+          max: 620
+        - key: '620'
+          min: 620
+          max: 640
+        - key: '640'
+          min: 640
+          max: 660
+        - key: '660'
+          min: 660
+          max: 680
+        - key: '680'
+          min: 680
+          max: 700
+        - key: '700'
+          min: 700
+          max: 720
+        - key: '720'
+          min: 720
+          max: 740
+        - key: '740'
+          min: 740
+          max: 760
+        - key: '760'
+          min: 760
+          max: 780
+        - key: '780'
+          min: 780
+          max: 901
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_itin
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: DSCR-ITIN-LOAN-MAX
+    priority: 30
+    action: deny
+    description: 'STD-4.5: ITIN borrower: maximum loan amount $1,000,000.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: Borrower.citizenship_status
+      operator: '=='
+      value: itin
+    condition:
+      kind: expression
+      field: LoanCore.total_loan_amount_usd
+      operator: <=
+      value: 1000000
+      domain_extensions:
+        # Linked to the profile, so the drift lint checks it against the grid's value.
+        profile_custom_key: itin_loan_amount_max
+  - rule_id: DSCR-FOREIGN-NATIONAL-ESCROW
+    priority: 35
+    action: deny
+    description: 'STD-4.7/7.12: Foreign National borrowers are ineligible for escrow waiver.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: LoanCore.is_escrow_waived
+      operator: ==
+      value: true
+    condition:
+      kind: expression
+      field: Borrower.citizenship_status
+      operator: '!='
+      value: foreign_national
+  - rule_id: DSCR-IO-MIN-LOAN
+    priority: 35
+    action: deny
+    description: 'STD-2.7/10.3: Interest-only products require a minimum loan amount of $250,000 and minimum
+      FICO 640.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: MortgageLoanInformation.is_interest_only
+      operator: ==
+      value: true
+    condition:
+      # Both legs the description states. Only the loan amount was encoded, so an interest-only
+      # loan at FICO 620 returned SATISFIED -- and `rule.description` is not inert prose: the
+      # policy registry hands it back verbatim as guidance text, so a caller was told a 640 check
+      # ran when none did. `profile.custom.fico_min_io` was authored at 640 with no rule reading
+      # it, which is the other half of the same omission.
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: LoanCore.total_loan_amount_usd
+        operator: '>='
+        value: 250000
+        domain_extensions:
+          profile_custom_key: io_loan_amount_min
+      - kind: expression
+        field: CreditReport.representative_score
+        operator: '>='
+        value: 640
+        domain_extensions:
+          profile_custom_key: fico_min_io
+  - rule_id: DSCR-NO-RATIO-CLTV
+    priority: 25
+    action: deny
+    description: 'STD-3.17: No Ratio (no qualifying rental income documented): max CLTV 75% purchase /
+      70% R&T / 65% cash-out. Separate from DSCR-SUB-1-DSCR-CLTV because a missing DSCR evaluates INDETERMINATE,
+      not ''<1.0''.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: LoanCore.dscr_qualification_method
+      operator: '=='
+      value: no_ratio
+    condition:
+      kind: matrix
+      axes:
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_sub_1_dscr
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: DSCR-NO-RATIO-FICO
+    priority: 25
+    action: deny
+    description: 'STD-3.17: No Ratio: minimum FICO 640.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: LoanCore.dscr_qualification_method
+      operator: '=='
+      value: no_ratio
+    condition:
+      kind: expression
+      field: CreditReport.representative_score
+      operator: '>='
+      value: 640
+      domain_extensions:
+        profile_custom_key: fico_min_no_ratio
+  - rule_id: DSCR-CITIZENSHIP
+    priority: 5
+    action: deny
+    description: 'STD-4.1: US Citizen, Permanent Resident, Non-Permanent Resident, Foreign National or ITIN.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    condition:
+      kind: expression
+      field: Borrower.citizenship_status
+      operator: in
+      value:
+      - us_citizen
+      - permanent_resident
+      - non_permanent_resident
+      - foreign_national
+      - itin
+      domain_extensions:
+        profile_custom_key: eligible_citizenship
+  - rule_id: DSCR-SELLER-CONCESSION
+    priority: 5
+    action: deny
+    description: 'STD-1.11: seller concessions limited to 3% of the sale price.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    condition:
+      kind: expression
+      field: LoanCore.seller_concession_percent
+      operator: <=
+      value: 3
+      domain_extensions:
+        profile_custom_key: seller_concession_max_pct
+  - rule_id: DSCR-DELAYED-FINANCING-MAX
+    priority: 5
+    action: deny
+    description: 'STD-1.4/2.4: delayed financing capped at $1.5MM.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: LoanCore.is_delayed_financing
+      operator: ==
+      value: true
+    condition:
+      kind: expression
+      field: LoanCore.total_loan_amount_usd
+      operator: <=
+      value: 1500000
+      domain_extensions:
+        profile_custom_key: delayed_financing_loan_amount_max
+  - rule_id: DSCR-SMALL-LOAN-CLTV
+    priority: 30
+    action: deny
+    description: 'STD-2.5: loan amount < $200,000, max CLTV 80% purchase / 75% refinance.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: LoanCore.total_loan_amount_usd
+      operator: <
+      value: 200000
+      domain_extensions:
+        profile_custom_key: small_loan_amount
+    condition:
+      kind: matrix
+      axes:
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_small_loan
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: DSCR-STR-FICO
+    priority: 30
+    action: deny
+    description: 'STD-3.14: short-term rental, minimum FICO 640.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.occupancy_subtype
+      operator: ==
+      value: short_term_rental
+    condition:
+      kind: expression
+      field: CreditReport.representative_score
+      operator: '>='
+      value: 640
+      domain_extensions:
+        profile_custom_key: fico_min_str
+  - rule_id: DSCR-NPR-LOAN-MAX
+    priority: 30
+    action: deny
+    description: 'STD-4.3: Non-Permanent Resident, max loan amount $1.5M (read as a limit independent of
+      the CLTV one, Q-21).'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: Borrower.citizenship_status
+      operator: ==
+      value: non_permanent_resident
+    condition:
+      kind: expression
+      field: LoanCore.total_loan_amount_usd
+      operator: <=
+      value: 1500000
+      domain_extensions:
+        profile_custom_key: npr_loan_amount_max
+  - rule_id: DSCR-NPR-CLTV
+    priority: 30
+    action: deny
+    description: 'STD-4.3: Non-Permanent Resident, max CLTV 80%.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: Borrower.citizenship_status
+      operator: ==
+      value: non_permanent_resident
+    condition:
+      kind: matrix
+      axes:
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_non_permanent_resident
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: DSCR-FOREIGN-NATIONAL-CLTV
+    priority: 30
+    action: deny
+    description: 'STD-4.4: Foreign National, max CLTV 70% purchase / 65% refinance.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: Borrower.citizenship_status
+      operator: ==
+      value: foreign_national
+    condition:
+      kind: matrix
+      axes:
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_foreign_national
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: DSCR-FTHB-TERMS
+    priority: 30
+    action: deny
+    description: 'STD-4.10: first-time homebuyer needs FICO 700, loan amount <= $1MM, no interest-only,
+      impounds, and 6 months reserves.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: Borrower.is_first_time_homebuyer
+      operator: ==
+      value: true
+    condition:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: CreditReport.representative_score
+        operator: '>='
+        value: 700
+        domain_extensions:
+          profile_custom_key: fico_min_fthb
+      - kind: expression
+        field: LoanCore.total_loan_amount_usd
+        operator: <=
+        value: 1000000
+        domain_extensions:
+          profile_custom_key: fthb_loan_amount_max
+      - &id002
+        kind: expression
+        field: MortgageLoanInformation.is_interest_only
+        operator: ==
+        value: false
+      - &id003
+        kind: expression
+        field: LoanCore.is_escrow_waived
+        operator: ==
+        value: false
+      - kind: expression
+        field: RatioSet.reserves_months
+        operator: '>='
+        value: 6
+        domain_extensions:
+          profile_custom_key: reserves_months_fthb
+  - rule_id: DSCR-FTHB-DSCR
+    priority: 30
+    action: deny
+    description: 'STD-4.10: first-time homebuyer, minimum DSCR 1.15.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: Borrower.is_first_time_homebuyer
+      operator: ==
+      value: true
+    condition:
+      kind: ratio
+      ratio_name: DSCR
+      numerator: RatioSet.total_monthly_income_usd
+      denominator: RatioSet.total_monthly_obligation_usd
+      threshold: profile:dscr_min_fthb
+      direction: '>='
+  - rule_id: DSCR-FTHB-CLTV
+    priority: 30
+    action: deny
+    description: 'STD-4.10: first-time homebuyer, max CLTV 70%.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: Borrower.is_first_time_homebuyer
+      operator: ==
+      value: true
+    condition:
+      kind: matrix
+      axes:
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_fthb
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: DSCR-THIN-FILE-CLTV
+    priority: 30
+    action: deny
+    description: 'STD-7.3: 1 or no score, or deficient tradelines, max LTV/CLTV 65%.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: any_of
+      conditions:
+      - kind: expression
+        field: CreditReport.score_count
+        operator: <=
+        value: 1
+      - kind: expression
+        field: CreditReport.tradelines_meet_requirement
+        operator: ==
+        value: false
+    condition:
+      kind: matrix
+      axes:
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_thin_file
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: DSCR-THIN-FILE-DSCR
+    priority: 30
+    action: deny
+    description: 'STD-7.3: 1 or no score, or deficient tradelines, minimum DSCR 1.1.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: any_of
+      conditions:
+      - kind: expression
+        field: CreditReport.score_count
+        operator: <=
+        value: 1
+      - kind: expression
+        field: CreditReport.tradelines_meet_requirement
+        operator: ==
+        value: false
+    condition:
+      kind: ratio
+      ratio_name: DSCR
+      numerator: RatioSet.total_monthly_income_usd
+      denominator: RatioSet.total_monthly_obligation_usd
+      threshold: profile:dscr_min_thin_file
+      direction: '>='
+  - rule_id: DSCR-THIN-FILE-HISTORY
+    priority: 30
+    action: deny
+    description: 'STD-7.3: 1 or no score, or deficient tradelines, needs 24 months 0x30 housing history.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: any_of
+      conditions:
+      - kind: expression
+        field: CreditReport.score_count
+        operator: <=
+        value: 1
+      - kind: expression
+        field: CreditReport.tradelines_meet_requirement
+        operator: ==
+        value: false
+    condition:
+      kind: expression
+      field: CreditReport.mortgage_0x30x24
+      operator: ==
+      value: true
+  - rule_id: DSCR-HOUSING-HISTORY-CLTV
+    priority: 30
+    action: deny
+    description: 'STD-7.9: mortgage history caps (1x30x12, 0x60x12, 0x90x12); 0x120x12 ineligible.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: CreditReport.housing_history_rating
+      operator: in
+      value:
+      - 1x30x12
+      - 0x60x12
+      - 0x90x12
+      - 0x120x12
+    condition:
+      kind: matrix
+      axes:
+      - field: CreditReport.housing_history_rating
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_housing_history
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: DSCR-BK-FC-CLTV
+    priority: 30
+    action: deny
+    description: 'STD-7.10: bankruptcy or foreclosure seasoned under 36 months caps CLTV (24-35 80%/75%,
+      12-23 65%); under 12 months ineligible.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: Borrower.has_bankruptcy_or_foreclosure
+        operator: ==
+        value: true
+      - kind: expression
+        field: Borrower.months_since_bankruptcy_or_foreclosure
+        operator: <
+        value: 36
+    condition:
+      kind: matrix
+      axes:
+      - field: Borrower.months_since_bankruptcy_or_foreclosure
+        bands:
+        - key: lt12
+          min: 0
+          max: 12
+        - key: '12_23'
+          min: 12
+          max: 24
+        - key: '24_35'
+          min: 24
+          max: 36
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_bankruptcy_foreclosure
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: DSCR-SS-DIL-MOD-CLTV
+    priority: 30
+    action: deny
+    description: 'STD-7.11: short sale, deed-in-lieu or modification seasoned under 24 months caps CLTV
+      (12-23 80%/75%, under 12 75%/70%).'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: Borrower.has_short_sale_dil_or_modification
+        operator: ==
+        value: true
+      - kind: expression
+        field: Borrower.months_since_short_sale_dil_or_modification
+        operator: <
+        value: 24
+    condition:
+      kind: matrix
+      axes:
+      - field: Borrower.months_since_short_sale_dil_or_modification
+        bands:
+        - key: lt12
+          min: 0
+          max: 12
+        - key: '12_23'
+          min: 12
+          max: 24
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_short_sale_dil_mod
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: DSCR-ESCROW-WAIVER-TERMS
+    priority: 35
+    action: deny
+    description: 'STD-7.12: escrow waiver needs loan amount <= $1.5M, CLTV <= 80%, FICO 700 and 0x30x24
+      mortgage history.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: LoanCore.is_escrow_waived
+      operator: ==
+      value: true
+    condition:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: LoanCore.total_loan_amount_usd
+        operator: <=
+        value: 1500000
+        domain_extensions:
+          profile_custom_key: escrow_waiver_loan_amount_max
+      - kind: expression
+        field: LoanCore.cltv_percent
+        operator: <=
+        value: 80
+      - kind: expression
+        field: CreditReport.representative_score
+        operator: '>='
+        value: 700
+        domain_extensions:
+          profile_custom_key: fico_min_escrow_waiver
+      - kind: expression
+        field: CreditReport.mortgage_0x30x24
+        operator: ==
+        value: true
+  - rule_id: DSCR-CONDO-TYPE-DSCR
+    priority: 30
+    action: deny
+    description: 'STD-8.1: non-warrantable condo and condotel/PUDtel, minimum DSCR 1.0.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.property_type
+      operator: in
+      value: &id001
+      - non_warrantable_condo
+      - condotel
+    condition:
+      kind: ratio
+      ratio_name: DSCR
+      numerator: RatioSet.total_monthly_income_usd
+      denominator: RatioSet.total_monthly_obligation_usd
+      threshold: profile:dscr_min_condo_type
+      direction: '>='
+  - rule_id: DSCR-FL-CONDO-CLTV
+    priority: 30
+    action: deny
+    description: 'STD-8.1: Florida non-warrantable condo and condotel/PUDtel, the property-type cap less
+      5%.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: SubjectProperty.state
+        operator: ==
+        value: FL
+      - kind: expression
+        field: SubjectProperty.property_type
+        operator: in
+        value: *id001
+    condition:
+      kind: matrix
+      axes:
+      - field: SubjectProperty.property_type
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_property_type_florida
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: DSCR-RURAL-CLTV
+    priority: 30
+    action: deny
+    description: 'STD-8.3: rural/unique property, max CLTV 80% purchase / 75% rate & term / 70% cash-out.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.is_rural
+      operator: ==
+      value: true
+    condition:
+      kind: matrix
+      axes:
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_rural
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: DSCR-RURAL-FICO
+    priority: 30
+    action: deny
+    description: 'STD-8.3: rural/unique property, minimum FICO 700.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.is_rural
+      operator: ==
+      value: true
+    condition:
+      kind: expression
+      field: CreditReport.representative_score
+      operator: '>='
+      value: 700
+      domain_extensions:
+        profile_custom_key: fico_min_rural
+  - rule_id: DSCR-RURAL-DSCR
+    priority: 30
+    action: deny
+    description: 'STD-8.3: rural/unique property, minimum DSCR 1.00.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.is_rural
+      operator: ==
+      value: true
+    condition:
+      kind: ratio
+      ratio_name: DSCR
+      numerator: RatioSet.total_monthly_income_usd
+      denominator: RatioSet.total_monthly_obligation_usd
+      threshold: profile:dscr_min_rural
+      direction: '>='
+  - rule_id: DSCR-VACANT-RT-TERMS
+    priority: 35
+    action: deny
+    description: 'STD-8.6: vacant rate & term refinance needs FICO 700, no interest-only, impounds and 6
+      months reserves.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: SubjectProperty.is_vacant
+        operator: ==
+        value: true
+      - kind: expression
+        field: LoanCore.loan_purpose
+        operator: ==
+        value: rate_term_refinance
+    condition:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: CreditReport.representative_score
+        operator: '>='
+        value: 700
+        domain_extensions:
+          profile_custom_key: fico_min_vacant_refinance
+      - *id002
+      - *id003
+      - kind: expression
+        field: RatioSet.reserves_months
+        operator: '>='
+        value: 6
+        domain_extensions:
+          profile_custom_key: reserves_months_vacant_refinance
+  - rule_id: DSCR-VACANT-RT-DSCR
+    priority: 35
+    action: deny
+    description: 'STD-8.6: vacant rate & term refinance, minimum DSCR 1.000.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: SubjectProperty.is_vacant
+        operator: ==
+        value: true
+      - kind: expression
+        field: LoanCore.loan_purpose
+        operator: ==
+        value: rate_term_refinance
+    condition:
+      kind: ratio
+      ratio_name: DSCR
+      numerator: RatioSet.total_monthly_income_usd
+      denominator: RatioSet.total_monthly_obligation_usd
+      threshold: profile:dscr_min_vacant_rate_term
+      direction: '>='
+  - rule_id: DSCR-VACANT-RT-CLTV
+    priority: 35
+    action: deny
+    description: 'STD-8.6: vacant rate & term refinance, max CLTV 70% under $1,000,000 and 65% under $2,000,000
+      (at the boundaries: Q-10).'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: SubjectProperty.is_vacant
+        operator: ==
+        value: true
+      - kind: expression
+        field: LoanCore.loan_purpose
+        operator: ==
+        value: rate_term_refinance
+    condition:
+      kind: matrix
+      axes:
+      - field: LoanCore.total_loan_amount_usd
+        domain_extensions:
+          profile_custom_key: vacant_rate_term_loan_amount_band_edges
+        bands:
+        - key: lt_1m
+          min: 0
+          max: 1000000
+        - key: 1m_2m
+          min: 1000000
+          max: 2000000
+        - key: ge_2m
+          min: 2000000
+          max: 3000001
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_vacant_rate_term
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: DSCR-VACANT-CO-TERMS
+    priority: 35
+    action: deny
+    description: 'STD-8.7: vacant cash-out refinance needs FICO 700, no interest-only, impounds, 6 months
+      reserves and 15 months ownership.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: SubjectProperty.is_vacant
+        operator: ==
+        value: true
+      - kind: expression
+        field: LoanCore.loan_purpose
+        operator: ==
+        value: cash_out_refinance
+    condition:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: CreditReport.representative_score
+        operator: '>='
+        value: 700
+        domain_extensions:
+          profile_custom_key: fico_min_vacant_refinance
+      - *id002
+      - *id003
+      - kind: expression
+        field: RatioSet.reserves_months
+        operator: '>='
+        value: 6
+        domain_extensions:
+          profile_custom_key: reserves_months_vacant_refinance
+      - kind: expression
+        field: SubjectProperty.ownership_months
+        operator: '>='
+        value: 15
+        domain_extensions:
+          profile_custom_key: vacant_cash_out_ownership_months_min
+  - rule_id: DSCR-VACANT-CO-DSCR
+    priority: 35
+    action: deny
+    description: 'STD-8.7: vacant cash-out refinance, minimum DSCR 1.15.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: SubjectProperty.is_vacant
+        operator: ==
+        value: true
+      - kind: expression
+        field: LoanCore.loan_purpose
+        operator: ==
+        value: cash_out_refinance
+    condition:
+      kind: ratio
+      ratio_name: DSCR
+      numerator: RatioSet.total_monthly_income_usd
+      denominator: RatioSet.total_monthly_obligation_usd
+      threshold: profile:dscr_min_vacant_cash_out
+      direction: '>='
+  - rule_id: DSCR-VACANT-CO-CLTV
+    priority: 35
+    action: deny
+    description: 'STD-8.7: vacant cash-out refinance, max CLTV 60% under $1,500,000; larger loans are not
+      addressed and read as ineligible (Q-10).'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: SubjectProperty.is_vacant
+        operator: ==
+        value: true
+      - kind: expression
+        field: LoanCore.loan_purpose
+        operator: ==
+        value: cash_out_refinance
+    condition:
+      kind: matrix
+      axes:
+      - field: LoanCore.total_loan_amount_usd
+        domain_extensions:
+          profile_custom_key: vacant_cash_out_loan_amount_band_edges
+        bands:
+        - key: lt_1_5m
+          min: 0
+          max: 1500000
+        - key: ge_1_5m
+          min: 1500000
+          max: 3000001
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_vacant_cash_out
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: DSCR-LISTED-FOR-SALE-CLTV
+    priority: 35
+    action: deny
+    description: 'STD-8.9: listed for sale within six months, max LTV/CLTV 65%.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.listed_for_sale_last_6_months
+      operator: ==
+      value: true
+    condition:
+      kind: matrix
+      axes:
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_listed_for_sale
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: DSCR-LISTED-FOR-SALE-TERMS
+    priority: 35
+    action: deny
+    description: 'STD-8.9: listed for sale within six months needs a tenant (not vacant), 24 months reserves,
+      a fully amortizing term and impounds.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.listed_for_sale_last_6_months
+      operator: ==
+      value: true
+    condition:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: SubjectProperty.is_vacant
+        operator: ==
+        value: false
+      - kind: expression
+        field: RatioSet.reserves_months
+        operator: '>='
+        value: 24
+        domain_extensions:
+          profile_custom_key: reserves_months_listed_for_sale
+      - *id002
+      - *id003
+  - rule_id: DSCR-LISTED-FOR-SALE-DSCR
+    priority: 35
+    action: deny
+    description: 'STD-8.9: listed for sale within six months, minimum DSCR 1.0.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.listed_for_sale_last_6_months
+      operator: ==
+      value: true
+    condition:
+      kind: ratio
+      ratio_name: DSCR
+      numerator: RatioSet.total_monthly_income_usd
+      denominator: RatioSet.total_monthly_obligation_usd
+      threshold: profile:dscr_min_listed_for_sale
+      direction: '>='
+  - rule_id: DSCR-MIXED-USE-DSCR
+    priority: 35
+    action: deny
+    description: 'STD-8.10: mixed use, adult care or assisted living, minimum DSCR 1.2.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.is_mixed_use
+      operator: ==
+      value: true
+    condition:
+      kind: ratio
+      ratio_name: DSCR
+      numerator: RatioSet.total_monthly_income_usd
+      denominator: RatioSet.total_monthly_obligation_usd
+      threshold: profile:dscr_min_mixed_use
+      direction: '>='
+  - rule_id: DSCR-IO-10-40-CLTV
+    priority: 35
+    action: deny
+    description: 'STD-10.4: Interest Only 10 Yr / 40 Year Term, max LTV/CLTV 80%.'
+    citations:
+    - acra_standard_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: LoanCore.is_interest_only_10_40
+      operator: ==
+      value: true
+    condition:
+      kind: matrix
+      axes:
+      - field: LoanCore.loan_purpose
+      table: profile_table:max_cltv_io_10_40
+      compare_field: LoanCore.cltv_percent
+      direction: <=

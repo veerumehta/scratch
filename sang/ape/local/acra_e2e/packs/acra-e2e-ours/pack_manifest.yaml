@@ -18,6 +18,11 @@ programs:
   - DSCR_PLATINUM_SELECT
 profiles:
   dir: profiles
+vocabulary:
+  chain:
+  - jazzx-core@0.1.0
+  - jazzx-finance@0.1.0
+  aliases: aliases.yaml
 conductor:
   kind: conductor_pipeline
   input_schema: schemas/loan_application.json

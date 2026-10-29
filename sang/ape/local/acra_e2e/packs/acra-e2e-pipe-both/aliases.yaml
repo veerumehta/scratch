@@ -1,0 +1,25 @@
+# Acra's terms and the SDK vocabulary terms they are (pack term: chain term). A term not listed is Acra's own.
+SubjectProperty.appraised_value_usd: Property.appraised_value_usd
+SubjectProperty.property_type: Property.property_type
+SubjectProperty.occupancy_subtype: Property.occupancy
+SubjectProperty.number_of_units: Property.units
+SubjectProperty.is_vacant: Property.is_vacant
+SubjectProperty.is_rural: Property.is_rural
+SubjectProperty.is_mixed_use: Property.is_mixed_use
+SubjectProperty.is_listed_for_sale: Property.is_listed_for_sale
+SubjectProperty.has_current_lease: Property.has_current_lease
+SubjectProperty.ownership_months: Property.ownership_months
+SubjectProperty.state: Property.state
+Borrower.citizenship_status: Borrower.citizenship
+Borrower.entity_type: Borrower.entity_type
+Borrower.is_first_time_homebuyer: Borrower.is_first_time_homebuyer
+Borrower.months_since_bankruptcy_or_foreclosure: Borrower.months_since_bankruptcy
+Borrower.months_since_short_sale_dil_or_modification: Borrower.months_since_short_sale
+CreditReport.representative_score: Borrower.credit_score
+LoanCore.total_loan_amount_usd: Loan.amount_usd
+LoanCore.loan_purpose: Loan.purpose
+LoanCore.note_rate_percent: Loan.note_rate_percent
+LoanCore.channel: Loan.channel
+LoanCore.prepayment_penalty_structure: Loan.prepayment_penalty_structure
+MortgageLoanInformation.is_interest_only: Loan.is_interest_only
+RatioSet.reserves_months: Loan.reserves_months

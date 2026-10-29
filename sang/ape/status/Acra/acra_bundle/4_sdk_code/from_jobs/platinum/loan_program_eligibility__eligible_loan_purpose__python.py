@@ -4,6 +4,9 @@
 # reads: LoanCore.loan_purpose
 # implements job: acra-platinum.loan_program_eligibility.eligible_loan_purpose
 
+import rules_lib
+
+
 def check(ctx):
     loan_purpose = ctx['LoanCore.loan_purpose']
     missing = rules_lib.gaps(loan_purpose=loan_purpose)

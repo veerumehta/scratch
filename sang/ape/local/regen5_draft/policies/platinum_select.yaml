@@ -1,0 +1,539 @@
+# Acra's Platinum Select DSCR program, from its consolidated guidelines. Loaded with load_policies().
+# Author: Virendra Mehta <virendra.mehta@jazzx.ai>
+#
+# Rule descriptions cite the consolidation's PLAT-x.y numbers. Encoded as printed where Acra's
+# answer is pending (720 takes the 700 row, Q-01). Not encoded, pending Acra or a field to read:
+# the declining-market -5% (Q-08), cash-in-hand limits (PLAT-2.2, Q-16), $50 loan increments, the
+# 10% own-funds gift rule, the listed-for-sale 3-year PPP minimum, Section 35 (Q-14), rent loss
+# insurance (PLAT-7.10), and the greater-of qualifying rent (PLAT-3.1, Q-03).
+policies:
+- policy_id: DSCR_PLATINUM_SELECT
+  version: 1.1.0
+  name: Acra Platinum Select DSCR Program
+  description: 'Executable encoding of the Platinum Select DSCR program from its consolidated guidelines:
+    FICO/purpose CLTV matrix, channel DSCR minimums, CLTV caps and borrower/property/credit eligibility;
+    the state PPP restrictions are in DSCR_PROCESS. Thresholds resolve from the plat_* keys of PolicyProfile dscr_v6_15_2026_v1_1.'
+  policy_type: institutional
+  pack_id: acra-regen-5
+  jurisdiction: US
+  effective_date: '2026-08-17T00:00:00Z'
+  status: draft
+  scope: product
+  overlay_id: platinum_select
+  source_refs:
+  - ref_id: acra_platinum_select_consolidated_v1_0
+    title: Acra DSCR Platinum Select Consolidated Guidelines v1.0 (Platinum Select DSCR Program Summary
+      8.17.2026; DSCR Seller's Guide excerpt 2026-08-28)
+    authority: Acra Lending
+    ref_type: guideline
+  rules:
+  - rule_id: PLAT-LA-MIN
+    priority: 5
+    action: deny
+    description: 'PLAT-1.13: minimum loan amount $100,000.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    condition:
+      kind: expression
+      field: LoanCore.total_loan_amount_usd
+      operator: '>='
+      value: 100000
+      domain_extensions:
+        profile_custom_key: plat_loan_amount_min
+  - rule_id: PLAT-LA-MAX
+    priority: 5
+    action: deny
+    description: 'PLAT-1.13: maximum loan amount $2,000,000.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    condition:
+      kind: expression
+      field: LoanCore.total_loan_amount_usd
+      operator: <=
+      value: 2000000
+      domain_extensions:
+        profile_custom_key: plat_loan_amount_max
+  - rule_id: PLAT-STATE-INELIGIBLE
+    priority: 5
+    action: deny
+    description: 'PLAT-1.16: ineligible locations SD and U.S. territories (PR, GU, VI, AS, MP).'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    condition:
+      kind: expression
+      field: SubjectProperty.state
+      operator: not_in
+      value:
+      - SD
+      - PR
+      - GU
+      - VI
+      - AS
+      - MP
+      domain_extensions:
+        profile_custom_key: plat_ineligible_states
+  - rule_id: PLAT-CITIZENSHIP
+    priority: 5
+    action: deny
+    description: 'PLAT-4.1/4.3: US Citizen or Permanent Resident only.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    condition:
+      kind: expression
+      field: Borrower.citizenship_status
+      operator: in
+      value:
+      - us_citizen
+      - permanent_resident
+      domain_extensions:
+        profile_custom_key: plat_eligible_citizenship
+  - rule_id: PLAT-PROPERTY-TYPE
+    priority: 5
+    action: deny
+    description: 'PLAT-7.1/7.2: SFR, Townhome, PUD, Warrantable Condo, Two-Units only; rural, condotel
+      and non-warrantable condo ineligible. 3-4 units and manufactured are not listed (Q-07).'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    condition:
+      kind: expression
+      field: SubjectProperty.property_type
+      operator: in
+      value:
+      - sfr
+      - townhome
+      - pud
+      - warrantable_condo
+      - two_to_four_unit
+      domain_extensions:
+        profile_custom_key: plat_eligible_property_types
+  # TODO(unit-count-not-tied-to-type): nothing checks residential_unit_count against
+  # property_type (an `sfr` with a count of 2 validates and is judged as two units); the schema
+  # has no conditional to say it, so it waits on input validation that can.
+  - rule_id: PLAT-TWO-UNITS-ONLY
+    priority: 5
+    action: deny
+    description: 'PLAT-7.1: of the 2-4 unit types only Two-Units is listed.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.property_type
+      operator: ==
+      value: two_to_four_unit
+    condition:
+      kind: expression
+      field: SubjectProperty.number_of_units
+      operator: ==
+      value: 2
+  - rule_id: PLAT-STR-INELIGIBLE
+    priority: 5
+    action: deny
+    description: 'PLAT-7.2: short-term rentals ineligible.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    condition:
+      kind: expression
+      field: SubjectProperty.occupancy_subtype
+      operator: '!='
+      value: short_term_rental
+  - rule_id: PLAT-RURAL-INELIGIBLE
+    priority: 5
+    action: deny
+    description: 'PLAT-7.2: rural properties ineligible.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    condition:
+      kind: expression
+      field: SubjectProperty.is_rural
+      operator: ==
+      value: false
+  - rule_id: PLAT-VACANT-INELIGIBLE
+    priority: 5
+    action: deny
+    description: 'PLAT-1.6/7.5: vacant properties ineligible.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    condition:
+      kind: expression
+      field: SubjectProperty.is_vacant
+      operator: ==
+      value: false
+  - rule_id: PLAT-FTHB-INELIGIBLE
+    priority: 5
+    action: deny
+    description: 'PLAT-4.4: first-time homebuyers ineligible.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    condition:
+      kind: expression
+      field: Borrower.is_first_time_homebuyer
+      operator: ==
+      value: false
+  - rule_id: PLAT-NO-RATIO-INELIGIBLE
+    priority: 5
+    action: deny
+    description: 'PLAT-1.8: no No Ratio option; every loan must meet the channel minimum DSCR (Q-12).'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    condition:
+      kind: expression
+      field: LoanCore.dscr_qualification_method
+      operator: '!='
+      value: no_ratio
+  - rule_id: PLAT-CLTV-GRID
+    priority: 10
+    action: deny
+    description: 'PLAT-2.1: CLTV may not exceed the matrix cell for the FICO row and loan purpose. No
+      row below 700; 720 takes the 700 row as printed (Q-01).'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    condition:
+      kind: matrix
+      axes:
+      - field: CreditReport.representative_score
+        bands:
+        - key: lt700
+          min: 0
+          max: 700
+        - key: '700'
+          min: 700
+          max: 721
+        - key: '721'
+          min: 721
+          max: 730
+        - key: '730'
+          min: 730
+          max: 901
+      - field: LoanCore.loan_purpose
+      table: profile_table:plat_max_cltv_grid
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: PLAT-DSCR-MIN
+    priority: 20
+    action: deny
+    description: 'PLAT-3.7: minimum DSCR 1.0 (Wholesale); no channel is lower.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    condition:
+      kind: ratio
+      ratio_name: DSCR
+      numerator: RatioSet.total_monthly_income_usd
+      denominator: RatioSet.total_monthly_obligation_usd
+      threshold: profile:plat_dscr_min_wholesale
+      direction: '>='
+  - rule_id: PLAT-DSCR-MIN-CORRESPONDENT
+    priority: 20
+    action: deny
+    description: 'PLAT-3.7: Correspondent minimum DSCR 1.2; a loan whose channel is not Wholesale is held
+      to it.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: LoanCore.channel
+      operator: '!='
+      value: wholesale
+    condition:
+      kind: ratio
+      ratio_name: DSCR
+      numerator: RatioSet.total_monthly_income_usd
+      denominator: RatioSet.total_monthly_obligation_usd
+      threshold: profile:plat_dscr_min_correspondent
+      direction: '>='
+  - rule_id: PLAT-HIGH-CLTV-RESERVES
+    priority: 20
+    action: require_evidence
+    description: 'PLAT-8.7: CLTV > 75% requires 6 months reserves.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: LoanCore.cltv_percent
+      operator: '>'
+      value: 75
+    condition:
+      kind: expression
+      field: RatioSet.reserves_months
+      operator: '>='
+      value: 6
+      domain_extensions:
+        profile_custom_key: plat_reserves_months_high_cltv
+    parameters:
+      evidence_types:
+      - bank_statement
+      - asset_statement
+  - rule_id: PLAT-LOAN-SIZE-CLTV
+    priority: 30
+    action: deny
+    description: 'PLAT-1.14/2.5: loan amount < $350,000 or > $1,500,000, max CLTV 75%.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: any_of
+      conditions:
+      - kind: expression
+        field: LoanCore.total_loan_amount_usd
+        operator: <
+        value: 350000
+        domain_extensions:
+          profile_custom_key: plat_small_loan_amount
+      - kind: expression
+        field: LoanCore.total_loan_amount_usd
+        operator: '>'
+        value: 1500000
+        domain_extensions:
+          profile_custom_key: plat_large_loan_amount
+    condition:
+      kind: matrix
+      axes:
+      - field: LoanCore.loan_purpose
+      table: profile_table:plat_max_cltv_75
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: PLAT-PROPERTY-TYPE-CLTV
+    priority: 30
+    action: deny
+    description: 'PLAT-7.1: Two-Units and Warrantable Condo, max CLTV 75%.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.property_type
+      operator: in
+      value:
+      - warrantable_condo
+      - two_to_four_unit
+    condition:
+      kind: matrix
+      axes:
+      - field: LoanCore.loan_purpose
+      table: profile_table:plat_max_cltv_75
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: PLAT-IO-CLTV
+    priority: 30
+    action: deny
+    description: 'PLAT-9.3: Interest-Only (5 Yr Term), max CLTV 75%.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: MortgageLoanInformation.is_interest_only
+      operator: ==
+      value: true
+    condition:
+      kind: matrix
+      axes:
+      - field: LoanCore.loan_purpose
+      table: profile_table:plat_max_cltv_75
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: PLAT-CORRESPONDENT-FICO-CLTV
+    priority: 30
+    action: deny
+    description: 'PLAT-2.3: Correspondent pricing limited to 60% CLTV for 700-719 FICO; a loan whose channel
+      is not Wholesale is held to it.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: LoanCore.channel
+        operator: '!='
+        value: wholesale
+      - kind: expression
+        field: CreditReport.representative_score
+        operator: '>='
+        value: 700
+      - kind: expression
+        field: CreditReport.representative_score
+        operator: <
+        value: 720
+    condition:
+      kind: matrix
+      axes:
+      - field: LoanCore.loan_purpose
+      table: profile_table:plat_max_cltv_correspondent_700_719
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: PLAT-LISTED-FOR-SALE-CLTV
+    priority: 30
+    action: deny
+    description: 'PLAT-7.8: listed for sale within six months, max LTV/CLTV 65%.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.listed_for_sale_last_6_months
+      operator: ==
+      value: true
+    condition:
+      kind: matrix
+      axes:
+      - field: LoanCore.loan_purpose
+      table: profile_table:plat_max_cltv_listed_for_sale
+      compare_field: LoanCore.cltv_percent
+      direction: <=
+  - rule_id: PLAT-LISTED-FOR-SALE-TERMS
+    priority: 35
+    action: deny
+    description: 'PLAT-7.8: listed for sale within six months requires 24 months reserves, a fully amortizing
+      term (no interest-only) and impounds.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: SubjectProperty.listed_for_sale_last_6_months
+      operator: ==
+      value: true
+    condition:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: RatioSet.reserves_months
+        operator: '>='
+        value: 24
+        domain_extensions:
+          profile_custom_key: plat_reserves_months_listed_for_sale
+      - kind: expression
+        field: MortgageLoanInformation.is_interest_only
+        operator: ==
+        value: false
+      - kind: expression
+        field: LoanCore.is_escrow_waived
+        operator: ==
+        value: false
+  - rule_id: PLAT-CASH-OUT-LEASE
+    priority: 35
+    action: deny
+    description: 'PLAT-1.5: cash-out refinance requires a current lease agreement.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: LoanCore.loan_purpose
+      operator: ==
+      value: cash_out_refinance
+    condition:
+      kind: expression
+      field: SubjectProperty.has_current_lease
+      operator: ==
+      value: true
+  - rule_id: PLAT-HOUSING-HISTORY
+    priority: 35
+    action: deny
+    description: 'PLAT-6.6: housing history 0x30x12.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    condition:
+      kind: expression
+      field: CreditReport.housing_history_rating
+      operator: ==
+      value: 0x30x12
+  - rule_id: PLAT-BK-FC-SEASONING
+    priority: 35
+    action: deny
+    description: 'PLAT-6.8: a bankruptcy or foreclosure needs 48 months seasoning (which events: Q-06).'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: Borrower.has_bankruptcy_or_foreclosure
+      operator: ==
+      value: true
+    condition:
+      kind: expression
+      field: Borrower.months_since_bankruptcy_or_foreclosure
+      operator: '>='
+      value: 48
+      domain_extensions:
+        profile_custom_key: plat_credit_event_seasoning_months
+  - rule_id: PLAT-SS-DIL-MOD-SEASONING
+    priority: 35
+    action: deny
+    description: 'PLAT-6.8: a short sale, deed-in-lieu or modification needs 48 months seasoning (which
+      events: Q-06).'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: Borrower.has_short_sale_dil_or_modification
+      operator: ==
+      value: true
+    condition:
+      kind: expression
+      field: Borrower.months_since_short_sale_dil_or_modification
+      operator: '>='
+      value: 48
+      domain_extensions:
+        profile_custom_key: plat_credit_event_seasoning_months
+  - rule_id: PLAT-TRADELINES
+    priority: 35
+    action: deny
+    description: 'PLAT-6.3: with 2 or fewer scores, 2 tradelines & 24 months or 3 tradelines & 12 months.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: CreditReport.score_count
+      operator: <=
+      value: 2
+    condition:
+      kind: expression
+      field: CreditReport.tradelines_meet_requirement
+      operator: ==
+      value: true
+  - rule_id: PLAT-PRODUCT
+    priority: 5
+    action: deny
+    description: 'PLAT-9.1: no 10 Yr / 40 Year interest-only product.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    condition:
+      kind: expression
+      field: LoanCore.is_interest_only_10_40
+      operator: ==
+      value: false
+  - rule_id: PLAT-ESCROW-WAIVER
+    priority: 35
+    action: deny
+    description: 'PLAT-6.13: escrow waiver max loan amount $1.5M and 0x30x24 mortgage history.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: LoanCore.is_escrow_waived
+      operator: ==
+      value: true
+    condition:
+      kind: all_of
+      conditions:
+      - kind: expression
+        field: LoanCore.total_loan_amount_usd
+        operator: <=
+        value: 1500000
+        domain_extensions:
+          profile_custom_key: plat_escrow_waiver_loan_amount_max
+      - kind: expression
+        field: CreditReport.mortgage_0x30x24
+        operator: ==
+        value: true
+  - rule_id: PLAT-DELAYED-FINANCING-MAX
+    priority: 35
+    action: deny
+    description: 'PLAT-1.4/2.4: delayed financing capped at $1.5MM.'
+    citations:
+    - acra_platinum_select_consolidated_v1_0
+    applicability:
+      kind: expression
+      field: LoanCore.is_delayed_financing
+      operator: ==
+      value: true
+    condition:
+      kind: expression
+      field: LoanCore.total_loan_amount_usd
+      operator: <=
+      value: 1500000
+      domain_extensions:
+        profile_custom_key: plat_delayed_financing_loan_amount_max

@@ -1,0 +1,3 @@
+bin_by_section: true
+name: acra-e2e-adjudication
+replicas: 1

@@ -1,580 +1,646 @@
 alignments:
-  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.10:
-    aligned_at: '2026-10-16T04:11:18+00:00'
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.0:
+    aligned_at: '2026-10-23T05:14:11+00:00'
     jobs:
-    - acra-platinum.loan_program_eligibility.matrix_cltv_limit
-    - acra-platinum.credit_review_analysis.minimum_score_and_matrix_cltv
-    note: At a decisioning score of 720, the printed matrix places the loan in the
-      700 row, with a 55% maximum CLTV for cash-out. The rule also reports that the
-      700–719 Correspondent restriction does not apply at 720 and that the printed
-      720–759 ARM margin is 3.25%.
+    - acra-platinum.loan_program_eligibility.loan_amount_range_and_increment
+    note: The loan amount must be no more than $2,000,000.
+    prompt: ledger/align_prompt@1.1.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.0
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.10:
+    aligned_at: '2026-10-23T05:14:20+00:00'
+    jobs:
+    - acra-platinum.loan_program_eligibility.matrix_fico_and_cltv
+    - acra-platinum.loan_program_eligibility.correspondent_fico_cltv_cap
+    note: For a representative score of 720, the matrix’s 700 row sets the cash-out
+      maximum at 55%, and the Correspondent restriction printed for “700-719 FICO”
+      does not apply. The printed ARM margin for 720–759 is 3.25%.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.10
     relation: partial
     source: proposal
   acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.11:
-    aligned_at: '2026-10-16T04:11:19+00:00'
+    aligned_at: '2026-10-23T05:14:22+00:00'
     jobs:
-    - acra-platinum.appraisal_review.short_term_rental_eligibility
-    - acra-platinum.income_stability_sufficiency_analysis.short_term_rental_eligibility
+    - acra-platinum.income_stability_sufficiency_analysis.reject_short_term_rental
     note: Short-term rentals are ineligible for the program.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.11
-    relation: partial
-    source: proposal
-  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.12:
-    aligned_at: '2026-10-16T04:16:23+00:00'
-    jobs:
-    - acra-platinum.income_stability_sufficiency_analysis.channel_minimum_dscr
-    note: The DSCR must be at least 1.2 for Correspondent loans and 1.0 for Wholesale
-      loans.
-    prompt: ledger/align_prompt@1.1.0
-    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.12
     relation: implements
     source: proposal
-  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.13:
-    aligned_at: '2026-10-16T04:11:23+00:00'
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.12:
+    aligned_at: '2026-10-23T05:14:20+00:00'
     jobs:
-    - acra-platinum.identification_requirements.eligible_citizenship_type
+    - acra-platinum.income_stability_sufficiency_analysis.meet_channel_minimum_dscr
+    - acra-platinum.appraisal_review_property_eligibility.listed_property_qualification
+    note: The calculated DSCR must be at least 1.2 for Correspondent or 1.0 for Wholesale;
+      for a property listed for sale within six months, the applicable channel minimum
+      DSCR applies.
+    prompt: ledger/align_prompt@1.1.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.12
+    relation: partial
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.13:
+    aligned_at: '2026-10-23T05:14:24+00:00'
+    jobs:
+    - acra-platinum.identification_requirements.eligible_borrower_citizenship
     - acra-platinum.identification_requirements.first_time_homebuyer_eligibility
-    - acra-platinum.loan_program_eligibility.first_time_homebuyer_eligibility
-    - acra-platinum.loan_program_eligibility.citizenship_eligibility
-    note: Eligible borrower citizenship types are US Citizen and Permanent Resident,
-      and First Time Homebuyers are ineligible. For Permanent Residents, an unexpired
-      PRA ID and SSA card / SSA-89 are required; the rule does not verify that documentation.
+    - acra-platinum.loan_program_eligibility.cash_out_current_lease
+    note: Eligible borrower citizenship types are US Citizen and Permanent Resident;
+      first-time homebuyers are ineligible; Cash-Out Refinance transactions require
+      a current lease agreement.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.13
-    relation: partial
+    relation: implements
     source: proposal
   acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.14:
-    aligned_at: '2026-10-16T04:16:37+00:00'
+    aligned_at: '2026-10-23T05:14:26+00:00'
     jobs:
     - acra-platinum.identification_requirements.first_time_homebuyer_eligibility
-    - acra-platinum.loan_program_eligibility.first_time_homebuyer_eligibility
-    - acra-platinum.identification_requirements.eligible_citizenship_type
-    note: Non-permanent residents, foreign nationals, and ITIN borrowers are not eligible,
-      and first-time homebuyers are ineligible. The rule does not affirmatively require
-      citizenship to be US Citizen or Permanent Resident.
+    note: First Time Homebuyers—applications where all Applicants have never previously
+      owned a home (real property)—are ineligible for this program.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.14
-    relation: partial
+    relation: implements
+    source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.15:
+    aligned_at: '2026-10-23T05:14:26+00:00'
+    jobs: []
+    note: An entity borrower must have complete entity documentation.
+    prompt: ledger/align_prompt@1.1.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.15
+    relation: no_job
     source: proposal
   acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.16:
-    aligned_at: '2026-10-16T04:16:35+00:00'
+    aligned_at: '2026-10-23T05:14:33+00:00'
     jobs:
-    - acra-platinum.compliance_and_closing.entity_guarantor_requirements
-    - acra-platinum.loan_program_eligibility.entity_borrower_eligibility
-    - acra-platinum.loan_program_eligibility.entity_guarantees_and_attestation
-    note: The entity borrower must be an allowed type and provide the required entity
-      documents. At least one guarantor must have prior homeownership experience,
-      and at least one borrower or guarantor must attest on the application that they
-      are not a first-time homebuyer.
+    - acra-platinum.compliance_and_closing_the_borrowing_entity_and_title.guarantor_homeownership_experience
+    - acra-platinum.compliance_and_closing_the_borrowing_entity_and_title.entity_borrower_eligibility
+    - acra-platinum.compliance_and_closing_the_borrowing_entity_and_title.required_entity_documentation
+    note: The borrowing entity must be one of the allowed entity types; at least one
+      borrower or guarantor must attest on the application that they are not a first-time
+      homebuyer; and the required entity documents must be complete, without exception.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.16
     relation: partial
     source: proposal
   acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.17:
-    aligned_at: '2026-10-16T04:16:48+00:00'
+    aligned_at: '2026-10-23T05:14:40+00:00'
     jobs:
-    - acra-platinum.compliance_and_closing.entity_documentation_package
-    note: The required entity documents must be complete, legible, applicable, and
-      meet the stated content and timing requirements.
+    - acra-platinum.compliance_and_closing_the_borrowing_entity_and_title.required_entity_documentation
+    note: The required entity documentation is complete, including the required operating
+      agreement or bylaws, ownership evidence, applicable corporate stock records
+      or K-1 and CPA/Tax Preparer evidence, matching names, and a Certificate of Good
+      Standing valid within ninety days of closing.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.17
-    relation: implements
+    relation: partial
     source: proposal
-  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.21:
-    aligned_at: '2026-10-16T04:16:58+00:00'
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.18:
+    aligned_at: '2026-10-23T05:14:37+00:00'
     jobs:
-    - acra-platinum.credit_review_analysis.fthb_status
-    - acra-platinum.loan_program_eligibility.first_time_homebuyer_eligibility
-    - acra-platinum.identification_requirements.first_time_homebuyer_eligibility
-    note: First Time Homebuyer (FTHB) is ineligible for this program.
+    - acra-standard.compliance_and_closing_the_borrowing_entity_and_title.entity_documentation
+    - acra-platinum.compliance_and_closing_the_borrowing_entity_and_title.required_entity_documentation
+    note: Required entity documentation is complete. The rule can identify when the
+      entity-documentation completeness field is false, but it does not verify the
+      specific required documents or their contents.
     prompt: ledger/align_prompt@1.1.0
-    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.21
-    relation: implements
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.18
+    relation: partial
     source: proposal
   acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.22:
-    aligned_at: '2026-10-16T04:16:57+00:00'
+    aligned_at: '2026-10-23T05:14:39+00:00'
     jobs:
-    - acra-platinum.loan_program_eligibility.property_eligibility_and_location
-    note: The property must be an eligible type and not Rural, a Condotel, a Non-Warrantable
-      Condo, or a Short-Term Rental; Two-Units and Warrantable Condos have a maximum
-      CLTV of 75%. The rule does not check the ineligible locations.
+    - acra-platinum.credit_review_analysis_credit.escrow_waiver_loan_amount
+    - acra-platinum.credit_review_analysis_credit.escrow_waiver_mortgage_history
+    - acra-platinum.appraisal_review_property_eligibility.property_type_status
+    note: For escrow waivers, the loan amount must not exceed $1.5M and 0x30x24 mortgage
+      history is required. Eligible property types are SFR, Townhome, PUD, Warrantable
+      Condo, and Two-Units; Rural Properties, Condotels, and Non-Warrantable Condos
+      are ineligible. Warrantable Condos and Two-Units have a maximum CLTV of 75.00%.
+      The rule does not explicitly classify Short-Term Rentals as ineligible.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.22
     relation: partial
     source: proposal
   acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.23:
-    aligned_at: '2026-10-16T04:16:55+00:00'
+    aligned_at: '2026-10-23T05:15:15+00:00'
     jobs:
-    - acra-platinum.loan_program_eligibility.property_eligibility_and_location
-    note: SFR, Townhome, PUD, Warrantable Condo, and Two-Units are eligible; Warrantable
-      Condos and Two-Units have a maximum CLTV of 75%. Rural properties, Condotels,
-      Non-Warrantable Condos, Short-Term Rentals, properties in SD or U.S. Terrs.,
-      and vacant properties are ineligible.
+    - acra-platinum.appraisal_review_property_eligibility.property_type_status
+    - acra-platinum.appraisal_review_property_eligibility.ineligible_state
+    note: The Platinum Summary lists SFR, Townhome, PUD, Warrantable Condo, and Two-Units
+      as eligible; Warrantable Condos and Two-Units have a maximum CLTV of 75.00%.
+      It lists Rural Properties, Condotels, Non-Warrantable Condos, and Short-Term
+      Rentals as ineligible, and leaves three- and four-unit properties, manufactured
+      homes, mixed use, Adult Care / Assisted Living, and PUDtel unaddressed. SD and
+      U.S. territories are ineligible locations. Vacant properties are also ineligible.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.23
-    relation: implements
+    relation: partial
     source: proposal
   acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.24:
-    aligned_at: '2026-10-16T04:16:54+00:00'
+    aligned_at: '2026-10-23T05:14:44+00:00'
     jobs:
-    - acra-platinum.asset_assessment.rent_loss_insurance
+    - acra-platinum.insurance_coverage_sufficiency_policy_assessment.rent_loss_insurance_applicability
     note: Loans with ≤ 70% CLTV are not required to carry rent loss insurance.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.24
     relation: partial
     source: proposal
   acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.26:
-    aligned_at: '2026-10-16T04:17:04+00:00'
+    aligned_at: '2026-10-23T05:14:52+00:00'
     jobs:
-    - acra-platinum.asset_assessment.cltv_over_75_reserves
-    note: Six months of reserves are required when CLTV is greater than 75.00%.
+    - acra-platinum.appraisal_review_property_eligibility.listed_property_reserves
+    - acra-platinum.asset_assessment_assets_and_funds_to_close.high_cltv_reserves
+    note: Six-months reserves are required for CLTV over 75.00%; twenty-four (24)
+      months of reserves are required for a property listed for sale within six months.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.26
     relation: partial
     source: proposal
   acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.27:
-    aligned_at: '2026-10-16T04:17:33+00:00'
+    aligned_at: '2026-10-23T05:14:43+00:00'
     jobs:
-    - acra-platinum.loan_program_eligibility.listed_for_sale_requirements
-    - acra-platinum.loan_program_eligibility.product_eligibility
-    - acra-platinum.loan_program_eligibility.prepayment_penalty_requirements
-    note: An interest-only loan has CLTV no greater than 75% and is not on a property
-      listed for sale; the selected prepayment penalty structure is one of the structures
-      printed for Platinum Select.
+    - acra-platinum.loan_program_eligibility.interest_only_cltv_cap
+    - acra-platinum.loan_program_eligibility.interest_only_listed_for_sale_restriction
+    note: Interest-Only (5 Yr Term) loans have a maximum CLTV of 75.00%, and Interest-Only
+      loans are not available on a property listed for sale.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.27
-    relation: partial
+    relation: implements
     source: proposal
   acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.28:
-    aligned_at: '2026-10-16T04:17:17+00:00'
+    aligned_at: '2026-10-23T05:15:06+00:00'
     jobs:
-    - acra-platinum.loan_program_eligibility.prepayment_penalty_requirements
-    - acra-platinum.compliance_and_closing.prepayment_penalty_requirements
-    - acra-standard.loan_program_eligibility.prepayment_penalty_structure
-    - acra-platinum.liabilities_assessment.listed_property_prepayment_penalty
-    - acra-platinum.asset_assessment.listed_property_prepayment_penalty
+    - acra-platinum.loan_program_eligibility.listed_for_sale_prepayment_term
+    - acra-platinum.appraisal_review_property_eligibility.listed_property_prepayment_penalty
     note: A property listed for sale within six months requires a prepayment penalty
-      of at least three (3) years, unless the property is in a state that does not
-      allow prepayment penalties.
+      of at least three years unless the property is in a state that does not allow
+      prepayment penalties.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.28
     relation: partial
     source: proposal
   acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.29:
-    aligned_at: '2026-10-16T04:17:34+00:00'
+    aligned_at: '2026-10-23T05:14:53+00:00'
     jobs:
-    - acra-platinum.credit_review_analysis.minimum_score_and_matrix_cltv
-    - acra-platinum.loan_program_eligibility.matrix_cltv_limit
-    note: The matrix CLTV maximum is 80%/80%/75% at FICO 730 and above, 80%/80%/65%
-      at 721–729, and 80%/80%/55% at 700–720; Correspondent loans at FICO 700–719
-      are limited to 60% CLTV. The rule does not enforce the minimum FICO of 700 in
-      all cases. It also applies 75% caps for loan amounts below $350,000 or above
-      $1,500,000 and for two-unit properties, and a 65% cap when the property was
-      listed for sale within six months.
+    - acra-platinum.loan_program_eligibility.listed_for_sale_cltv_cap
+    - acra-platinum.loan_program_eligibility.correspondent_fico_cltv_cap
+    note: A property listed for sale within six months has a maximum LTV/CLTV of 65%.
+      For Correspondent loans with a FICO score from 700 through 719, CLTV must not
+      exceed 60%.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.29
-    relation: partial
-    source: proposal
-  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.31:
-    aligned_at: '2026-10-16T04:17:29+00:00'
-    jobs: []
-    note: Correspondent borrowers with FICO 700–719 are limited to 60% CLTV.
-    prompt: ledger/align_prompt@1.1.0
-    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.31
-    relation: no_job
-    source: proposal
-  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.32:
-    aligned_at: '2026-10-16T04:17:38+00:00'
-    jobs:
-    - acra-standard.asset_assessment.reserves_for_fico_below_620
-    - acra-platinum.asset_assessment.cltv_over_75_reserves
-    note: 12 months of reserves when FICO is below 620; six months of reserves when
-      CLTV is greater than 75.00%.
-    prompt: ledger/align_prompt@1.1.0
-    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.32
     relation: implements
     source: proposal
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.32:
+    aligned_at: '2026-10-23T05:15:02+00:00'
+    jobs: []
+    note: A borrower needs 12 months of seasoning when FICO is below 620 and 6 months
+      when CLTV is above 75.00%.
+    prompt: ledger/align_prompt@1.1.0
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.32
+    relation: no_job
+    source: proposal
   acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.34:
-    aligned_at: '2026-10-16T04:18:07+00:00'
+    aligned_at: '2026-10-23T05:15:00+00:00'
     jobs:
-    - acra-platinum.compliance_and_closing.vacant_property_eligibility
-    - acra-platinum.loan_program_eligibility.vacant_property_eligibility
+    - acra-platinum.appraisal_review_property_eligibility.vacant_property_eligibility
+    - acra-platinum.loan_program_eligibility.vacant_property_status
     note: Vacant properties are ineligible.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.34
     relation: implements
     source: proposal
-  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.37:
-    aligned_at: '2026-10-16T04:18:05+00:00'
+  acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.36:
+    aligned_at: '2026-10-23T05:15:06+00:00'
     jobs: []
-    note: Rent loss insurance is not required when CLTV is at or below 70%.
+    note: Platinum Select requires 48 months of seasoning for bankruptcy or foreclosure,
+      and for short sale, deed-in-lieu, or modification.
     prompt: ledger/align_prompt@1.1.0
-    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.37
+    proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.36
     relation: no_job
     source: proposal
   acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.38:
-    aligned_at: '2026-10-16T04:17:49+00:00'
-    jobs:
-    - acra-platinum.compliance_and_closing.escrow_waiver_eligibility
-    - acra-platinum.loan_program_eligibility.escrow_waiver
-    - acra-platinum.credit_review_analysis.escrow_waiver
-    note: Escrow waivers are ineligible for Section 35 loans.
+    aligned_at: '2026-10-23T05:15:10+00:00'
+    jobs: []
+    note: Whether Section 35 loans are ineligible for an escrow waiver, and whether
+      the §11.5 DTI alternative applies to DSCR-qualified loans; the listed jobs do
+      not state these requirements.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.38
-    relation: partial
+    relation: no_job
     source: proposal
   acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.5:
-    aligned_at: '2026-10-16T04:17:45+00:00'
+    aligned_at: '2026-10-23T05:15:18+00:00'
     jobs:
-    - acra-platinum.credit_review_analysis.loan_amount
-    - acra-platinum.loan_program_eligibility.loan_amount_requirements
-    note: The loan amount must be from $100,000 to $2,000,000, inclusive, and in $50
-      increments.
+    - acra-platinum.loan_program_eligibility.loan_amount_range_and_increment
+    note: The loan amount must be $100,000 to $2,000,000, in $50 increments.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.5
     relation: implements
     source: proposal
   acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.6:
-    aligned_at: '2026-10-16T04:17:54+00:00'
+    aligned_at: '2026-10-23T05:15:11+00:00'
     jobs:
-    - acra-platinum.loan_program_eligibility.non_owner_occupancy
+    - acra-platinum.loan_program_eligibility.non_owner_occupied_status
     note: The subject property must be non-owner occupied.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.6
-    relation: implements
+    relation: partial
     source: proposal
   acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.7:
-    aligned_at: '2026-10-16T04:18:05+00:00'
+    aligned_at: '2026-10-23T05:15:17+00:00'
     jobs:
-    - acra-platinum.loan_program_eligibility.vacant_property_eligibility
-    - acra-platinum.compliance_and_closing.vacant_property_eligibility
-    - acra-platinum.loan_program_eligibility.eligible_loan_purpose
-    - acra-platinum.compliance_and_closing.cash_out_lease_verification
-    note: Platinum Select eligible loan purposes are Purchase, Rate & Term Refinance,
-      Cash-Out Refinance, and Delayed Financing; vacant properties are ineligible;
-      DSCR Cash-Out Refinance Transactions require a current lease agreement; and
-      Delayed Financing is capped at $1.5MM.
+    - acra-platinum.loan_program_eligibility.vacant_property_status
+    - acra-platinum.appraisal_review_property_eligibility.vacant_property_eligibility
+    note: Vacant properties are ineligible.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.7
     relation: implements
     source: proposal
   acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.8:
-    aligned_at: '2026-10-16T04:17:58+00:00'
+    aligned_at: '2026-10-23T05:15:15+00:00'
     jobs:
-    - acra-platinum.asset_assessment.loan_amount_requirements
-    note: The loan amount must be at least $100,000, no more than $2,000,000, and
-      in $50 increments. If the loan amount is below $350,000 or above $1,500,000,
-      the maximum CLTV is 75.00%.
+    - acra-platinum.loan_program_eligibility.loan_size_cltv_cap
+    - acra-platinum.loan_program_eligibility.loan_amount_range_and_increment
+    note: The loan amount must be $100,000 to $2,000,000 in $50 increments. Loans
+      below $350,000 or above $1,500,000 must have a maximum CLTV of 75%.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.8
     relation: implements
     source: proposal
   acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.9:
-    aligned_at: '2026-10-16T04:18:40+00:00'
+    aligned_at: '2026-10-23T05:15:25+00:00'
     jobs:
-    - acra-platinum.credit_review_analysis.minimum_score_and_matrix_cltv
-    - acra-platinum.loan_program_eligibility.matrix_cltv_limit
-    note: For loans up to $2,000,000, apply the printed FICO- and loan-purpose-based
-      CLTV maximum; the printed matrix has no row below 700, and the treatment of
-      a score of exactly 720 is left for Acra confirmation. Non-owner-occupied properties
-      in SD or U.S. Terrs. are also ineligible.
+    - acra-platinum.loan_program_eligibility.matrix_fico_and_cltv
+    note: For loans up to $2,000,000, CLTV must not exceed the printed maximum for
+      the loan purpose and FICO row; the rule leaves a score of exactly 720 unresolved.
+      It also rejects non-owner-occupied properties in SD or U.S. territories.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-platinum:acra-platinum.python.acra_dscr_platinum_select_consolidated_guidelines_v1_0_1_docx.9
     relation: partial
     source: proposal
   acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.10:
-    aligned_at: '2026-10-16T04:18:17+00:00'
+    aligned_at: '2026-10-23T05:15:20+00:00'
     jobs:
-    - acra-standard.loan_program_eligibility.matrix_fico_and_cltv
-    note: For investment-property loans of $1,500,000 or less with FICO of at least
-      600, apply the published matrix row for loan amount, FICO, and purpose; the
-      loan’s CLTV must not exceed that row’s maximum.
+    - acra-standard.loan_program_eligibility.investment_property_fico_and_cltv_matrix
+    note: For investment-property loans of $1,500,000 or less, proposed CLTV must
+      not exceed the printed limit for the representative FICO and loan-purpose column.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.10
     relation: partial
     source: proposal
   acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.11:
-    aligned_at: '2026-10-16T04:18:37+00:00'
+    aligned_at: '2026-10-23T05:15:22+00:00'
     jobs:
-    - acra-standard.loan_program_eligibility.matrix_fico_and_cltv
-    note: The loan’s FICO meets a published matrix row for the loan amount and transaction
-      purpose. The rule does not check whether CLTV is within that row’s limit or
-      whether Acra confirmation is obtained for a score below 600.
+    - acra-standard.loan_program_eligibility.investment_property_fico_and_cltv_matrix
+    note: For loans of $2,000,001–$3,000,000 with a representative FICO score of at
+      least 700, maximum CLTV is 70% for purchase and rate-and-term refinance, and
+      65% for cash-out refinance.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.11
     relation: partial
     source: proposal
   acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.12:
-    aligned_at: '2026-10-16T04:18:50+00:00'
+    aligned_at: '2026-10-23T05:15:28+00:00'
     jobs:
-    - acra-standard.loan_program_eligibility.loan_amount
-    - acra-standard.credit_review_analysis.loan_amount_below_200_000_cltv_limit
-    - acra-standard.loan_program_eligibility.additional_loan_amount_limits
-    - acra-standard.credit_review_analysis.interest_only_loan_amount_and_fico
-    note: Delayed financing is capped at $1.5MM. For loans below $200,000, maximum
-      CLTV is 80% for purchase and 75% for refinance—rate & term and cash-out. Interest-only
-      loans must be at least $250,000 and no more than $3,000,000, with a minimum
-      FICO of 640. The rule does not determine whether loans above $2,000,000 meet
-      the minimum DSCR of 1.0.
+    - acra-standard.loan_program_eligibility.delayed_financing_loan_amount_cap
+    - acra-standard.loan_program_eligibility.loan_amount_below_200_000_cltv_limit
+    note: Delayed-financing loans are capped at $1.5MM. Loans below $200,000 have
+      a maximum CLTV of 80% for purchase and 75% for rate-and-term or cash-out refinance.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.12
-    relation: partial
+    relation: implements
     source: proposal
   acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.14:
-    aligned_at: '2026-10-16T04:18:27+00:00'
+    aligned_at: '2026-10-23T05:15:28+00:00'
     jobs:
-    - acra-standard.appraisal_review.vacant_purchase_rent_appraisal
-    note: If a vacant property is being purchased, qualifying rents are taken from
-      the Form 1007 or Form 1025 appraisal report, as applicable, for qualifying income.
+    - acra-standard.income_stability_sufficiency_analysis.verify_vacant_property_rent_source
+    note: For a vacant-property purchase, qualifying rents are taken from the applicable
+      Form 1007 or Form 1025; rental income from a vacant-property purchase that is
+      the subject of an Acra loan requires a 1007 survey.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.14
     relation: partial
     source: proposal
   acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.15:
-    aligned_at: '2026-10-16T04:18:40+00:00'
-    jobs: []
-    note: Short-term rental properties are limited to 75% CLTV for purchase and 70%
-      for refinance; No Ratio loans are limited to 75% CLTV for purchase, 70% for
-      rate-and-term refinance, and 65% for cash-out refinance, with a minimum FICO
-      of 640.
+    aligned_at: '2026-10-23T05:15:39+00:00'
+    jobs:
+    - acra-standard.income_stability_sufficiency_analysis.apply_short_term_rental_limits
+    - acra-standard.income_stability_sufficiency_analysis.apply_dscr_below_one_or_no_ratio_limits
+    note: Short-term-rental transactions are limited to 75% CLTV for purchase and
+      70% for refinance, with a minimum FICO of 640. For DSCR below 1.0 or No Ratio,
+      the rule applies the 75% purchase and 70% refinance limits and 640 minimum FICO,
+      but does not apply the 65% cash-out refinance limit.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.15
-    relation: no_job
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.16:
+    aligned_at: '2026-10-23T05:15:47+00:00'
+    jobs:
+    - acra-standard.income_stability_sufficiency_analysis.apply_scenario_specific_minimum_dscr
+    - acra-standard.appraisal_review_property_eligibility.rural_or_unique_property_limits
+    - acra-standard.appraisal_review_property_eligibility.condotel_or_pudtel_caps
+    - acra-standard.appraisal_review_property_eligibility.non_warrantable_condo_caps
+    note: The applicable minimum DSCR is 1.20 when LTV is above 80%; 1.0 when the
+      loan amount is over $2,000,000; 1.1 for 1 or no score or deficient tradelines;
+      1.00 for a rural or unique property; 1.0 for a non-warrantable condo, condotel,
+      or PUDtel; 1.150 for a first-time homebuyer; 1.000 for a vacant-property rate-and-term
+      refinance; 1.15 for a vacant-property cash-out refinance; 1.0 when the property
+      was listed for sale within six months; and 1.2 for mixed use, adult care, or
+      assisted living. The rule determines the applicable minimum, but does not check
+      whether the loan meets it or whether required reserves are met.
+    prompt: ledger/align_prompt@1.1.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.16
+    relation: partial
     source: proposal
   acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.17:
-    aligned_at: '2026-10-16T04:19:33+00:00'
+    aligned_at: '2026-10-23T05:15:44+00:00'
     jobs:
-    - acra-standard.identification_requirements.foreign_national_cltv_and_fico
-    - acra-standard.identification_requirements.itin_cltv_tier
-    - acra-standard.credit_review_analysis.foreign_national_cltv_limit
-    - acra-standard.credit_review_analysis.itin_loan_amount_and_fico_limits
-    - acra-standard.loan_program_eligibility.itin_limits
-    note: For Foreign Nationals, maximum CLTV is 70% for purchase and 65% for refinance
-      — rate & term and cash-out, and the loan is priced at FICO 700. For ITIN loans,
-      the maximum loan amount is $1.0M, minimum FICO is 640, and maximum CLTV follows
-      the printed FICO-tier and transaction-type limits; the unresolved “FICO 700”
-      and US-resident eligibility questions remain subject to Acra confirmation.
+    - acra-standard.identification_requirements.itin_maximum_cltv
+    - acra-standard.identification_requirements.itin_loan_amount_and_minimum_fico
+    - acra-standard.identification_requirements.foreign_national_maximum_cltv
+    note: ITIN loans must not exceed $1.0M, have a representative FICO score of at
+      least 640, and meet the printed maximum CLTV tiers. Foreign National loans must
+      meet the maximum CLTV of 70% for purchases and 65% for refinances — rate & term
+      and cash-out.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.17
     relation: implements
     source: proposal
   acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.18:
-    aligned_at: '2026-10-16T04:18:56+00:00'
+    aligned_at: '2026-10-23T05:15:41+00:00'
     jobs:
-    - acra-standard.identification_requirements.itin_or_ssn_credit_reporting
-    note: Tradelines must be reported under the correct ITIN or SSN to meet requirements.
+    - acra-platinum.credit_review_analysis_credit.tradelines
+    note: 'Applicants with 2 or fewer scores must meet the stated tradeline requirement:
+      2 tradelines with 24 months of history or 3 tradelines with 12 months of history.'
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.18
     relation: partial
     source: proposal
   acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.19:
-    aligned_at: '2026-10-16T04:19:03+00:00'
+    aligned_at: '2026-10-23T05:15:46+00:00'
     jobs:
-    - acra-standard.identification_requirements.foreign_national_program_eligibility
-    - acra-standard.loan_program_eligibility.foreign_national_eligibility
+    - acra-standard.identification_requirements.foreign_national_business_purpose
     note: Foreign Nationals are eligible for financing on business purpose transactions
       only (i.e. investment properties).
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.19
     relation: partial
     source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.22:
+    aligned_at: '2026-10-23T05:15:45+00:00'
+    jobs: []
+    note: Business entities are eligible for financing only on business purpose transactions
+      involving investment properties.
+    prompt: ledger/align_prompt@1.1.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.22
+    relation: no_job
+    source: proposal
   acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.23:
-    aligned_at: '2026-10-16T04:19:27+00:00'
+    aligned_at: '2026-10-23T05:15:54+00:00'
     jobs:
-    - acra-standard.loan_program_eligibility.entity_borrower_eligibility
-    - acra-platinum.loan_program_eligibility.entity_borrower_eligibility
-    - acra-standard.loan_program_eligibility.entity_guarantees
-    - acra-platinum.compliance_and_closing.entity_guarantor_requirements
-    note: The borrower must be an allowed entity type and provide the required entity
-      documents. At least one borrower or guarantor must attest on the application
-      that they are not a first-time homebuyer.
+    - acra-platinum.compliance_and_closing_the_borrowing_entity_and_title.guarantor_homeownership_experience
+    - acra-platinum.compliance_and_closing_the_borrowing_entity_and_title.entity_borrower_eligibility
+    - acra-standard.compliance_and_closing_the_borrowing_entity_and_title.entity_form_and_status_eligibility
+    note: The entity type must be one of the allowed types, and at least one borrower
+      or guarantor must attest that they are not a first-time homebuyer. The rule
+      does not decide the other requirements of these jobs; it also checks entity-document
+      completeness, which is not stated in the listed jobs.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.23
     relation: partial
     source: proposal
   acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.24:
-    aligned_at: '2026-10-16T04:19:35+00:00'
+    aligned_at: '2026-10-23T05:16:09+00:00'
     jobs:
-    - acra-platinum.compliance_and_closing.entity_documentation_package
-    - acra-platinum.title_review.entity_documentation
-    - acra-platinum.identification_requirements.entity_documentation
-    - acra-standard.compliance_and_closing.entity_documentation
-    note: The required entity documents must be complete and legible, contain the
-      required authorization, signer, and ownership information, match identification
-      names or include an explanation for discrepancies, and include a Certificate
-      of Good Standing or equivalent valid within ninety days of closing.
+    - acra-standard.compliance_and_closing_the_borrowing_entity_and_title.entity_documentation
+    note: The required entity documentation is complete, including the documents,
+      contents, ownership evidence, name matching, and good-standing validity specified
+      by the policy.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.24
-    relation: partial
+    relation: implements
     source: proposal
   acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.25:
-    aligned_at: '2026-10-16T04:19:30+00:00'
+    aligned_at: '2026-10-23T05:15:56+00:00'
     jobs:
-    - acra-platinum.identification_requirements.entity_documentation
-    - acra-platinum.compliance_and_closing.entity_documentation_package
-    - acra-platinum.title_review.entity_documentation
-    note: The required entity documentation must be complete. When it is complete,
-      the rule cannot determine whether Borrower / Guarantor Due Diligence is current
-      as of the date of loan approval or draw under the unreproduced schedule.
+    - acra-standard.compliance_and_closing_the_borrowing_entity_and_title.entity_documentation
+    - acra-platinum.compliance_and_closing_the_borrowing_entity_and_title.required_entity_documentation
+    note: The required entity documents are required, without exception. The rule
+      checks only whether the entity-document package is marked complete; it does
+      not verify the listed documents’ individual contents or whether due diligence
+      is current.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.25
     relation: partial
     source: proposal
   acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.28:
-    aligned_at: '2026-10-16T04:19:35+00:00'
-    jobs: []
-    note: The maximum CLTV is 80% for purchase and 75% for refinance for a 1x30x12
-      mortgage history rating; 75% and 70% for 0x60x12; 65% for either purpose for
-      0x90x12; and loans with a 0x120x12 rating are ineligible.
+    aligned_at: '2026-10-23T05:15:51+00:00'
+    jobs:
+    - acra-standard.credit_review_analysis_credit.mortgage_history_cltv_limits
+    note: For the applicable mortgage-history label and loan purpose, CLTV must not
+      exceed the printed maximum; 0x120x12 is ineligible.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.28
-    relation: no_job
-    source: proposal
-  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.29:
-    aligned_at: '2026-10-16T04:19:38+00:00'
-    jobs:
-    - acra-standard.credit_review_analysis.short_sale_dil_and_modification_seasoning_limits
-    - acra-standard.credit_review_analysis.bankruptcy_and_foreclosure_seasoning_limits
-    note: Apply the printed maximum CLTV limits by loan purpose and seasoning band
-      for short sale, deed-in-lieu, and modification history, and for bankruptcy and
-      foreclosure history; cases with less than 12 months since bankruptcy or foreclosure
-      are ineligible.
-    prompt: ledger/align_prompt@1.1.0
-    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.29
     relation: implements
     source: proposal
-  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.30:
-    aligned_at: '2026-10-16T04:20:04+00:00'
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.29:
+    aligned_at: '2026-10-23T05:16:06+00:00'
     jobs:
-    - acra-standard.loan_program_eligibility.vacant_property_refinance
-    - acra-standard.loan_program_eligibility.eligible_property_type
-    - acra-standard.appraisal_review.rural_or_unique_property_limits
-    note: For vacant-property refinances, the rule checks the stated minimum 700 FICO,
-      applicable CLTV limits, DTI limit for rate-and-term, prepayment penalty, no
-      interest-only programs, impounds, six months of reserves, and cash-out ownership
-      period; it refers the stated unresolved amount cases for confirmation. Above
-      80.00% LTV, it allows only SFR, warrantable condos outside Florida, townhomes,
-      and PUDs. For rural properties, it checks the stated maximum CLTV by transaction
-      type and minimum FICO of 700.
+    - acra-standard.appraisal_review_property_eligibility.condotel_or_pudtel_caps
+    - acra-standard.appraisal_review_property_eligibility.non_warrantable_condo_caps
+    - acra-standard.appraisal_review_property_eligibility.manufactured_home_caps
+    - acra-standard.credit_review_analysis_credit.bankruptcy_and_foreclosure_cltv_limits
+    - acra-standard.credit_review_analysis_credit.short_sale_deed_in_lieu_and_modification_cltv_limits
+    note: 'Bankruptcy or foreclosure: under 12 months is ineligible; at 12–23 months
+      the maximum CLTV is 65%; at 24–35 months it is 80% for purchase and 75% for
+      refinance; at 36 months or more there are no restrictions. Short sale, deed-in-lieu
+      or modification: under 12 months the maximum CLTV is 75% for purchase and 70%
+      for refinance; at 12–23 months it is 80% for purchase and 75% for refinance;
+      at 24 months or more there are no restrictions. Manufactured Home caps are 65%
+      for purchase and 60% for refinance. Non-Warrantable Condo caps are 80% for purchase
+      and 75% for refinance; Condotel / PUDtel caps are 75% for purchase, 70% for
+      rate/term refinance and 65% for cash-out refinance. For both condo types, Florida
+      properties have a 5-point CLTV reduction and the printed minimum DSCR is 1.0;
+      the rule does not check DSCR.'
+    prompt: ledger/align_prompt@1.1.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.29
+    relation: partial
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.30:
+    aligned_at: '2026-10-23T05:16:08+00:00'
+    jobs:
+    - acra-standard.appraisal_review_property_eligibility.vacant_property_cash_out_refinance
+    - acra-standard.appraisal_review_property_eligibility.vacant_property_rate_and_term_refinance
+    - acra-standard.appraisal_review_property_eligibility.rural_or_unique_property_limits
+    note: For vacant-property cash-out refinances, the rule decides the minimum 700
+      FICO, the 15-month ownership requirement, the 60% CLTV limit for loans under
+      $1,500,000, the three-year prepayment penalty, no interest-only programs, impounds,
+      and six months of reserves. For vacant-property rate and term refinances, it
+      decides the minimum 700 FICO, the stated CLTV limits by loan amount (with the
+      specified exact-amount cases left for confirmation), the 40.0% maximum DTI when
+      qualifying by DTI, the two-year prepayment penalty, no interest-only programs,
+      impounds, and six months of reserves. For rural or unique properties, it decides
+      the stated purchase and refinance CLTV limits and the 700 minimum FICO. The
+      applicable DSCR requirements, and further LTV reductions for unusual property
+      characteristics, are not decided.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.30
     relation: partial
     source: proposal
   acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.31:
-    aligned_at: '2026-10-16T04:19:53+00:00'
+    aligned_at: '2026-10-23T05:15:59+00:00'
     jobs:
-    - acra-standard.compliance_and_closing.listed_property_maximum_cltv
-    - acra-platinum.asset_assessment.rent_loss_insurance
-    note: For a property listed for sale, the maximum LTV / CLTV is 65% based on the
-      lesser of the appraised value or the lowest recent listing price. Six (6) months'
-      rent loss insurance is required on one- to four-unit non-owner occupied income
-      properties when subject property rents are used to qualify, except loans with
-      ≤ 70% CLTV are not required to carry rent loss insurance.
+    - acra-standard.appraisal_review_property_eligibility.listed_for_sale_determination
+    note: A property is considered listed for sale under §11.5 if it has been listed
+      for sale in the last six months, measured from the last date of being listed
+      to the Application Date.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.31
-    relation: partial
+    relation: implements
     source: proposal
   acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.32:
-    aligned_at: '2026-10-16T04:19:40+00:00'
+    aligned_at: '2026-10-23T05:16:03+00:00'
     jobs: []
     note: Loans with ≤ 70% CLTV are not required to carry rent loss insurance.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.32
     relation: no_job
     source: proposal
-  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.34:
-    aligned_at: '2026-10-16T04:19:53+00:00'
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.33:
+    aligned_at: '2026-10-23T05:16:13+00:00'
     jobs:
-    - acra-standard.loan_program_eligibility.interest_only_eligibility
-    - acra-standard.loan_program_eligibility.vacant_property_refinance
-    - acra-standard.loan_program_eligibility.first_time_homebuyer_conditions
-    note: Interest-only loans require a minimum loan amount of $250,000 and a minimum
-      640 credit score; 10 Yr / 40 Year Term loans are limited to 80% LTV / CLTV and
-      $3 million. Interest-only is not available to first-time homebuyers, on vacant-property
-      refinances, or on properties listed for sale.
+    - acra-standard.asset_assessment_assets_and_funds_to_close.vacant_property_refinance_reserves
+    - acra-standard.asset_assessment_assets_and_funds_to_close.first_time_homebuyer_reserves
+    - acra-standard.asset_assessment_assets_and_funds_to_close.listed_property_reserves
+    - acra-standard.asset_assessment_assets_and_funds_to_close.fico_reserve_trigger
+    note: A vacant property refinance requires six months of reserves; a first-time
+      homebuyer requires at least six months; a property listed for sale within six
+      months requires 24 months; and a borrower with FICO below 620 requires 12 months.
+    prompt: ledger/align_prompt@1.1.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.33
+    relation: implements
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.34:
+    aligned_at: '2026-10-23T05:16:30+00:00'
+    jobs:
+    - acra-standard.loan_program_eligibility.interest_only_availability_restrictions
+    - acra-standard.loan_program_eligibility.interest_only_loan_amount_and_credit_minimums
+    - acra-standard.loan_program_eligibility.interest_only_10_yr_40_year_term_limits
+    - acra-standard.loan_program_eligibility.first_time_homebuyer_dscr_conditions
+    note: Fully implements the stated restrictions that interest-only loans are unavailable
+      to first-time homebuyers, on vacant-property refinances, and on properties listed
+      for sale; and the 10 Yr / 40 Year Term maximum 80% CLTV and $3M loan amount.
+      Partially implements the loan amount and credit minimums job by checking the
+      $250,000 minimum and 640 minimum score for interest-only loans, but checking
+      the $3M maximum only for the 10 Yr / 40 Year Term product. Also checks the first-time-homebuyer
+      condition that the loan is not interest-only, but not the other DSCR conditions.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.34
+    relation: implements
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.35:
+    aligned_at: '2026-10-23T05:16:20+00:00'
+    jobs:
+    - acra-standard.loan_program_eligibility.prepayment_penalty_minimum_terms
+    - acra-standard.loan_program_eligibility.prepayment_penalty_structure
+    note: Vacant-property rate & term refinances require a prepayment penalty of at
+      least two years, and vacant-property cash-out refinances require at least three
+      years, where allowable. The selected penalty structure must match one printed
+      in STD-11.1. The rule does not decide the three-year minimum for a property
+      listed for sale, which is subject to the state exception.
+    prompt: ledger/align_prompt@1.1.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.35
     relation: partial
     source: proposal
   acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.36:
-    aligned_at: '2026-10-16T04:19:56+00:00'
+    aligned_at: '2026-10-23T05:16:22+00:00'
     jobs:
-    - acra-standard.loan_program_eligibility.prepayment_penalty_structure
-    - acra-platinum.compliance_and_closing.prepayment_penalty_requirements
-    - acra-platinum.loan_program_eligibility.prepayment_penalty_requirements
-    note: Apply the printed state restrictions on prepayment penalties, including
-      when BUY-OUT is required or when Mississippi allows a 5 year (STEP) structure.
-      This rule does not check the other structure and transaction-minimum requirements
-      in those jobs.
+    - acra-standard.loan_program_eligibility.prepayment_penalty_minimum_terms
+    note: Certain states require a BUY-OUT prepayment penalty, subject to the printed
+      property, borrower, loan-amount, rate, and transaction conditions; how a state
+      restriction interacts with a minimum term requires Acra confirmation.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.36
     relation: partial
     source: proposal
   acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.37:
-    aligned_at: '2026-10-16T04:20:24+00:00'
+    aligned_at: '2026-10-23T05:16:26+00:00'
     jobs:
-    - acra-standard.loan_program_eligibility.eligible_property_type
-    - acra-standard.loan_program_eligibility.itin_limits
-    - acra-standard.loan_program_eligibility.vacant_property_refinance
-    - acra-standard.loan_program_eligibility.first_time_homebuyer_conditions
-    - acra-standard.loan_program_eligibility.foreign_national_eligibility
-    note: 'The applicable CLTV must not exceed the printed property-type caps: 80%/75%/75%
-      for a Non-Warrantable Condo; 75%/70%/65% for a Condotel or PUDtel; 80% for a
-      2–4 unit property; and 65%/60%/60% for a Manufactured Home. Rural properties
-      are capped at 80%/75%/70%. ITIN CLTV limits are 70% for the printed “FICO 700”
-      purchase tier (65% for refinance), 65%/60% for FICO 660–699, and 60% for FICO
-      640–659. A vacant-property rate-and-term refinance under $1,000,000 is capped
-      at 70% CLTV. First-time homebuyers are capped at 70% CLTV. Foreign National
-      loans are capped at 70% for purchase and 65% for refinance.'
+    - acra-standard.income_stability_sufficiency_analysis.apply_dscr_below_one_or_no_ratio_limits
+    - acra-standard.appraisal_review_property_eligibility.rural_or_unique_property_limits
+    note: For No Ratio, maximum CLTV is 75% for purchase, 70% for rate-and-term refinance,
+      and 65% for cash-out refinance. For rural or unique property, maximum CLTV is
+      80% for purchase, 75% for rate-and-term refinance, and 70% for cash-out refinance.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.37
     relation: partial
     source: proposal
   acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.38:
-    aligned_at: '2026-10-16T04:19:58+00:00'
+    aligned_at: '2026-10-23T05:16:38+00:00'
     jobs:
-    - acra-standard.loan_program_eligibility.property_listed_for_sale
-    note: For a property listed for sale within the last six months, LTV / CLTV does
-      not exceed 65%.
+    - acra-platinum.loan_program_eligibility.listed_for_sale_cltv_cap
+    note: For a property listed for sale within six months, the maximum LTV / CLTV
+      is 65%.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.38
+    relation: implements
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.42:
+    aligned_at: '2026-10-23T05:16:29+00:00'
+    jobs:
+    - acra-standard.loan_program_eligibility.delayed_financing_loan_amount_cap
+    note: Delayed-financing loans are capped at $1.5MM.
+    prompt: ledger/align_prompt@1.1.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.42
+    relation: implements
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.43:
+    aligned_at: '2026-10-23T05:16:33+00:00'
+    jobs: []
+    note: A representative credit score below 600.
+    prompt: ledger/align_prompt@1.1.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.43
+    relation: no_job
+    source: proposal
+  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.44:
+    aligned_at: '2026-10-23T05:16:39+00:00'
+    jobs:
+    - acra-standard.loan_program_eligibility.investment_property_fico_and_cltv_matrix
+    note: For loans of $1,500,000 or less, the matrix has no row below a FICO score
+      of 600; eligibility below 600 is not stated.
+    prompt: ledger/align_prompt@1.1.0
+    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.44
     relation: partial
     source: proposal
   acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.6:
-    aligned_at: '2026-10-16T04:20:21+00:00'
+    aligned_at: '2026-10-23T05:16:58+00:00'
     jobs:
-    - acra-standard.loan_program_eligibility.eligible_property_type
-    note: 'The subject property type must be one of the published eligible types:
-      SFR, Townhome, PUD, Warrantable Condo, Non-Warrantable Condo, Condotel / PUDtel,
-      2-4 Units, or Manufactured.'
+    - acra-platinum.loan_program_eligibility.eligible_property_type
+    - acra-platinum.loan_program_eligibility.eligible_location
+    - acra-platinum.loan_program_eligibility.loan_amount_range_and_increment
+    - acra-platinum.loan_program_eligibility.borrower_citizenship
+    - acra-standard.loan_program_eligibility.investment_property_fico_and_cltv_matrix
+    note: 'The rule checks some shared requirements: loan amounts start at $100,000
+      and use $50 increments; eligible property types include SFR, Townhome, PUD,
+      and Warrantable Condo; SD is ineligible; and US Citizens and Permanent Residents
+      are accepted. It also applies part of the investment-property matrix: for loans
+      of $1,500,000 or less with a score of at least 720, CLTV is limited to 85% for
+      purchase and 80% for rate-and-term or cash-out.'
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.6
     relation: partial
     source: proposal
   acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.8:
-    aligned_at: '2026-10-16T04:20:14+00:00'
-    jobs: []
-    note: A loan qualifies either by a calculated DSCR or as No Ratio DSCR, where
-      no ratio is calculated.
+    aligned_at: '2026-10-23T05:16:36+00:00'
+    jobs:
+    - acra-standard.loan_program_eligibility.qualification_method
+    note: A loan qualifies either by a calculated DSCR or as No Ratio DSCR.
     prompt: ledger/align_prompt@1.1.0
     proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.8
-    relation: no_job
-    source: proposal
-  acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.9:
-    aligned_at: '2026-10-16T04:20:19+00:00'
-    jobs:
-    - acra-standard.loan_program_eligibility.seller_contributions
-    - acra-standard.asset_assessment.loan_amount_limits
-    - acra-standard.asset_assessment.seller_concession_cap
-    - acra-standard.loan_program_eligibility.loan_amount
-    note: The loan amount must be $100,000–$3,000,000 in $50 increments; delayed financing
-      is capped at $1.5 million; seller concessions or other contributions are limited
-      to 3% of the sale price; and SD is ineligible. This implements the loan amount
-      job only in part because it does not check the interest-only loan amount requirements.
-    prompt: ledger/align_prompt@1.1.0
-    proposal_id: acra-standard:acra-standard.python.acra_dscr_standard_consolidated_guidelines_v1_0_docx.9
-    relation: partial
+    relation: implements
     source: proposal

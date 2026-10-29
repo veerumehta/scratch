@@ -1,0 +1,126 @@
+# DSCR — Domain Pack Manifest
+# JazzX Institutional Intelligence Platform
+# pack_id: acra-regen-5
+#
+# Declares the policy and profile corpora below, and an investigation_loop conductor whose modes
+# are tuned by mode_tuning/.
+#
+# The eligibility policy corpus (MatrixCondition-based grids) lives at policies/process.yaml,
+# policies/standard.yaml and policies/platinum_select.yaml + profiles/dscr_profile.yaml (see ENCODING_NOTES.md) and is declared below. Pack.policy_registry
+# now builds a PolicyRegistry from a manifest's own declared policy YAML -- `core:`/`overlays:`/
+# `dir:` -- so the corpus reaches the Pack object without a policies/registry.py holding a list.
+# The `registry:` pointer to an already-built object still exists and still wins where a pack has
+# one; this pack does not need it.
+#
+# Certification status: draft - not for production use.
+
+pack_id: acra-regen-5
+pack_name: "DSCR"
+pack_version: "0.2.18"
+exports: [jtbdset]   # the pack can be turned into a JTBDSet
+certification_status: draft   # draft | certified | suspended | retired
+
+domain: commercial_lending
+segment: dscr   # DSCR rental-property loan eligibility
+
+regulatory_context: []
+
+# The eight ids the policies name in rule `parameters.evidence_types`. Without
+# this line `Pack.evidence_types` is empty and a tool registry built from the pack derives a
+# requestable set of nothing -- the same gap, and the same one-line fix, as ci-spread-core's.
+evidence_types: evidence_types.yaml
+# The documents the classifier, the job writer and lint resolve through (japes DocumentRegistry).
+document_types: document_types.yaml
+
+policies:
+  # A dir rather than `core:`, because the corpus is expected to grow file by file and enumerating
+  # each one here would be a second place to keep in step. Non-policy assets in the folder are
+  # skipped by shape (is_policy_document), so a checklist or notes file can sit beside the rules.
+  dir: policies
+
+# Acra's DSCR programs, one policy each. process.yaml (scope institution: the process gates and
+# the state PPP rules) applies to every program.
+programs:
+  standard: [DSCR_STANDARD]
+  platinum_select: [DSCR_PLATINUM_SELECT]
+
+# The other half of the corpus: every matrix and ratio rule resolves `profile:`/`profile_table:`
+# references, and without this the profile beside them is never loaded — `policy_profile()` answers
+# None and every one of those rules raises "needs a PolicyProfile".
+profiles:
+  dir: profiles
+
+# The case conductor (jazzx_sdk.pipelines.kinds, kind conductor_pipeline), which is what Plato runs
+# for `POST {prefix}/packs/acra-regen-5/runs`; jaci runs DSCR only there. The steps, in order:
+# - documents: any loan documents the case names, extracted to fill the record (see the step).
+# - assessment: the deterministic eligibility assessment (jazzx_sdk.pack.assessment, no model):
+#   LoanCore.cltv_percent and RatioSet.dscr derived, every rule checked, the max-CLTV caps composed so the binding one is
+#   named. The page reads its grid from the run's `assessment`.
+# - investigation: the mode loop for what the grid cannot do (cross-document discrepancies,
+#   entity/title review, evidence sufficiency). The assessment is authoritative: a failed one
+#   blocks the governor.
+# - approval: the run waits for an underwriter (`POST {prefix}/runs/{id}/resume`).
+# - narrative: drafted only for an approved `ineligible` decision.
+conductor:
+  kind: conductor_pipeline
+  input_schema: schemas/loan_application.json
+  subject_field: loan_id
+  steps:
+    # A case may start from loan documents: each is classified (document_types.yaml) and read for
+    # its class's fields of loan_document_fields.json, which fill what the submitted record left
+    # out. With no documents the step converts nothing and the record goes on as submitted.
+    # A case that names documents must include the application, a lease or rent roll, and the
+    # credit report, plus the entity's documents when an entity borrows; one with none is held to
+    # nothing (required_when), so a record-only case is never flagged. Every program alike.
+    - id: documents
+      kind: document_ingest
+      fields_schema: schemas/loan_document_fields.json
+      fills: input
+      # A closing package is one PDF of hundreds of pages holding every document; it is cut into
+      # them first (document_agent.yaml's split_* settings), each then classified and read alone.
+      split: true
+      required_when: documents
+      required_classes:
+        - loan_application
+        - {any_of: [lease_agreement, rent_roll]}
+        - credit_report
+        - {any_of: [entity_documents], when: {Borrower.entity_type: [llc, corporation, trust]}}
+    - id: assessment
+      kind: policy_assessment
+      metrics: metrics.yaml
+      compose_caps: {compare_field: LoanCore.cltv_percent, strategy: min}
+      default_program: standard
+    - id: investigation
+      kind: investigation
+      hypothesis_schema: schemas/hypothesis.json
+      decision_schema: schemas/eligibility_recommendation.json
+      evidence_tools: evidence_tools.yaml
+      max_iterations: 5
+      on_reasoner_failure:
+        decision: refer_to_underwriter
+        rationale: "The reasoner did not produce a recommendation; refer to an underwriter."
+      # A failed assessment withholds the governor's approval of any decision but an ineligible one,
+      # which agrees with it: that keeps the governor's own verdict, so its narrative can be drafted.
+      deterministic_verdict: {mode: authoritative, adverse_decisions: [ineligible]}
+    - {id: approval, kind: human_checkpoint, checkpoint: ELIGIBILITY_DECISION_APPROVAL}
+    - id: narrative
+      kind: narrate
+      gate: {governor_approved: true, decision_field: decision, decision_in: [ineligible]}
+
+evaluation:
+  # No gold_cases_path: it was a path inside this repo, resolvable nowhere else, and this pack is
+  # also japes' seed. The gold cases are tests/eval/gold_cases/dscr.
+  pass_threshold: 0.75
+
+autonomy_ceilings:
+  default: 1   # RECOMMEND_ONLY
+
+human_checkpoints:
+  - ELIGIBILITY_DECISION_APPROVAL
+
+governance_chain:
+  aba: DEFERRED
+  jap: DEFERRED
+  overlay: DEFERRED
+
+created_at: "2026-08-13"
