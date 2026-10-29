@@ -77,6 +77,19 @@ else
   bad "origin/dev has changes $SRC lacks (merge or cherry-pick them into $SRC first)"
 fi
 
+# The squash takes $SRC's tree, so a change merged straight to plato (a contributor's PR) that $SRC lacks would be undone.
+# Only meaningful once plato descends from dev (the base of that merge is then dev's tip, not the old squash lineage).
+if git merge-base --is-ancestor "$DEV" "$PLATO"; then
+  MERGED_PLATO=$(git merge-tree --write-tree "$SRC_SHA" "$PLATO" 2>/dev/null | head -1 || true)
+  if [ -n "$MERGED_PLATO" ] && [ "$MERGED_PLATO" = "$(git rev-parse "$SRC_SHA^{tree}")" ]; then
+    ok "$SRC already carries everything origin/plato has"
+  else
+    bad "origin/plato has changes $SRC lacks (a squash would overwrite them): run 'git merge origin/plato' on $SRC (a real merge; resolve conflicts keeping both sides' intent), then squash again"
+  fi
+else
+  echo "  note  origin/plato does not descend from origin/dev, so a change merged straight to plato cannot be told from release lag; push the plato sync first"
+fi
+
 if [ -n "$LOCAL_PLATO" ] && [ "$LOCAL_PLATO" != "$PLATO" ]; then
   if git merge-base --is-ancestor "$PLATO" "$LOCAL_PLATO"; then
     echo "  note  local plato is $(git rev-list --count "$PLATO..$LOCAL_PLATO") commit(s) ahead of origin/plato; --apply replaces them"
