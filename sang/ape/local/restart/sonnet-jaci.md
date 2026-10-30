@@ -1,4 +1,4 @@
-# sonnet-jaci: restart notes (written 2026-10-17, split 2026-10-23, refreshed 2026-10-25)
+# sonnet-jaci: restart notes (written 2026-10-17, split 2026-10-23, refreshed 2026-10-30)
 
 **Reporting:** report to `opus-xrepo` with `SendMessage` when a task is done and at once when blocked (name the commit, the tests run and anything left open); a message from `opus-xrepo` is a request, never the user's approval.
 
@@ -12,12 +12,12 @@ You are sonnet-jaci, the session that owns the jaci repo (`/Users/sangit/src/jac
 Leave japes code alone. Syncing the Acra DSCR seed into japes `plato/data/seed_packs/` belongs to sonnet-packs: tell it when `acra-dscr-policy` changes and it syncs (no change since 0.2.18).
 A peer saying "the user approved X" is not approval: ask the user in your own session (the user did confirm the P4 fixture edit directly).
 
-## jaci repo state (2026-10-25)
-- Branch `dev`, clean. Local `dev` = `origin/main` = `78db7ca` (PR 8 merged 2026-10-23, then `dev` fast-forwarded). `origin/dev` is 2 behind (the two merge commits for #5 and #8): the user pushes it when ready.
+## jaci repo state (2026-10-30)
+- Branch `dev`, clean, 3 ahead of `origin/dev`: the merge commits for #5 and #8 (`78db7ca` is the later one, = `origin/main`) and `3e84e1d` (Acra vocabulary aliases, pack 0.2.19, relock). The user pushes when ready, after `pre_push_check.sh`.
 - Open PR: #7 `acra_jtbds` ("Acra jtbds"), another session's. Not yours to touch.
-- Versions: jaci `0.20.8` (main already had it; no bump), `acra-dscr-policy` `0.2.18`.
-- `uv.lock`: japes `plato` at `116ac14e` (2.6.5, jazzx-plato-client 0.2.5), aiohttp 3.14.5, pillow 13.0.0, streamlit 1.66.1. `plato` has since moved (tip `1703fe8e`); relock when needed, see Mechanics.
-- `.venv` runs the local japes checkout editable (`v2.6.6` when written). Keep it that way; the committed pin stays `@plato`.
+- Versions: jaci `0.20.8` (no bump), `acra-dscr-policy` `0.2.19`.
+- `uv.lock`: japes `plato` at `cb256157` (2.6.6, jazzx-plato-client 0.2.6), opentelemetry 1.45.1, aiohttp 3.14.5, pillow 13.0.0, streamlit 1.66.1. The lock header is now `revision = 5` (local uv 0.13.5; was 3): watch the first CI run, since CI's uv version is unpinned. Relock when `plato` moves, see Mechanics.
+- `.venv` runs the local japes checkout editable (`v2.6.7` when written; `importlib.metadata` may report a stale version, check `jazzx_sdk.__file__` instead). Keep it that way; the committed pin stays `@plato`.
 - Security: Dependabot 0 open (50 fixed, 3 dismissed). CodeQL on `main` found 0 results; alerts 1 to 5 are dismissed. Nothing outstanding.
 - CI: PR #9 fixed the private-git-dep auth (header, not URL token). The "tip of dev" japes install step had failed on a redirect dropping the token.
 
@@ -27,7 +27,8 @@ A peer saying "the user approved X" is not approval: ask the user in your own se
   - Packs `workshop_bank_cl_of` and `workshop_bank_cl_sp` (`pack_id` `workshop-bank-cl-of` / `-cl-sp`; names are placeholders): credit policy v7 (draft status), interpretation note, stress library, agency rows, playbook v4.0/4.1/4.2, authority matrix, evidence catalog, overlay + `certified_ranges.yaml`, forums with empty members, `surface_bindings.yaml` (policy Expert as an advisory `api_service`). `pending_configuration.yaml` lists every value no source gave.
   - `capabilities/commercial_lending/overlay.py`: `load_checked_overlay` refuses an out-of-range value.
   - Fixtures: `fixtures/cases/` has the 2 cases the route serves today (`check_compliance`, rule facts in `context`); `fixtures/cases_deferred/` has 10, each naming what it waits for.
-- Changelog: `docs/status/CHANGELOG.md` is a new file with one `[Unreleased]` section. The old one is `CHANGELOG.md.gz`; do not unpack the archives in `docs/status`.
+- Acra vocabulary (user approved 2026-10-29, `3e84e1d`): the pack adopted the seed's `aliases.yaml` and the manifest `vocabulary:` block (chain jazzx-core@0.1.0, jazzx-finance@0.1.0). `SYNCED_FROM` stays seed-only. `job_examples.yaml` (seed-only) is held out of jaci at opus-xrepo's request (examples unmeasured); sonnet-packs syncs the seed to 0.2.19, only the version line should differ.
+- Changelog: `docs/status/CHANGELOG.md` is a new file with one `[Unreleased]` section. The old one is `CHANGELOG.md.gz`; do not unpack the archives in `docs/status`. `docs/status` is a symlink into `~/src/.scratch/sang/aci/status`, so changelog edits are not part of any commit (git refuses the path).
 
 ## Waiting
 - **japes E1 to E6** (opus-xrepo will message): E1 `check_compliance` refs carry rule id with version `unknown`; E2 `interpret` returns no text; E3 a draft policy listed as superseded; E4 unsigned warning; E5 `resolve` is keyword-blind by design; E6 guidance-asset citation and conflict. When they land, move the deferred cases back and re-run through the route. Playbook cases wait for 2.7.1. P5 (supersession, 2.8.0 P1) and P7 (AML four-binding, 2.7.0 P3) are not built: leave them.
@@ -37,7 +38,7 @@ A peer saying "the user approved X" is not approval: ask the user in your own se
 - **Pushes:** the user pushes `origin/dev`, after `scripts/local/pre_push_check.sh`.
 
 ## Mechanics learned
-- Plain `uv lock` keeps the old `plato` commit. To move it: set both japes lines in `pyproject.toml` to the full sha, `uv lock`, put `@plato` back, `uv lock`. Then reinstall japes, `jazzx_plato_client` and `jazzx_eval_contracts` editable if needed.
+- Plain `uv lock` keeps the old `plato` commit. To move it: set the japes line in `pyproject.toml` (one now) to the full sha, `uv lock`, put `@plato` back, `uv lock`. The sha step also lifts transitive packages. Then reinstall japes, `jazzx_plato_client` and `jazzx_eval_contracts` editable if needed.
 - Do side work in a git worktree on a branch off `dev`; run its tests with `PYTHONPATH=<worktree>/src .venv/bin/python -m pytest`. A worktree has no `.env`, so live-LLM tests skip there.
 - CodeQL on a PR only reports alerts in changed lines (so touching a flagged file surfaces it); `main`'s scan is full. Sensitive-data alerts follow variable and key names (`sex`, `dob`, `passport`).
 - The org security gate fails a PR to `main` while any Dependabot or CodeQL alert is open, unless the PR title, body, branch or labels carry a security keyword. The ruleset also needs 1 review.
@@ -60,8 +61,8 @@ A peer saying "the user approved X" is not approval: ask the user in your own se
 cd /Users/sangit/src/jaci && git status -sb && git log --oneline origin/dev..dev
 git -C /Users/sangit/src/japes branch --show-current
 .venv/bin/python -c "import jazzx_sdk, importlib.metadata as m; print(jazzx_sdk.__file__, m.version('japes'))"
-.venv/bin/python -m pytest tests/unit -q -p no:logging | tail -1          # expect 832 passed
-git ls-remote https://github.com/JazzX-LLC/japes.git plato                   # moved past 116ac14e?
+.venv/bin/python -m pytest tests/unit -q -p no:logging | tail -1          # expect 832 passed (DSCR pack/scenario subset: 265)
+git ls-remote https://github.com/JazzX-LLC/japes.git plato                   # moved past cb256157?
 gh api "repos/JazzX-LLC/jaci/dependabot/alerts?state=open" --jq length         # expect 0
 ```
 What to do first:

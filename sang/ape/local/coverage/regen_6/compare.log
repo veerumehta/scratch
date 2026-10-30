@@ -1,0 +1,55 @@
+{
+ "program": "standard",
+ "left_jobs": 107,
+ "right_jobs": 124,
+ "summary": {
+  "same": 50,
+  "differs": 14,
+  "partial": 43,
+  "none": 0,
+  "error": 0,
+  "left": 107,
+  "only_right": 19
+ },
+ "equivalence": {
+  "equivalent": 17,
+  "differs": 8,
+  "split": 58,
+  "merged": 24,
+  "ours_only": 0,
+  "error": 0,
+  "left": 107,
+  "theirs_only": 19,
+  "equivalent_rate": 0.159,
+  "same_id": 0
+ },
+ "cost_usd": 0.04092877500000001
+}
+{
+ "program": "platinum",
+ "left_jobs": 100,
+ "right_jobs": 108,
+ "summary": {
+  "same": 38,
+  "differs": 17,
+  "partial": 44,
+  "none": 1,
+  "error": 0,
+  "left": 100,
+  "only_right": 10
+ },
+ "equivalence": {
+  "equivalent": 5,
+  "differs": 8,
+  "split": 61,
+  "merged": 25,
+  "ours_only": 1,
+  "error": 0,
+  "left": 100,
+  "theirs_only": 10,
+  "equivalent_rate": 0.05,
+  "same_id": 7
+ },
+ "cost_usd": 0.040417357500000015
+}
+FINISHED

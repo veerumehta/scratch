@@ -1,0 +1,38 @@
+[
+ {
+  "representation": "jtbd",
+  "document": "standard",
+  "policy_id": "acra-standard",
+  "attempts": [
+   {
+    "run_id": "13d87863183a4de4a46933b83052e851",
+    "status": "succeeded",
+    "segments": 9,
+    "failed_segments": [],
+    "proposals": 107,
+    "cost_usd": 0.0246,
+    "started_at": "2026-10-29T23:26:50.069002Z",
+    "finished_at": "2026-10-30T00:05:47.597175Z",
+    "error": ""
+   }
+  ]
+ },
+ {
+  "representation": "jtbd",
+  "document": "platinum",
+  "policy_id": "acra-platinum",
+  "attempts": [
+   {
+    "run_id": "f0cb00a081f240968ecae45d77964161",
+    "status": "succeeded",
+    "segments": 11,
+    "failed_segments": [],
+    "proposals": 100,
+    "cost_usd": 0.0225,
+    "started_at": "2026-10-29T23:26:50.015350Z",
+    "finished_at": "2026-10-30T00:05:06.646468Z",
+    "error": ""
+   }
+  ]
+ }
+]
