@@ -20,5 +20,6 @@ The list of work deliberately left out of 2.6.7, each with what is known. Nothin
    user, not a build.
 7. **Deferred rules-library helpers** from sonnet-packs' survey: `latest` and `explains`. A change to the library bumps its patch version (1.1.3), per the user's ruling.
 8. **Review notes not yet taken**, from `scripts/local/.reviews/accepted.md` and the `TODO(slug)` markers in the tree: read them at the start of the round.
+9. **Cross-reference heading read as a topic** (`jazzx_sdk/pipelines/policy/markdown_guide.py`, `read_markdown_guide`): in the June 2026 Selling Guide the heading `### B2-1.5-02, Loan Eligibility.` (line 33378) is the sentence `See B2-1.5-02, Loan Eligibility.` (line 9223) set as a heading after a page break, so the reader yields a second topic `B2-1.5-02 (2)` (389 topics) and splits B6-1-01's content. Rule to build: a heading whose id repeats an earlier topic id and whose text matches a `See <id>, <title>.` sentence elsewhere continues the previous topic (388 topics, B6-1-01 whole). Changes unit ids: state the effect on the Pulte pack's 389-unit coverage and links (jaci regenerates). Raised by opus-xrepo from the jaci review.
 
 Not carried: anything needing a provider call (the writer's measuring run on a real guide, adoption of generated jobs) waits for the user's own typed approval of a figure.
