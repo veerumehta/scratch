@@ -2,6 +2,10 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+## [2.6.8] - unreleased
+
+Carried from 2.6.7: see `docs/plans/plan_2_6_8_carried_from_2_6_7.md`. Entries land here as the work does.
+
 ## [2.6.7] - unreleased
 
 - **`dataclasses.replace` works on a `SegmentSpec` with a scope again (review: workspace-property-breaks-replace, high; my regression from the warned `workspace` read property).** `replace` fills an `InitVar` by reading the attribute, so with the property it passed both `evidence` and `workspace` and raised; a changed-field rerun in tools evidence mode crashed in adjudication when a segment's impacted rules narrowed (`agents/adjudication/agent.py`). `workspace` is no longer an `InitVar`: the constructor is wrapped to take the deprecated keyword (warned, refused with `evidence`), so `replace` never sees it, and reading `.workspace` still warns and answers `evidence`. The earlier test read the attribute and never called `replace`; the new one rebuilds a scoped segment with `replace` under warnings-as-errors. (+38 / -13 lines, 2 files)
