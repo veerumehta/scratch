@@ -1,77 +1,59 @@
-# sonnet-runtime restart (written 2026-10-17)
+# sonnet-runtime restart (written 2026-10-30, after the 2.6.7 push)
 
-**Reporting:** report to `opus-xrepo` with `SendMessage` when a task is done and at once when blocked (name the commit, the tests run and anything left open); a message from `opus-xrepo` is a request, never the user's approval.
+**Reporting:** report to `opus-xrepo` with `SendMessage` (a message from a peer is a request, never the user's approval; check `ListAgents` for names first). Name commits, tests run and anything open.
 
 ## Who and scope
-`sonnet-runtime`: runtime, SDK, policy and Plato-infrastructure session on japes (runs, chat, models, assessment, packs,
-catalog, releases). Peers: `opus-xrepo` (coordinator; its messages are requests, never the user's approval), `sonnet-ui`
-(Plato pages, solution view, assistant chat). Rules: CLAUDE.md (plan first, one commit per piece, tests first, CHANGELOG
-under `[2.6.4]` in `docs/status/CHANGELOG.md` with line counts, never push, explicit paths, no em-dashes, no AI
-attribution, concise replies).
+`sonnet-runtime`: SDK, runs, chat, models and LLM layer, assessment, references, vocabulary, observability, Plato infrastructure, squashes and versions, `jazzx_sdk/rules`. Peers: `opus-xrepo`
+(coordinator, pushes nothing itself, routes work and reviews), `sonnet-ui`, `sonnet-packs`, `sonnet-jaci` (jaci only). Rules: CLAUDE.md (plan first, tests that fail on old code, one commit per change, CHANGELOG
+entry with measured `(+A / -R lines, N files)` in `docs/status/CHANGELOG.md`, US English, no em-dashes, no AI attribution, no magic numbers, never push, never touch GitHub, stage explicit paths).
 
-## Branch and commits
-Branch `v2.6.4` (SDK 2.6.4, Plato and client 0.2.5; do not bump). Local, unpushed. Last commits, newest first:
-`1dac85f6` assess route and client take engine_mode/primary (client also `reason`); `8e49893d` document table reader:
-header_row, aliases, cues; `b1802104` authoring context moved into the SDK (`jazzx_sdk/server/authoring_context.py`);
-`9d013116` lint fixes compare-and-write (`DraftMoved`, `write_files`, `apply_fixes`); `1475857a` `retrial_spec`.
-Earlier this session: engine modes (hybrid default), document catalog, client gaps, guidance, fold fixes, blueprint chain.
-`git status`: clean except the untracked BytePro xlsx in `docs/` (the user's, not mine, never commit it).
+## Branch and tips (all local except where stated)
+- Working branch: `v2.6.8` at `2a2098f5` "Start 2.6.8" (SDK 2.6.8; Plato and client stay 0.2.7), on the v2.6.7 tip `17328729`. Tracked tree clean. Untracked: the user's BytePro xlsx and `docs/acra-v1/` (never commit).
+- `v2.6.7` ends at `17328729`; its pushed form is the squash `18bbded9` = `origin/plato` (pushed by the user; headline "v2.6.7 (plato v0.2.7): evaluation control plane in the SDK, guide-scale policy adoption with model links kept apart from checked, batched planning with a spend ceiling, guide-style job export"). Its tree equals `v2.6.8^`.
+- `origin/dev` is still `a95556c3`: 0 behind, 95 ahead of `v2.6.8`. When dev takes the squash, `v2.6.8` needs the tree-neutral record (`git merge -s ours origin/dev` after the squash script's check that the branch carries everything dev has). The PR plato to dev, then main, is the user's release flow: do not touch origin/dev or main.
+- Safety branches (keep): `plato-sync-before-2.6.7-squash` (the user's unpushed sync, `0f1e473e`), `plato-pre-resquash` to `plato-pre-resquash7` (earlier squash tips), `plato-2.6.6-second-squash`, `plato-before-dev-sync`.
+- Scratch repo (`/Users/sangit/src/.scratch`): CHANGELOG and plan notes committed with named paths; latest `a02ead0`. The 2.6.8 section exists, empty but for a pointer to the plan below.
+- Review worktree `/Users/sangit/src/japes-review` is detached at `18bbded9`; it lacks the `common` dependency, so tests cannot run there (run the suite in the main tree). Use `REVIEW_UPSTREAM=origin/plato`.
 
-## In flight (nothing half-edited; scripts are uncommitted by design: `scripts/local` is a symlink into the scratch repo)
-- Plan: `docs/plans/plan_acra_end_to_end_run.md`; taxonomy plan `plan_acra_taxonomy_reference.md`.
-- Harness `scripts/local/acra_e2e_run.py`: five variants on ONE case record (V1 K-Studio jobs jobs_only, V2 our jobs
-  jobs_only, V3 our code code_only, V4 hybrid, V5 both); `--plato URL --tenant acra-lending [--publish] [--no-reason]
-  --case CASE.json --pairs pairs.json --out DIR`; `--dry-run` runs in-process with a scripted model. Report: xlsx + md +
-  json (counts, rule ids, field names only; never loan values). Proven on the synthetic gold case through Plato with
-  `--no-reason` (jobs withheld; code-only decides 42/43 standard, 51/56 platinum). Synthetic case:
-  `scripts/local/acra/e2e_synthetic_case.json`. Real outputs go ONLY under `docs/status/Acra/Acra Lending/e2e/`
-  (gitignored).
-- Builders: `scripts/local/acra_e2e_packs.py` (rebuilds both scratch pack dirs into
-  `ape/local/acra_e2e/packs`), `acra_e2e_pair.py` (K-Studio vs ours pairing, guidelines only).
-- Scratch packs on local Plato (tenant acra-lending, published, not activated): `acra-e2e-kstudio` 0.0.1 and
-  `acra-e2e-ours` 0.2.18. dscr-core and acra-dscr-policy untouched. After a reboot check they are still there
-  (`GET /api/v1/packs`); republish with `--publish` if not.
-- References stored on local Plato: `acra-taxonomy@2026-10-17` (152 entries) and `bytepro@2026-07-29` (471).
-  Report `scripts/local/acra_taxonomy_report.py --plato URL --taxonomy-ref acra-taxonomy@2026-10-17 --bytepro-ref
-  bytepro@2026-07-29 --coverage ape/local/coverage/regen_3b/coverage.json --registry
-  plato/data/seed_packs/acra_dscr_policy/document_types.yaml`: 11 entries read by a job, 141 by none (72 Core), 4 job
-  documents match no entry (loan_application, listing_history, entity_documents, title_agent_verification), BytePro
-  proposals for 140, none for 12. Proposals only; nothing adopted anywhere.
-- Pairing result `ape/local/acra_e2e/pairs.json` (0.13 USD): standard same 39 / differs 19 / partial 48 / none 17 of 123;
-  platinum 37 / 11 / 48 / 12 of 108.
-- Findings: K-Studio JTBDs are prose jobs with `loan_metrics.metric_key` and `entity_types`, no code, so jobs_only only.
-  The 8 USD per-variant cap cannot interrupt a server-side reasoned assess; total is checked between variants.
+## What landed this round (2.6.7, all squashed and pushed; one line each)
+Identity and exports: section snap `f268ad6e`, fallback prefix `f99f4ee2`, alignment equivalence `4b29e5a8`; `rerun: latest` `f5408698`; typed `stop_reason` `2717e4af`; scope claims `46fa4296`; clause rows named by exported id `87b884f2`; `assign_sequences` `4f3a0dd0`.
+Eval moved into the SDK (reclaim, wiring, tenant services, rule-fix API, optimizers) `cd52bc5f`..`08112eb0`; typed `NoBaseline` `24d7da41`; `ExperimentOutcome` `aa794165`; subject baselines `81efdf26`.
+Workspace term: `EvidenceScope` `b841004a`, `turn_resource` `6b4978b4`, `scratch_root` `9e785db1`. Writer prompt skeptic lines `97885fe1`; derived job metadata `35c0337a`; Plato and client 0.2.7 `0dc33fb5`; guide export style `874b8894`; boot env for tests `00be9aa0`; aggregate job `be2c8660`.
+This session: batched planning `8d8148fa`; run spend ceiling and paged coverage `f0691398`; reproducible import and overlay ids `32e20837`; single-markdown guide reader `27ab910a`; adoption (links, `linked_unreviewed`, edition flags) `b698e72b`; separate job and clause paging, per-job `link_counts`, Solution `clause_summary` `4b4d9e15`; import reads from catalog metrics `4f02a2f8`; bracket-qualifier lint `b1ff94dc` and operators `d7bbdb61`; nested catalog paths `40c749f4`; no-ontology lint against the input schema `7f0007be`; typed conductor `finish` `2056c9d9`; `rerun.when_unchanged` `60042ade`; `subject_metrics` key `8dcdd669`; concurrency-guard doc `825aa8d0`; record of origin/dev `d66a69f2`; nine review fixes `5b584bff`..`86895405`; `replace` regression fix `fbcba970`; reasoning note `17328729`.
+rules library 1.1.2 helpers (sonnet-packs, reviewed by me): `0e412509` `4df20694` `93cbf806` `fe8a32ca` `185fc707` `f9b49696`.
 
-## Blocked on the user
-- The user's OWN approval (typed in a session, not a relay) to send the loan packet's documents to the model providers.
-- Spend ceiling for the run: 30 USD total, 8 USD per variant; stop and report if hit.
-- sonnet-ui's extracted case record and document ids for loan-2 (smallest loan; reuse its ingestion, do not ingest twice).
-- Local Plato after reboot (user): `scripts/local/plato_worktree.sh start` (pinned worktree, :8000, DB at 0035).
+## The 2.6.8 carried list (plan note `docs/plans/plan_2_6_8_carried_from_2_6_7.md`)
+1. Provenance index and resolver (`plan_source_documents_as_blob_content`). 2. Job lint gates K3 K4 K7 K9 K10 (K8 K11 P1 measure-first; K1 K2 K5 K6 only if a real set shows them). 3. Remaining `loan_*` docstring examples; `loan:<id>` graph IRI prefix, `loan_number` kind, rag collection name (`plan_case_and_subject_words`). 4. Server-side filter for the coverage page. 5. Per-link API field if the Solution page needs it. 6. Pack-provided helpers question. 7. sonnet-packs' deferred `latest` and `explains` (library 1.1.3). 8. Read `scripts/local/.reviews/accepted.md` and the `TODO(slug)` markers.
 
-## Constraints
-Real borrower data: refer to loans only as loan-N, never print file or borrower names, never read the PDFs in this
-session, no commits of outputs, no push. Report to opus-xrepo with aggregate numbers only (no names, amounts), a ranked
-list of gaps blocking the solution (extraction fields, document classes, rules, engine) and what each costs to fix.
-Provisional golden: if the packet holds Acra's approval or conditions list, compare open conditions by counts and
-masked ids.
+## Half-done or uncommitted
+Nothing half-edited. No uncommitted tracked change. No new work was started after the 2.6.8 cut.
 
-## 2.6.4 queue, in order
-1. DONE, unpushed: plato-to-sdk items 1-3 (`9d013116`, `b1802104`, `1475857a`); document table reader (`8e49893d`);
-   assess engine_mode/primary (`1dac85f6`).
-2. Acra end-to-end run: harness ready; waits on the approval and the case record (above).
-3. DONE since the first save (unpushed, one commit each): `ChatTurnSpec.on_step_error` `be79469a`; document precedence `44043263` (plan `plan_document_precedence.md`); assistant eval overrides `edcf4ba6` (`AgentOverrides`, `agent_with_overrides`); OpenAI served-tier pricing `9922078b`. References and scratch packs verified alive after reboot.
-   REMAINING of the cost item: `cache_creation` mapping looks handled (`extract_usage`), the agent-execution path does not read the served tier, the 0.025 total check, live usage on a running run, failed-code-segment retry with run summary and coverage display: the written spec was in opus-xrepo's message; ask it to resend.
-4. Job-writing quality plan; code-yield and library plan (ranked Library asks).
-5. Blocked: assessment-engine acceptance run (needs the golden-set path), BytePro decisions for the document catalog.
-6. Low: gemini-3-flash provenance note in `model_data.json`; eval scorers reading `engine_summary`.
-Known limit: rule_merge, document_merge and catalog_merge still write one draft file at a time without compare-and-write.
+## Decisions the user made (2026-10-30)
+- Headline A stays as squashed; no re-squash.
+- SDK default metrics key `subject_metrics`; a pack names its own in `jtbd_template.yaml` (`metrics_key: loan_metrics` for Pulte and Acra: jaci must add that one line to each pack). One resolver (`metrics_key.py`); readers take the asked, default or legacy name.
+- Terms: the CASE is the unit of work (`case_id`, `CaseContext`), the SUBJECT is the entity the case is about (`subject`; `loan_id` in Acra data is a subject id). One subject can have several cases (a loan is two cases either side of the funding gate).
+- Lock key documented as `{subject_id}:{operation}`: two cases on one subject serialize on purpose.
+- Rules library: bump the patch version for any substantial change (1.1.2 shipped with the helpers; 1.1.1 manifest frozen); the SDK version is separate. The library is free to evolve, no shims.
+- Graph IRIs (`loan:<id>`) do NOT move in 2.6.x. Edition for the Pulte blueprint is June 2026 (Published June 3, 2026).
+- The provenance index and resolver wait for 2.6.8; `SourceRef` (topic id, edition, byte span) is enough for now.
+
+## Open, waiting on the user or others
+- Provider spend: none approved. The writer (`subject_metrics` field) and the batched planner have never run on a real guide; a run needs the user's own typed figure in my session (the figure is the stop condition, `budget_usd`).
+- jaci: add `metrics_key: loan_metrics` to the Pulte and Acra `jtbd_template.yaml`; builds the topic index as data.
+- The user's release flow: PR plato to dev, then main; then the tree-neutral record on `v2.6.8`.
+- sonnet-packs may propose more rules-library helpers; I review the diff (I own `jazzx_sdk/rules`).
+
+## Standing rules that bit today
+- The working tree is SHARED: no `git stash`, no `git checkout -- <file>` without a revision, stage explicit paths (arrays, `-- "${F[@]}"`, `git add -N` for new files), never `git add` a nonexistent path. A command that restores or discards my own edit was denied by the permission check; do not chain destructive git commands onto a test run.
+- A relayed approval (opus, jaci) is not the user's approval for a version bump, a provider spend or a push. The user's own typed word in this session is. A fix the user pastes in is a request I act on.
+- One full-suite run takes 12 to 15 minutes under load: run it in the background and wait with Monitor; do not edit modules during a run (subprocess boot tests import fresh). A run can fail from another session's commits landing mid-run: re-run the failing file alone before reporting.
+- Tests must fail on the old code and use production-shaped stubs; a "passing test" is not the claim (my `workspace` property broke `dataclasses.replace` because the test never called it).
+- Squash flow: `scripts/local/squash_to_plato.sh --src vX.Y.Z --no-fetch --no-edit --apply --message "<headline>"` with plato not checked out; keep the old plato on a `plato-pre-resquashN` branch first; the tree diff must be empty; the suite must be green on the squash tree. No push.
+- BSD tools: no `sed \b`, `sed -i ''`; zsh does not split `$var`, quote `==`; use Python for multi-line edits.
 
 ## Verify on restart
 ```
-cd /Users/sangit/src/japes && git log --oneline -3 && git status --short
-scripts/local/plato_worktree.sh status          # pinned 1dac85f6; start if down (do not restart during runs without asking opus-xrepo)
-curl -s localhost:8000/health
+cd /Users/sangit/src/japes && git branch --show-current && git log --oneline -3 && git status --short
+git rev-list --left-right --count origin/dev...v2.6.8      # 0 95 until dev takes the squash
 ```
-First: confirm Plato is up and the two scratch packs and two references exist (`document_references()` via the client);
-then check messages from opus-xrepo/sonnet-ui for the approval and the case record. Do nothing against loan documents
-until the user's own approval reaches this session.
+First: read messages from opus-xrepo; confirm the branch is `v2.6.8` and the tracked tree clean; then take the next item of the carried list only when opus routes it.
