@@ -38,24 +38,20 @@ difference is small. Record each iteration in a short note under `docs/plans/` (
 - Never bump a pack version, push, or change a gold case or fixture without asking. Commit explicit paths only.
 - No em-dashes, no AI attribution, US spelling; follow CLAUDE.md.
 
-### State at 2026-10-28 (read this first)
-- Spend: the user has approved no provider run (all spend stopped after the loan-2 runs reached about 20 USD); the Claude-model pass and
-  the repeat runs ("3c") wait until costed from real prices. Everything below was offline.
-- Built: `docs/status/Acra/acra_bundle/` README now also written as README.html (`acra_bundle.py`, `_write_readme`, uncommitted, scratch repo).
-- Comparison regen-5 vs K-Studio (done, reported to opus-xrepo): `5_comparison/jobs_vs_kstudio_regen5.xlsx` and `.md`, plus
-  `readings_for_decision_regen5.md` (8 readings for the user to decide: refer / fill / keep both; opus-xrepo routes it to the user; nothing for
-  me until they answer). Matching was checked by a blind second read: 27 of 40 identical job sets, 36 of 40 Jaccard >= 0.5; of 35 existence
-  claims 30 agreed (5 were partial credits). Counts are +-1 or 2 clauses.
-- Findings: ours has no job on the Platinum Condo/Two-Unit 75% cap, cash-in-hand footnotes, ARM terms, state prepay restrictions, Rider, REO
-  scope, Business Purpose Attestation, HELOC CLTV, excessive lease rent (Standard), previous credit events (Platinum). Cause: the job-writer
-  prompt (`jazzx_sdk/prompts/files/policy_jtbd/write_prompt.md`, SDK-owned, sonnet-runtime edits it) has no "every figure/cap/footnote decided by
-  some check" line; the coverage report counts a partial alignment as checked. Routed through opus-xrepo: three prompt lines and the partial-count
-  issue. Handed to sonnet-runtime: `scripts/local/figure_lint.py` (figures in a clause that no linked job states).
-- Working files (scratchpad, may vanish): clause to job maps `map_plat.py`, `map_std.py`, builder `build.py` under
-  `/private/tmp/claude-506/-Users-sangit-src-japes/bb2cb21f-d3b1-4548-ae77-5bd112373491/scratchpad/cmp/`.
-- Not mine, finished as a detour: the systemtwoai.com website repo (`/Users/foo/src/research/website`) was cleaned (deletions staged, user commits).
-- Next, when the user allows: measure the write_prompt edits (needs a costed run), a repeat run to size noise, then the pack-side items
-  (job kinds, vocabulary) with sonnet-runtime. Until then wait for the user's answers on the readings list.
+### State at 2026-10-30 (evening)
+- Branch `v2.6.7`. No provider run is approved; any measuring run needs the user's approval and a costed plan.
+- Committed, unpushed: `73dc2aa5` escrow CLTV limit read from the profile; `4e4b263a` seed synced to jaci 0.3.0 (jaci `0ed0d27`: 14 optional
+  fields, Rider and Attestation document types, no rule reads them yet); `74ffb5b2` three shaped `limit` examples in `job_examples.yaml`
+  (label `acra-job-examples-2`, inert until a job declares `jtbd.job_shape`; adding `job_shape` to pack content is NOT done).
+- Helpers: `rules_lib` 1.1.2 (`names`, `same_person`, `same_org`, `uncovered_months`, `pair_off`; commits `0e412509` `4df20694` `93cbf806`
+  `fe8a32ca` `185fc707`, docstrings `f9b49696`), reviewed and accepted by sonnet-runtime. `latest` and `explains` deferred.
+- Notes done: `docs/plans/draft_missing_jobs_acra_dscr_policy.yaml` (10 missing-job proposals, unwired); `docs/status/note_seed_policy_vs_kstudio_by_what_a_job_checks.md`
+  (seed vs K-Studio, with the condition-level pass); `docs/plans/draft_blueprint_pulte_home_mortgage.yaml` (shape reference only: the Pulte
+  blueprint does NOT go in japes seed, sonnet-jaci holds it as jaci config); surveys A and B reported to opus-xrepo (gates go to sonnet-runtime).
+- Blocked on the user: the 8 readings (`5_comparison/readings_for_decision_regen5.md`) plus Q-10 (vacant rate and term boundaries: seed exclusive,
+  K-Studio inclusive); the measuring run (about 0.1 to 0.2 USD, plan in sonnet-runtime's `note_job_examples_skeptic_pass_and_measuring_run.md`).
+- Next: wire the missing-job proposals once the fields exist (add them to `jtbd_template.yaml` reads then); document-type classifier behavior for the
+  two new documents needs a measured run. Do not touch sonnet-runtime's uncommitted edits. The scratch-repo commit may be hook-blocked.
 
 ### On restart
 Read CLAUDE.md, your memory index and `docs/status/Acra/acra_bundle/README.md`; report in one short paragraph what you understood and what you propose first; wait.

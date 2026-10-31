@@ -1,0 +1,15 @@
+# Author: Virendra Mehta <virendra.mehta@jazzx.ai>
+# Pulte home mortgage: the policy pack and the assistant that serves it.
+blueprint_id: pulte-home-mortgage
+version: 0.1.0
+title: Pulte Home Mortgage
+domain: residential_lending
+segment: mortgage
+client: pulte
+members:
+  - role: policy
+    ref_id: pulte-home-mortgage-policy
+    version_range: ">=0.1"
+  - role: assistant
+    ref_id: pulte-home-mortgage-core
+    version_range: ">=1.2"

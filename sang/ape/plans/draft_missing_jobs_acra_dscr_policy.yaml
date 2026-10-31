@@ -1,0 +1,147 @@
+# Draft proposals for jobs our Acra DSCR set lacks (sonnet-packs, 2026-10-30). Not wired in; nothing here is loaded.
+# Source of the gap list: 5_comparison/jobs_vs_kstudio_regen5.md ("Gaps in ours"). Clause text is quoted from the consolidated
+# guidelines (STD-x.y / PLAT-x.y); no figure below is invented. `needs_field` names data the case schemas do not carry
+# today (a field to add, or the job stays a reviewer step). `open` names the guideline's own unresolved question (Q-nn):
+# where one governs, the job states the printed rule and refers the question, it does not pick a reading.
+# `disposition` is a proposal for the assessment stage to confirm, not a claim.
+label: acra-missing-jobs-draft-1
+proposals:
+  - id: condo_two_unit_cltv_cap
+    programs: [platinum]
+    cites: [PLAT-7.1, PLAT-2 table row "Warrantable Condo", "Two-Units"]
+    clause: '"Two-Units, Warrantable Condo, Max CLTV: 75.00%"'
+    purpose: Determine whether a Warrantable Condo or Two-Unit subject meets the 75.00% maximum CLTV.
+    checks:
+      - For a Warrantable Condo or a Two-Unit property, CLTV does not exceed 75.00% (all three purposes).
+    reads: [SubjectProperty.property_type, LoanCore.cltv_percent]
+    missing_data: whether a condo is warrantable
+    open: Q-07 (3 and 4 units, manufactured, mixed-use are not listed as eligible on Platinum)
+    disposition: code
+
+  - id: cash_in_hand_limits
+    programs: [standard, platinum]
+    cites: [STD-2.3, PLAT-2.2]
+    clause: >-
+      Footnote 1 (marker on the Cash-Out heading): "When LTV > 65% Max Cash-in-Hand: $1,000,000 for loans >= $1,500,000,
+      $500,000 for loans < $1,500,000." Footnote 2: "When LTV <= 65%, unlimited cash-in-hand allowed".
+    purpose: Determine whether cash-in-hand on a cash-out refinance is within the printed footnote limit.
+    checks:
+      - If LTV is above 65% on a cash-out refinance, cash-in-hand does not exceed $1,000,000 when the loan is $1,500,000 or more, and $500,000 when it is less.
+      - If LTV is 65% or below, cash-in-hand has no limit (footnote 2).
+    reads: [LoanCore.loan_purpose, LoanCore.total_loan_amount_usd]
+    needs_field: [LoanCore.ltv_percent, LoanCore.cash_in_hand_usd]
+    open: 'Q-17 (whether footnote 2 applies to every tier; footnotes say LTV, matrix says CLTV). Delayed financing column and cash-in-hand rule: Q-06 (STD) / Q-02 (PLAT).'
+    disposition: code once the two fields exist; until then computable_no_code
+
+  - id: arm_terms
+    programs: [standard, platinum]
+    cites: [STD-10.1, STD-10.2, PLAT-9.1, PLAT-9.2]
+    clause: >-
+      Index 1 Yr CMT; caps 2/2/6; margin by FICO. Standard: 3.00 (760+), 3.25 (720-759), 3.50 (700-719), 3.75 (680-699),
+      4.00 (660-679), 4.25 (640-659), 5.00 (600-639). Platinum: 3.00 (760+), 3.25 (720-759), 3.50 (700-719).
+      Standard products 5/1 and 7/1 ARM; Platinum 5 Yr ARM.
+    purpose: Determine whether an ARM loan uses the printed index, caps and margin for the borrower's FICO band.
+    checks:
+      - An ARM loan's index is the 1 Yr CMT and its caps are 2/2/6.
+      - An ARM loan's margin equals the printed margin for the representative score's band (per program).
+    reads: [CreditReport.representative_score]
+    needs_field: [LoanInformation.product_type, LoanInformation.arm_index, LoanInformation.arm_caps, LoanInformation.arm_margin]
+    open: Q-01 (721 vs 720 boundary and the printed bands, PLAT-2)
+    disposition: code once the ARM fields exist; the margin table belongs in pack data, not code
+
+  - id: state_prepay_restrictions
+    programs: [standard, platinum]
+    cites: [STD-11.1, STD-11.3, PLAT-10.1, PLAT-10.3]
+    clause: 'Prepayment structures as printed; "14 state restrictions", in Acra''s exact wording per state (e.g. Alaska: "BUY-OUT all Residential 1-4").'
+    purpose: Determine whether the prepayment penalty structure is one the program offers and the state allows.
+    checks:
+      - 'The prepayment structure is one of the printed structures (Standard: 5, 4, 3, 2, 1 year or No Prepay; Platinum: 5, 3, 2, 1 year or No Prepay).'
+      - The structure meets the printed restriction for the subject state and unit count.
+    reads: [LoanCore.prepayment_penalty_structure, SubjectProperty.state]
+    missing_data: unit count read as a check input; meaning of "BUY-OUT"
+    open: 'Q-24 (STD), Q-19 (PLAT): what BUY-OUT requires; whether a 4-year structure is available on Platinum'
+    note: The per-state table is already pack data in the process policy; this job is the missing statement of the check, not a second table.
+    disposition: code_and_procedure (structure and state are computable; BUY-OUT stays a reviewer step until Q-24 or Q-19 answers)
+
+  - id: one_to_four_family_rider
+    programs: [standard, platinum]
+    cites: [STD-1.8, PLAT-1.11]
+    clause: '"All borrowers purchasing or refinancing a one- to four-family investment property must execute a One- to Four-Family Rider with the loan documents"'
+    purpose: Determine whether a one- to four-family investment loan carries an executed One- to Four-Family Rider.
+    checks:
+      - For a one- to four-family investment property purchase or refinance, an executed One- to Four-Family Rider is in the loan documents.
+    reads: [SubjectProperty.property_type, SubjectProperty.occupancy_subtype]
+    needs_field: [LoanDocuments.one_to_four_family_rider_executed]
+    open: none printed
+    disposition: procedure until a document-presence field exists; then code
+
+  - id: reo_scope
+    programs: [standard, platinum]
+    cites: [STD-8.10, PLAT-7.8 and the listed-for-sale conditions; Schedule of Real Estate Owned (REO) in the document list]
+    clause: >-
+      "DSCR loans only require documentation on the subject property, principal residence, and second home (if any) of the
+      borrower and / or guarantor(s). Additional properties do not require housing history to be documented unless documents
+      in the file ..." (STD-7.7, PLAT-6.11)
+    purpose: Determine that housing history is documented for exactly the printed property scope (subject, principal residence, second home).
+    checks:
+      - Housing history is documented for the subject property, the principal residence and any second home of the borrower or guarantor.
+      - No housing history is demanded for other REO unless file documents indicate a problem.
+    reads: [CreditReport.housing_history_rating]
+    needs_field: [Borrower.reo_properties]
+    open: the clause is cut at "unless documents in the file ..."; read the full sentence from the source before writing the job. Does not cover the Schedule of REO as a document.
+    disposition: procedure (scope judgement over a document list)
+
+  - id: business_purpose_attestation
+    programs: [standard, platinum]
+    cites: [STD-1.3, PLAT-1.3]
+    clause: >-
+      "Where the borrower is qualifying utilizing the subject property's actual or market cashflow under a business purpose
+      transaction, borrower must execute with loan docs a Business Purpose Attestation (Exhibit 8) or other similar
+      attestation approved by Acra."
+    purpose: Determine whether a DSCR-qualified business purpose loan carries the executed attestation.
+    checks:
+      - When qualifying on the subject's actual or market cashflow, a Business Purpose Attestation (Exhibit 8, or one approved by Acra) is executed with the loan documents.
+    reads: [LoanCore.dscr_qualification_method]
+    needs_field: [LoanDocuments.business_purpose_attestation_executed]
+    open: 'Q-27 (STD): whether every loan on the program is business purpose (STD-9.2 mentions consumer transactions)'
+    disposition: procedure until a document-presence field exists; then code
+
+  - id: heloc_cltv_calculation
+    programs: [standard]
+    cites: [STD-10.7]
+    clause: '"If Subordinate/Secondary Financing is a HELOC, CLTV will be calculated on the greater of the credit line limit or current credit line balance for eligibility."'
+    purpose: Determine whether CLTV counts a HELOC at the greater of its line limit or balance.
+    checks:
+      - When subordinate financing is a HELOC, the CLTV used for eligibility counts the HELOC at the greater of its credit line limit and its current balance.
+    reads: [LoanCore.cltv_percent]
+    needs_field: [LoanCore.subordinate_financing_type, LoanCore.heloc_limit_usd, LoanCore.heloc_balance_usd]
+    open: Q-18 (whether subordinate financing is allowed at all on the program, for which liens, with what leverage). Platinum does not address it (PLAT-3.6), so no Platinum job.
+    disposition: code_and_procedure (the arithmetic is code; allowability is Q-18)
+
+  - id: excessive_lease_rent
+    programs: [standard, platinum]
+    cites: [STD-3.11, PLAT-3.10]
+    clause: >-
+      "Single family investment properties with excessive monthly rent payments reflected on the lease require documentation
+      supporting that the monthly rent is typical for the area; acceptable documentation may include classified ads from
+      local newspapers, a 1007 completed by the appraiser, or a market rent survey ..."
+    purpose: Determine whether a single family investment property with an excessive lease rent has documentation that the rent is typical for the area.
+    checks:
+      - If the monthly rent on the lease is excessive, documentation shows it is typical for the area.
+    reads: [SubjectProperty.property_type]
+    needs_field: [SubjectProperty.lease_rent_usd]
+    missing_data: what counts as excessive (the guideline prints no threshold)
+    open: none printed; a threshold must come from Acra, not from us
+    disposition: not_computable (names the missing threshold); STD-3.11 is listed on Standard in the gap list, PLAT-3.10 carries the same text
+
+  - id: previous_credit_events
+    programs: [platinum]
+    cites: [PLAT-6.8]
+    clause: '"Previous Credit Events (PCEs): 48 Mo Seasoning"'
+    purpose: Determine whether previous credit events are seasoned the printed 48 months.
+    checks:
+      - Each previous credit event is at least 48 months seasoned.
+    reads: [Borrower.has_bankruptcy_or_foreclosure, Borrower.months_since_bankruptcy_or_foreclosure, Borrower.has_short_sale_dil_or_modification, Borrower.months_since_short_sale_dil_or_modification]
+    open: Q-06 (which events are covered, start and end dates, month counting, modification and forbearance treatment)
+    note: Standard already has tiered PCE jobs; this is the single Platinum seasoning standard. Fields exist, so the check is computable once Q-06 fixes the event set.
+    disposition: code_and_procedure (event list is Q-06; until answered, the covered set is the four fields above, which is a reading to confirm)

@@ -52,6 +52,7 @@ start() {
     export PLATO_WIRING=plato.wiring.default:build PLATO_PROFILE=packs
     export PLATO_PACK_BLOB_DIR="$MAIN/.plato-pack-blobs" PLATO_PACK_CACHE_DIR="$MAIN/.plato-pack-cache"
     export JAPES_LOCAL_DATA_DIR="$MAIN/documents"
+    grep -q '^PLATO_DEFAULT_PACK=' "$MAIN/.env" 2>/dev/null || export PLATO_DEFAULT_PACK="${PLATO_DEFAULT_PACK:-acra-dscr-policy}"
     echo "=== $(date -u +%FT%TZ) start from $WT at $(git log --oneline -1)" >> "$LOG"
     nohup python -m plato >> "$LOG" 2>&1 &
   )
