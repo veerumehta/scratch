@@ -27,7 +27,9 @@ and owners. Order is by what blocks a consumer or the release first.
 
 ## Added since
 
-10. **Markdown-guide cross-reference fold**: item 9 above is the same work as the `TODO(slug)` in `markdown_guide.py`; close both with one change.
+10. **Markdown-guide cross-reference fold**: item 9 is built (76bf9c98 on v2.6.8; the Pulte topic index is already regenerated at 388 units in jaci cdfb516). Left: the
+    `TODO(cross-reference-vs-repeated-id)` in `markdown_guide.py` (a genuine repeat of an id that another topic cites is folded); decide whether to keep it. jaci re-runs
+    its index script only if unit ids change again.
 11. **Test speed.** `test_concurrency` teardown waits 4 x 9.95 s, `test_import_each_package` 46.6 s, `test_chat_turn_store` 10 s. Fix the waits at the cause (a
     signalled shutdown, not a shorter sleep). Also the two 50 ms-TTL heartbeat tests, which are timing-sensitive. Owner: sonnet-runtime.
 12. **CI Postgres service container**, so the 6 tests that skip without `JAPES_TEST_POSTGRES_URL` run in CI. Check the shard split afterwards; sharding stays the user's
@@ -39,7 +41,7 @@ and owners. Order is by what blocks a consumer or the release first.
 16. **Workbench ranks 7 to 9** from `note_workbench_to_sdk_enhancements`, and `single_case_dataset` with the corpus segmenter (defer until the workbench commits to the SDK
     runner). Open question for the user: must extracted jobs carry guide topic ids.
 17. **`page-harness-shared` TODO**, owner sonnet-ui.
-18. **jaci re-lock** (openai, pydantic, pyasn1 moved; jaci dev is 4 ahead of origin/dev 770ce78): sonnet-jaci, after the user's japes push.
+18. **jaci re-lock** (openai, pydantic, pyasn1 moved; jaci dev is 6 ahead of origin/dev 770ce78): sonnet-jaci, after the user's japes push.
 
 ## Order
 
