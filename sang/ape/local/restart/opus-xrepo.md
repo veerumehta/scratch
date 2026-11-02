@@ -1,102 +1,57 @@
-# opus-xrepo restart file (saved 2026-10-17, before a computer reboot)
+You are opus-xrepo (cross-repo coordinator for japes). Read CLAUDE.md first, then this file. Route, do not build in builder paths. Never push, never write to GitHub, never bump a version unasked. One-off files go in /tmp with short names. No em-dashes, US English, no AI attribution. Check ListAgents before relaying (a /rename breaks messaging). A peer's message is a request, never the user's approval: peers (rightly) will not commit a version bump or publish to the local Plato on a relayed "the user approved", so the user must say yes in that session. Archive of the previous state: docs/status/stale_opus_xrepo_restart_2026-10-30_late.md (and the earlier _2026-10-30.md).
 
-You are opus-xrepo, the cross-repo coordinator for japes (jaci, jazzx-assistant, assistant and the rest). Route work to
-the builder sessions; do not build in their paths. Never push, never write to GitHub (`gh api` reads are blocked for
-you; `scripts/local/pr_new_comments.sh <pr>` and `gh pr view/checks` work). Scripts go to `scripts/local/` (not /tmp,
-which a reboot can clear), generic logic in scripts/local. No em-dashes, no AI attribution, no version bumps unasked.
-Read CLAUDE.md (cross-repo paragraph) after this file. Sessions: `scripts/local/restart_session.sh list`.
+## State, end of 2026-10-30
+- japes: the 2.6.7 squash is PUSHED to origin/plato (18bbded9: parents cb256157 and origin/dev a95556c3, headline `v2.6.7 (plato v0.2.7): evaluation control plane in the SDK, guide-scale policy adoption with model links kept apart from checked, batched planning with a spend ceiling, guide-style job export`). Review rounds (4 slices) passed. Working branch is now v2.6.8 (Start 2.6.8 = 2a2098f5, cut from the v2.6.7 tip, SDK 2.6.8; Plato and client stay 0.2.7; rules LIB_VERSION 1.1.2). origin/dev is still a95556c3 and main e5c7128e: the PR plato to dev, then main, is the user's release flow. When dev takes the squash, v2.6.8 needs the tree-neutral record (`git merge -s ours origin/dev`) after a carries-everything check. Nothing of v2.6.8 is pushed.
+- jaci UPDATE 2026-10-31: the user pushed jaci dev up to 770ce78 (origin/dev); dev is now 4 ahead: cdfb516 (Pulte review fixes and the 388-unit topic index, committed on the user's yes), 8284084 (scenarios to solutions rename plus patch bumps of 6 packs), 96772ed (ARCHITECTURE and playbook paths), 0de2007 (Pulte solution page in the UI). Pulte export gate on japes a1e18862: 115 jobs, 8 errors (6 metric-key-not-in-ontology content gaps, 2 owned-twice income slot collisions), 13 warnings (1 cycle, 5 possible cycles, 7 shared keys). The older jaci text below is superseded where it conflicts.
+- jaci (older text, 2026-10-30): dev is 8 ahead of origin/dev, unpushed (user pushes after pre_push_check.sh, AFTER the japes plato push because jaci's japes pin; jaci re-locks after that push): Pulte packs, pin, blueprint, 0.2.0 content, Acra DSCR fields, client step 1, test warnings, and 770ce78 (Pulte pack 0.2.1 with jtbd_template.yaml metrics_key: loan_metrics; committed with the user's own yes, NOT republished; the Acra line is deliberately not added until its missing-job proposals are wired). The user also had jaci (re)activate Acra DSCR 0.3.0 in tenant acra-lending (byte-identical, already held). Not approved: the classifier measurement of the two new document types (provider run, needs a typed approval with a figure).
+- Local Plato :8000 is still on the old pinned rev 46ee72a7 (reports SDK 2.6.5, so its lint shows 102 unreachable_input on Pulte where the new lint shows 2). Restart only with no run in flight: `JAPES_RUN_BUDGET_USD=7 JAPES_PAGE_CACHE_DIR="<japes>/docs/status/Acra/Acra Lending/e2e/page_cache" scripts/local/plato_worktree.sh restart <rev>` (the script now sets PLATO_DEFAULT_PACK=acra-dscr-policy unless .env defines it). The user has not asked for the restart yet; it shows the Solutions, Clauses, paging and neutral-wording work.
+- Pulte home-mortgage blueprint, live on the local Plato tenant pulte: guideline set fannie-mae-selling-guide (G1, the June 3, 2026 guide, 2,598,374 bytes), pulte-home-mortgage-policy 0.2.0 (115 Pulte JTBDs, 292 rules, 182 declared reads, ontology seed v2.0.0 scope a, 389 guide units, 877 adopted links), pulte-home-mortgage-core 1.2.0, blueprint pulte-home-mortgage 0.1.0 (active, members pinned). Coverage over 389 units: 0 checked, 59 cited only, 120 linked_unreviewed (model links, unreviewed), 210 uncited. Lint: 0 blocking; 241 uncited rules, 46 unreachable_filter_field (7 filter fields absent from the seed ontology: Hub content), 2 unreachable_input (LoanCore.total_undisclosed_monthly_payment_usd, bare Borrower for COM-DEC). No generation spend was needed or made. The blueprint is jaci config (not a japes seed: a seed publishes on every fresh tenant).
 
-## First, on restart
-1. `cd /Users/sangit/src/japes && scripts/local/restart_session.sh list` (who is live, who saved a restart file).
-2. Local Plato does not survive a reboot: `scripts/local/plato_worktree.sh start` (pinned worktree
-   /Users/sangit/src/japes-plato, :8000, database at 0035). Check `curl localhost:8000/health` (version 0.2.5).
-   If it does not start, `scripts/local/plato_worktree.sh status`; the helper's `stop` bug is fixed (fcfaea6 in scratch).
-3. `git fetch origin; git status; git log --oneline -3 v2.6.4; git branch --show-current` in /Users/sangit/src/japes.
-4. Tell the user, in one short paragraph, what you understood and what waits on them (section "Waiting on the user").
+## 2026-11-01 state (supersedes the 2.6.8 lines below where they conflict)
+- Round 3 of the full-range adversarial review is CLEAN on local `plato` 521640ea (parents 18bbded9 and origin/dev 0564d28d, tree identical to v2.6.8 tip 0394d6eb; suite 11729 passed, 34 skipped). Rounds 1 and 2 found 8 SDK and 6 UI items, all fixed (SDK 2e1699f0, ef6a05b0; UI 08d40095, 83dfc989, f7f705f2, 0394d6eb). Safety branches: plato-pre-resquash8 (18bbded9), plato-pre-resquash9 (dcdc69eb), plato-pre-resquash10 (5cc39d4e). v2.6.8 freeze is over.
+- Nothing of 2.6.8 is pushed. User steps: check Dependabot on main, push refs/heads/plato alone (fast-forward from 18bbded9), PR targeting plato, then jaci dev after pre_push_check.sh and a re-lock. Local Plato :8000 still runs 8d17d777 (restart onto 0394d6eb for the browser check; UI editor flows are not browser-checked).
+- Carried to 2.6.9: TODO(slug)s from review (runs/schema.py max_attempts retry branch, markdown_guide.py cross-reference fold), plus the carried list in plan_2_6_8_carried_from_2_6_7 and the MACER steps.
 
-## Where things stand
-- Released: v2.6.2 is on main (#95, 5d8f5ef2); v2.6.3 is on dev (#92 squash 6277834e). dev recorded on local plato
-  (0abeacdd, parents 1a35ec41 and 6277834e, tree unchanged, NOT pushed yet). origin/plato = 1a35ec41.
-- v2.6.4 is cut from dev (417abf1c: SDK 2.6.4, Plato and client 0.2.5; do not bump again). The shared checkout
-  /Users/sangit/src/japes is on v2.6.4; second clone /Users/sangit/src/other/japes for isolated work.
-- v2.6.4 builder commits, all unpushed and UNREVIEWED: sonnet-runtime (assessment engine modes with hybrid the
-  DEFAULT 54bb5550 and a both-in-force warning, document types with external codes/cardinality/scope/attributes,
-  tabular catalog reader with header_row, versioned document references and routes, adopt/suggest, descendant
-  expansion, unread/single-instance reporting, five jaci client gaps: documents index 0034, document read, record
-  outcome, guidance store 0035, reactions, follow_case_run from_seq, RetryPolicy, assess route/client engine_mode;
-  tip 1dac85f6), sonnet-ui (chain findings on the packs page, show_job card, runs page ask_page actions, document
-  catalog page /document-catalog/ui, single-instance conflicts on the runs page).
-- Dependabot: no alerts (user checked). CodeQL alerts on #95 fixed and carried to v2.6.3 (regex, trial path, solution id).
+## 2026-11-02 night (supersedes the evening block where they conflict)
+- PUSHED: origin/plato 433b89d2 = de4a8be8 plus one follow-up commit (tree = v2.6.8 tip 59c26732): two-shard CI behind the `pytest` aggregator, 30-min limit and --durations=30, pyasn1 0.6.5, qualifier-filter parser, rules_lib helpers (edate, eomonth, round_half_up/ceiling/floor, total/average/lowest/highest) with the overflow family fixed, shard step fails loudly, reap test deterministic. origin/dev e138c07f = f2e74d42 (CI timeout and deliberate-warning tests) + ee4ba790 (tree-neutral record of main b4405728, the 2.6.7 squash) + pyasn1 (same patch as plato's). PR #105 (2.6.7 dev to main) is merged; its CodeQL alerts were dismissed by the user (regex false positive, str(exc) of ScopeClaimRefused carries only a claim name and a fixed rule).
+- v2.6.8 local branch (japes-v268) tip 59c26732; commit order: c54c5a0a, 520bccb9, 90eb9cac, a65d153e, 0a30c147, f89b265c, 1e1db0a4, 3072880e, d6a9c3a9, 59c26732. Full suite on 1e1db0a4: 11,916 passed, 0 failed (14m39s); not rerun after the three fix commits (the user's pre-push run covered the plato tip).
+- Decisions today: rules library helpers stay under LIB_VERSION 1.1.2, no bump, no impact (nobody else uses them); the review note on that is closed by the user (no accepted.md was found under scripts/local/.reviews, so the loop may re-raise it); one large commit per follow-up on shared branches, user amends headlines (memory updated); common bump to 0.3.0 is a 2.6.9 item; fixes go forward, not reverted.
+- Local environment facts: .venv is at the old pins (openai 3.3.0, openai-agents 0.22.3, pydantic 2.12.5), lock is newer: run pre_push_check.sh --ci-versions. jazzx_plato_client in the venv is an editable install pointing at the main checkout, so tests run from another worktree need PYTHONPATH=<tree>/jazzx_plato_client (the hook sets it only in its throwaway-worktree mode; I fixed the shim line to prepend, in the scratch repo, uncommitted there). One-off push scripts: /tmp/plato_amend_and_check.sh and /tmp/plato_push.sh. Stale worktree entry pruned; disk 93% used (biggest: .plato-pack-blobs 926M, .venv 993M); safety branches plato-pre-resquash8 to 18 and plato-pre-ciwf remain.
+- Open for the user: PR targeting plato and the first sharded CI run (both shards under 25 min? aggregator green?); jaci pre_push, re-lock (openai, pydantic, pyasn1), push dev; after the plato PR merges into dev: record that squash on plato and a fresh record of origin/dev on v2.6.8 (f03b39fc wording); optional dev to main PR for the four pyasn1 alerts (they close when 2.6.8 reaches main anyway); Dependabot on main; delete safety branches.
+- 2.6.9 starts now (user, 2026-11-02): plan doc first (plan_2_6_9_*), carried list = plan_2_6_8_carried_from_2_6_7 items 1 to 9 plus: common 0.3.0 bump (gated), test speed (test_concurrency teardown, test_import_each_package, test_chat_turn_store), the two 50 ms-TTL heartbeat tests, CI Postgres service container, check_new_models cache, MACER steps, thinking fill for Anthropic and Gemini, workbench ranks 7 to 9, lint gates K3 K4 K7 K9 K10, single_case_dataset and corpus segmenter, page-harness-shared TODO, runs/schema.py max_attempts TODO, markdown-guide cross-reference fold, jaci re-lock.
 
-## Acra end-to-end (the active programme)
-- Goal from the user: one end-to-end run on ONE real loan packet with our jobs, our code, hybrid, both, compared with
-  Acra's K-Studio JTBDs, to show how far we are. sonnet-runtime leads (plans/plan_acra_end_to_end_run.md,
-  scripts/local/acra_e2e_run.py, scratch packs acra-e2e-kstudio 0.0.1 and acra-e2e-ours 0.2.18 on local Plato).
-  Pairing K-Studio vs ours (guidelines only): standard same 39 / differs 19 / partial 48 / none 17 of 123; platinum 37/11/48/12 of 108.
-- References loaded on local Plato (tenant acra-lending): acra-taxonomy@2026-10-17 (152 entries from
-  docs/status/Acra/Updated_Loan_Document_Taxonomy.xlsx, sheet Master Taxonomy, header row 5) and bytepro@2026-07-29
-  (471 entries). 141 of 152 taxonomy entries are read by no job (72 Core); 4 job documents match no entry
-  (loan_application, listing_history, entity_documents, title_agent_verification). Jobs name only 11 coarse documents:
-  after jaci adopts the taxonomy into the registry, regenerating jobs should name fine entries (not yet asked).
-- sonnet-ui owns the classification eval (docs/plans/plan_acra_classification_eval.md; label_mapping.csv and
-  golden/dataset_parts.json in the ignored Acra folder). Step 0 (page counts only) is done: loan-1 786, loan-2 534
-  (smallest), loan-3 788, loan-4 551, loan-5 1063; the workbook's six Parts (101, 90, 52, 117, 35, 69 pages) match no file,
-  so the Part-to-file map is unknown. Waiting on the user: which loan/offset each Part is; and ingest loan-2 whole
-  (about 0.5 USD vision, inside the 5 USD ceiling; my recommendation: yes).
-- PRIVACY: docs/status/Acra/Acra Lending/ holds real borrower data (176 files, about 600 MB). It is gitignored in the
-  scratch repo (which has a GitHub remote, ahead of origin, NEVER push it). Refer to loans only as loan-N; never print
-  file or borrower names; never read the PDFs in a session; outputs only under that ignored folder; reports to the user
-  aggregate-only. sonnet-ui printed the loan file names once by mistake (reported to the user). Spend: classification
-  eval 5 USD; end-to-end 30 USD total, 8 per variant (the per-variant cap cannot interrupt a server-side reasoned
-  assess; I recommended leaving it).
-- A session must have the user's OWN approval for anything that sends real documents to providers; my relays do not
-  count (sonnet-ui and sonnet-runtime correctly refused them). The user approved step 0 directly in sonnet-ui.
-- Acra bundle: docs/status/Acra/acra_bundle is regen 3b (121/110 jobs, 43/56 code). `scripts/local/acra_bundle.py
-  --trial X` builds a candidate in /tmp/acra_bundle_candidate; `--promote --archive-as NAME` archives the current best
-  and replaces it. The user syncs the folder to SharePoint. Regen 3b coded 50% (120/240) vs regen 2 56% (150/270);
-  alignment with Acra's whole set was never measured for 3b (acra_compare_sets.py).
+## 2026-11-02 evening (supersedes the update below where they conflict)
+- 2.6.7 is on main (b4405728); dev records it as ee4ba790 (local, push is the user's). origin/plato is the 2.6.8 squash de4a8be8 (pushed). v2.6.8 tip carries, unpushed: c54c5a0a (qualifier-filter parser, clears the CodeQL false positive), 520bccb9 (CI timeout 30 min + --durations=30 + the two deliberate-warning tests, same patch as dev f2e74d42), 90eb9cac (two-shard CI behind a `pytest` aggregator job), plus a pending pyasn1 0.6.5 floor and lock bump (four high alerts). User applies them to plato with `git cherry-pick -n` and one commit. sonnet-packs owes a commit for edate/eomonth in rules/lib.py and manifest 1.1.2 (uncommitted in japes-v268, fails test_rules_lib); the release squash waits on it.
+- CI data: dev run on f2e74d42 passed in 13m14s (10,596 passed, 34 skipped); serial time varies 13 to 20 min on the same code. Sharding on plato is the user's experiment; if it gains little, drop 90eb9cac and keep 520bccb9.
+- 2.6.9 list additions: bump the `common` submodule from 25bf9d81 (0.2.0) to 0.3.0 main (5fa47753): multi-tenancy foundations, default-off, but core/db.py gives every session TenantAwareSession and telemetry adds a span processor; gate on tests/test_common_submodule_deps.py, Plato boot-contract tests and a full suite with tenancy off (user decision 2026-11-02); test speed (test_concurrency teardown waits 4 x 9.95 s, test_import_each_package 46.6 s, test_chat_turn_store 10 s; routed to sonnet-runtime); CI Postgres service container (6 tests skip without JAPES_TEST_POSTGRES_URL); fix check_new_models cache to store served ids (stale "untracked model" warning for gpt-6.1-terra); two deliberate-warning tests need no change if dev f2e74d42 lands.
+- jaci: re-lock needed (openai, pydantic, pyasn1 moved); jaci dev is 4 commits ahead of origin/dev 770ce78.
 
-## Waiting on the user
-- Own approvals for the loan runs, typed in the builder sessions (sonnet-ui: classification/ingest; sonnet-runtime:
-  the end-to-end run). Which loan/offset each Part is. Ingest loan-2 whole (yes recommended).
-- Confirm the hybrid default for assessment (54bb5550); run the review over the whole unpushed v2.6.4 range before any push.
-- Push local plato (0abeacdd, tree-neutral record of dev; `git push --no-verify` is fine for it).
-- Golden set for loan decisions (policy verdicts) and a sanitized Acra loan package are still missing; Acra's case date;
-  browser check of every new page (nothing has been opened in a browser); qualifying_rent; Docker for the executor check.
+## 2026-11-02 update (supersedes the 2026-11-01 block)
+- Review round 6 is CLEAN on `plato-next` 847ec9e3 (parents 18bbded9 and origin/dev 0564d28d; tree = v2.6.8 tip 56010526; suite 11784 passed on the new lock pins). Rounds 4 and 5 found and closed: publish gate, unreadable policy files, bare-list data files, locks, pattern guard (overlap count, variable-width bodies), shorthand IPv4, thinking replay, opened_at. v2.6.8 also gained function_tool_from_schema, AnthropicNativeModel output limit, thinking (live smoke passed 2026-11-02, 0.004 USD, adaptive and enabled-budget shapes) and stream usage; lock raised: openai 3.42.0, openai-agents 0.24.0, pydantic 2.14.2. Tool errors keep the exception text (tool_error_text), user decision.
+- v2.6.8 work now lives in the worktree /Users/sangit/src/japes-v268 (main checkout is on `plato` for the user's push). Safety branches plato-pre-resquash8 to 15.
+- User steps: in the main checkout `git reset --hard plato-next` (plato 521640ea to 847ec9e3; tree clean), check Dependabot, push refs/heads/plato alone (fast-forward from 18bbded9), PR targeting plato, then jaci: pre_push_check.sh, re-lock (openai and pydantic moved), push dev. After dev takes the squash: tree-neutral record of origin/dev on v2.6.8 (f03b39fc wording still the user's).
+- Workbench: can adopt from v2.6.8 (plan steps 0 to 2 now possible); its questions (why the CLI) unasked. Open: MACER metrics source, Pulte income-type enum, juno and Hub questions, Plato browser check (still on 8d17d777).
 
-## Mine, not done
-- Fix scripts/local/pre_push_check.sh so the hook checks the pushed ref, not HEAD (the last hook review covered 42
-  lines = the last commit of v2.6.3, because the hook reviews HEAD and v2.6.3 has no upstream). Design: parse stdin
-  refs; if the pushed tree differs from HEAD's tree or tracked files are dirty, run the steps in a throwaway worktree
-  at the pushed sha (PYTHONPATH add jazzx_plato_client and jazzx_eval_contracts, unset GIT_DIR, symlink scripts/local,
-  absolute STAMP_DIR from the main root); REVIEW_UPSTREAM = the remote sha; stamp by the pushed sha. Test with a toy
-  repo and a bare remote. Not started editing.
-- Test-suite audit: plans/plan_test_suite_audit.md (615 files, about 8,100 tests, serial ~15 min; try xdist and
-  markers). Needs a fresh session in 2.6.4; write its kickoff file under scripts/local/restart/ when the user wants it.
-- Minor: gemini-3-flash provenance note in model_data.json still describes the preview as the only entry (sent to
-  sonnet-runtime, low). Roberto = the assistant team, Poddar = the jazzx-assistant team (memory).
+## 2026-10-31 additions
+User decided: Plato surface changes go in 2.6.8 and Plato plus client bump to 0.2.8 (runtime commits the version first, then sonnet-ui builds the surfaces: export lint and profile editor, ontology stamp and Hub refresh, adoption, extraction estimate; the 2.6.8 squash headline becomes `v2.6.8 (plato v0.2.8): ...`); dependency cycles are a warning by default; the Fannie guide parsing fix and the workbench-derived SDK items (ontology source b58c3755, job references d0a91744, metric key parser e551a33c, owned-twice 961867ef, cycle default 53d204d8, ranks 3 to 6) are committed on v2.6.8. Runtime builds SDK verbs 1 to 5 (parse_markdown_guide, dump_export_profile, catalog_stamp plus propose_refresh, adopt_links_into_files plus review_link, plan_estimate plus batch counters), then the workbench adoption plan; resolver resolve_unit only if time. Plans: plan_juno_sdk_adoption (written; eight juno questions open for the user), plan_plato_policy_to_jtbd_surfaces, plan_plato_surfaces_sdk_verbs, note_workbench_to_sdk_enhancements. Juno: local japes_v2 deleted, JAPES_V2 created off main (local only). Plato restarted on 2a2098f5 after the user ran migration 0036 (restart again on the final tip). Open for the user: record commit wording on v2.6.8 (f03b39fc), income_type enum for Pulte, juno questions, Hub ontology answers, 'must extracted jobs carry guide topic ids' (corpus segmenter), jaci commit of the topic-index regeneration, jaci push.
 
-## How a release goes (what I did this time)
-squash_to_plato.sh --src vX --apply (parents origin/plato and origin/dev; use --no-edit if the editor step does not
-move plato) -> review (scripts/local/release/japes_review_plato_263b.sh style, REVIEW_FULL=1, from the review worktree
-/private/tmp/japes-plato-review) -> push_plato.sh (the hook runs the full suite, about 15 min, never skip it for real
-code) -> PR plato->dev squash-merge -> record_dev_squash_on_plato.sh --apply -> cut the next version from dev. A
-dev->main squash: merge main back into dev with a tree-neutral merge (scripts/local/release/japes_merge_main_into_dev_262.sh).
+## Decisions the user made today (2026-10-30)
+Plato and client 0.2.7; policy workbench team gets no question (they adopt SDK functionality when ready); do not touch the scratch repo commits; rules library free to evolve and LIB_VERSION takes a patch bump with any substantial change (1.1.2 now); the guide edition is June 2026; adopt existing JTBDs, no generation; guide docs in guideline sets (blob) with SourceRef provenance, index and resolver deferred to 2.6.8; neutral terms Case (unit of work, fabric.canonical CaseContext) and subject (the entity: loan, customer, patient), no new loan_* words, SDK default metrics key subject_metrics, interchange key per pack in jtbd_template.yaml (metrics_key: loan_metrics for Pulte), graph IRIs loan:<id> not moving in 2.6.x, lock key subject-keyed {subject_id}:{operation} (two cases on one subject serialize on purpose); empty default pack on the Plato pages; headline A; Pulte metrics_key template with pack 0.2.1 unpublished and no Acra line. Memory holds the durable ones (case-is-the-neutral-term-not-loan, rules-library-free-to-evolve).
 
-## Where the moved files are
-On 2026-10-17 the /tmp scripts and notes moved to scripts/local/release (japes_*.sh), acra (acra_*.sh), restart (restart
-and kickoff notes) and notes. CLAUDE.md paths were rewritten. Old /tmp paths in older messages are stale.
+## Open, with the user
+- PR plato to dev then main; Dependabot is clean as of the user's word (my own check was blocked); push order japes first, then jaci dev.
+- (Done: the Pulte 0.2.1 commit, user said yes in the jaci session.) The jaci classifier measurement for the two new Acra document types needs a typed approval with a figure.
+- sonnet-packs items: Q-10 (vacant rate and term boundaries: seed exclusive, K-Studio inclusive), the eight readings, the measuring-run figure for the writer-prompt before/after (about 0.13 USD, typed approval with a figure; nothing spent).
+- Hub answers for ontology content: which ontology version is Pulte's (seed v2.0.0 is not confirmed against Knowledge Hub), the 46 missing filter fields (borrower_type on five entities, Liability.is_undisclosed), the missing LoanCore.total_undisclosed_monthly_payment_usd, the bare Borrower key, the 69 jobs without loan_metrics (63 undeclared but read DB columns, 6 truly read nothing).
+- Plato restart for the browser check (browser check does not block anything); delete the safety branches when wanted: plato-sync-before-2.6.7-squash, plato-pre-resquash*. Do NOT push the old sync branch.
+- Older items still the user's: Plato bundles route, billed DocIntel figure (~20.6 USD est.), repeat hybrid (~0.4 USD), /tmp/message_to_aditya.md and optionally /tmp/message_to_roberto.md, the platform's scope-name answer (then revise /tmp/pr101_comment.md).
 
-## Update after the reboot (2026-10-17, 16:30)
-- Local Plato needs TWO steps after a reboot: first the database, `scripts/local/pg_dev_daily.sh` (cluster under
-  ~/.local/share/japes-pg/16, port 55432, idempotent, migrates to head 0035), then `scripts/local/plato_worktree.sh
-  start` (if /health says not_ready after the database came up, `plato_worktree.sh restart 1dac85f6`). Both done: Plato
-  healthy (0.2.5, worktree 1dac85f6). Docker is not running (the executor Linux check still needs it).
-- All four sessions were restarted with scripts/local/restart_session.sh and reported idle. I sent start messages:
-  sonnet-runtime (verify references and scratch packs survived, no loan documents until the user's own approval and
-  loan-2 ids, continue the 2.6.4 queue, hybrid default to confirm), sonnet-ui (re-run its smoke, hold loan steps,
-  check the catalog adopt flow on a scratch draft pack), sonnet-jaci (plan only: map the 11 coarse evidence types and
-  the 4 unmatched job documents to the Master Taxonomy; no adoption into acra-dscr-policy). Replies pending.
-- Still waiting on the user: which loan/offset each Part is; ingest loan-2 whole (yes recommended); own approvals in the
-  builder sessions for the loan runs (30 USD e2e, 5 USD classification); hybrid default; review of the unpushed v2.6.4
-  range; push local plato (0abeacdd); the pre-push hook fix and test-suite audit kickoff are still mine/open.
+## Sessions at the end of today
+sonnet-runtime: v2.6.8 cut; carried list in plan_2_6_8_carried_from_2_6_7 (scratch): provenance index and resolver, workbench lint gates K3 K4 K7 K9 K10 (K8 K11 P1 measure-first; K1 K2 K5 K6 only if a real set shows them), remaining loan_* docstrings and the loan:<id> IRI prefix, loan_number kind and rag collection name, server-side coverage filter, per-link API field if needed, pack-provided helpers question, sonnet-packs' latest and explains helpers (LIB_VERSION 1.1.3), single_case_dataset and its stale-start and outcome checks (deferred until the workbench commits to the SDK runner). sonnet-ui and sonnet-packs: idle, nothing queued from me. sonnet-jaci: waits as above. All four were asked to update their own restarts before the user /clears.
+Standing process rules that bit: the working tree is shared (no git stash, stage explicit paths, check git status first); in git use refs/heads/plato because `plato` is also a directory (ambiguous ref); the user rejected a bare `git fetch` and a compound gh call from me, so ask before network commands.
+
+## Reference
+- Survey of kernel-lab and policy-workbench (read only, 2026-10-30): the Rule Map artifact (Fannie Mae June 2026 Selling Guide rules scored against Pulte's 115 JTBDs; model verdicts, unreviewed) decoded at /private/tmp/claude-506/-Users-sangit-src-japes/41eb897d-4178-4efb-81d6-2ed024f91004/scratchpad/rulemap.json (may be gone); kernel-lab codec-suite code_generator_agents/TUNING.md and runtime/glue.py (mortgage layer, pack-level only); workbench jtbd_audit and policyforge surveyed by sonnet-packs, gates routed to runtime.
+- scripts/local/generalization_survey.py: read-only survey of jaci scenario code versus config and of domain words in jazzx_sdk (baseline in /tmp/gen_survey_2026-10-30.md); run at release time as a trend, not a gate.
+- Plans (docs/plans, scratch): plan_batched_section_planning, plan_adopt_existing_jtbds, plan_source_documents_as_blob_content, plan_case_and_subject_words, plan_rerun_when_unchanged, plan_2_6_8_carried_from_2_6_7.
+- Squash flow for the next release: tree-neutral record of origin/dev on the version branch, real merge of any origin/plato content, squash_to_plato.sh, full-range adversarial review rounds from /Users/sangit/src/japes-review (git checkout --detach plato; REVIEW_UPSTREAM=origin/plato; the worktree lacks `common`, so no tests there; the review is token-heavy and the user launches it), user pushes, PRs target plato.
