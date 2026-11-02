@@ -21,7 +21,9 @@ and owners. Order is by what blocks a consumer or the release first.
 4. Server-side coverage filter. Owner: sonnet-ui with sonnet-runtime for the route.
 5. Per-link API field, only if the Solution page needs it. Owner: sonnet-ui.
 6. Pack-provided helpers: a question for the user, not a build.
-7. Rules-library `latest` and `explains` (LIB_VERSION 1.1.3). Owner: sonnet-packs.
+7. Rules-library `latest(rows, stamp, order=None, ties=False)` and `explains(text, name=None, amount=None, on=None, large=None)`, one commit each with a test that
+   fails without it, manifest 1.1.2 regenerated. Version: the library keeps growing on 1.1.2 while nothing uses it (user ruling 2026-11-02); bump to 1.1.3 only if the
+   user decides one is needed. Both must pass the extreme-input probe (huge, NaN/sNaN, infinity, bool, mixed, long lists) before commit. Owner: sonnet-packs.
 8. Review notes and `TODO(slug)` markers, including `runs/schema.py` (`max_attempts` retry branch). Read at the start of the round.
 9. Cross-reference heading read as a topic in `markdown_guide.py`. Changes unit ids; state the effect on the Pulte pack and tell jaci to regenerate.
 
@@ -38,8 +40,10 @@ and owners. Order is by what blocks a consumer or the release first.
 14. **Thinking fill** for the Anthropic and Gemini models (OpenAI-shaped thinking landed in 2.6.8; live smoke passed 2026-11-02). Needs the LLM contract test plus a live
     smoke at a stated figure, per the standing rule.
 15. **MACER steps** from `macer-japes-consolidation-roadmap` (deprioritized; take only what a consumer asks for). Open question first: the MACER metrics source.
-16. **Workbench ranks 7 to 9** from `note_workbench_to_sdk_enhancements`, and `single_case_dataset` with the corpus segmenter (defer until the workbench commits to the SDK
-    runner). Open question for the user: must extracted jobs carry guide topic ids.
+16. **Workbench ranks 7 to 9** from `note_workbench_to_sdk_enhancements`: rank 7 (set reconcile and value equivalence) when a consumer asks; rank 8 (behind-latest pin
+    report) is small and independent; rank 9 (within-job repeat detection) is measure-first, run on the Pulte and Acra sets before any gate, warning only. Also
+    `single_case_dataset` with the corpus segmenter, deferred until the workbench commits to the SDK runner (sonnet-packs agrees). Open question for the user: must
+    extracted jobs carry guide topic ids. No provider run needed.
 17. **`page-harness-shared` TODO**, owner sonnet-ui.
 18. **jaci re-lock** (openai, pydantic, pyasn1 moved; jaci dev is 6 ahead of origin/dev 770ce78): sonnet-jaci, after the user's japes push.
 
