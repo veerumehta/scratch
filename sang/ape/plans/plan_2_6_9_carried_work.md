@@ -47,11 +47,19 @@ and owners. Order is by what blocks a consumer or the release first.
 17. **`page-harness-shared` TODO**, owner sonnet-ui.
 18. **jaci re-lock**: done in the jaci working tree (uv.lock only, uncommitted; japes cb256157 to 433b89d2, plato client 0.2.6 to 0.2.8, pyasn1 0.6.5; openai and
     pydantic did not move). Left: the user's yes to commit, then the full `pre_push_check.sh`. Owner: sonnet-jaci.
+19. **Parallel tests inside a job (pytest-xdist), from sibling repos.** kernel and juno run `-n auto --dist loadscope` (kernel gives each worker its own Postgres
+    schema, sets the worker count from the container's CPU quota, and merges per-worker coverage files; juno adds `--reruns 3`); macer and jazzx-assistant carry the
+    dependency. japes has no xdist (sharding by file in CI only; the 13 to 20 min serial time is the cost). Measure first: a local `-n 4 --dist loadscope` run of the
+    full suite, then list the failures (shared ports, the Postgres tests via `JAPES_TEST_POSTGRES_URL`, `.plato-pack-blobs` and page-cache dirs, the 9.95 s
+    teardown tests). Build only the isolation the failures call for (a per-worker schema and tmp dir keyed on `PYTEST_XDIST_WORKER`), then decide shards versus
+    xdist versus both in CI. Fold with 11 and 12; owner sonnet-runtime. Older survey: `SIBLING_SURVEY_2026-09-02.md` (stale; a fresh one is item 20).
+20. **Fresh sibling survey** for 2.6.9 (read only): what kernel, juno, jazzx-assistant, macer and knowledge-hub learned since 2026-09-02 that japes should absorb
+    (CI, test isolation, config patterns). `scripts/local/sister_repo_activity.sh` is the start; output is a `note_*`, not a build. Owner: opus-xrepo.
 
 ## Order
 
 1. Start 2.6.9 commit and this plan; read `accepted.md` and the TODO markers (8).
-2. Release unblockers: 11, 12, 13 (speed and CI), then 9/10 (unit ids change, so jaci hears early).
+2. Release unblockers: 11, 12, 13, 19 (speed and CI), then 9/10 (unit ids change, so jaci hears early).
 3. Consumer items: 1, 2, 3, then 4 and 5 if the Solution page asks.
 4. The common bump (gated) once the suite is stable; thinking fill (14) with its smoke.
 5. 7, 15, 16, 17 as capacity allows.
