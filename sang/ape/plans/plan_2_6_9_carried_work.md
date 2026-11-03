@@ -45,7 +45,8 @@ and owners. Order is by what blocks a consumer or the release first.
     `single_case_dataset` with the corpus segmenter, deferred until the workbench commits to the SDK runner (sonnet-packs agrees). Open question for the user: must
     extracted jobs carry guide topic ids. No provider run needed.
 17. **`page-harness-shared` TODO**, owner sonnet-ui.
-18. **jaci re-lock** (openai, pydantic, pyasn1 moved; jaci dev is 6 ahead of origin/dev 770ce78): sonnet-jaci, after the user's japes push.
+18. **jaci re-lock**: done in the jaci working tree (uv.lock only, uncommitted; japes cb256157 to 433b89d2, plato client 0.2.6 to 0.2.8, pyasn1 0.6.5; openai and
+    pydantic did not move). Left: the user's yes to commit, then the full `pre_push_check.sh`. Owner: sonnet-jaci.
 
 ## Order
 
