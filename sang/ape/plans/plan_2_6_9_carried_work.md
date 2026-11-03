@@ -57,6 +57,19 @@ and owners. Order is by what blocks a consumer or the release first.
     (CI, test isolation, config patterns). `scripts/local/sister_repo_activity.sh` is the start; output is a `note_*`, not a build. Owner: opus-xrepo.
     Done 2026-11-03: `status/note_sibling_survey_2026-11-03.md`. Changes to this plan: the common bump targets 0.4.0 (96b0495f), not 0.3.0; item 19 gains the
     collect-twice xdist check; item 14 gains `prefixItems` and the supports-thinking rule; new checks for eval comparison drift, mock KH parity and DocIntel 429 handling.
+21. **Structured outputs: `prefixItems` and `oneOf`.** Add the `prefixItems` case and a fall-back rule to `jazzx_sdk/llm/structured.py` (sibling kernel b0e2d325 stops
+    sending native structured outputs for those schemas); with 14, and a live smoke only on a typed figure. Also send thinking only to models whose card supports it
+    (macer 628352f0). Owner: sonnet-runtime.
+22. **Eval comparison drift check**: eval-service 9200af5, eafe21b, c945df0, 8059398, 039f67b against the SDK evaluation control plane; list gaps, fix by family. Owner:
+    sonnet-runtime (read-only survey first).
+23. **Mock Knowledge Hub parity**: update validation (2026-09-02 finding), versioned taxonomy and prompt APIs, synthetic-object marking, imdoc hiding, pipeline filter.
+    Measure what the mock lacks before building. Owner: sonnet-runtime.
+24. **DocIntel 429 handling**: honor `Retry-After` and back off (kernel 0b69854e, 704d2dbe); check the japes client. Owner: sonnet-runtime.
+25. **CI hygiene from siblings**: a warn-only workflow that the `common` pin is on the latest release (assistant 2e7f6a1), after the common bump; compare test markers
+    (`real_llm_call`, `integration`, `long_running`) with japes when 11, 12, 19 land. Owner: sonnet-runtime.
+26. **Chat two-stage answer** (jazzx-assistant fast answer from prior findings): read-only look at the pattern and ask how their chat-pipeline migration went. Owner:
+    opus-xrepo, then sonnet-runtime if worth absorbing. Also feedback labels (eval-service bf14628): decide if they belong in the SDK feedback service.
+27. **Dependabot gate**: ask the siblings (knowledge_hub PAGI-2139) what gate they run; adopt for the pre-push alert check if it fits. Owner: opus-xrepo.
 
 ## Order
 
@@ -73,4 +86,4 @@ adversarial review (run by the user from the review worktree) is clean.
 
 ## Open for the user
 
-Version numbers for Plato and client; the pack-helpers question (6); the MACER metrics source; guide topic ids on extracted jobs (16); the figure for each provider run.
+ACR push beside GHCR (INFRA-6028); workspace copy-on-write runtime on the Plato roadmap (BSD-5632); version numbers for Plato and client; the pack-helpers question (6); the MACER metrics source; guide topic ids on extracted jobs (16); the figure for each provider run.
