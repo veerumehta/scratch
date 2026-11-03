@@ -6,7 +6,7 @@ and owners. Order is by what blocks a consumer or the release first.
 
 ## Gates (not built, decided by the user)
 
-- **Common submodule 0.3.0.** Bump `common` from 25bf9d81 (0.2.0) to 0.3.0 main (5fa47753): multi-tenancy foundations, default-off, but `core/db.py` gives every session
+- **Common submodule 0.3.0.** Bump `common` from 25bf9d81 (0.2.0) to 0.4.0 (96b0495f, what the siblings pinned 2026-11-03; the earlier 0.3.0 target 5fa47753 is superseded): multi-tenancy foundations, default-off, but `core/db.py` gives every session
   `TenantAwareSession` and telemetry adds a span processor. Gate: `tests/test_common_submodule_deps.py`, the Plato boot-contract tests, and a full suite with tenancy off.
   Owner: sonnet-runtime.
 - **Provider runs.** The classifier measurement of the two new Acra document types and the writer-prompt before/after run (about 0.13 USD) each wait for a typed approval
@@ -55,6 +55,8 @@ and owners. Order is by what blocks a consumer or the release first.
     xdist versus both in CI. Fold with 11 and 12; owner sonnet-runtime. Older survey: `SIBLING_SURVEY_2026-09-02.md` (stale; a fresh one is item 20).
 20. **Fresh sibling survey** for 2.6.9 (read only): what kernel, juno, jazzx-assistant, macer and knowledge-hub learned since 2026-09-02 that japes should absorb
     (CI, test isolation, config patterns). `scripts/local/sister_repo_activity.sh` is the start; output is a `note_*`, not a build. Owner: opus-xrepo.
+    Done 2026-11-03: `status/note_sibling_survey_2026-11-03.md`. Changes to this plan: the common bump targets 0.4.0 (96b0495f), not 0.3.0; item 19 gains the
+    collect-twice xdist check; item 14 gains `prefixItems` and the supports-thinking rule; new checks for eval comparison drift, mock KH parity and DocIntel 429 handling.
 
 ## Order
 
