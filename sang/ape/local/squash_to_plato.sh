@@ -65,7 +65,7 @@ echo "preconditions:"
 case "$SRC" in plato|dev|main) bad "source is $SRC; squash a version branch" ;; *) ok "source is a working branch" ;; esac
 [ -z "$(git status --porcelain --untracked-files=no)" ] && ok "tracked files are clean" || bad "tracked files are dirty"
 if [ "$HERE" = plato ]; then
-  echo "  note  plato is checked out: --apply switches to $SRC, moves plato, and switches back"
+  echo "  note  plato is checked out: --apply detaches HEAD at $SRC, moves plato, and switches back"
 else
   ok "plato is not checked out"
 fi
@@ -124,7 +124,7 @@ if [ "$EDIT" = 1 ]; then
     printf '\n# Squash of %s onto plato (parents: origin/plato, origin/dev).\n' "$SRC"
     printf '# Lines starting with # are dropped; an empty message aborts.\n#\n'
     printf '# %s\n#\n' "$(git diff --shortstat "$PLATO" "$SRC_SHA")"
-    git log --format='# %h %s' "$DEV..$SRC_SHA" | head -n 40
+    git log -n 40 --format='# %h %s' "$DEV..$SRC_SHA"
   } > "$FILE"
   eval "$(git var GIT_EDITOR)" "$FILE"
   MSG=$(grep -v '^#' "$FILE" || true)
@@ -133,7 +133,7 @@ fi
 
 NEW=$(git commit-tree "$SRC_SHA^{tree}" -p "$PLATO" -p "$DEV" -m "$MSG")
 if [ "$HERE" = plato ]; then
-  git checkout --quiet "$SRC"
+  git checkout --quiet --detach "$SRC_SHA"
   git branch -f plato "$NEW"
   git checkout --quiet plato
 else
