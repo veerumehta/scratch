@@ -1,6 +1,6 @@
 # Plan: what a rerun does when nothing changed, as a setting (sonnet-runtime, 2026-10-30)
 
-Plan only; nothing built. The user asked "is there a way to make this configurable?" about the rerun that finds nothing to redo.
+Status: built (60042ade, `rerun.when_unchanged` of `continue`, `stop_copy` or `stop_empty` in `pipelines/rerun.py`; the CHANGELOG entry "What a rerun does when nothing changed is a setting"). Status corrected 2026-11-06. The user asked "is there a way to make this configurable?" about the rerun that finds nothing to redo.
 
 ## 1. What happens today (read from `pipelines/steps.py`, adjudication step)
 A rerun (`rerun: {of, rejected}`) computes what changed (fields of the record, documents by sha256) and what the followed run never judged. When nothing changed, nothing

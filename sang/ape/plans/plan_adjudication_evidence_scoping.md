@@ -1,6 +1,6 @@
 # Plan: evidence scoped per segment in AdjudicationAgent
 
-Status: plan, not built. Branch `v2.6.3` (SDK 2.6.3), local, unpushed, no version bump.
+Status: built in 2.6.3 (checked 2026-11-06): evidence mounts per segment (`agents/adjudication/evidence_scope.py`, `EvidenceScope`, renamed from `EvidenceWorkspace`) and the adjudication step's `evidence` setting (`pipelines/steps.py`, `AdjudicationStep.evidence`). Kept for its reasoning; owner sonnet-runtime.
 Source: `note_parity_adjudication_20261012.md` gap 2 and rows 2.1, 2.3, 2.4; `note_sibling_parity.md` macer row 10-12;
 `plan_programme_oct.md`. Prior art checked: `status/done_reasoner-chassis-analysis.md` (P4 workspace, P7 planner),
 `status/done_design_note_p1_p2_sizing.md` (k=3 replicas bought no variance reduction: measure before defaulting),

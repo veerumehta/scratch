@@ -1,6 +1,6 @@
 # Plan: pack ontology authoring (an Ontology tab on Plato)
 
-Status: proposed (2026-10-06), plan only; nothing built. Asked through opus-xrepo as user-directed.
+Status: partly built (checked 2026-11-06): the Ontology page (`plato/static/ontology.html`), catalog references with compare and adopt (`plato/api/catalogs.py`: `/catalogs/references`, `/packs/{id}/catalog/adopt`), catalog extraction from policy documents (the `catalog` extraction representation) and the Hub catalog source routes exist. Not re-checked item by item against this plan: the JSON Schema ontology importer and write-back of accepted proposals into a pack's catalog file. Asked through opus-xrepo as user-directed (2026-10-06).
 The decisions at the end are the user's.
 
 ## What it is for

@@ -1,6 +1,6 @@
 # Plan: job writer folds duplicate jobs across sections and maps missing data to catalog fields
 
-Status: plan, not built. Branch `v2.6.3` (SDK 2.6.3, Plato 0.2.4), local. Owner sonnet-runtime.
+Status: built in 2.6.3 (6277834e: the job writer folds duplicates across sections and maps missing data to catalog fields; `pipelines/policy/jtbd_fold.py`, `jtbd_data.py`, `tests/test_jtbd_fold.py`). Later review rounds changed the fold (the CHANGELOG has them). Kept for its reasoning; status corrected 2026-11-06, owner sonnet-runtime.
 Source: Acra regeneration 2 (`local/coverage/regen_2/`, trial `acra-regen-2`: 130 jobs against Acra's 128, code decides
 at least part of 58%, lacks data 34%); `plan_programme_oct.md` (opus-xrepo open items); `plan_document_registry_and_job_shape.md`
 (D1-D4, the job shape this extends). Prior art read: `pack/jtbd_match.py` (content matching across two sets),
