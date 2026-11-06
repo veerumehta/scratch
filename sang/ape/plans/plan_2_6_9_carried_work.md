@@ -95,6 +95,9 @@ and owners. Order is by what blocks a consumer or the release first.
 
 30. **Clear a case condition** (follow-up of the open-conditions slice, 2.7.0): no route sets an `OutcomeCondition.resolution` after a run; a reviewer route (and what it records, who, when, and how a rerun carries a resolved condition) is the next slice. Also `timing` and `party` on a missing-document condition once `ClassNeed` carries them. Owner: sonnet-runtime.
 
+31. **Policy change to impact, the open-cases half** (catalog slice P6, 2.7.0): `pack/release_report.compare_packs` (served at `GET /packs/{id}/release-report`) already lists what a new version changes (jobs, rules, documents, catalog, coverage, and the gold cases whose answers move, without a model). Missing: "which open cases need a rerun", that is, finding the stored case runs of the old version that judged a rule the change touched and naming them for a rerun (the rerun submit and `impacted_rules` exist; nothing maps a pack change to stored runs). Not registered in the pipeline catalog, because the catalog lists runnable pipelines and this is a report. Owner: sonnet-runtime.
+32. **Feedback to improvements, the glue** (catalog slice P6, 2.7.0): the parts exist but are not composed: an approved correction becomes a gold case (`pack/correction_cases.py`, `CorrectionCaseSync`), a correction is diagnosed to the layer to fix and a ranked fix list (`pack/diagnosis.py`, `diagnose`, `fix_list`), and eval signals become guidance proposals (`modes/evolve/curator.py`, `route_improvement_signals`, `synthesize_bucket`). Missing: one run that takes approved feedback through the three and files the proposals, and the knowledge-loop plan's change classes. Owner: sonnet-runtime, with the 2.7.1 plan.
+
 ## Order
 
 1. Start 2.6.9 commit and this plan; read `accepted.md` and the TODO markers (8).
