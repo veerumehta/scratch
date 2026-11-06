@@ -93,6 +93,8 @@ and owners. Order is by what blocks a consumer or the release first.
     - *Open for the user.* Which types count as "logs". Hard delete or tombstone. Whether the audit entry itself is ever deletable. Whether KH canonical objects are in scope
       (KH owns its own retention). Whether a range delete may cross an open run. Who may call it (platform admin only, or a tenant admin for their own tenant).
 
+30. **Clear a case condition** (follow-up of the open-conditions slice, 2.7.0): no route sets an `OutcomeCondition.resolution` after a run; a reviewer route (and what it records, who, when, and how a rerun carries a resolved condition) is the next slice. Also `timing` and `party` on a missing-document condition once `ClassNeed` carries them. Owner: sonnet-runtime.
+
 ## Order
 
 1. Start 2.6.9 commit and this plan; read `accepted.md` and the TODO markers (8).
