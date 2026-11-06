@@ -59,3 +59,13 @@ if [[ $failed -eq 1 ]]; then
 EOF
     exit 1
 fi
+
+# A message must not name a gitignored file or a plan's private label (K3, Phase 4, UAF): state the rule in a
+# clause. The check lives beside this hook in the repository it guards; a repo without it skips this step.
+checker="$(git rev-parse --show-toplevel 2>/dev/null)/scripts/local/check_plan_refs.py"
+if [[ -f "$checker" ]]; then
+    python3 "$checker" --message "$msg_file" || {
+        printf '\n  Deliberate exception:  git commit --no-verify\n' >&2
+        exit 1
+    }
+fi

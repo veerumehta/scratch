@@ -43,7 +43,7 @@ if [[ "${JAPES_SKIP_PREPUSH:-}" == "1" ]]; then
 fi
 
 # git hands a pre-push hook one line per pushed ref on stdin ("local_ref local_sha remote_ref
-# remote_sha"). Read it before anything else can consume it: step 2e checks the range being pushed,
+# remote_sha"). Read it before anything else can consume it: steps 2e and 2f check the range being pushed,
 # not whatever happens to be checked out. A run by hand has a terminal on stdin and no refs.
 PUSH_REFS=""
 [[ -t 0 ]] || PUSH_REFS=$(cat)
@@ -278,6 +278,16 @@ python "$(git rev-parse --show-toplevel)/scripts/local/check_us_spelling.py"
 # 1 is a British spelling added; 2 is "could not check" (no git range), which never blocks a push.
 [[ $? -ne 1 ]] || fail=1
 
+# ── 2f. plan references in what is being pushed ──────────────────────────────
+# Tracked text must not name a gitignored file (a plan, a status note, the CHANGELOG, the session guide) or use a
+# plan's private labels (K3, Phase 4, UAF): the reader cannot open them. File names, paths and the label shapes
+# that measured no false positives fail the push; the rest warn. `plan-ref-ok` on a line, or
+# JAPES_SKIP_PLAN_REFS=1, is the escape.
+say "2f/4  plan references in what is being pushed"
+python "$(git rev-parse --show-toplevel)/scripts/local/check_plan_refs.py"
+# 1 is a plan reference added; 2 is "could not check" (no git range), which never blocks a push.
+[[ $? -ne 1 ]] || fail=1
+
 # ── 3. the suite ──────────────────────────────────────────────────────────────
 # `JAPES_SKIP_SUITE=1` keeps the review, which `--quick` does not: the review is the step that
 # catches what a green suite does not, and the suite is the slow one. Symmetric with the
@@ -314,7 +324,8 @@ PY
         if [[ -n "$pins" ]]; then
             echo "  pinning: $pins"
             python -m pip install -q --target "$SHIM" --no-deps $pins || { echo "  FAIL  could not install pins"; exit 1; }
-            PYTHONPATH="$SHIM" python -m pytest -q -rfs || fail=1
+            # Prepended, never replaced: the throwaway worktree puts its own tree and client on PYTHONPATH.
+            PYTHONPATH="$SHIM${PYTHONPATH:+:$PYTHONPATH}" python -m pytest -q -rfs || fail=1
             rm -rf "$SHIM"
         else
             echo "  local already matches the lock; running normally"
