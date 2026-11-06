@@ -71,6 +71,28 @@ and owners. Order is by what blocks a consumer or the release first.
     opus-xrepo, then sonnet-runtime if worth absorbing. Also feedback labels (eval-service bf14628): decide if they belong in the SDK feedback service.
 27. **Dependabot gate**: ask the siblings (knowledge_hub PAGI-2139) what gate they run; adopt for the pre-push alert check if it fits. Owner: opus-xrepo.
 
+28. **Visible failure when a turn trace is not written** (carried to a later version, no code now): `TurnTrace.record` swallows a write failure and only logs it, so a
+    lost trace is silent in the reply. Options to scope: a counter or metric on the failure, and an "unwritten" flag on the `trace_id` the reply carries. Settle first, from
+    the new DEBUG line at record time, whether the cloud 401 was an empty identity (then the fix belongs at the caller) or a cleared one. Owner: sonnet-runtime.
+29. **Clear logs by date range and type** (scoping only, user request via opus-xrepo; no code until the user decides). Owner: sonnet-runtime.
+    - *Inventory (read from code, not measured).* Records that behave like logs, and what already removes them:
+      run journal `turn_run` and `turn_run_event` (`purge_terminal(older_than_seconds)` on the store, called from `plato/jobs.py:80`; reaping of stale runs is separate);
+      queue executions `japes_queue_execution` (`purge_completed`, the replay window); sessions `agent_session` (`reap_stale` by a `SessionReaper`);
+      request idempotency `japes_request_idempotency` (expires by its window); conversation messages `conversation_message`; cost records `japes_turn_cost` and `cost_record`
+      (no delete found); feedback `japes_feedback` and `japes_feedback_history` (delete by id or entity, not by range); config audit `config_audit_event` (no delete found);
+      eval `eval_case_run` and `eval_experiment`; pack lint runs `pack_lint_run`; pack draft events `pack_draft_event`. In Knowledge Hub: canonical Trace, Decision, Evidence,
+      Outcome objects in the canonical collection (no range delete found in the store). Blob: offloaded payloads, not inventoried. Not checked: Plato's own request logs and any
+      cloud log stream, which live outside the SDK.
+    - *Shape.* One admin operation: types (a closed list), `from` and `to`, tenant, `dry_run` defaulting to true and returning counts per type; a real run needs the dry-run's
+      count echoed back as confirmation and writes one audit entry (who, tenant, types, range, counts). Each store gets one `purge_range(tenant, start, end)` beside its existing
+      purge, one shape for Postgres, KH and blob (the symmetry rule), and the operation fans out over them.
+    - *Safety.* Governance records (decisions, audit, canonical evidence and outcomes) are excluded unless the type is named explicitly, and never by a wildcard. Tenant
+      required, identity required, an admin role gate, no unbounded range, no cross-tenant. Hard delete versus tombstone to settle. Zero-retention tools are unaffected.
+    - *Where.* An SDK function per store plus the fan-out in `jazzx_sdk` (so any host has it), a Plato admin route over it (gated like the other admin routes), and a CLI script
+      that calls the same function. No logic in the route or the script.
+    - *Open for the user.* Which types count as "logs". Hard delete or tombstone. Whether the audit entry itself is ever deletable. Whether KH canonical objects are in scope
+      (KH owns its own retention). Whether a range delete may cross an open run. Who may call it (platform admin only, or a tenant admin for their own tenant).
+
 ## Order
 
 1. Start 2.6.9 commit and this plan; read `accepted.md` and the TODO markers (8).
