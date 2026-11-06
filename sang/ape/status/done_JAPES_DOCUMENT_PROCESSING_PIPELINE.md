@@ -1,5 +1,19 @@
 # plan_JAPES_DOCUMENT_PROCESSING_PIPELINE
 
+> **Implementation notes (read first).** Built on `v2.7.0`; the plan text below is unchanged. Where the build differs:
+>
+> - **S1, stage list.** The target stages assess, read, split, classify, completeness and extract are not separate pipeline steps. They run inside `DocumentAgent.process` and are traced as that agent's own spans. The shipped steps are intake, package | collection | single | refuse, reconcile, recall, review, admit, emit, finalize (`admit` is new: it applies review attestations). Registered as `document_processing` ("Documents to Verified Fields"). `run_document` gained an optional `step_guards`.
+> - **S3, default detector.** `detect_input` is opt-in on `document_ingest`, because making it the default would change existing routing; `document_processing` uses it by default. The package page threshold is a named constant (20) and a `DocTurn` field.
+> - **S5, reconcile.** Moved into `pipelines/document/reconcile.py`; `steps.py` keeps thin wrappers, and existing case-run tests pass unchanged.
+> - **S6, recall.** There was no separate recall step to extract: the recall pass already runs inside `process` when the spec names demanded fields. The recall stage only reports its results (`label_hits`, `focused_fields`, `focused_disagreements`, `null_reasons`). Review resumes at the review step (not from reconcile), and `admit` applies the attestations with no model call. A `Refusal` now also carries the refused value and where it was read.
+> - **S7, tables.** Digital PDF table cells come from PyMuPDF `find_tables`; a structured view is returned only when tables exist.
+> - **S8, locators.** The plan's "no post-hoc text search" cannot hold without extra model calls, so the user chose two modes: `quote_anchored` (default; the quote from the same call is located in the read, giving a page plus a `chars a-b` region, with value search as the fallback) and `page_aligned` (one call per page when the read has page regions, so every field carries its page). Set per pack (`DocumentAgentSpec.locator_mode`), per turn (`DocTurn.locator_mode`) and per call. Acceptance is a page plus a character span, not bounding boxes; Document Intelligence element regions are not used.
+> - **S9, metrics.** `run_metrics` and `diff_metrics` in `pipelines/document/metrics.py`. The diff key is the content digest (plus the page range for a cut document); confidence alone is not a difference.
+> - **S10, minimal profile.** The registry rename to `documents_to_fields` (alias `document_ingest` kept, one deprecation warning) was done with the catalog work, not here. `documents_to_fields` is described as the minimal profile of `document_processing`, with a test pinning its steps against the processing pipeline's. Step ids and `run_document` are unchanged, so it is a shared set of step implementations rather than a delegating call.
+> - **Not done.** The classification eval run (needs the user's typed approval with a figure; sonnet-ui owns it) and any provider run.
+>
+> Commits: S2, S3, S4, S7 933f1df1; S5 4aa5e500; S9 441863dd; S6 8a874cea; S1 aef8fc20; S10 d4152cc0; S8 cf667c99.
+
 Author: Virendra Mehta · 2026-11-06 · Status: done on v2.7.0 (S1 to S10; unpushed)
 
 ## Goal
@@ -95,16 +109,3 @@ Each slice ships with its tests and leaves the suite green.
 ## Done when
 
 A pack runs `document_processing` on a mixed folder of loan documents, digital and scanned, and gets split, classified, complete-or-not, extracted, reconciled fields with page and cell locators, and the run pauses for review only where it should. Status lines on the deck's document processing slide can then move from "In progress" to "Ready to pilot".
-
-## Outcome
-
-Commits on `v2.7.0`: S2, S3, S4, S7 933f1df1; S5 4aa5e500; S9 441863dd; S6 8a874cea; S1 aef8fc20; S10 d4152cc0; S8 cf667c99.
-
-Where the build differs from the plan:
-
-- S1: assess, read, split, classify, completeness and extract are not separate pipeline steps. They run inside `DocumentAgent.process` and are traced as its spans. The pipeline steps are intake, package | collection | single | refuse, reconcile, recall, review, admit, emit, finalize.
-- S3: the default detector (`detect_input`) is opt-in on `document_ingest` so existing callers keep their routing; `document_processing` uses it by default.
-- S6: the recall pass already runs inside `process` when the spec names demanded fields, so the recall stage reports only.
-- S8: acceptance is a page plus a character span, no bounding boxes. `locator_mode` is `quote_anchored` (default) or `page_aligned` (one call per page), per spec, per turn and per call.
-- S10: the registry rename and alias were done with the catalog work; `documents_to_fields` is described as the minimal profile and a test pins its steps against the processing pipeline's. Step ids and `run_document` are unchanged.
-- Not run: the classification eval (needs the user's typed approval with a figure; sonnet-ui owns it) and any provider run.
