@@ -70,11 +70,29 @@ else
   ok "plato is not checked out"
 fi
 
-MERGED=$(git merge-tree --write-tree "$SRC_SHA" "$DEV" 2>/dev/null | head -1 || true)
-if [ -n "$MERGED" ] && [ "$MERGED" = "$(git rev-parse "$SRC_SHA^{tree}")" ]; then
-  ok "$SRC already carries everything origin/dev has"
+if [ "$(git rev-parse "$DEV^{tree}")" = "$(git rev-parse "$PLATO^{tree}")" ]; then
+  # origin/dev and origin/plato hold the same content, so the dev squash commit is only a record that $SRC need not carry as an
+  # ancestor. What must not happen is losing something plato has: every path where plato differs from $SRC has to be one $SRC
+  # changed since their merge-base (release lag), not one plato changed that $SRC lacks.
+  BASE=$(git merge-base "$SRC_SHA" "$PLATO" || true)
+  if [ -z "$BASE" ]; then
+    bad "$SRC and origin/plato share no merge-base; cannot tell release lag from a change plato has and $SRC lacks"
+  else
+    UNEXPLAINED=$(comm -23 <(git diff --name-only "$SRC_SHA" "$PLATO" | sort) <(git diff --name-only "$BASE" "$SRC_SHA" | sort))
+    if [ -z "$UNEXPLAINED" ]; then
+      ok "origin/dev matches origin/plato's tree, and every path plato differs on is one $SRC changed since $(git rev-parse --short "$BASE")"
+    else
+      bad "origin/plato differs from $SRC on paths $SRC did not change since $(git rev-parse --short "$BASE") (the squash would undo them):"
+      printf '          %s\n' $UNEXPLAINED
+    fi
+  fi
 else
-  bad "origin/dev has changes $SRC lacks (merge or cherry-pick them into $SRC first)"
+  MERGED=$(git merge-tree --write-tree "$SRC_SHA" "$DEV" 2>/dev/null | head -1 || true)
+  if [ -n "$MERGED" ] && [ "$MERGED" = "$(git rev-parse "$SRC_SHA^{tree}")" ]; then
+    ok "$SRC already carries everything origin/dev has"
+  else
+    bad "origin/dev has changes $SRC lacks (merge or cherry-pick them into $SRC first)"
+  fi
 fi
 
 # The squash takes $SRC's tree, so a change merged straight to plato (a contributor's PR) that $SRC lacks would be undone.
