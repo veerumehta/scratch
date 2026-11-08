@@ -1,6 +1,6 @@
 # plan_2_7_0_tenancy_hardening - keep the string tenant, harden its keys, add one name-to-UUID resolver at the boundary
 
-Repo: `japes`. Owner: sonnet-runtime. Status: scoped, nothing built.
+Repo: `japes`. Owner: sonnet-runtime. Status: in progress (see Status and modifications).
 
 Author: Virendra Mehta. Written against `v2.6.9` (`2066c67d`, the tree equal to `origin/plato` plus the scorer-context commit), 2026-11-06. Decision applied (the user's, relayed by opus-xrepo): tenancy option C. The SDK
 keeps the free-form string tenant (`DEFAULT_TENANT = "default"`, `jazzx_sdk/identity.py:16`), hardens it now, and adds one tenant name to UUID resolver used only where code crosses into `common`
@@ -8,6 +8,18 @@ or a sibling service. Full adoption of `common`'s UUID model and `DB_TENANCY_MOD
 
 What I read versus inferred is marked throughout. "Read" means I opened the file or ran the introspection and saw it; "inferred" is reasoning from what I read. No migration was run, no row count was
 measured (none is available here), and nothing was changed.
+
+## Status and modifications
+
+How to use this section: the plan author may read it and update it; implementers append one dated line per slice (what landed, the commit, anything the plan got wrong). Newest line last. Branch: v2.7.0, nothing pushed.
+
+- 2026-11-06 M1 and M3 landed as 0037 and 0038 (5dd3be0e): two legacy unique keys dropped, tenant first in the two composite keys.
+- 2026-11-07 M2 landed as 0039 (7ed7375b). Deviations: no store changed (the stores already filtered every read by tenant); the unique twin that repeats the new primary key is dropped on four tables and recreated on downgrade (the plan said keep; SQLite never creates the duplicate, and Postgres would carry a second index). Verified on sqlite and on the local Postgres in a scratch schema. Lock time on a large table is unmeasured (open question 4).
+- 2026-11-07 renumbering: migration 0040 is now taken by the extraction run parent link (policy_to_pack); the group-D migration (M4) will be 0041.
+- 2026-11-07 M4 landed (43b131de) with the user's answers to questions 2 and 3: the backfill tenant is the host's (`JAPES_BACKFILL_TENANT`), `default` only in a local posture, and the upgrade refuses in a deployed one with none; the SDK ships `upgrade_tenant_keys` and `check_tenant_keys` (`fabric/db/tenant_keys.py`). Deviations: (a) six tables, not seven: `cost_record` is left, since `DbTenantCostStore` already keys on the tenant and Plato uses it, (b) no migration file: Plato holds none of these tables, so the host's migration calls the function (this renumbers nothing; 0041 stays free), (c) `conversation_message` keeps its surrogate key and gets a `tenant_id` column and index, (d) the stores take a required `tenant_id`, and `FabricConfig.conversation_tenant_id` feeds the `sql` conversation backend. The marker in `fabric/tenancy.py` now names what remains (the Knowledge Hub canonical stores and the legacy cost table).
+- 2026-11-07 M5 landed (aa506086): `store_table_problems` and a live test over every store table the SDK and Plato declare (not a registered list), one named exemption (`cost_record`); both docstrings corrected. Deviation: tables are found by walking SDK store modules, not through one list the stores feed, so a store module with another name is not seen (noted in the CHANGELOG).
+- 2026-11-07 decisions (user, typed): the resolver's mapping is config behind the `TenantDirectory` interface (question 5); the platform gateway owns tenant UUIDs and the directory mirrors them, Plato issues none (question 5); the sibling services' queue `tenantId` is a UUID (question 6), so queue ingestion (`queue/processor.py`, `server/app.py`) translates it to the tenant name through the directory, and so does the token claim at `authority/principal.py`. Unknown is a `LookupError` (a 400), never a fallback to `default`.
+- 2026-11-07 resolver landed (dedad88b) as decided. Deviations: (a) the module is `jazzx_sdk/tenant_directory.py` and imports nothing from the SDK, (b) an unknown tenant at the queue sites is raised as `ScopeClaimRefused`, which both sites already turn into a terminal error or a 400, (c) a known tenant name also passes `name_for`, so a sender that sends names keeps working, (d) the directory is read once from the environment into a module-level holder (optional: absent means no change), replaceable with `set_tenant_directory`. The import contract lists the packages that must not import it. Nothing is left in this plan.
 
 ## TLDR
 
