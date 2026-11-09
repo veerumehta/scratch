@@ -2,6 +2,10 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+## [2.7.1] - unreleased
+
+Started from `origin/dev` after 2.7.0 reached main: SDK 2.7.1, Plato 0.3.1, client 0.3.1.
+
 ## [2.7.0] - unreleased
 
 Plan: `docs/plans/plan_JAPES_2_7_0_EXPERT_SURFACE_AND_ANSWER_CONTRACT.md` (drift-checked), `docs/plans/plan_2_7_0_tenancy_hardening.md`. Entries land here as the work does.
@@ -183,6 +187,20 @@ Plan: `docs/plans/plan_JAPES_2_7_0_EXPERT_SURFACE_AND_ANSWER_CONTRACT.md` (drift
   claims they are an older run's: it names them and says to check the directory for staged `.md` files that are not members. Residual:
   the warning cannot tell members from staging. Tests: two same-stem zip members keep separate staged text (failed before); existing
   artifact-name assertions follow the new names.
+
+- **One shared name for staged files (`tools/documents/staging.py`, new; +56 / -13 lines, 5 files).** `staged_markdown_name`,
+  `staged_result_name` and `STAGING_DIR` are the single source for `<file name>.md`, `<file name>.result.json` and `.japes`; `process_dir`,
+  the manifest (which now takes the result name computed once in the worker, not rederived from the markdown name), the folder-run default
+  output directory and `ensure_local_cache` all use them, so the folder run and the Knowledge Hub write-through cache find each other's
+  files again. Family grep across `jazzx_sdk`, `plato`, `tests`, `docs` and examples: the only other writer or reader of the staged name was
+  `ensure_local_cache`; `LocalStubProvider` reads a co-located `<stem>.md` by design and is unchanged. One reference left to its owner: the
+  `ci-spread-core` seed pack's `core.yaml` names a `.japes/<stem>.md` path for a jaci source, which a staged name now extends with the source
+  suffix. Tests: a conversion staged by a folder run is found by `ensure_local_cache` (failed before); the hydration test expects the new name.
+
+- **The local cache's docstring and a legacy note say what is true (`tools/documents/local_cache.py`; +6 / -3 lines, 1 file).** The cache file is
+  the one `process_dir` stages only for a top-level file under the default output directory; subfolder files and other output directories
+  are not shared. A `TODO(legacy-stem-cache)` records that a cache written under the old `<stem>` name is not recognized (one extra
+  Knowledge Hub fetch per document per machine, same content). Comments only.
 
 ## [2.6.9] - unreleased
 
