@@ -5,6 +5,18 @@ contains `JAPES_V2`; backend under `backend/`) against japes `v2.6.8`. Plan only
 sonnet-runtime. Same principles as `plan_juno_sdk_adoption.md`: tiered and additive, consumer-neutral SDK features, each step shippable
 alone with a stop point, and nothing stated as measured that was not ([V] checked in code or run, [U] not verified).
 
+## Status and modifications
+
+How to use this section: the plan author may read it and update it; implementers append one dated line per slice. Newest line last.
+
+- 2026-11-09 refreshed against japes 2.7.0 (`main` 2c8274b0) by opus-xrepo; read-only on policy-workbench; the text below still describes 2.6.8 except where a line says 2026-11-09. Nothing was run.
+- Workbench now: `origin/main` d3b7d70f (2026-11-04); `backend/pyproject.toml` still pins japes at `f3101079` (2.6.4) with floor `>=2.6.4`; its `JAPES_V2` work is merged into `main`; a branch `ai-gateway-migration` exists on the workbench as on every sibling (same `common.core.ai_gateway` change; land the pin bump first so the two do not diverge on the common version).
+- Pin target changes: a `main` commit of 2.7.0 (`2c8274b0`), not a plato rev (pinned revs are `main` commits or tags). The jump from 2.6.4 is one minor line plus its patches: read `docs/status/CHANGELOG.md` from 2.6.5 to 2.7.0 first. Known host-breaking items: five tenant-keyed stores take a required `tenant_id` (only if the workbench uses the SDK's stores; it uses four files of the SDK, so most likely not); pipeline ids were renamed with one deprecation warning per old id.
+- Step 1 helper now exists: `function_tool_from_schema(name, description, schema, handler)` in `jazzx_sdk/agents/function_tools.py`, exported from `jazzx_sdk.agents`; the host-side adapter is no longer needed.
+- Section 3 and 6 gap closed for Anthropic and Gemini: `AnthropicNativeModel` asks for thinking through `model_settings.extra_args["thinking"]` (`thinking_request`) and publishes the thinking blocks as reasoning-summary deltas, never into the answer stream (`agents/anthropic_native.py:137-140`, `:333-339`); `GeminiNativeModel` asks for thoughts and streams them (`gemini_native.py` `thinking_config`). Step 4 is therefore built for both; Ollama was not checked. What remains for the workbench's panel is verifying that its `StreamEvent(type="thinking")` mapping accepts these deltas.
+- Still absent in the SDK at 2.7.0 (grepped): `BlobStore.copy` and prefix delete, `create_project_collection` and `delete_project` on the Knowledge Hub client (the global-config read was not re-checked). Steps 7 to 9 are unchanged and unverified.
+- Not re-checked: per-code parity of `jtbd_audit` with `jtbdset_lint`; anything the workbench did after 2026-11-04 on non-`main` branches.
+
 ## 1. What the workbench takes from the SDK today
 
 | Area | Evidence |
@@ -66,11 +78,11 @@ beside it and move only on measured parity.
 
 | # | Step | Owner | Test | Risk | Stop point |
 |---|---|---|---|---|---|
-| 0 | **Pin.** `rev` to a pushed japes 2.6.7 commit (`origin/plato` `18bbded9`), floor `>=2.6.7`, `uv lock`; the suite | workbench PR | its suite; `test_japes_dependency.py` (every name it imports still exists in 2.6.8, [V]) | Low to medium. The `openai-agents` floor already matches: the workbench declares `>=0.22.0` (`pyproject.toml:71`) and locks 0.24.0 (`uv.lock:1837`), japes needs `>=0.22.0` [V]. What the lock gains: `jazzx-plato-client` 0.2.7 | Workbench on a known SDK |
-| 1 | **OpenAI provider onto the SDK's agent builder.** `OpenAIAgentProvider` (274 lines: `Agent` plus `Runner.run` over `function_tool`) builds its agent with `jazzx_sdk.agents.openai_provider.OpenAIProvider.build_agent(name, instructions, model=, tools=, model_settings=)` (`:56`), keeping `LLMProvider` and `ToolDefinition` | workbench PR (SDK helper below optional) | provider tests with the same fixtures; a tool with a nested array and object parameter keeps its schema; a handler that raises still returns `Tool error: ...` | Medium. See "Tool mapping" below | Flag off keeps today's |
+| 0 | **Pin.** `rev` to the japes 2.7.0 `main` commit (`2c8274b0`; 2026-11-09, was a 2.6.7 plato rev), floor `>=2.7.0`, `uv lock`; the suite | workbench PR | its suite; `test_japes_dependency.py` (every name it imports still exists in 2.6.8, [V]) | Low to medium. The `openai-agents` floor already matches: the workbench declares `>=0.22.0` (`pyproject.toml:71`) and locks 0.24.0 (`uv.lock:1837`), japes needs `>=0.22.0` [V]. What the lock gains: `jazzx-plato-client` 0.2.7 | Workbench on a known SDK |
+| 1 | **OpenAI provider onto the SDK's agent builder.** `OpenAIAgentProvider` (274 lines: `Agent` plus `Runner.run` over `function_tool`) builds its agent with `jazzx_sdk.agents.openai_provider.OpenAIProvider.build_agent(name, instructions, model=, tools=, model_settings=)` (`:56`), keeping `LLMProvider` and `ToolDefinition` | workbench PR (the SDK helper now exists: `function_tool_from_schema`, 2026-11-09) | provider tests with the same fixtures; a tool with a nested array and object parameter keeps its schema; a handler that raises still returns `Tool error: ...` | Medium. See "Tool mapping" below | Flag off keeps today's |
 | 2 | **Opt-in switch: `claude-*` on the same SDK path, as an EXPERIMENT.** `factory.get_provider` (`factory.py:21`) gains a switch (an env flag, default off) under which a `claude*` model returns the SDK-path provider from step 1 instead of `ClaudeAgentProvider`. The SDK already routes by name: `resolve_model` sends `claude-*` to `AnthropicNativeModel`, `gpt-*` to OpenAI, `gemini-*` to Gemini [V `agents/models.py:345-375`]. **The Claude Code CLI provider stays primary and the default** | workbench PR | the same fixtures through both; the factory test for the switch | Medium: behavior differs in ways not measured (below) | Switch off is today's behavior |
 | 3 | **Measured side by side, later.** A recorded eval set run through both Claude paths, comparing answer, tool use, cost and latency | workbench, with the user's approval of any spend | the comparison itself | n/a | Report only; the default does not move on this alone |
-| 4 | **An opt-in thinking stream in the SDK, only if the user decides it is a product need** (section 6) | SDK, then workbench | provider-by-provider stream tests | Medium | Do not build without the decision |
+| 4 | **An opt-in thinking stream in the SDK, only if the user decides it is a product need** (section 6; built for Anthropic and Gemini by 2026-11-09, see Status) | SDK, then workbench | provider-by-provider stream tests | Medium | Do not build without the decision |
 
 Independent of the model layer, in this order when wanted: **5** delete the workbench pricing copy where `test_claude_pricing.py`'s parity tests already compare it to `compute_cost` (low); **6** import `unwrap_ontology` and `reject_reason` for the ontology gate (`ontology_refresh.py:234`, `ontology_store.py:182`), the store stays (low); **7** run `lint_jtbdset` beside `jtbd_audit` on `build_artifact`'s output and write the per-code parity table (report only); **8** the investor-classification call (`guideline_versioning.py:356`) through `jazzx_sdk.llm` instead of a bare `anthropic.Anthropic` (low); **9** KH project calls, global-config read, blob `copy` and prefix delete as SDK verbs only if the workbench wants them (SDK first). **Not now:** retiring the CLI path (subprocess, transcript store, sanitizer): only after step 3 shows parity, and only if the user decides to leave Claude Code.
 
@@ -80,7 +92,7 @@ Independent of the model layer, in this order when wanted: **5** delete the work
 
 ## 5. Open questions for the user
 1. Is a workbench PR from its `JAPES_V2` branch agreed, and who reviews on the workbench side?
-2. The pin: is `origin/plato` `18bbded9` (2.6.7) the target, or wait for the 2.6.8 squash (unpushed)?
+2. The pin: the 2.7.0 `main` commit `2c8274b0` (2026-11-09; the 2.6.7 and 2.6.8 targets are superseded).
 3. Claude provider: does the workbench want to leave Claude Code (and its built-in loop behavior) at all? Steps 2 and 3 are an experiment beside it, not a commitment.
 4. Streamed thinking: section 6 says who needs it and what exists; is it a product need? That decides step 4.
 5. Do the KH project calls and `copy` / prefix delete belong in the SDK, or stay workbench-specific (step 4)?

@@ -25,6 +25,7 @@ Detail lives elsewhere: `scripts/local/restart/<session>.md` (per-session state)
 | `sonnet-runtime` | SDK, `runs/`, chat, models and LLM layer, assessment, references, vocabulary, observability, Plato infrastructure, squashes and versions |
 | `sonnet-ui` | Plato pages and UI routes, classification eval, assistant chat UI |
 | `sonnet-packs` | Seed packs and their sync, job and code refinement, the Acra comparison |
+| `sonnet-docs` | Document processing: `tools/documents/`, `agents/document/`, `pipelines/document/`, the document ingest step (the document processing pipeline build, 2.7.0) |
 | `sonnet-jaci` | jaci only (jaci changes never come from a japes session) |
 
 - Session names lead with the model; a stray `/rename` breaks messaging, so check `ListAgents` before relaying. Sessions report to
@@ -110,3 +111,10 @@ Bias toward caution over speed; for trivial tasks use judgment.
      assert a literal the code derives from a named source.
    - A behavior change is a change to whatever declares that behavior (a contract object, table, enum, rendered doc): grep for the old value, and
      keep at least one assertion that comes from running the thing, not from comparing artifacts to each other.
+7. **Place every new file deliberately.** Before adding one, list its target directory (`git ls-files <dir> | wc -l`) and ask whether it belongs
+   to an existing cluster or starts one. Put it in the package that owns its subject (a kernel header claim goes beside the kernel client in
+   `jazzx_sdk/clients/`, not in the `jazzx_sdk/` root). The `jazzx_sdk/` root holds only cross-cutting core (models, identity, registry,
+   scope claims); a new root module needs a stated reason. A directory past about 25 modules, or a cluster of five related files in one, gets a
+   subpackage. `tests/` is flat today (about 750 files): put new tests in a subfolder named for the area they cover (match the package
+   path), and say in the commit or review if you add to the flat root. A host-specific or customer-specific name (a claim, a header, a
+   tenant) is pack or host configuration, not an SDK module. The reviewer checks placement on every new file.
