@@ -12,6 +12,7 @@ How to use this section: implementers append one dated line per slice (what land
 - 2026-11-09 user decisions (typed in `opus-xrepo`'s session): headline is P1 to P3, P4 to P7 deferred. (1) forum members live in the pack (`governance/guidance.yaml`); (2) from-feedback learning assets are `minor_behavioral`; (3) self-approval follows the existing posture, enforced by provenance at every class when off; (4) no emergency class in the first cut; (5) a pack with no forum refuses material changes (fail closed), minor ones pass; (6) the gate table is the SDK default, packs only tighten.
 - 2026-11-09 P1 `4ebdb648`: `ChangeClass` (five classes), `ChangeGate`, `DEFAULT_GATES`, `tightened`, `unclassified_change`. The slide-19 matrix is not in the repo: defaults chosen so only the two material classes need a forum (administrative, minor narrowing and minor behavioral: owner), which `overlay_forum` and `owner_then_release` tighten.
 - 2026-11-09 P2: see the CHANGELOG entry; plan deviations: the state table keeps one `reviewer` actor class and the lifecycle resolves the step; `emergency` and bundle-level rollback not built; the gate's tests are recorded, not run (P4/P6).
+- 2026-11-09 P3: loop signals and change proposals as records nested in `provenance.proposal` (no table); deviation from the plan: no `proposal_id` field on provenance (it is `provenance.proposal.proposal_id`), and a Sentinel signal becomes a proposal only through `propose_change` with a candidate asset (no route).
 
 ## TLDR
 
