@@ -112,3 +112,38 @@ Build the two-method facade on the current pin, typed result including the 202, 
 5. Does the delete task have a status API we should wrap (`wait_for_task`), and where is its status vocabulary documented? I did not find it.
 6. Which release carries it: v2.7.1 (small, QA waiting) or 2.7.2?
 7. Does QA need the `common` submodule from a pip install of japes (section 5, item 3)?
+
+## 8. Addition (2026-11-10, scope widened by the user): the fabric `EntityStore`, the fabric mock path, and the symmetry check
+
+Design only; still no build until the user releases the slice.
+
+**`EntityStore` (`fabric/entities/store.py`).** It takes the client behind `fabric.entities` (the real `KnowledgeHubClient`, or the in-memory `MockKnowledgeHubClient` in LOCAL and TEST mode: `fabric.py` builds `EntityStore(backing)` with the mock as `backing`, so one mock covers the fabric path) and normalizes every return through `fabric._contract`, which today knows only dict, list and None.
+- `delete_many(collection_id, ids, *, dry_run=False) -> BulkDeleteResult` and `delete_all(collection_id, *, confirm) -> BulkDeleteResult`. The collection id is a required argument: the single `delete(entity_id)` needs none, but the bulk endpoint is collection-scoped.
+- `confirm` is a plain keyword string that must equal `collection_id`, else `ValueError` before any call (typing the collection's id is the confirmation; a boolean flag is too easy to pass by habit). `delete_all` has no `dry_run` argument on the store; a dry run of "everything" is `delete_many` over a filtered id list, or the facade's own `delete_all_entities(dry_run=True)` for a caller with the client.
+- Return shape: a new helper in `fabric/_contract.py`, `typed(result, cls)`, returns `result` when `isinstance(result, cls)` and raises the same `TypeError` (`fabric contract violation: expected a BulkDeleteResult, got bool`) otherwise, so a facade or mock that leaks a bool, dict or a generated `Response` fails loud at the fabric boundary. The module docstring's "plain dict/list/None" becomes "plain dict/list/None or a frozen result type of the fabric".
+- Docstrings say how they differ from `delete`: `delete` returns a bool and hides failures (a missing id and an outage both read `False`); `delete_many` reports partial success (`status == "PARTIAL_SUCCESS"`, the `failed` ids with `error_code` and `message`), counts, a dry run (`outcome == "dry_run"`, `matched_count`, nothing removed), and `delete_all` returns "accepted for later" (`outcome == "accepted"` with `task_id` and `poll_url`; the deletion has not happened when the call returns). 401 and 403 raise `KnowledgeHubAccessError`; a 5xx, timeout or connection failure raises `KnowledgeHubUnavailableError` on both, whatever the client's `raise_on_unavailable` flag says. `KnowledgeHubLike` (`clients/kh_protocol.py`) gains `bulk_delete_entities` and `delete_all_entities`.
+
+**Mocks.** In-memory: `MockKnowledgeHubClient` gets the two methods with the facade's semantics (the section 1 list: a missing id is a `failed` entry so the status is `PARTIAL_SUCCESS`; an already-removed id is neither deleted nor failed; `dry_run` removes nothing; `delete_all` answers `accepted` with a generated task id and poll URL and removes the collection's entities). Its `_entities` store keeps no collection id on every path today `[U: I read `_entities` as `{entity_id: entity}`; the collection field is on the entity dict `create_entity` stores, which the mock must filter on]`. HTTP mock app (`server/mock_knowledge_hub_app.py`): the `bulk-delete` route with the 200 and 202 bodies and `Location`. Both are held to the facade by the shared contract test.
+
+**Symmetry: the other fabric delete paths.**
+
+| Hit | What it does | Wants the bulk call or typed result? | Decision |
+|---|---|---|---|
+| `fabric/entities/store.py` `delete` | single, returns `bool(await kh.delete_entity)` | the two new methods are its siblings | stays as it is (documented as the lossy one) |
+| `fabric/graph/store.py:513` `delete_triple` | `await self._kh.delete_entity(triple_id)`; the bool is discarded | no bulk, but it has a defect: `delete_entity` answers `False` on failure and this returns `None` as success, so a failed delete is silent | fix in the slice: raise `KnowledgeFabricError` when the answer is `False` (docstring already promises "Raises: KnowledgeFabricError: If deletion fails") |
+| `fabric/graph/store.py:612` `delete_triples` | query, then one `delete_triple` per match, counting every one as deleted | yes: it is exactly N single deletes over a collection; with the fix above a failure now raises mid-loop instead of miscounting | move to `entities.delete_many` per collection (ids from the query), return `deleted_count`, and raise `KnowledgeFabricError` naming `failed` ids on a `PARTIAL_SUCCESS`; needs the collection id the query already resolves (`collection_id` or the default); one slice-sized follow-up, so listed as an open item, not done silently |
+| `fabric/graph/store.py:473` `delete_ontology` | single, `bool(...)` | no bulk endpoint for ontologies in the generated client | leave |
+| `fabric/docs/store.py:1461` and `docs/mock.py:167` `delete` | single document delete | no bulk document delete in the generated client (only `delete_document`) | leave |
+| `fabric/canonical/store/` | no delete path (grep over `core.py`, `_base.py` and the typed stores found none) | n/a | nothing to do |
+| `fabric/blob/store.py:90`, `fabric/db/store.py:113` | other backends' deletes | unrelated to Knowledge Hub | leave |
+
+**Tests (to write with the slice).**
+- `tests/fabric/entities/test_entity_store_bulk_delete.py`: through `EntityStore` over the real `KnowledgeHubClient` with an `httpx.MockTransport` that answers as the API does and the generated parser as shipped: a 202 (`parsed` is `None` at our pin, and at the bot revision) gives an `accepted` result with `task_id`, `poll_url` and `location`; a 200 with `PARTIAL_SUCCESS` and a `failed` entry gives `failed` ids with codes; a 200 dry run removes nothing and reports `matched_count`; an already-deleted id is not failed; a 403 raises `KnowledgeHubAccessError`; a 500 raises `KnowledgeHubUnavailableError` on both methods with a client built without `raise_on_unavailable`; an empty id list and a bad uuid raise before any request; `delete_all` with a `confirm` that is not the collection id raises `ValueError` and sends nothing.
+- A shape test: a stub client whose `bulk_delete_entities` returns `True` (the old `delete` shape) makes `delete_many` raise `TypeError`, so a bool-returning `delete_many` is impossible.
+- The same case table run against `MockKnowledgeHubClient` through `EntityStore` and against the HTTP mock app (the contract test).
+- `tests/fabric/graph/`: `delete_triple` raises when the client answers `False`; `delete_triples` over a stub with one missing id raises with the failed id.
+
+**Added open items for the user.**
+8. `delete_triples` moving to `delete_many` (a behavior change for a caller that today gets a count and never an error): in this slice, or the next?
+9. The `delete_triple` fix makes a silent failure loud: any caller relying on the silence (a cleanup that ignores missing triples) needs a look; I found the in-tree callers only in `delete_triples` and the docstring example `[U: sibling repos not searched]`.
+10. Confirm string equal to the collection id (my call) versus a fixed word such as `"delete all"`.
