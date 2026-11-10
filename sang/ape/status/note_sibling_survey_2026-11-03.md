@@ -8,10 +8,11 @@ Nothing was run against a provider. "Check" means not yet verified against japes
 
 ## Act on (plan items change)
 
-1. **The `common` target moved: 0.4.0, not 0.3.0.** juno, eval-service, kernel, knowledge_hub and assistant all pinned common `96b0495f` on 2026-11-03 (common#263
-   head; its `pyproject.toml` says 0.4.0). The plan's target 5fa47753 is not an ancestor of 96b0495f in the local clone (check `main` after a fetch). 0.4.0 adds
-   tenancy guards, a guard CLI and reusable workflow, tenant-leading unique swaps and tenant FKs, and a start-up refusal when `PLATFORM_TENANT_ID` is unset while
-   the service maps tenant tables. Re-aim the gated bump at 96b0495f or its release tag, and read the 0.4.0 start-up refusal against Plato's boot-contract tests.
+1. **The `common` target stays 0.3.0 (corrected after a fetch, 2026-11-03).** juno, eval-service, kernel, knowledge_hub and assistant pinned common `96b0495f`
+   (`version = "0.4.0"`), but it is only on the unmerged branch `origin/feat/BSD-5538-phase3-v0.4.0` (branched from main's 3f70d3cb). `origin/main` is `5fa47753`,
+   version 0.3.0, tagged `v0.3.0`: that remains the gated bump's target. 0.4.0 adds tenancy guards, a guard CLI and reusable workflow, tenant-leading unique swaps
+   and tenant FKs, and a start-up refusal when `PLATFORM_TENANT_ID` is unset while the service maps tenant tables. Revisit it once 0.4.0 merges and is tagged, and
+   read that refusal against Plato's boot-contract tests then.
 2. **xdist traps for item 19.** juno 07470784 (`fixed parametrize values so xdist workers collect the same tests`): a parametrize list built from random or unordered
    values makes workers collect different tests and xdist aborts. Run `pytest --collect-only` twice and diff before trusting `-n`. kernel and juno also use
    `--dist loadscope`, per-worker Postgres schemas, `--reruns 3` (juno) and `--durations=20` (kernel). Already on the plan as 19.

@@ -16,6 +16,16 @@
 
 Author: Virendra Mehta · 2026-11-06 · Status: done on v2.7.0 (S1 to S10; unpushed)
 
+## Status and modifications
+
+How to use this section: the plan author may read it and update it; implementers append one dated line per slice (what landed, the commit, anything the plan got wrong). Newest line last. Branch: v2.7.0, nothing pushed. Target: all of this plan lands in 2.7.0 (user decision 2026-11-06).
+
+- 2026-11-07 owner `sonnet-docs`. All slices landed: S2, S3, S4, S7 933f1df1; S5 4aa5e500; S9 441863dd; S6 8a874cea; S1 aef8fc20; S10 d4152cc0; S8 cf667c99. Final report and the plan-to-status move are with the owner.
+- 2026-11-07 modification S3: the default detector is opt-in (`detect_input`, passed as `detect=`) so `document_ingest` output does not change; `document_processing` turns it on. It is model-free: an outline of two or more top-level entries, or at least `DEFAULT_PACKAGE_MIN_PAGES` pages (`DocTurn.package_min_pages` overrides, zero disables).
+- 2026-11-07 modification S1: assess, read, split, classify, completeness and extract are not separate pipeline steps; they run inside `DocumentAgent.process` and are traced as its spans. The recall pass already runs inside `process()` when the spec names demanded fields, so the recall stage only reports it. Decomposing the agent into swappable steps is a follow-up, not done.
+- 2026-11-07 modification S8: `locator_mode` is `quote_anchored` (default, page plus `chars a-b` from the model's cited quote, value search only as the fallback, one model call) or `page_aligned` (one call per non-empty page, every field gets its page from the chunk). Settable on the pack spec, on `DocTurn` and as a keyword. No bounding boxes exist for text-layer or vision reads. With `ground_by_quote` off, `quote_anchored` falls back to value search.
+- 2026-11-07 S10: `documents_to_fields` is the minimal profile (the registry id and alias came from the catalog work).
+
 ## Goal
 
 Build one complete, reusable document processing pipeline in the SDK that does, by default, everything the document processing agent and the case-run ingest step can already do. Today the `document_ingest` reference pipeline only routes inputs (`pipelines/document/ingest.py:18-21`), while the case-run `DocumentIngestStep` (`pipelines/steps.py`, around 991-1025) carries most of the business logic. The result should be a pipeline a pack can run as-is, with every stage visible, traced and swappable.
