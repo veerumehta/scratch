@@ -5,6 +5,11 @@ Entries are terse; the plans in `docs/plans` and `git log` carry the detail.
 
 ## [Unreleased]
 
+### Changed: scenarios are now solutions (`8284084`)
+- `src/jaci/scenarios` is `src/jaci/solutions`, `tests/scenarios` is `tests/solutions`, and the term is "solution" in code, UI labels, the README, ARCHITECTURE and CLAUDE.md. "Stress scenario" (finance) and the web demo contract (`/scenario.json`, `scenario_data.py`, `web/`) keep their names.
+- Pack manifests name code by dotted path, so six packs changed content and moved a patch version: `aml-investigation-core` 0.2.14, `ci-spread-core` 0.3.3, `cl-of-core` 0.1.1, `cl-sp-core` 0.1.1, `clinical-intake-core` 0.1.4, `cre-underwriting-core` 0.1.2.
+- Pulte pack (`cdfb516`): review fixes to the coverage files (Part E total, B3-5.3-09 edition flag) and the topic index on the SDK's 388-unit reader (B6-1-01 spans the cross-reference heading).
+
 ### Changed: Acra DSCR pack 0.3.0 (`0ed0d27`)
 - `LoanApplication` gains 14 optional fields the missing jobs read (LTV, cash in hand, product type, ARM index, margin and three caps, subordinate financing type, HELOC limit and balance, lowest recent listing price, lease rent, `reo_properties`); names follow the production ontology where it has them (`LoanCore.arm_index_type`, `arm_margin_percent`, `arm_*_cap_percent`, `ltv_percent`), provisional elsewhere. Nothing reads them yet.
 - Document registry: One- to Four-Family Rider and Business Purpose Attestation (Exhibit 8), kind `closing`, read for nothing. Not classifier-measured yet.

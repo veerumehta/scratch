@@ -91,3 +91,28 @@ Not published; the number is a proposal for the user to approve.
   under `jazzx_sdk/vocabulary/data`, only `jazzx-core` and `jazzx-finance`). A mortgage layer would be a consumer-neutral
   SDK addition, or the pack carries everything in its own catalog.
 - Whether Plato's check then reports anything other than the 292 `rule_without_citation` warnings (units, a separate gap).
+
+## Review findings left open (adversarial review 20261031T041258Z, 2026-10-31)
+
+Fixed in the working tree (uncommitted): rulemap Part E total (642), topic index regenerated on the SDK reader (388 units; B6-1-01 spans 1839092-1844599, no `B2-1.5-02 (2)`),
+mapping `edition_flags` (B3-5.3-09 added, undated 156), `jtbd_template.yaml` comment.
+
+- TODO(pulte-ontology-keys), medium, blocks the JTBDSet export readiness lint: `LoanCore.total_undisclosed_monthly_payment_usd` (absent),
+  `LoanCore.down_payment.total_amount_usd` (nested object, not a scalar key), `Borrower.current_address` and its `[borrower_type=...]`
+  forms (`ResidenceAddress` is an allOf, read as a relationship), bare `Borrower` in COM-DEC; selector field `Liability.is_undisclosed`
+  is missing. Same Knowledge Hub content questions 2 and 3 above; no field is invented here. Either the Hub export adds the fields or the
+  jobs are re-keyed.
+- TODO(pulte-catalog-scope), low: `catalog_to_ontology` reads 22 entities, not 17 (Address, BorrowerIdentifierPair, CreditScore,
+  LoanOriginatorAssignmentAudit, ResidenceAddress pass its entity test); their scalar fields reach writers as bare names.
+- TODO(pulte-percent-unit), unknown importance: no `x-unit` on the percent types, so a writer's scale for `*_percent` is unstated.
+  Needs a japes answer on the default when `units` is empty.
+- TODO(rulemap-null-key), low: chapters B2-3 and B3-2 use a bare `null:` key (loads as None) where totals say `no_score`.
+- TODO(rulemap-models-null), low: `source.models` is null; the model names are not recorded.
+- TODO(topic-index-null-dates), low: 10 topics with `date: null`, C3-5-02's title looks cut at a wrapped heading.
+- TODO(topic-index-b4-1.4-01), low: the index has no B4-1.4-01; retired in June 2026 or folded into B4-1.3-12, undetermined.
+- TODO(topic-index-escapes), low: titles keep `\(` escapes; the mapping file does not.
+- TODO(mapping-undated-from-path), low: 156 undated cortex sections, many carry a date in `chunk_path`.
+- TODO(mapping-absent-flag-table), low: `cortex_sections_absent_from_rule_map: []` was checked against the topic index, not this file's table.
+- TODO(mapping-p-best-name), low: `p_best` is the cheap-pass score, not the best job p.
+- Acra, low, not edited (0.3.0 is active in Plato byte-identical; a comment edit would need a bump): `document_types.yaml:140` says a missing
+  attestation can be reported but neither type is in `required_classes`; the 13 new fields are read by no rule (intended, per the model comment).

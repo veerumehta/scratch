@@ -51,6 +51,19 @@ Nothing half-edited. No uncommitted tracked change. No new work was started afte
 - Squash flow: `scripts/local/squash_to_plato.sh --src vX.Y.Z --no-fetch --no-edit --apply --message "<headline>"` with plato not checked out; keep the old plato on a `plato-pre-resquashN` branch first; the tree diff must be empty; the suite must be green on the squash tree. No push.
 - BSD tools: no `sed \b`, `sed -i ''`; zsh does not split `$var`, quote `==`; use Python for multi-line edits.
 
+## 2.6.9 test-speed TODOs (from opus-xrepo; measure first, no edits until the user says go; one commit per topic)
+- tests/test_concurrency.py: four tests spend 9.95 s each in teardown (~40 s): run_offloaded_timeout, best_effort_timeout_degrades, background_timeout_does_not_block_drain, best_effort_backend_offload. Find what teardown waits for; release it (event, shorter named sleep, shutdown without wait) without weakening the proof.
+- tests/test_import_each_package.py::test_every_package_imports_on_its_own, 46.6 s: find where the time goes, keep the isolation.
+- tests/test_chat_turn_store.py::test_close_records_a_write_its_timeouts_left_open_as_indeterminate[retain], 10 s: same pass if the cause is shared.
+- Two old-name warning tests were fixed on dev f2e74d42 / v2.6.8 520bccb9; CI shards use scripts/shard_weights.json (regenerate from a junit run when stale).
+
+- 2.6.9: bump the `common` submodule 25bf9d81 (0.2.0) to origin/main 5fa47753 (0.3.0), by user decision (not 2.6.8; the pin must land on a common main commit; the local common checkout is on a perf branch, compare against origin/main). Touches core/db.py (TenantAwareSession for every common-backed session, incl. fabric.db and Plato's store), utils/telemetry.py, core/log_settings.py. Gate: tests/test_common_submodule_deps.py, Plato boot-contract and schema-version tests, full suite with DB_TENANCY_MODE=off and IDENTITY_MODE=legacy, check whether Plato env needs PLATFORM_TENANT_ID; add a test that opens a session through the common backend and behaves as before with tenancy off.
+
+- 2.6.9 plan: `docs/plans/plan_2_6_9_carried_work.md` (opus-xrepo). Mine: 1 provenance index and resolver, 2 lint gates K3/K4/K7/K9/K10, 3 case and subject words, 8 review notes and TODO(slug)s (runs/schema.py max_attempts), 9/10 markdown-guide cross-reference fold (built in 76bf9c98 on v2.6.8; only its TODO(slug) remains; jaci already regenerated at 388 units, tell jaci only if the decision changes unit ids again), 11 test speed (signalled shutdown, not shorter sleeps; add the two 50 ms-TTL heartbeat tests), 12 CI Postgres service container (recheck shards), 13 check_new_models cache stores served ids, 14 thinking fill Anthropic and Gemini (contract test; live smoke only with a typed figure), common 0.3.0 bump (gated), route for 4. Order: 11, 12, 13, then 9/10, then 1, 2, 3, then common bump and 14. Nothing starts until the user cuts v2.6.9.
+
+- 2.6.9 started 2026-11-03 (user said start; branch v2.6.9 in japes-v268 (now japes-v270), tip 81e83399, bump committed). Order from opus-xrepo: 8 review notes and TODO(slug)s, 11, 12, 13, 19 (collect-only twice and diff before xdist), 9/10 TODO decision, 1, 2, 3, common bump to 0.3.0 (5fa47753 = origin/main, tag v0.3.0; 0.4.0 96b0495f is only on an unmerged branch; gates in plan_2_6_9_scope A1; boot Plato with PLATFORM_TENANT_ID unset and tenancy off, tenant picker path, test_common_submodule_deps, full suite), 14 and 21, 22 to 25.
+- The four juno-migration items are plan lines E18 to E21 in plan_2_6_9_scope.md.
+
 ## Verify on restart
 ```
 cd /Users/sangit/src/japes && git branch --show-current && git log --oneline -3 && git status --short

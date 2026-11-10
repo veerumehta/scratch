@@ -23,9 +23,9 @@ plan in japes `docs/plans/plan_plato_domain_pack_runtime.md`).
   the pack's `conductor_pipeline` (policy_assessment → investigation → human_checkpoint → narrate,
   `dscr/plato_review.py`); the page's grid is the run's `assessment`. No in-process DSCR path and
   no keyless demo for it any more; the rule tests assess in-process via
-  `tests/scenarios/dscr/pack_assessment.py`. The Domain tab adds policy authoring on Plato
-  (`scenarios/shared/policy_tab.py`). Clinical intake keeps **"Run on: in-process | Plato"**
-  (`scenarios/shared/plato.py`): `clinical_intake/plato_session.py:PlatoIntakeSession` over
+  `tests/solutions/dscr/pack_assessment.py`. The Domain tab adds policy authoring on Plato
+  (`solutions/shared/policy_tab.py`). Clinical intake keeps **"Run on: in-process | Plato"**
+  (`solutions/shared/plato.py`): `clinical_intake/plato_session.py:PlatoIntakeSession` over
   Plato's recorded sessions, in-process still its keyless demo path.
 - **Finding Plato:** `JACI_PLATO_URL` (API root, e.g. `http://localhost:8000/api/v1`), else beside
   the page — dev-daily's gateway serves `https://<host>/jaci/` and `https://<host>/plato/` as
@@ -48,9 +48,9 @@ plan in japes `docs/plans/plan_plato_domain_pack_runtime.md`).
   and run with `.venv/bin/python` (plain `uv run` resyncs to the pin).
 
 Prior round (2026-08-11, kept for history): document upload → Knowledge-Hub-backed "document
-packet" pipeline (`scenarios/shared/document_upload.py`, `commercial_lending/document_packet.py`,
+packet" pipeline (`solutions/shared/document_upload.py`, `commercial_lending/document_packet.py`,
 `shared/packet_picker.py`, `config/demo_document_packets.json`), the `.japes` local-markdown cache
-generalized across scenarios, YETI/MAA 10-K stubs committed, `shared/fabric.py:cached_build_fabric`
+generalized across solutions, YETI/MAA 10-K stubs committed, `shared/fabric.py:cached_build_fabric`
 (session-state caching, because `MockKnowledgeHubClient` does not persist), and japes#57 filed. Full
 record: `docs/status/done_JACI_CL_DOCUMENT_PACKET_SYSTEM.md`.
 
@@ -58,7 +58,7 @@ Prior round (2026-08-08, kept for history): `CLSpreadContext.control_tolerance` 
 so the four arithmetic controls (FR-VAL-1/3/4/5) became reachable in the governed pipeline
 (previously dead code despite being implemented/tested); fixed a stale hardcoded "3.0x" leverage
 ceiling in `ci_spread`'s UI (real ceiling is 3.5x, read from `CI_REGISTRY` now); investigated and
-mostly disproved a "scenarios are inconsistent" premise across all 8 scenarios; found (but didn't
+mostly disproved a "solutions are inconsistent" premise across all 8 solutions; found (but didn't
 fix) that no conductor populates `CanonicalTrace.steps` with granular per-mode entries, so the
 Trace tabs' thinness is a real backend data gap, not presentation; surveyed the `web/commercial-
 lending-demo` submodule for portable feature concepts (provenance tooltips, chain-of-thought
@@ -66,12 +66,12 @@ banner, DSCR scenario builder, risk-rating panel — none built, just scoped).
 
 ---
 
-> **Branch: `dev`** — JACI with AML and KYC scenarios (May 2026)
+> **Branch: `dev`** — JACI with AML and KYC solutions (May 2026)
 >
-> This branch includes both the original AML investigation and the new KYC/CDD (Know Your Customer / Customer Due Diligence) scenario.
-> The KYC scenario uses Anthropic Client SDK instead of OpenAI Agents SDK to validate JAPES's agent platform adapter role.
+> This branch includes both the original AML investigation and the new KYC/CDD (Know Your Customer / Customer Due Diligence) solution.
+> The KYC solution uses Anthropic Client SDK instead of OpenAI Agents SDK to validate JAPES's agent platform adapter role.
 >
-> **KYC Scenario Features:**
+> **KYC Solution Features:**
 > - ✅ SDK: Anthropic Client SDK (`anthropic` package) with claude-sonnet-4-5
 > - ✅ Adapter: `src/jaci/sdk/anthropic_adapter.py` for structured output + tool use
 > - ✅ Schemas: KYC-specific (RiskTier, ReviewTrigger, RiskTierRecommendation, ReviewFile)
@@ -81,7 +81,7 @@ banner, DSCR scenario builder, risk-rating panel — none built, just scoped).
 >
 > See `docs/JACI_KYC_BUILD_PLAN.md` for full architecture and implementation plan.
 >
-> **AML Scenario Status:** Charter Alignment Phases 7–10 **COMPLETE** (April 28, 2026)
+> **AML Solution Status:** Charter Alignment Phases 7–10 **COMPLETE** (April 28, 2026)
 > - ✅ Phase 7: Canonical cross-linkage (CanonicalTrace, Outcome schemas)
 > - ✅ Phase 10: Pack governance (config/packs/aml_investigation_core.yaml)
 > - ✅ Phase 8: Evaluator mode (split Python/LLM evaluation)
@@ -146,8 +146,8 @@ See `APP_README.md` for detailed usage instructions.
 JACI is a domain pack built on the JAPES extension framework for AML/KYC investigation.
 
 **SDK Runtime:**
-- **AML scenario:** OpenAI Agents SDK (`openai-agents` package)
-- **KYC scenario:** Anthropic Client SDK (`anthropic` package) — validates JAPES's agent platform adapter role
+- **AML solution:** OpenAI Agents SDK (`openai-agents` package)
+- **KYC solution:** Anthropic Client SDK (`anthropic` package) — validates JAPES's agent platform adapter role
 
 **Note:** The old `kyc` branch has been archived as `kyc-archived`. All KYC work is now in `dev`.
 
@@ -557,7 +557,7 @@ validated on the current typology set.
 
 **Directory-based structure (current as of May 2026):**
 
-1. Create directory: `tests/eval/gold_cases/{scenario}/case_NN/`
+1. Create directory: `tests/eval/gold_cases/{solution}/case_NN/`
 2. Write `trigger.json` with `alert` and `expected_outcome`
 3. (Optional for AML) Add `CASE_NN` dict to `tests/fixtures/case_fixtures.py` if using mock fixtures
 4. (Recommended for KYC) Generate source documents and verification reports using scripts in `scripts/`
