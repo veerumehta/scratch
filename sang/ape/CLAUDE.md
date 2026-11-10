@@ -118,3 +118,5 @@ Bias toward caution over speed; for trivial tasks use judgment.
    subpackage. `tests/` is flat today (about 750 files): put new tests in a subfolder named for the area they cover (match the package
    path), and say in the commit or review if you add to the flat root. A host-specific or customer-specific name (a claim, a header, a
    tenant) is pack or host configuration, not an SDK module. The reviewer checks placement on every new file.
+   **Pipelines:** the `PIPELINE_REGISTRY` entry (id, aliases, module, entrypoint, builder, turn type) is the public contract; package
+   `__init__` files import nothing; generic callers use `load_pipeline`, and only a host bound to one pipeline deep-imports its module.
