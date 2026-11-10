@@ -245,6 +245,22 @@ Weight these highest, because they are what has actually shipped broken here bef
   interface. Check the whole family, not just the nearest sibling -- if three share a shape and
   one got the change, the other two are latent until shown otherwise
 
+Check the placement of every file the diff ADDS (a new-file header in the diff), against the repo's
+placement guideline, and report each violation as a [PLACEMENT] finding:
+- it lives in the package that owns its subject (a kernel header claim beside the kernel client in
+  `jazzx_sdk/clients/`, a guidance record under `jazzx_sdk/fabric/guidance/`), not in a nearby
+  package that merely imports it;
+- a new module directly in the `jazzx_sdk/` root is only cross-cutting core (models, identity,
+  registry, scope claims); anything else there needs a stated reason in its docstring;
+- a directory past about 25 modules, or a cluster of five related new files in one directory,
+  should be a subpackage;
+- a new test goes in a subfolder of `tests/` named for the area it covers, matching the package
+  path (`tests/fabric/guidance/` for `jazzx_sdk/fabric/guidance/`), not in the flat `tests/` root,
+  unless the commit says why;
+- a host-specific or customer-specific name (a claim, a header, a tenant, a lender) is pack or
+  host configuration, not an SDK module or a constant in shipped SDK code.
+Name the file and the directory it belongs in. Say nothing when every new file is placed correctly.
+
 Tag every finding with exactly one of:
 
   [DEFECT]  wrong behaviour, and you can name the concrete input or state that produces it. The
@@ -254,6 +270,8 @@ Tag every finding with exactly one of:
             duplicated in a caller that belongs in the layer below, a rule stated in a test that
             the library cannot apply, a constant repeated instead of shared, a fix that reads as
             local when the layer could own it.
+  [PLACEMENT] a file this diff adds is in the wrong place by the rules above; same line shape as
+            the others, slug such as `new-module-in-sdk-root`. Report at most three.
   [NOTE]    everything else: a comment that could be more precise, a claim that is true but
             narrower than stated, a naming or structure preference, a test that could assert more.
 
@@ -328,7 +346,7 @@ in the finding rather than asking for the test to be rewritten. Never propose de
 a test that currently catches something: name what it catches instead.
 
 The last line of your reply must be exactly `VERDICT: BLOCK` if you reported one or more [DEFECT],
-or `VERDICT: PASS` otherwise -- [SYMMETRY] and [NOTE] findings never block, however strongly you
+or `VERDICT: PASS` otherwise -- [SYMMETRY], [PLACEMENT] and [NOTE] findings never block, however strongly you
 hold them. They are for the author to weigh, not a gate.
 PROMPT
 
