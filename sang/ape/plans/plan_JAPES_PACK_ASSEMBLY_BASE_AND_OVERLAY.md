@@ -84,3 +84,5 @@ S7. **jaci config** for the two lenders (blueprints and the assembled packs publ
 ## Not verified
 
 Run-time behavior of a `core` member next to a `policy` member; whether USDA belongs in the government family or is its own; whether Freddie Mac's overlay texts in the existing sets are cleanly separable; the 68 differing steps; how the studios store packs today.
+
+- 2026-11-09 from `sonnet-packs` R1 (note `note_revolution_pack_r1_r2_2026-11-09.md`): importing Pulte 6.2.3 through `import_jtbdset` reproduces jaci's Pulte pack exactly (292 of 292 rule conditions equal), so the risk "68 of 115 steps differ" is settled: the earlier figure compared split steps with whole COMMON text. The S5 equivalence test no longer needs that diagnosis first. Revolution imports unchanged (183 base rules, 401 overlay rules).
