@@ -15,6 +15,7 @@ How to use this section: the plan author may read it and update it; implementers
 - Step 1 helper now exists: `function_tool_from_schema(name, description, schema, handler)` in `jazzx_sdk/agents/function_tools.py`, exported from `jazzx_sdk.agents`; the host-side adapter is no longer needed.
 - Section 3 and 6 gap closed for Anthropic and Gemini: `AnthropicNativeModel` asks for thinking through `model_settings.extra_args["thinking"]` (`thinking_request`) and publishes the thinking blocks as reasoning-summary deltas, never into the answer stream (`agents/anthropic_native.py:137-140`, `:333-339`); `GeminiNativeModel` asks for thoughts and streams them (`gemini_native.py` `thinking_config`). Step 4 is therefore built for both; Ollama was not checked. What remains for the workbench's panel is verifying that its `StreamEvent(type="thinking")` mapping accepts these deltas.
 - Still absent in the SDK at 2.7.0 (grepped): `BlobStore.copy` and prefix delete, `create_project_collection` and `delete_project` on the Knowledge Hub client (the global-config read was not re-checked). Steps 7 to 9 are unchanged and unverified.
+- 2026-11-09 naming: Knowledge Studio is the new name of policy-workbench (user), so this plan is the Knowledge Studio plan; the roadmap deck's "Knowledge Studio" rows and this plan describe the same repo.
 - Not re-checked: per-code parity of `jtbd_audit` with `jtbdset_lint`; anything the workbench did after 2026-11-04 on non-`main` branches.
 
 ## 1. What the workbench takes from the SDK today
