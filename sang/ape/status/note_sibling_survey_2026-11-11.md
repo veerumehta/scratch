@@ -1,0 +1,53 @@
+# Sibling repo survey, 2026-11-11
+
+Author: Virendra Mehta
+
+Written by opus-xrepo after a read-only fetch, all refs, last 2 days, full commit bodies read for juno (13 commits), eval-service (15), macer (52), kernel (5), client-api (9), common (10), jazzx-assistant (2), assistant (1), jaci (3); knowledge_hub had none. Diffs were not read. Nothing was run except `git ls-tree`, `git log` and a grep of japes-v27's lock. `[V]` stated in a commit body or checked in a ref, `[U]` not verified.
+
+## Needs action before the 2.7.1 squash
+
+1. **common v0.5.0 is tagged and its semantics changed after our pin.** v2.7.1 pins the `common` submodule at `e5f29d9`. common#268 merged as `3cb0a55d` (tag v0.5.0) with `4e525051`: the gateway is **on whenever both AI_GATEWAY_* vars are set**, the Flipt flag is a kill switch (only an explicit `false` turns it off), Flipt unset or unreachable **keeps it on** (errors cached briefly, not as off), vars are checked before any Flipt call, and there is an async variant [V]. Every sibling adopted it (macer `02bb1174`, kernel `fc004503`, eval-service `3ce30b1`, juno `086a4c37`, all then "Pin common to v0.5.0"). Our port was written against the old fail-closed decision and our docs, tests and the 0.50 USD smoke plan describe it. Decision for the user: move the submodule to v0.5.0 in 2.7.1 (recommended; the gateway code is already ours, the pin is one commit) and re-check our flag tests and README wording.
+2. **jazzx-assistant pins a japes branch, not a release.** `origin/ai-gateway-migration` (Utkarsh's PR #108) is 4 commits ahead of dev: `891a49a7`, `9d82666a`, `f1297125`, `5bb1d006` (bump common to e3fda74), `06ae2f41` (pin v0.5.0); 26 files, +1928/-231 against dev. jazzx-assistant moved to `5bb1d00` then to the commit that pins v0.5.0 [V]. They still need a release to repin to once 2.7.1 reaches plato; PR #108 and #101 are closed as superseded (user's GitHub action) only after that.
+3. **Dependabot.** common fixed oauthlib 4.0.1 and pyasn1 0.6.5 (CVE-2026-49272, four pyasn1 CVEs) in `aa6ff09c` [V]. v2.7.1's `poetry.lock` already has oauthlib 4.0.1 and pyasn1 0.6.5 [V]. The `gh api` alert check on main is still the user's call before the push.
+
+## japes-relevant findings
+
+### Gateway
+- **Async flag read (juno `dab798a7`).** The sync flag decision did an HTTP call to Flipt on a cache miss and was reached from async code; juno now evaluates in a lifespan background task with common's async evaluator and the sync path only reads the last value [V]. [U] whether our gateway decision is called from async code on a cache miss; check once the submodule moves (common now ships the async evaluator).
+- **Model ids on the gateway (kernel `390c57eb`).** The gateway lists models as `<provider>/<model>` (`openai/gpt-4o-mini`, `anthropic/...`); kernel strips the `openai/` prefix and drops other providers' entries because its model cards use bare names [V]. macer (`8a25fede`) stopped turning dashes into dots so names stay as given [V]. This is the first evidence that the gateway serves provider-prefixed ids; our dotted-id spelling question (`claude-x.y` vs `claude-x-y`) is still only settled by the live smoke, but check whether our gateway path sends `anthropic/<name>` or the bare name.
+- **Streaming truncation (kernel `aa5da002`).** A stream that ends with finish_reason `length` or an unknown or missing reason now raises like the non-streaming path [V]. This is the same defect the whole-range review found in our gateway agent; the pure-streaming path is our deferred `gateway-stream-truncation` TODO, so kernel's fix is a reference for that slice.
+
+### macer (MA-4125 and prompts)
+- **Formula engine loaded from Kernel (`1339ad6b`, `36209c93`).** macer downloads the income-worksheet tool's source from Kernel once, cuts it at the "Tool entry point" banner and imports it; a failed load never fails the process: each engine call raises `FormulaEngineUnavailableError`, every declared metric reads "Not calculated" with the reason, and nothing is presented to the agents as final [V]. `KernelToolClient` returns a tool's source by name, typed failures, shared `retry_async` with a `kernel_policy()` (transient only) [V]. japes' `KernelClient.get_tool(name)` exists; [U] whether it returns source. Two lessons: degrade to "Not calculated with a reason", never to a guess; and code can live in Kernel as a named tool that a host loads (matches the Pulte rule-library direction).
+- **Program from the invocation (`eb837a5d`, `ca031373`).** Confirms last survey: the invoking `loan_program` sets the engine's program; the earlier inference is reverted [V]. Same stance as our overlays.
+- **Evidence hierarchy (`31a8155e`, `ea61d055`).** SOURCE OF TRUTH rules in the batch JTBD prompt: the source document a requirement names governs; when it is missing the LOS value is used and labelled provisional (flag in the metric's `short_desc`); loan-setup facts come from the LOS unless the requirement names another document; the 1003/URLA and documents derived from it are never evidence unless the requirement's own text directs a 1003 review; only listed Reference Documents are read or cited [V]. [U] whether our JTBD, assessment or Revolution/Acra packs state an evidence hierarchy; the "provisional" label and the 1003 exception are candidates for the Revolution and Acra overlays.
+- **Choice reviewer (`8b693939`, `7fb77ab4`).** Inputs with a fixed list of values carry `allowed_values` into the review prompt; a correction must spell an allowed value or is dropped with the reason recorded; evidence for a first run is read from `loan_documents.json`, not the re-run index [V].
+- **Join on id, not title.** `e55e2bd2` joins merged conditions to findings on `condition_id`, not title; `4de46426` and `e9d67bea` fixed a hard gate that looked up underwriter rejections under renumbered condition ids [V]. Same failure class as the cluster-shares-one-resolution bug. `6fb91939` fixed a condition resolver splitting fact/observation strings without honoring pipe escaping [V]. ACER check (mine, not started) should cover all three.
+- **Quality gates.** Prompt snapshots as goldens to force review of prompt changes, a mypy ratchet, a regression suite that runs macer on real loans and compares runs, CI cancels superseded PR runs [V]. The goldens and the real-loan comparison are patterns for our prompt and eval changes.
+- **Local runner (`adabdf32`).** `scripts/local_jtbd_queue_run.py` runs the worker in-process against a mock KH and Azurite; `generate_los.py` generates LOS entities for a loan [V].
+
+### juno
+- **KH collections as plan steps (BSD-6056, `b00c82c3`, `b088407b`, `58837e45`).** Juno creates, updates and reuses Knowledge Hub collections after plan approval: same create body and stored-only upload as the Knowledge page, only listed attached files, what was written is recorded as it is written so a retry adds nothing twice; refuses a taken name, missing or duplicate name and wrong file type rather than guess; no rename, delete or replace of documents; zips go to Knowledge Hub's own archive upload, whose created, duplicate, skipped and failed counts are reported as they are [V]. [U] whether `fabric` exposes KH's archive upload; the idempotent-record-as-written pattern matches our `WriteOutcome`/`ensure`.
+- **Tool to backend-system registry (BSD-5902, `25b39e3d`).** 225 tools mapped to 13 Appendix-B backends or an explicit NoBackend value, with a coverage test that reconciles the AST count of `@function_tool` decorators with the imported objects so a partial scan fails [V]. Same shape as a tool capability registry; the reconcile-by-AST test is worth borrowing for ours.
+- **Copilot plan dependencies (BSD-6145 to 6147).** A breaking contract change pulls its direct users into the plan; declining holds the change; the card graph is sent once, not twice [V]. Nothing for japes unless Builder Studio plans reach the SDK.
+
+### eval-service
+- Fan-out and per-run overrides are merged (`9bd87b8`: migration 0034 on top of main's 0033; `_RunContext.agent_overrides`; rerun copies `max_concurrency` clamped) [V]. Run-level custom aggregators pinned at creation (`26b2c3c`) [V].
+- KH clone work: `089c415` filters clone entities while paging; `bb10da8` skips clone work for archived datasets [V]. Paging again: our two KH scans now page ordered by id.
+- MLflow outages report as 502 or 503 and trace experiment ids are cached (`472ab13`); baseline routes accept Flowable ids (`deeab83`) [V].
+
+### common, assistant, kernel, client-api
+- **common:** a RoleResolver and FastAPI gate for BSS and Juno (`a0ae096a`): jaxi-authz-api role-check with the service's own token, per-process cache of at most 60 s, errors never cached, one call shared between concurrent lookups, off/observe/enforce modes with RFC 9457 problems and metrics; role-check client regenerated and shipped as 0.6.0 (`cd816ee7`); a legacy context whose Keycloak JWT verified now has a trusted subject (`5988d17b`) [V]. [U] whether Plato's authz should reuse the resolver; no japes change yet.
+- **assistant (`63c6e9a`):** macer renamed `docs_ontology_id` and `findings_ontology_id` to names (`docs_ontology`, `findings_ontology`); the Assistant stopped requiring or forwarding the ids (a 422 on every jazzx-assistant queue invocation until then) [V]. Names over ids again, as with LLMs.
+- **kernel:** gateway path keeps `finish_reason` handling and bare model ids, reverted an unrelated `parse_image` fix out of the gateway PR (`15031216`) [V].
+- **client-api:** `origin/main` is still `96c42ed`, our pin; nothing newer on main [V]. A bot "Regenerate kernel client" (`f1ae559`, Nov 6) sits on a branch.
+- **jaci:** three commits, all ours (Revolution pack, re-import, delete-triple warning); nothing new from others [V].
+
+## Follow-ups, none started
+1. Move v2.7.1's `common` submodule to v0.5.0 and re-check the gateway flag tests, README and the smoke plan against the on-by-default semantics (needs `sonnet-runtime`; user decides before the squash).
+2. Check our gateway decision for an async-context sync call, and whether we send `anthropic/<name>` or the bare name.
+3. Use kernel's streaming finish_reason handling as the reference for the deferred `gateway-stream-truncation` slice.
+4. ACER and `case_to_verdicts`: settled-fact metrics, "Not calculated with a reason" fallback, join on id not title, pipe-escaped resolver strings, cluster-shares-one-resolution (mine).
+5. Evidence hierarchy and provisional label for the Revolution and Acra overlays (`sonnet-packs`).
+6. Read `KernelClient.get_tool` against macer's source-by-name use.
+7. Not covered: diffs were not read; knowledge_hub had no commits in the window.
