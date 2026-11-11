@@ -19,7 +19,12 @@ from __future__ import annotations
 import argparse
 import re
 import subprocess
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import commit_authors  # noqa: E402
 
 ATTRIBUTION = "Author: Virendra Mehta <virendra.mehta@jazzx.ai>"
 
@@ -54,9 +59,12 @@ def added_files(base: str) -> list[Path]:
     return [Path(n) for n in seen]
 
 
-def check(paths: list[Path]) -> int:
+def check(paths: list[Path], base: str = "origin/dev") -> int:
     missing: list[Path] = []
     flagged: list[tuple[Path, str]] = []
+    # A file another author added carries their header: it is listed, not failed, and still checked for AI markers.
+    foreign = commit_authors.foreign_added(base, own_emails=commit_authors.own_emails())
+    skipped = {str(p): foreign[str(p)] for p in paths if str(p) in foreign}
 
     this_file = Path(__file__).resolve()
     for path in paths:
@@ -69,12 +77,14 @@ def check(paths: list[Path]) -> int:
             text = path.read_text(errors="ignore")
         except OSError:
             continue
-        if ATTRIBUTION not in text and not str(path).startswith(VENDORED):
+        if ATTRIBUTION not in text and not str(path).startswith(VENDORED) and str(path) not in skipped:
             missing.append(path)
         found = AI_MARKERS.search(text)
         if found:
             flagged.append((path, found.group(0)))
 
+    for name, who in skipped.items():
+        print(f"  skipped (added by {who}, not ours): {name}")
     for path in missing:
         print(f"  MISSING attribution  {path}")
     for path, marker in flagged:
@@ -97,7 +107,7 @@ def main() -> None:
     if not paths:
         print("no new files to check")
         raise SystemExit(0)
-    raise SystemExit(check(paths))
+    raise SystemExit(check(paths, args.base))
 
 
 if __name__ == "__main__":

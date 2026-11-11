@@ -350,6 +350,17 @@ or `VERDICT: PASS` otherwise -- [SYMMETRY], [PLACEMENT] and [NOTE] findings neve
 hold them. They are for the author to weigh, not a gate.
 PROMPT
 
+# Files a contributor's commit added (a PR or a cherry-pick) are not placed by us: the reviewer skips them for
+# [PLACEMENT] and names them once in a single [NOTE].
+foreign_added="$(python3 "$(dirname "$0")/commit_authors.py" "$upstream" 2>/dev/null || true)"
+if [[ -n "$foreign_added" ]]; then
+    {
+        printf '\nThese files in the diff were added by other authors (path, author). Do not raise [PLACEMENT] for them; '
+        printf 'name them once in one [NOTE] saying their placement was not checked:\n'
+        printf '%s\n' "$foreign_added"
+    } >> "$prompt_file"
+fi
+
 # Findings the author has retired without fixing them. `TODO(...)` on the code and a `skip` marker
 # on a test are the only two closures the prompt above offers, and both are code constructs: a row
 # in a pack YAML has nowhere to put either, so a corpus finding the author declines can only be
