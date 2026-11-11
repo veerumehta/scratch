@@ -91,3 +91,8 @@ From the declared reads (evaluators not read): Pulte and Revolution share **152 
 1. How to give the 135 jobs a read list (model pass, evaluator reads as a declared leak, or leave to the code writer).
 2. Which ontology copy CODEC's snapshot follows; ask the kernel-lab side for a path list with no values.
 3. Placement: `sonnet-jaci` copies the pack folder to `config/packs/revolution_home_mortgage_policy` (and `catalog.schema.json` as is); the scratch folder is not durable.
+
+## Update, 2026-11-10: importer fixes and a recount
+
+The importer (`jtbdset.py`) lost outcome text in several layouts (see the SDK commits `65c1b524` and `84cf6486` on v2.7.1). The pack was rebuilt with it, so the "lossless" and "292 of 292" lines above hold only for the importer before the fix. After it: 53 Pulte base rules differ in their outcomes (placeholders replaced by the source's criteria) and 177 Pulte overlay rules in their description; Revolution lint is still 685 findings of the same three kinds.
+Field coverage after checking filter fields as well as the field after the bracket: **40 fully mapped, 8 partly mapped, 135 no read named** (was 48 / 0 / 135). The 8 filter on `borrower_type`, which no entity holds (AST-TYPE, AST-GIFT, IDN-DPV, LIA-PMT, LIA-BAS, CRD-BAS-REV, INC-VER, INC-WAG).
