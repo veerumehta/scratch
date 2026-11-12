@@ -23,7 +23,19 @@
 # files apart and says which one is being reviewed.
 #
 # Exits 1 when the review reports a defect, 0 otherwise (including when it cannot run: a missing
-# reviewer CLI, an empty diff, or an inconclusive review are not failures).
+# reviewer CLI, an empty diff, or an inconclusive review are not failures). Exits 3 when the spend
+# cap stopped it before every slice was reviewed: that is not a PASS, and the slices left out are
+# named. Exits 2 for a bad setting, or for an engine whose cost it cannot measure (below).
+#
+# SPEND. `REVIEW_MAX_USD` (default 25, the user's standing authorization per review: see the spend
+# note) caps what one run may spend. The cost of each slice comes back with its verdict (claude:
+# `total_cost_usd`), a running total is kept, and no further slice is started once it reaches the
+# cap. A slice already running cannot be stopped, so the total can pass the cap by at most one
+# slice, resume rounds included: about 3 to 4 USD at the usual 4000-line slice. A failed
+# invocation reports no cost and is not counted. Codex reports no cost, so the cap cannot be
+# enforced there: it is refused unless `REVIEW_UNMETERED_OK=1` (the slice cap still applies).
+# `REVIEW_DRY_RUN=1` runs the whole loop with no provider call, taking each slice's cost from the
+# comma-separated `REVIEW_DRY_RUN_COSTS` (the last repeats), to prove the stop.
 #
 # `REVIEW_ENGINE` picks the reviewer: `claude` (the default) or `codex`. Both read the same prompt
 # and diff on stdin, run read-only against the checkout, and must end with the same VERDICT line.
@@ -44,6 +56,10 @@ case "$REVIEW_ENGINE" in
     codex)  default_model=""; default_effort="" ;;
     *) echo "  ! REVIEW_ENGINE must be claude or codex, not '$REVIEW_ENGINE'"; exit 2 ;;
 esac
+# The most one run may spend on the reviewer, in USD; see SPEND above. One named setting, not a literal below.
+MAX_USD="${REVIEW_MAX_USD:-25}"
+DRY_RUN="${REVIEW_DRY_RUN:-}"
+spent_usd=0
 REVIEW_MODEL="${REVIEW_MODEL:-$default_model}"
 REVIEW_EFFORT="${REVIEW_EFFORT:-$default_effort}"
 
@@ -51,9 +67,14 @@ say() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 
 say "adversarial review of what is being pushed ($REPO, $REVIEW_ENGINE ${REVIEW_MODEL:-default model})"
 
-if ! command -v "$REVIEW_ENGINE" >/dev/null 2>&1; then
+if [[ -z "$DRY_RUN" ]] && ! command -v "$REVIEW_ENGINE" >/dev/null 2>&1; then
     echo "  ! $REVIEW_ENGINE not on PATH — skipping the review"
     exit 0
+fi
+if [[ -z "$DRY_RUN" && "$REVIEW_ENGINE" == codex && -z "${REVIEW_UNMETERED_OK:-}" ]]; then
+    echo "  ! codex reports no cost, so REVIEW_MAX_USD ($MAX_USD) cannot be enforced; not running."
+    echo "    Set REVIEW_UNMETERED_OK=1 to run it anyway (only the slice cap, $((${REVIEW_MAX_SLICES:-8})) slices, applies)."
+    exit 2
 fi
 
 # `REVIEW_UPSTREAM` to review an arbitrary range -- a already-pushed commit, or a slice plan you
@@ -85,6 +106,7 @@ save_state() {
     # transcript with no findings -- and the next round then diffed nothing against it and skipped
     # itself with "nothing changed since the last review". A killed round must cost a re-run, not
     # a silently skipped one.
+    [[ -z "$DRY_RUN" ]] || return 0          # a dry run's PASS is not a verdict anyone reviewed
     [[ -n "${transcript:-}" ]] && grep -q '^VERDICT:' "$transcript" 2>/dev/null || return 0
     # The commit that was *reviewed*, not `HEAD` as it stands at exit. A fix committed or amended
     # while the pass was still running moves HEAD, and a baseline naming a commit these findings
@@ -103,6 +125,9 @@ trap 'rm -rf "$run".* 2>/dev/null || :; save_state' EXIT
 # round did not touch cannot be found by an incremental pass -- the previous findings are carried
 # in below so it can at least tell what its own last pass concluded.
 state_dir="$(git rev-parse --show-toplevel)/scripts/local/.reviews"
+# A dry run keeps its transcript and state in scratch, swept on exit: a fake PASS must never become the baseline a real
+# round narrows against.
+[[ -n "$DRY_RUN" ]] && state_dir="$run.state"
 mkdir -p "$state_dir"
 state_file="$state_dir/.state"
 prior_head=""
@@ -478,6 +503,19 @@ RESUME
 # named in `--allowedTools`, with the writing tools also disallowed outright.
 run_reviewer() {
     local out="$1" log="$2"
+    if [[ -n "$DRY_RUN" ]]; then
+        # No provider call: the verdict is a PASS and the cost is the next of REVIEW_DRY_RUN_COSTS (a counter file, since
+        # this runs at the end of a pipeline and cannot keep a variable).
+        local costs count=0 cost
+        IFS=, read -r -a costs <<< "${REVIEW_DRY_RUN_COSTS:-1}"
+        [[ -r "$run.dry-count" ]] && count="$(cat "$run.dry-count")"
+        cost="${costs[$count]:-${costs[${#costs[@]}-1]}}"
+        echo $((count + 1)) > "$run.dry-count"
+        cat > /dev/null
+        printf 'dry run\nVERDICT: PASS\n' > "$out"
+        printf 'session= in=0 out=0 cache_read=0 cache_create=0 cost_usd=%s\n' "$cost" > "$out.meta"
+        return 0
+    fi
     case "$REVIEW_ENGINE" in
         codex)
             # `--output-last-message` keeps Codex progress and diagnostics out of the verdict text.
@@ -519,6 +557,18 @@ PY
     esac
 }
 
+# Add the cost a pass reported (in its `.meta`) to the running total; a pass that reported none adds nothing.
+add_cost() {
+    local cost
+    cost="$(sed -n 's/.*cost_usd=\([0-9.eE+-]*\).*/\1/p' "$1" 2>/dev/null | head -1)"
+    spent_usd="$(awk -v a="$spent_usd" -v b="${cost:-0}" 'BEGIN { printf "%.4f", a + b }')"
+}
+
+# Whether the running total has reached REVIEW_MAX_USD.
+cap_reached() {
+    awk -v s="$spent_usd" -v m="$MAX_USD" 'BEGIN { exit !(s >= m) }'
+}
+
 # One pass over one diff. Echoes the findings indented; returns 1 for BLOCK, 2 for no verdict.
 review_one() {
     local slice_diff="$1" label="$2" out log
@@ -557,6 +607,7 @@ review_one() {
         return 2
     fi
     sed 's/^/    /' "$out"
+    add_cost "$out.meta"
     # `<<<` rather than `## $label`: the reviewer emits its own `##` headings, so the slice
     # boundary and the slice content were the same shape and no round could be read back
     # mechanically -- not by the next round, and not by anything counting findings.
@@ -580,9 +631,16 @@ review_one() {
 # skipping exits 0, so the gate passed silently on exactly the pushes big enough to need it -- and
 # a workflow that squashes several rounds into one commit produces those every time.
 if [[ "$lines" -le "$MAX_LINES" ]]; then
+    if cap_reached; then
+        echo "  ! spending cap REVIEW_MAX_USD=$MAX_USD leaves nothing to spend; the whole diff ($lines lines) was not reviewed."
+        exit 3
+    fi
     echo "  reviewing $lines lines against $upstream ..."
     review_one "$diff_file" whole
-    case $? in
+    verdict=$?
+    echo "  spent $spent_usd of $MAX_USD USD"
+    cap_reached && echo "  ! this one pass reached the cap (REVIEW_MAX_USD=$MAX_USD); its verdict stands."
+    case $verdict in
         1) echo; echo "  FAIL  review found defects (above)."
            echo "        transcript: $transcript"; exit 1 ;;
         0) echo "  ok  no defects reported"; exit 0 ;;
@@ -623,11 +681,21 @@ MAX_SLICES="${REVIEW_MAX_SLICES:-8}"
 reviewed=0
 blocked=0
 inconclusive=0
+capped=0
 for i in $(seq 1 "$total"); do
     if [[ "$i" -gt "$MAX_SLICES" ]]; then
         echo
         echo "  ! $((total - MAX_SLICES)) of $total slices not reviewed (cap $MAX_SLICES). Files:"
         for j in $(seq "$((MAX_SLICES + 1))" "$total"); do
+            grep '^+++ b/' "$slice_dir/$j.diff" | sed 's|^+++ b/|        |'
+        done
+        break
+    fi
+    if cap_reached; then
+        capped=1
+        echo
+        echo "  ! spending cap reached: $spent_usd of $MAX_USD USD (REVIEW_MAX_USD); $((total - i + 1)) of $total slices not reviewed. Files:"
+        for j in $(seq "$i" "$total"); do
             grep '^+++ b/' "$slice_dir/$j.diff" | sed 's|^+++ b/|        |'
         done
         break
@@ -644,10 +712,15 @@ for i in $(seq 1 "$total"); do
 done
 
 echo
+echo "  spent $spent_usd of $MAX_USD USD across $reviewed slice(s)"
 if [[ "$blocked" -gt 0 ]]; then
     echo "  FAIL  $blocked of $reviewed reviewed slices found defects (above)."
     echo "        transcript: $transcript"
     exit 1
+fi
+if [[ "$capped" -eq 1 ]]; then
+    echo "  NOT A PASS  the spending cap stopped the review before every slice was reviewed (above)."
+    exit 3
 fi
 if [[ "$inconclusive" -gt 0 ]]; then
     echo "  ! $inconclusive of $reviewed slices returned no verdict — inconclusive, not blocking"
