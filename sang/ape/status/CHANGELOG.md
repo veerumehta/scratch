@@ -2,6 +2,12 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+## [2.7.2] - unreleased
+
+Started from the v2.7.1 tip `741d571a` (it carries the whole plato lineage; the squash `5b92f233` equals its tree): SDK 2.7.2, Plato 0.3.2, client 0.3.2, by the user's decision (start commit `759a8aaf`, +7 / -7 lines, 7 files). Worktree `/Users/sangit/src/japes-v272`; `japes-v27` stays on v2.7.1 until the user retires it. Origin/dev needs a tree-neutral record of plato once the plato-to-dev PR merges.
+
+Carried from 2.7.1, in order: gateway live smoke (needs `AI_GATEWAY_BASE_HOST` and `AI_GATEWAY_API_KEY`; cap 1 USD; include one read-only `GET /v1/models`); `TODO(gateway-stream-truncation)` (kernel `aa5da002` as the reference); `TODO(gateway-agent-helpers-shared)`; `TODO(gateway-response-format-forced-tool)`; `delete_triples` through `EntityStore.delete_many`; the fabric docs `_list_hub` defect; the `clients/` subpackage question; a fabric `discardWorkspace` method (undecided); `zero_data_retention` into `RetentionPolicy` (undecided); the review notes left open (audit record after the store put, `MockDocStore.list` pipeline refusal, `log_startup_config` for hosts without a route, by-name reads and the hub's `latest`).
+
 ## [2.7.1] - unreleased
 
 Started from `origin/dev` after 2.7.0 reached main: SDK 2.7.1, Plato 0.3.1, client 0.3.1.
