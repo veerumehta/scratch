@@ -17,7 +17,6 @@ import sys
 
 #: The email in our `Author:` header; the checkout's own git identity is added to it (`own_emails`).
 HEADER_EMAIL = "virendra.mehta@jazzx.ai"
-_COMMIT_MARK = "@@author@@ "
 
 
 def own_emails() -> set[str]:
@@ -25,18 +24,19 @@ def own_emails() -> set[str]:
     return {HEADER_EMAIL, configured.stdout.strip()} - {""}
 
 
+def _run(args: list[str], cwd) -> list[str]:
+    out = subprocess.run(["git", *args], capture_output=True, text=True, check=False, cwd=cwd).stdout
+    return [line for line in out.splitlines() if line.strip()]
+
+
 def foreign_added(base: str, *, own_emails: set[str], cwd=None) -> dict[str, str]:
-    """``{path: author email}`` for each file ``base..HEAD`` adds in a commit by an author outside ``own_emails``."""
-    log = subprocess.run(
-        ["git", "log", "--no-merges", "--diff-filter=A", "--name-only", f"--format={_COMMIT_MARK}%ae", f"{base}..HEAD"],
-        capture_output=True, text=True, check=False, cwd=cwd).stdout
+    """``{path: author email}`` for each file ``base..HEAD`` adds whose first commit, followed through renames, is by an
+    author outside ``own_emails``."""
     found: dict[str, str] = {}
-    author = ""
-    for line in log.splitlines():
-        if line.startswith(_COMMIT_MARK):
-            author = line[len(_COMMIT_MARK):]
-        elif line.strip() and author not in own_emails:
-            found.setdefault(line.strip(), author)
+    for path in _run(["diff", "--no-renames", "--name-only", "--diff-filter=A", base, "HEAD"], cwd):
+        first = _run(["log", "--follow", "--diff-filter=A", "--format=%ae", "--", path], cwd)
+        if first and first[-1] not in own_emails:
+            found[path] = first[-1]
     return found
 
 

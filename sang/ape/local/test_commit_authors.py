@@ -45,6 +45,13 @@ def test_a_file_added_by_another_author_is_listed_with_that_author(tmp_path):
     assert authors.foreign_added("main", own_emails={OURS}, cwd=repo) == {"theirs.py": THEIRS}
 
 
+def test_a_foreign_file_we_only_renamed_is_still_theirs(tmp_path):
+    repo = repo_with_two_authors(tmp_path)
+    git(repo, "mv", "theirs.py", "moved.py")
+    git(repo, "commit", "-m", "move it", email=OURS)
+    assert authors.foreign_added("main", own_emails={OURS}, cwd=repo) == {"moved.py": THEIRS}
+
+
 def test_the_check_skips_and_lists_a_foreign_file_but_still_fails_one_of_ours(tmp_path, capsys, monkeypatch):
     repo = repo_with_two_authors(tmp_path)
     monkeypatch.chdir(repo)
