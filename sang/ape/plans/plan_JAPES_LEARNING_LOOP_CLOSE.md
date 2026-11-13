@@ -7,6 +7,8 @@ Author: Virendra Mehta · 2026-11-10 · Status: not started
 How to use this section: the plan author may read and update it; implementers append one dated line per slice (what landed, the commit, anything the plan got wrong). Newest line last.
 
 - 2026-11-10 drafted from a read of `main` (2.7.0). Complements `plan_JAPES_2_7_1_KNOWLEDGE_LOOP_CHANGE_CLASSES.md` (change classes, gates, forum approval, proposal and signal records, citation index); nothing here repeats that plan.
+- 2026-11-13 L1 landed (`eff41245`, v2.7.3): deployed guidance per segment in `AdjudicationAgent` (`guidance_pack_id`, `guidance_applicability`, `AdjudicationAgent(..., guidance=store)`), refs on judged verdicts under `inputs["guidance_refs"]`, case decision `guidance_refs`. Retrieval runs before the fan-out (an access denial must stop the run); the plan's `run_segment` does the prompt and refs, not the retrieval. Refs are on model-judged verdicts only. The query adds each rule's description to the ids and section.
+- 2026-11-13 L2 landed (`b95f6413`, v2.7.3): decided with the user that the feedback store is the queue (Layer 1 buckets are in-memory and nothing stored them; no table added). An approved correction becomes a `rule_correction` signal with case, rule, run and pack ids, filed with the new `route_signal`; the feedback router's `on_change` routes it, guarded. The plan's `Feedback.from_case_result` is for eval results; corrections already are `Feedback`, so `to_signal()` is the successor. L3 needs a "drafted" marker (the draft asset's provenance is the candidate) and a per-pack grouping.
 
 ## Goal
 
