@@ -12,6 +12,7 @@ How to use this section: the plan author may read and update it; implementers ap
 - 2026-11-13 L4 landed (`v2.7.3`): the plan's with/without comparison cannot move a gold answer (gold cases are assessed with no model; guidance reaches only model-judged verdicts), so with the user's decision L4 is an observed uplift (`pack/guidance_uplift.py`, a `guidance` section in the release report) and not a counterfactual re-run. The re-run needs each gold case's documents and a typed spend cap, and is not built.
 - 2026-11-13 L3 landed (`v2.7.3`): `jazzx_sdk/pack/guidance_sweep.py` and `job:guidance-sweep`. The "marked so the next sweep skips it" is the proposal naming the correction ids (no new table); the cap is one `CallMeter` across the run and the job exits 3 unless `PLATO_GUIDANCE_SWEEP_MAX_USD` is set. Per pack, not per tag. Not run live.
 - 2026-11-13 L5 landed (`v2.7.3`): `feedback_to_improvements` in the catalog (draft, measure, review). The measurement is the corrections each draft answers plus the deployed version's observed uplift as baseline; a draft has no runs, so the plan's "measured effect" cannot be its own uplift until it is deployed. Moved the L3 sweep out of `modes/` (tier contract).
+- 2026-11-13 L6 landed (`v2.7.3`): the page already existed (`guidance.html`), so L6 is an evidence read and section: corrections answered plus the deployed baseline uplift. Approve is the existing route; the audit table shows the actor. Not browser-checked.
 
 ## Goal
 
