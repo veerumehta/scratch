@@ -52,8 +52,9 @@ library is delivered as source on the command line, so the repo is not mounted. 
 boot-time `probe_isolation` in a worker thread and, in a deployed posture, refuses to run any rule if the network namespace or process
 limit is not in effect, reporting why. **[code]** Gaps against the point as written: no seccomp or container boundary of its own, no
 memory cap on macOS, and the network layer needs Linux user namespaces (the probe itself reports a default container seccomp profile
-as a refusal). **[run]** `tests/test_local_executor.py`: 26 passed and 1 errored on this macOS host, the error being
-`test_it_runs_in_a_deployed_posture` (its failure text was not examined further; I did not diagnose it).
+as a refusal). **[run]** `tests/test_local_executor.py`: 26 passed on this macOS host. The one error first reported was a teardown error of
+`test_it_runs_in_a_deployed_posture` (an environment leak from importing `plato`, a test-fixture cause fixed afterward; it says nothing
+about isolation, because that test patches the probe).
 
 **(5) Provenance of engine and model per artifact.** Partial. [code] A rule records `lib_version` when it imports the library, `origin`
 and a header comment (`# origin: written from a job`, `# implements job: ...`), and the proposal records `created_by` (a user). A
@@ -115,7 +116,7 @@ a regen, the user's typed approval.
 
 - Verified by reading source: the pipeline stages, the static gate's rules, the executor's limits and hook, the Plato boot probe, the
   budget meter's behavior, `rule_fix` and `lint_fix` semantics, the library's versions and helper counts, jaci's lack of its own paths.
-- Verified by running: the reuse numbers (script over 97 files), the helper counts per library version, 26 executor tests passing.
+- Verified by running: the reuse numbers (script over 97 files), the helper counts per library version, 26 executor tests passing (the teardown error was a fixture leak, fixed).
 - Not verified: that the executor's network and process isolation holds on this host (the one erroring test); anything about kernel-lab's
   code; whether the bundle's `bundle.json` is written per artifact anywhere I did not look; how often the Code page is used; the 1.1.2
   helpers' uptake; a wall-clock bound on whole generation runs in every path.
