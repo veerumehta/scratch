@@ -16,6 +16,8 @@ How to use this section: the plan author may read and update it; implementers ap
 
 - 2026-11-15 F1 landed (878f404c) and F2 landed (82be878e, 2.7.3): finder, report script, `figures.yaml` set, `figures` run, proposal kind, merge, reads, lint, client methods. Differences from the plan: units are the finder's 1:1 with `number` for a bare number; the clause unit rule is citation, else leading code, else source, else job id; type labels ("2-4 Unit") are excluded as `label`; the compare read is F4; the naming call is a stub (`named_by`) until a spend cap is typed. A figures run with no uploaded documents reads the draft's jobs (no separate `source` option).
 
+- 2026-11-15 F4 landed (d917a07a, 2.7.3): `compare_figures`, `GET packs/{pack}/figures/compare`, `POST packs/{pack}/figures/updates`. Pairing is on unit, masked sentence and position; the similarity fallback was not needed. It compares against the clauses on the `to` version's jobs; guideline documents are not read.
+
 ## Goal
 
 The numbers a policy states (caps, floors, limits, rates) are found once from the source clauses, laid out as their own set, and reviewed twice, separately from the jobs, because they are the most important items to check. A jobs-only reviewer sees each figure with its clause, the jobs and checks that print it, and where jobs disagree with each other or with the clause. When a policy document changes, every figure is compared with the new text and a changed or missing one is a conflict for a person; nothing updates silently. Generated code, where a pack has it, may later read an approved figure by reference (F3); nothing in the first release needs it.
