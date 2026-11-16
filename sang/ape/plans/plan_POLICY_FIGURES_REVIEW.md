@@ -70,6 +70,41 @@ Only for a pack with generated code. The smallest design that keeps the sandbox 
 - **Jobs-only packs (the seed packs, Revolution, Pulte):** run `figures` with `source: pack` as a report first, then file proposals; no job changes, no code. Every job of the seed Acra pack (37), Pulte (115) and Revolution (183) returns clause text from `job_clause` (measured 2026-11-15). The seed Acra pack is a synced copy of jaci: its `figures.yaml` and manifest key go through jaci first (sonnet-jaci), then the sync.
 - **The Acra regen-5 export:** the finder report lists its 134 code uses against proposed figures and the 5 that match a profile threshold. After approval, only F3 changes anything about the 51 figure-bearing rules (they keep working; `figure_written_inline` appears once F3 exists, and regeneration with `figure:` reads needs the user's typed approval with a figure).
 
+## Contract: `figures.yaml` and its manifest declaration (owner: sonnet-packs; model, lint and routes built by sonnet-runtime)
+
+**Manifest.** An optional top-level key `figures: figures.yaml` (a path relative to the manifest's directory, as `catalog:` is). A manifest without it has no figures set; the loader ignores nothing else about it (no known-keys check on manifest keys was found, so existing packs load unchanged; to be confirmed by the first test).
+
+**File.**
+
+```yaml
+version: 1
+figures:
+  - id: fig-3f9a1c2b7d40      # "fig-" + first 12 hex of sha256(clause_unit \x1f value \x1f spelling); the lint recomputes it
+    key: max_cltv_2_4_unit    # display name (snake_case), unique in the file, never the identity
+    value: "80"               # a decimal string (never a float); the number as stated, in the unit below
+    spelling: "80%"           # as printed
+    unit: percent             # percent | usd | ratio | days | months | years | count | text
+    clause_unit: STD-8.1      # the unit id the sentence sits under (the guideline unit, or the job's cited unit)
+    sentence: "Max CLTV: 80% without a purpose split."   # verbatim from the clause; the evidence
+    checks: [{job: acra-standard.appraisal_review.2_4_unit_cltv_cap, index: 0}]   # optional; empty for a pack with no jobs
+    qualifiers: "2-4 Unit; purchase"                     # free text, where the sentence says so; grids are deferred
+    profile_key: dscr_min_rural                          # optional link to a profile threshold
+    state: approved           # approved | rejected | superseded (a proposal is not in the file until it is decided)
+    approved_by: policy-owner@example.test               # the pack's policy owner; required when state is approved
+    approved_at: "2026-11-16T09:00:00Z"                  # UTC, required when state is approved
+    superseded_by: fig-aa11bb22cc33                      # only when state is superseded
+```
+
+A rejected figure stays in the file so a rerun that finds the same `id` does not file it again.
+
+**File lint** (built by sonnet-runtime in `pack/lint.py`, beside the vocabulary findings; codes are the contract). Errors: `figures_unreadable` (declared file missing, not YAML or not this shape), `figure_id_mismatch`, `figure_duplicate` (an id or key twice), `figure_value_not_decimal`, `figure_approval_missing` (approved without `approved_by` or `approved_at`), `figure_superseded_target_unknown`. Warnings: `figure_unit_unknown`, `figure_sentence_not_in_text` (the sentence is in no job's clause and in no guideline text of the pack, only when a text exists), `figure_check_unknown` (a `checks` job or index that does not exist), `figure_profile_key_unknown` (the key is in no profile of the pack).
+
+**Set guards** (findings on figures and jobs, not file lint; warnings, tolerant): `figure_unapproved`, `figure_inconsistent`, `figure_stale`. Produced by F2 and F4, surfaced on the Figures page and in the lint report.
+
+**Acceptance fixtures** (sonnet-packs writes the data, sonnet-runtime the tests; placed under `tests/pack/figures/`, a new subfolder): a clause text with the traps the finder must pass (a section id `STD-8.1`, a date, a count written as a numeral that is not a policy figure, `0`, `1`, `100`, `$1.5MM`, a range `60-65%`, `at least 1.20`); two clauses stating `80` with different meanings; two jobs stating one cap differently; and the expected candidates and findings as a YAML file beside them.
+
+**Version sync and seed packs.** Only `plato/data/seed_packs/acra_dscr_policy` carries a `SYNCED_FROM` (source commit and pack version, a copy of jaci). Adding SDK support for the `figures:` key needs no entry. A seed pack that gains a `figures.yaml` changes its archive and needs a new pack version to reach tenants that already hold the old one (the seeder skips a version already in the store), and a pack version bump is the user's word; for the Acra seed it also needs the change in jaci first, then a `SYNCED_FROM` update. Neither is part of 2.7.3's F1, F2 or F4.
+
 ## Slices (orderable; sizes are estimates with an anchor)
 
 Anchors: the alias-proposal slice (a new proposal path and a merge) was +586 / -37 lines over 11 files; the Models page +522; the demo loader +467.
