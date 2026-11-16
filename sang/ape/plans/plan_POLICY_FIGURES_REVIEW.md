@@ -12,6 +12,8 @@ How to use this section: the plan author may read and update it; implementers ap
 - 2026-11-15 the user decided (via opus-xrepo): **F1, F2 and F4 are in 2.7.3** (the plan said 2.7.4); F3 is out of scope. Decisions as recommended: own `figures.yaml` (not the profile), per-figure approval, tolerant with findings surfaced, the jobs-only guards as warnings, grids deferred (scalar figures with `qualifiers` text), the approver is the pack's policy owner. Owners: sonnet-runtime builds the finder (F1), representation, kind, merge and routes; sonnet-packs owns the `figures.yaml` schema, its manifest declaration, the file's lint and the acceptance fixtures (with sonnet-runtime), and runs the F1 report; sonnet-ui builds the page. The seed Acra pack's `figures.yaml` goes through sonnet-jaci later, not in 2.7.3.
 - 2026-11-15 sonnet-packs measured the clause text jobs carry (`job_clause`, over each pack's job rules): Acra seed 37 of 37 jobs, Pulte 115 of 115 jobs (292 rules in all, each carrying `jtbd.source_text`), Revolution (jaci `revolution-pack`, read from the branch, not checked out) 183 of 183 jobs. The earlier "292 of 292 jobs" counted rules, overlays included; corrected below.
 
+- 2026-11-16 F1 landed (`878f404c`, sonnet-runtime). sonnet-packs ran `scripts/figures_report.py` (no model, nothing written to any pack) over regen-5, Pulte, Revolution and the Acra seed pack; numbers in "F1 report results" below. Unit list settled: the finder's units are used as they are and a bare number is `number`. Finder cases committed (`746189c5`); two differ from the first finder by the contract's design: type labels such as `2-4 Unit` and the value string of a scaled amount.
+
 ## Goal
 
 The numbers a policy states (caps, floors, limits, rates) are found once from the source clauses, laid out as their own set, and reviewed twice, separately from the jobs, because they are the most important items to check. A jobs-only reviewer sees each figure with its clause, the jobs and checks that print it, and where jobs disagree with each other or with the clause. When a policy document changes, every figure is compared with the new text and a changed or missing one is a conflict for a person; nothing updates silently. Generated code, where a pack has it, may later read an approved figure by reference (F3); nothing in the first release needs it.
@@ -70,6 +72,23 @@ Only for a pack with generated code. The smallest design that keeps the sandbox 
 - **Jobs-only packs (the seed packs, Revolution, Pulte):** run `figures` with `source: pack` as a report first, then file proposals; no job changes, no code. Every job of the seed Acra pack (37), Pulte (115) and Revolution (183) returns clause text from `job_clause` (measured 2026-11-15). The seed Acra pack is a synced copy of jaci: its `figures.yaml` and manifest key go through jaci first (sonnet-jaci), then the sync.
 - **The Acra regen-5 export:** the finder report lists its 134 code uses against proposed figures and the 5 that match a profile threshold. After approval, only F3 changes anything about the 51 figure-bearing rules (they keep working; `figure_written_inline` appears once F3 exists, and regeneration with `figure:` reads needs the user's typed approval with a figure).
 
+## F1 report results (2026-11-16, `scripts/figures_report.py`, deterministic, no provider)
+
+| Set | Jobs (all with clause text) | Figures in clauses | In checks | Distinct values | Shared by 2+ jobs | Check figures not in the clause | Review rows (distinct unit, value, spelling) |
+|---|---|---|---|---|---|---|---|
+| regen-5, Standard | 114 | 1,618 | 154 | 71 | 33 | 0 | 575 for both programs together (105 distinct values) |
+| regen-5, Platinum | 81 | 1,361 | 54 | 77 | 18 | 0 | (same) |
+| Pulte (jaci) | 115 | 3,804 | 360 | 252 | 95 | 0 | 355, with no clause unit |
+| Revolution (jaci `revolution-pack`) | 183 | 8,332 | 565 | 431 | 133 | 0 | 622, with no clause unit |
+| Acra seed | 37 | 173 | 172 | 53 | 26 | 0 | 65, with no clause unit |
+
+Excluded by the finder (each listed with job, place and reason by `--excluded`): regen-5 2,004 section ids, 269 structural, 282 list markers; Pulte 1,562 section ids, 908 structural, 756 list markers, 116 dates, 60 years, 4 ordinals; Revolution 2,396 section ids, 1,587 structural, 1,587 list markers, 390 dates, 186 years, 18 ordinals; Acra seed 235 section ids, 62 structural. No job's checks print a number its clause does not (0 in every set).
+
+What it shows for the design:
+- **Review load.** The clauses state far more figures than the checks use: regen-5 prints 2,979 figures in clauses and 208 in checks. Per-figure approval of everything is 575 rows for regen-5 (105 distinct values), 355 for Pulte, 622 for Revolution, 65 for the Acra seed. The page needs a way to start from the figures the jobs' checks print (41 distinct values in regen-5) and treat the rest of the clause figures as a second, lower-priority list.
+- **Clause unit.** Only the regen-5 jobs carry clause parts with a citation (all 195); the imported sets and the Acra seed carry none, so a figure there has no clause unit, and the identity (unit, value, spelling) collapses two clauses that state the same value into one row, which is the "same value, different meaning" case the set must keep apart. The report passes the job id as the unit; F2 needs a rule: the guideline unit from `clause_parts` where present, else the clause's own leading code (`STD-1.10:` on the Acra seed), else the job's `jtbd.source`, else the job id.
+- **Over-collection.** A type label such as `2-4 Unit` yields figures `2` and `4` with no unit; a table cell is found with its row as the sentence and no column header. Both are in the finder cases.
+
 ## Contract: `figures.yaml` and its manifest declaration (owner: sonnet-packs; model, lint and routes built by sonnet-runtime)
 
 **Manifest.** An optional top-level key `figures: figures.yaml` (a path relative to the manifest's directory, as `catalog:` is). A manifest without it has no figures set; the loader ignores nothing else about it (no known-keys check on manifest keys was found, so existing packs load unchanged; to be confirmed by the first test).
@@ -83,7 +102,7 @@ figures:
     key: max_cltv_2_4_unit    # display name (snake_case), unique in the file, never the identity
     value: "80"               # a decimal string (never a float); the number as stated, in the unit below
     spelling: "80%"           # as printed
-    unit: percent             # percent | usd | ratio | days | months | years | count | text
+    unit: percent             # the finder's units 1:1: percent | usd | months | days | years | points | basis_points | times | number (a bare number the finder emits as "")
     clause_unit: STD-8.1      # the unit id the sentence sits under (the guideline unit, or the job's cited unit)
     sentence: "Max CLTV: 80% without a purpose split."   # verbatim from the clause; the evidence
     checks: [{job: acra-standard.appraisal_review.2_4_unit_cltv_cap, index: 0}]   # optional; empty for a pack with no jobs
@@ -97,7 +116,7 @@ figures:
 
 A rejected figure stays in the file so a rerun that finds the same `id` does not file it again.
 
-**File lint** (built by sonnet-runtime in `pack/lint.py`, beside the vocabulary findings; codes are the contract). Errors: `figures_unreadable` (declared file missing, not YAML or not this shape), `figure_id_mismatch`, `figure_duplicate` (an id or key twice), `figure_value_not_decimal`, `figure_approval_missing` (approved without `approved_by` or `approved_at`), `figure_superseded_target_unknown`. Warnings: `figure_unit_unknown`, `figure_sentence_not_in_text` (the sentence is in no job's clause and in no guideline text of the pack, only when a text exists), `figure_check_unknown` (a `checks` job or index that does not exist), `figure_profile_key_unknown` (the key is in no profile of the pack).
+**File lint** (built by sonnet-runtime in `pack/lint.py`, beside the vocabulary findings; codes are the contract). Errors: `figures_unreadable` (declared file missing, not YAML or not this shape), `figure_id_mismatch`, `figure_duplicate` (an id or key twice), `figure_value_not_decimal`, `figure_approval_missing` (approved without `approved_by` or `approved_at`), `figure_superseded_target_unknown`. Warnings: `figure_unit_unknown` (a unit outside the list above), `figure_sentence_not_in_text` (the sentence is in no job's clause and in no guideline text of the pack, only when a text exists), `figure_check_unknown` (a `checks` job or index that does not exist), `figure_profile_key_unknown` (the key is in no profile of the pack).
 
 **Set guards** (findings on figures and jobs, not file lint; warnings, tolerant): `figure_unapproved`, `figure_inconsistent`, `figure_stale`. Produced by F2 and F4, surfaced on the Figures page and in the lint report.
 
