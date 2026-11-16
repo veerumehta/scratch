@@ -1,7 +1,7 @@
 # plan_POLICY_FIGURES_REVIEW
 
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>
-Repo: japes (`jazzx_sdk`, `plato`); the first release (F1, F2, F4) needs no code generation and is recommended for 2.7.4; F3 is later and optional
+Repo: japes (`jazzx_sdk`, `plato`); F1, F2 and F4 are in 2.7.3 and need no code generation; F3 is out of scope
 
 ## Status and modifications
 
@@ -9,6 +9,8 @@ How to use this section: the plan author may read and update it; implementers ap
 
 - 2026-11-15 drafted by sonnet-packs, as `plan_POLICY_FIGURES_FOR_CODE.md`, from the user's decision "B: figures found as a pre-process of code generation" (via opus-xrepo), after two read-only surveys: `note_generated_code_execution_survey_2026-11-15.md` and `note_figures_at_the_job_step_survey_2026-11-15.md` (with its A-versus-B addendum). Nothing built.
 - 2026-11-15 revised and renamed (`git mv`) on the user's direction: the figure step stands alone, with or without code generation, because production and the policy workbench have no code generation today. Figures are a policy-ingestion product; code generation is one consumer, no longer the host. Slices re-cut; F3 is the only code-dependent slice and is last. Nothing built.
+- 2026-11-15 the user decided (via opus-xrepo): **F1, F2 and F4 are in 2.7.3** (the plan said 2.7.4); F3 is out of scope. Decisions as recommended: own `figures.yaml` (not the profile), per-figure approval, tolerant with findings surfaced, the jobs-only guards as warnings, grids deferred (scalar figures with `qualifiers` text), the approver is the pack's policy owner. Owners: sonnet-runtime builds the finder (F1), representation, kind, merge and routes; sonnet-packs owns the `figures.yaml` schema, its manifest declaration, the file's lint and the acceptance fixtures (with sonnet-runtime), and runs the F1 report; sonnet-ui builds the page. The seed Acra pack's `figures.yaml` goes through sonnet-jaci later, not in 2.7.3.
+- 2026-11-15 sonnet-packs measured the clause text jobs carry (`job_clause`, over each pack's job rules): Acra seed 37 of 37 jobs, Pulte 115 of 115 jobs (292 rules in all, each carrying `jtbd.source_text`), Revolution (jaci `revolution-pack`, read from the branch, not checked out) 183 of 183 jobs. The earlier "292 of 292 jobs" counted rules, overlays included; corrected below.
 
 ## Goal
 
@@ -18,7 +20,7 @@ The numbers a policy states (caps, floors, limits, rates) are found once from th
 
 - Code written from jobs holds 134 figure occurrences but only 37 distinct values; 21 values are used by two or more rules (65 and 75 in 13 rules each, 80 and 70 in 12). A value is not a meaning (the 12 rules that write 80 do not mean one cap), so a figure's identity cannot be its value or a model-chosen name.
 - Of the 134 occurrences, 69% are printed in the job's checks, 22% only in its steps or outcomes, 7% only in the clause, 2% nowhere; all 127 figures in the jobs' checks are printed in their clause. Only 5 of the 134 equal a value in the hand-written Acra profile.
-- Jobs carry their clause: `job_clause(rule)` returns the clause the extraction cited, else the requirement text an import kept. [run] On the Pulte set (jaci `pulte_home_mortgage_policy`), 292 of 292 jobs carry `jtbd.source_text`. So a jobs-only pack has the text a finder needs without the guideline documents.
+- Jobs carry their clause: `job_clause(rule)` returns the clause the extraction cited, else the requirement text an import kept. [run] Every job of the three jobs-only packs measured carries clause text through `job_clause`: Acra seed 37 of 37, Pulte 115 of 115 (all 292 of its rules, overlays included, carry `jtbd.source_text`), Revolution 183 of 183. So a jobs-only pack has the text a finder needs without the guideline documents.
 - The scan `printed_numbers(text)` returns `{value: spelling}` with no unit or sentence; nothing finds figures with their context.
 
 ## Design
@@ -65,7 +67,7 @@ Findings are recorded on the figure or the job (tolerant by default, strict as a
 Only for a pack with generated code. The smallest design that keeps the sandbox closed: **a figure is a read.** A rule lists `figure:<id>` in `reads` and writes `ctx['figure:<id>']`; `PythonEvaluator` already passes only the declared reads, so the one new step is the assessment engine adding `context['figure:<id>'] = value` for each approved figure a rule's `reads` names (where `_policy_profile` is supplied today), through the existing JSON channel (`_json_read`). The child gets a number: no profile object, no pack path, no new import, no file or network access, and no change to `check_python_rule` or `LocalPythonExecutor`. A `figure:` read of an unapproved or missing figure withholds the rule (indeterminate, "figure not approved"); a tolerant mode may run a proposed value and say so. `lint.py` exempts the `figure:` prefix from the catalog-field check as it does `derived:` (`lint.py:97`); coverage and the field-mapping report need the same exemption (to be checked, not read).
 
 ### Migration
-- **Jobs-only packs (the seed packs, Revolution, Pulte):** run `figures` with `source: pack` as a report first, then file proposals; no job changes, no code. Pulte imports carry `jtbd.source_text` on all 292 jobs (measured); the Revolution set and the seed Acra pack carry a clause through `job_clause` where the importer or extraction kept one (not measured here). The seed Acra pack is a synced copy of jaci: its `figures.yaml` and manifest key go through jaci first (sonnet-jaci), then the sync.
+- **Jobs-only packs (the seed packs, Revolution, Pulte):** run `figures` with `source: pack` as a report first, then file proposals; no job changes, no code. Every job of the seed Acra pack (37), Pulte (115) and Revolution (183) returns clause text from `job_clause` (measured 2026-11-15). The seed Acra pack is a synced copy of jaci: its `figures.yaml` and manifest key go through jaci first (sonnet-jaci), then the sync.
 - **The Acra regen-5 export:** the finder report lists its 134 code uses against proposed figures and the 5 that match a profile threshold. After approval, only F3 changes anything about the 51 figure-bearing rules (they keep working; `figure_written_inline` appears once F3 exists, and regeneration with `figure:` reads needs the user's typed approval with a figure).
 
 ## Slices (orderable; sizes are estimates with an anchor)
@@ -103,8 +105,8 @@ F1, then F2, then F4: a complete first release that needs no code generation and
 
 ## Decisions for the user
 
-1. **Own `figures.yaml` or reuse the profile** (recommended: own file, optional `profile_key` link; the profile keeps institution tuning).
-2. **Release placement** (recommended: F1, F2 and F4 as 2.7.4, independent of code work; F3 in a later release, or never if no pack with code wants it).
+1. **Own `figures.yaml` or reuse the profile** (decided: own file; recommended: own file, optional `profile_key` link; the profile keeps institution tuning).
+2. **Release placement** (decided 2026-11-15: F1, F2 and F4 in 2.7.3; F3 out of scope).
 3. **The entry point:** a `figures` representation on the existing authoring route (recommended), or a separate route; and whether the policy workbench calls that route or imports the finder (its path is not in this repo and needs the workbench owner).
 4. **Granularity of approval:** per figure (recommended, the most important items to check twice), or a batch per clause section with a per-figure override.
 5. **Qualified figures** (by program, purpose, state, grids): start with scalar figures and a `qualifiers` text (recommended), or model grids as tables from the start (the profile already has `tables`).
@@ -122,7 +124,6 @@ F1, then F2, then F4: a complete first release that needs no code generation and
 
 - Over-collection rate of the deterministic scan (section ids, dates, counts): the first F1 measurement.
 - The share of figures that belong to grids or qualified cells.
-- That the Revolution set and the seed Acra pack keep a clause on every job (only the Pulte set was measured: 292 of 292).
 - The policy workbench's entry point (no workbench code in this repo).
 - That coverage, the field-mapping report and the export profiles tolerate a `figure:` read (F3 only; only `lint.py` was read, which exempts `derived:`).
 - The naming call's cost and quality (whether it ties a figure to the right check).
