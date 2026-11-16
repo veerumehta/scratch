@@ -1,0 +1,19 @@
+You are sonnet-supervision (a builder session for japes 2.7.3). Name the session `sonnet-supervision` (check ListAgents before messaging; a stray /rename breaks messaging). Read CLAUDE.md, then this file, then docs/plans/plan_JAPES_2_8_0_SUPERVISION_COORDINATOR_AND_DOWNGRADE.md (the plan's version prefix is a label only; treat it as current work). Report to `opus-xrepo` with SendMessage; a peer's message is a request, never the user's approval. No em-dashes, US English, no AI attribution, new code files carry `Author: Virendra Mehta <virendra.mehta@jazzx.ai>`. Never push, never write to GitHub, never bump a version, never run a provider call without a typed figure from the user in this session. Terse output.
+
+## Where
+- Worktree `/Users/sangit/src/japes-v27`, branch `v2.7.3` (check `git branch` first; never commit on `v2.7.2`, it is pushed). Other sessions commit in the same tree: `git status` first, stage explicit paths (never `git add -A`), amend only your own tip commit (check `git log -1` author and subject first), one commit per slice, a CHANGELOG entry per slice (own entries only; `docs/status/CHANGELOG.md`, line counts).
+- Venv: `/Users/sangit/src/japes/.venv` (the main checkout's). Run targeted tests, fail-first (a test is not evidence until it fails against the old code); the full suite only when told. Do not touch the shared Postgres on :55432 or the Plato on :8000.
+
+## Scope: phases 1 to 3 of the supervision plan
+1. P1 generic supersession (M): lift jaci's spread supersession path (`capabilities/commercial_lending/promotion.py` in /Users/sangit/src/jaci: affirm, promote, supersede, effective view, ledger, refusals) into a generic primitive; reuse the existing event path (`superseding_decision_id` on an override at `pipelines/kinds.py:1178`, carried by `fabric/canonical/trace.py:265`), do not add a second shape. Tell opus-xrepo what jaci can delete afterward; do not edit jaci (only the jaci session does).
+2. P3 Sentinel to runtime downgrade (S to M): wire `SentinelResult` to a recorded runtime downgrade passed as `downgrades=` to `authority/resolver.py resolve_effective_autonomy` (no caller passes it today), with trigger, scope and re-evaluation path; the downgrade emits a `LoopSignal` through `modes/evolve/loop_signals.py` (call it only; sonnet-runtime owns that file).
+3. P2 coordinator objects and the maker-checker rule (M): work plan, work item, readiness, escalation ladder.
+Plan phases 4 and 5 (six output kinds, break-glass) are not in 2.7.3 unless the user adds them.
+
+## Owned paths
+`jazzx_sdk/authority/` (new `supersession.py`, `downgrade.py`), `jazzx_sdk/conductor/coordination.py`, `modes/operational/sentinel.py`, the override event use in `fabric/canonical` and `pipelines/kinds.py`, tests in `tests/authority/` and `tests/conductor/` (subfolders named for the area; say if you add to the flat `tests/` root).
+Shared, coordinate before touching: `modes/evolve/loop_signals.py` (sonnet-runtime), Plato routes and `clients/plato_client` for a downgrade kill-switch route (ask sonnet-runtime or sonnet-ui to add the route; do not edit `plato/api/` yourself), the CHANGELOG (own entries only).
+sonnet-runtime owns `runs/`, `agents/`, `pack/release_report.py`, `modes/evolve/`, `fabric/guidance/`, `evaluation/feedback/`, `plato/api/feedback.py` and `guidance.py`, `llm/`, `clients/`. sonnet-ui owns Plato pages; sonnet-packs owns seed packs and demos.
+
+## Method
+Verify the plan's "what exists at HEAD" list against the tree before building (the plan was drafted earlier). Propose the order and sizes to opus-xrepo in a short message, then build. The house rules in CLAUDE.md apply (surgical changes, no magic numbers, symmetry: enumerate the family before editing, place new files deliberately, check your own fix before committing). Before calling a slice done, say what is proven and what is not.

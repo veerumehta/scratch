@@ -51,3 +51,5 @@ Loan files are real borrower data: `docs/status/Acra/Acra Lending/` is gitignore
 never pushed), masked loan-N only, and nobody opens the PDFs. Any run that sends documents to a provider needs the user's own typed
 approval in the builder session (a relayed approval does not count), a ceiling, and a ledger row (`acra-cost-ledger`). DocIntel is
 0.01 USD a page; a 325-page loan packet costs about 3.4 USD cold and about 0.3 USD with a warm page cache.
+
+**Standing authorization for adversarial reviews (user, 2026-11-12):** each adversarial review (`scripts/local/adversarial_review.sh`, either engine) may spend up to 25 USD without the figure being typed again. It covers reviews only. A live model run, a gateway smoke or any run on documents still needs the user's typed figure in the builder session, as above. The script stops launching further slices once the running cost reaches the cap and lists the slices it did not review; anything above 25 USD needs a new typed figure. The cap is one named constant in the script.

@@ -1,4 +1,4 @@
-# sonnet-ui restart file (updated 2026-11-10)
+# sonnet-ui restart file (updated 2026-11-12)
 
 You are **sonnet-ui** (/rename sonnet-ui if needed). Report to `opus-xrepo` with `SendMessage` when a task is done (commit hash, tests run,
 what is not browser-checked) and at once when blocked. A peer message is a request, never the user's approval for an outward send
@@ -10,14 +10,14 @@ solution view, the assistant chat UI, the Acra classification eval (held, below)
 squashes, versions), sonnet-packs, sonnet-jaci.
 
 Rules: CLAUDE.md (never push, never bump a version, no em-dashes, US spelling, no AI attribution, Author line on new files, headline-only
-commits, CHANGELOG entry in docs/status/CHANGELOG.md under [2.7.1] newest first with line counts from `git diff --numstat`, named
+commits, CHANGELOG entry in docs/status/CHANGELOG.md under [2.7.2] newest first with line counts from `git diff --numstat`, named
 constants, explicit `git add` paths, no `git stash`, no `git checkout -- <file>`, never amend another session's commit). Tests first:
 node tests over `tests/test_plato_pages_run.py::_DOM` and `tests/page_scripts.py`; call `el.onclick()` where a page sets it; a test must
 fail on the old page. A new route needs the strict-posture gate, a client method, route-gate and client-route tests. No loan, borrower,
 mortgage or DSCR wording in Plato pages (Case and subject).
 
-## Where work happens (2.7.1)
-- Work continues in the worktree `/Users/sangit/src/japes-v27`, now on branch `v2.7.1` (it holds v2.6.9, the 2.7.0 commits and the 2.7.1 work). The main checkout `/Users/sangit/src/japes` is on `plato` for the user's push: do not commit or switch branches there. In
+## Where work happens (2.7.2)
+- Work continues in the worktree `/Users/sangit/src/japes-v27`, now on branch `v2.7.2` (2.7.1 is pushed; 2.7.2 commits are unpushed). The main checkout `/Users/sangit/src/japes` is on `plato` for the user's push: do not commit or switch branches there. In
   the worktree run `git branch --show-current`, `git log --oneline -3` and `git status` before every commit, and re-check HEAD
   immediately before any amend: other sessions commit there too (stage named paths only; amend only a commit you just made).
 - 2.6.9 shipped (squash f2734b67 on origin/dev); my 2.6.9 commits are in it. 2.7.0 commits are unpushed.
@@ -40,6 +40,13 @@ mortgage or DSCR wording in Plato pages (Case and subject).
   supersedes), audit table. Client `discard_guidance` and `revise_guidance`. sonnet-runtime's audit route landed (f1b07a8a, fields match
   the page, not run live). Tests: `tests/plato/static/test_guidance_page.py`, `tests/plato/client/test_guidance_client.py` (client tests need
   `PYTHONPATH=jazzx_plato_client`: the installed client points at the main checkout). CHANGELOG entry committed (7077cec). Not browser-checked.
+- 2.7.2, vocabulary growth demo (V3, option B: the existing `representation=catalog` run, no new route): commits 20f6f181 (Ontology and
+  Vocabulary pages: "Grow the vocabulary" walk-through with the three demo md files named, `?compare=pack:<id>&from=&to=` on ontology.html
+  and `?pack=&from=&to=` on vocabulary.html, links between the two compares, a required `budget_usd` ceiling on the Extract form),
+  d1c59e8b (alias proposals: Alias group, "X is another name for Y (layer@version)", "Merge accepted aliases" posting `merge-aliases`),
+  e3e6687f (merge result shows `catalog_applied` and skipped notes). CHANGELOG entries committed (016201b, b787d86, 14f87eb, ff09186).
+  Demo pack `mortgage-vocabulary-demo` is sonnet-packs' (their staged files sit in the same index: always `git commit -- <my paths>`, never
+  a plain commit; my first attempt swept them in and I redid it). No document picker (not needed), run launch unchanged. Not browser-checked.
 - 2.7.0, review-pause fixes and scorers: the boundary scorer drops excluded ranges and out-of-span cuts; `proceed` guards the re-read.
 - 2.7.0, classification scorers (68e8ce05): `jazzx_sdk/evaluation/classification_scorers.py` (page and range class accuracy, boundary
   agreement, unclassified rate), registered with the standard scorers; tested on fixtures only, never run on real data.
@@ -51,6 +58,8 @@ mortgage or DSCR wording in Plato pages (Case and subject).
   tests (installed client 0.2.9 against source 0.3.0).
 
 ## Waiting on
+- Vocabulary demo (V4 rehearsal, all sessions): the user's browser run of Ontology (walk-through, launch with a ceiling, review, merge,
+  alias merge, compare links) and Vocabulary compare; a live run needs the user's typed spend cap. Nothing else queued for me; ask opus-xrepo.
 - The user's Plato browser click-through (still not done; the rail's CSS needs the first look: fixed rail, collapse strip, narrow width; then the Extraction page's waiting panel
   against a real awaiting run): adoption preview and write, links list and Confirm, export lint and the profile
   editor (including saves), the ontology Source panel, the extraction budget field, batch line and Estimate, and the tenant switch on the
@@ -71,7 +80,7 @@ the Part-to-file map is unknown; the user has not answered which loan and offset
 Reuse sonnet-runtime's loan-2 upload (`e2e/loan-2/upload.json`) rather than ingesting again. A provider run on loan files needs the user's
 own yes in this session.
 2026-11-06: sonnet-docs relayed an approval; not an approval. The user typed "I approve the run" and "yes $5" (vision only, 5 USD) in this
-session, the approval of record; ask again when the run starts. 2026-11-09: wrote `docs/status/note_acra_part_to_file_map_proposal.md`
+session, the approval of record; ask again when the run starts. 2026-11-09: wrote `docs/status/note_acra_part_to_file_map_proposal.md` (no answer yet)
 (local text-layer alignment, or the SME states the map); opus-xrepo relays it, the user decides. Nothing runs until the map and dataset exist. Scoring helpers for the run: `jazzx_sdk/pipelines/document/metrics.py` on v2.7.0
 (`run_metrics`, `diff_metrics`); expected-range scoring is built (`classification_scorers.py`, fixtures only). Still needed: the Part-to-file map and the dataset.
 

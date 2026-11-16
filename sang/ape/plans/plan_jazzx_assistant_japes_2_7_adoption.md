@@ -37,6 +37,8 @@ How to use this section: the plan author may read and update it; implementers ap
 6. **Starting processes.** Use the pack's `process` declaration and the SDK's process skills to start and follow a Macer run from a conversation; the caller (the pack) provides the start values. Needs the pack author's answers from the checklist; no SDK change.
 7. **Tenancy.** Only if the assistant uses the SDK's host-owned stores: `upgrade_tenant_keys` before deploy and `check_tenant_keys` in CI. Verify first whether it does [U].
 
+   **Push versus poll (their finding, 2026-11-11):** the assistant pushes events as they happen; `ChatCoordinator` journals them to a `TurnRunStore` (Postgres or in memory) and a follower reads the journal by polling (`ChatTurnHandle.events` through `ResilientRunner.resume`, an adaptive sleep; the stop check polls too). Delivery out already has a push shape: `ChatTurnHandle.pump(outlet)` feeds a `BoundedOutlet`. The gap is on the store side: nothing wakes a follower when an event lands. Proposed fix, in the SDK and not as a host adapter: give the turn store an optional wake-up (an in-process condition for the in-memory store, `LISTEN/NOTIFY` for Postgres) that `resume` and the stop watcher wait on, with the polling kept as the fallback and the cadence of the adaptive sleep as the upper bound. A host then maps `pump` to its socket and needs no adapter of its own. Verify first: that `pump` plus `BoundedOutlet` carries their transport (ordering, backpressure, session id), and what their code needs beyond latency.
+
 Slices 1 and 2 are independent of the rest; 3 and 4 are the substance; 5 and 6 follow.
 
 ## Stays in the assistant
