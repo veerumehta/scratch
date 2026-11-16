@@ -79,3 +79,28 @@ Verified by reading: the segment text, the guard and where its findings go, the 
 resolution, the evaluator's context, the static gate's key rule. Verified by running a script: the 134, 127 and 12 figure counts. Not verified: the
 grid share; consumers of `reads` (coverage, lint, export) beyond the two named; whether the job-writing prompt could carry a `figures` field without
 lowering job quality (no regen run); anything in kernel-lab.
+
+## Addendum: two placements compared (A at the job step, B a pre-process at the start of code generation)
+
+Extra measurements, [run] over the same 97 rules: the code writes **134 figure occurrences but only 37 distinct values**; 21 values are used by two or
+more rules (65 and 75 in 13 rules each, 80 and 70 in 12, 700 and 2 in 7, 1500000 and 6 in 6). Only **5 of the 134** occurrences equal a value in the
+hand-written Acra profile (5 distinct thresholds, the DSCR floors), so the profile does not yet hold the LTV and CLTV caps. A value is not a meaning:
+the 12 rules that write 80 do not all mean one cap (a 2-4 unit CLTV cap, other grid cells), so a figure's identity cannot be its value. The existing
+scan `printed_numbers(text)` returns `{value: spelling}` with no position or sentence, so either placement needs a scan that also returns the unit and
+sentence each number sits in (the one shared finder).
+
+| | A: at the job step | B: pre-process at generation, proposed as profile values |
+|---|---|---|
+| **Needs to change** | The job-writing prompt and record (`_DraftJob`, job extension) gain `figures`; a per-job verify against the clause; delivery at assessment; code prompt and guard. The job prompt is the largest and most quality-sensitive prompt (every job set depends on it). | A finder (deterministic scan with unit and sentence, shared), one naming call (name each candidate, tie it to a check), a new proposal kind for a figure (today: concept, relationship, rule, catalog, document) with a merge that writes the draft's profile `thresholds`, the review surface, delivery at assessment, code prompt and guard. Size anchor: the alias-proposal slice (a new proposal path plus merge) was +586 / -37 lines over 11 files. |
+| **Reruns** | Figures are written again with the job; an approved value lives on the job, so a job rewrite loses it unless job identity carries it forward (not checked). The model may name or round differently each time. | The scan is deterministic over the clause; an approved profile value is matched by (clause unit, value, spelling), not by name, so a rerun that finds the same number files nothing, and a changed number files a conflict against the approved value (the catalog `conflicting` pattern). Names vary run to run (the vocabulary retest saw this), so the name must not be the identity. |
+| **Existing packs without regenerating jobs** | None: needs the jobs rewritten, or a backfill, which is B's finder. | All packs that keep clause text: jobs carry `ledger.clause` and an imported job keeps its whole requirement (`codable` docstring), so the Acra seed, the Revolution and the Pulte sets can be scanned as they are. A pack with no profile file gets one created. |
+| **Where a contradiction is detected after generation** | The guard compares code figures to the job's own figures; a cap two jobs state differently is not seen. | The same guard compares code figures to the approved profile values, and a value shared by many rules is one entry, so two rules reading different values for one key cannot happen; the unwired `find_profile_literal_drift` lint has a place to run. |
+| **Main risk** | Job-writing quality and cost move; every existing pack stays unbenefited until jobs are regenerated. | The scan over-collects (section ids like STD-8.1, dates, counts), so the naming call and the reviewer carry the filtering; qualified figures (by program, purpose, state, the grids) need key names that carry the qualifier, and a grid is not a scalar. |
+
+**Recommendation: B first, then A only if wanted.** B works on today's packs with no job rewrite, puts a figure used by many rules in one approvable place
+(37 values behind 134 uses), reuses the existing `profile:<key>` mechanism and the catalog's conflict pattern for reruns, and leaves the most fragile
+prompt alone. Build the finder once (scan with unit and sentence, returning candidates) in the policy pipeline package; A then becomes a small step later:
+the job step writes `figures: [key]` as references to approved profile keys (a name, never a value), by calling the same finder over the clause. Order:
+(1) finder and its tests, no model; (2) naming call and the figure proposal kind and merge; (3) delivery at assessment and the prompt; (4) the guard.
+Steps 1 and 4 can ship before 2 and 3, as a report only: the finder over regen-5 would list the 134 uses and the proposed keys with no change to any pack.
+Not measured: how many figures are grid cells; the cost of the naming call; whether a pack without a profile file loads cleanly with one added.
