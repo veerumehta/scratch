@@ -155,31 +155,55 @@ lock = pathlib.Path("poetry.lock")
 if not lock.exists():
     print("  ! no poetry.lock — skipping"); raise SystemExit(0)
 
-# Parse `name = "x"` / `version = "y"` pairs. Deliberately not a TOML load: the lock is large and
-# this only needs the two fields, so a dependency-free scan keeps the hook fast to start.
+# Parse each `[[package]]` block for its name, version and source type. Deliberately not a TOML load: the lock is large and
+# this only needs three fields, so a dependency-free scan keeps the hook fast to start. A path, directory or git source is
+# the checkout's own code, not a release CI downloads, so it is not compared.
 text = lock.read_text()
-pinned = dict(re.findall(r'^name = "([^"]+)"\nversion = "([^"]+)"', text, re.M))
+pinned = {}
+for block in text.split("[[package]]")[1:]:
+    name = re.search(r'^name = "([^"]+)"', block, re.M)
+    version = re.search(r'^version = "([^"]+)"', block, re.M)
+    source = re.search(r'^\[package\.source\]\ntype = "([^"]+)"', block, re.M)
+    if name and version and not (source and source.group(1) in ("directory", "file", "git", "url")):
+        pinned[name.group(1)] = version.group(1)
 
-# The packages whose version actually changes what the suite does. A full comparison would flag
-# every transitive nudge and get ignored within a week.
-WATCH = ["openai", "openai-agents", "anthropic", "pydantic", "pytest", "pytest-asyncio"]
-drift = []
-for name in WATCH:
-    want = pinned.get(name)
+# Behind the lock is what hides a failure: CI runs the newer release, so a green run here says nothing about it. Ahead is
+# reported once, as a count, because a newer release is usually harmless; the packages whose behavior has changed a test
+# result before are named so a jump in one of them is not lost in the count.
+MATTERS = ("packaging", "sqlalchemy", "sqlmodel", "starlette", "pydantic", "pydantic-core", "openai", "openai-agents",
+           "anthropic", "pytest", "pytest-asyncio")
+MAJOR_JUMPS_SHOWN = 5
+from packaging.version import InvalidVersion, Version
+
+behind, ahead = [], []
+for name, want in sorted(pinned.items()):
     try:
         have = md.version(name)
     except md.PackageNotFoundError:
-        have = None
-    if want and have and want != have:
-        drift.append((name, want, have))
+        continue                      # an extra this environment does not install
+    try:
+        order = (Version(have) > Version(want)) - (Version(have) < Version(want))
+    except InvalidVersion:
+        order = 0 if have == want else None
+    if order is None or order == 0:
+        continue
+    (ahead if order > 0 else behind).append((name, want, have))
 
-if drift:
-    print("  ! installed versions differ from poetry.lock (CI uses the lock):")
-    for name, want, have in drift:
-        print(f"      {name:16} lock {want:12} local {have}")
-    print("    a green run here is not proof CI is green. --ci-versions runs against the pins.")
-else:
-    print("  ok  watched packages match the lock")
+if behind:
+    print(f"  FAIL  {len(behind)} package(s) are BEHIND poetry.lock (CI installs the newer release; a green run here proves nothing about it):")
+    for name, want, have in behind:
+        print(f"      {name:34} lock {want:14} local {have}")
+    print("    raise them to the lock's pins, or run --ci-versions to test against the pins.")
+if ahead:
+    jumps = [(name, want, have) for name, want, have in ahead if Version(have).major > Version(want).major]
+    named = [(name, want, have) for name, want, have in ahead if name in MATTERS and (name, want, have) not in jumps]
+    print(f"  !  {len(ahead)} package(s) are ahead of poetry.lock; CI runs the older release.")
+    for name, want, have in (jumps[:MAJOR_JUMPS_SHOWN] + named):
+        print(f"      {name:34} lock {want:14} local {have}" + ("   (major)" if (name, want, have) in jumps else ""))
+    if len(jumps) > MAJOR_JUMPS_SHOWN:
+        print(f"      ... and {len(jumps) - MAJOR_JUMPS_SHOWN} more major jump(s)")
+if not behind and not ahead:
+    print("  ok  every locked package matches the lock")
 
 # Extras CI does not install: a test needing one skips there and runs here, so a local pass can
 # cover ground CI never sees.
