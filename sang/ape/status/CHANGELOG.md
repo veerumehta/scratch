@@ -4,6 +4,8 @@ All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
 ## [2.7.4] - unreleased
 
+SDK 2.7.4, Plato 0.3.4, client 0.3.4, on the user's typed word.
+
 - **KernelClient: send a whole invocation request, and start an agent by id (`jazzx_sdk/clients/kernel_client.py` +58 / -25 lines, `mocks.py` +20 / -7, `tests/clients/test_kernel_client_requests.py` new, 8 tests, 7 fail against the old client).** A consumer reached `_raw_client` to send a full `AgentInvocationRequest` (streaming, hooks, notepad, per-agent and global overrides) and looked for `invoke_agent_request`, which did not exist. `invoke_agent_request(request, *, request_headers=None)` returns the invocation id as a `UUID` and raises `RuntimeError` when kernel returns none or rejects it. `request_headers` go on that request only: the generated `with_headers` the consumer used updates the shared httpx client's headers, so one caller's headers (a project id, an identity) stay on every later call (a test sends two calls and a concurrent pair and reads the wire). `start_agent`, `invoke_agent` and `stream_agent` also take `agent_id` (no name lookup; exactly one of name and id), additively; the mock client takes the same shapes. `get_tool(name)` already returns every field kernel sends (the typed model keeps extras), so no new tool method; a test pins it. Grep of `jazzx_sdk`, `plato` and the clients for `with_headers` on a shared client: none (the `common` submodule already carries a lint for it). Not built: a tool test-run (`call_tool` raises by design) and a Knowledge Hub global-config read.
 
 ## [2.7.3] - unreleased
