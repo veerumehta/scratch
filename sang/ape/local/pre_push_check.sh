@@ -312,6 +312,13 @@ python "$(git rev-parse --show-toplevel)/scripts/local/check_plan_refs.py"
 # 1 is a plan reference added; 2 is "could not check" (no git range), which never blocks a push.
 [[ $? -ne 1 ]] || fail=1
 
+# ── 2g. layering: logic added under plato/ that a second host might need ──────────────────────────
+# plato/ is the hosted shell (routes, page wiring, boot, job entry points, seed data); logic lives in jazzx_sdk. Lists the
+# functions of 15+ lines added under plato/ that name no HTTP type, as questions ("would a second host need it?"). Warn only:
+# it never fails the push.
+say "2g/4  layering: logic added under plato/ (warn only)"
+PUSH_REFS="$PUSH_REFS" python "$(git rev-parse --show-toplevel)/scripts/local/check_plato_layering.py" || true
+
 # ── 3. the suite ──────────────────────────────────────────────────────────────
 # `JAPES_SKIP_SUITE=1` keeps the review, which `--quick` does not: the review is the step that
 # catches what a green suite does not, and the suite is the slow one. Symmetric with the

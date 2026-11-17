@@ -386,6 +386,18 @@ if [[ -n "$foreign_added" ]]; then
     } >> "$prompt_file"
 fi
 
+# Layering: logic lives in jazzx_sdk and plato/ is the hosted shell. Asked only when the diff changes Python under plato/.
+if git diff --name-only ${diff_range:-} -- plato 2>/dev/null | grep -q '^plato/.*\.py$'; then
+    {
+        printf '\nThis diff changes Python under plato/. Layering rule: logic lives in jazzx_sdk; plato/ is the hosted shell '
+        printf '(routes, page wiring, boot, job entry points, seed and demo data), and jazzx_sdk must not import plato. '
+        printf 'Flag new logic added under plato/ that is not hosting-specific (it names no HTTP type, and another host built '
+        printf 'on the SDK would plausibly need the same behavior) as a [SYMMETRY] finding: name the jazzx_sdk module that owns '
+        printf 'its subject, name the sibling places under plato/ that do the same (the whole family, not one), and cite this rule. '
+        printf 'Say nothing for routes, handlers, page wiring, boot and job entry points, or data that only Plato ships.\n'
+    } >> "$prompt_file"
+fi
+
 # Findings the author has retired without fixing them. `TODO(...)` on the code and a `skip` marker
 # on a test are the only two closures the prompt above offers, and both are code constructs: a row
 # in a pack YAML has nowhere to put either, so a corpus finding the author declines can only be
