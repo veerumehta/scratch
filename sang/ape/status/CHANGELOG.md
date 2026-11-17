@@ -2,6 +2,10 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+## [2.7.5] - unreleased
+
+Started from the pushed 2.7.4 squash `6d88ea61` on `v2.7.5`: SDK 2.7.5, Plato 0.3.5, client 0.3.5, on the user's typed word.
+
 ## [2.7.4] - unreleased
 
 SDK 2.7.4, Plato 0.3.4, client 0.3.4, on the user's typed word.
