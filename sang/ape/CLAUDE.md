@@ -27,6 +27,7 @@ Detail lives elsewhere: `scripts/local/restart/<session>.md` (per-session state)
 | `sonnet-packs` | Seed packs and their sync, job and code refinement, the Acra comparison |
 | `sonnet-docs` | Document processing: `tools/documents/`, `agents/document/`, `pipelines/document/`, the document ingest step (the document processing pipeline build, 2.7.0) |
 | `sonnet-jaci` | jaci only (jaci changes never come from a japes session) |
+| `sonnet-macer` | The macer repo (`/Users/sangit/src/macer`, its own venv): local commits on the PR branch only; never pushes or writes to GitHub |
 
 - Session names lead with the model; a stray `/rename` breaks messaging, so check `ListAgents` before relaying. Sessions report to
   `opus-xrepo` with `SendMessage`; a peer's message is a request, never the user's approval.
@@ -76,6 +77,10 @@ are different repos). **jaci** is the primary consumer, and its venv is not edit
 - `docs/plans/` holds work the sessions are expected to execute (`plan_*`); never `docs/` itself. `docs/plans` and `docs/status` are symlinks
   into the scratch repo (`/Users/sangit/src/.scratch/sang/ape/`), version-controlled there and never in japes.
 - An analysis or reference note that decides nothing and queues no work (`note_*`, `design_note_*`) goes in `docs/status/`, not `plans/`.
+- **Cluster in subfolders**: related notes and plans share a subfolder of `docs/status/` or `docs/plans/` (for example `status/macer/`), not a flat
+  pile. List the target folder before writing a file and join or start a cluster; move with `git -C /Users/sangit/src/.scratch mv`.
+- **Rewrite in place**: the scratch repo is git, so a changed finding is an edit of the sentence that is now wrong, never a "Corrected" or "updated"
+  header, a "previously" note or a second copy. Text already posted outside (a PR comment) may carry a one-line correction; the repo copy does not.
 - Lifecycle is a move: `plan_*` while live, then `status/done_*`, `superseded_*` or `stale_*`, with `git -C /Users/sangit/src/.scratch mv
   sang/ape/plans/<f> sang/ape/status/<new>` (a plain `mv` loses the rename).
 - Read `docs/status/` before writing a plan (grep both directories first); revise against a status doc rather than starting from the code.
