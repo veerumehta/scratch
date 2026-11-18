@@ -28,6 +28,63 @@ Not verified, stated plainly:
 7. **litellm 1.109.0 stream and error semantics.** A stalled stream now returns `litellm.Timeout` 408 (was 500 `APIConnectionError`) and retries, cooldowns and fallbacks now apply, so litellm-level retries can stack on macer's `RetryingModel` and `AsyncOpenAI` retries. macer's `TransientErrors` matches by status (408 in `STATUS`) and by name `Timeout` (`runtime/retry.py:55-62`), so classification is covered; the attempt count is not. Possible.
 8. **max_tokens defaults.** litellm 1.109.0: Claude with no `max_tokens` defaults to the model's limit (128000 for cost-map-missing models; was 4096). macer always sends `max_tokens`, so none for the main path; check any call path that does not (the embedding path has no such parameter).
 
+## What staying on the old lock costs
+
+The findings above are the risks of moving. These are what macer lacks while it stays on openai 2.43.0, openai-agents 0.17.6 and litellm 1.103.10, taken from the same release rows. "Path" is the macer route it touches. Nothing here is measured; none proves a quality drop. The pages do not say a release fixed output quality for OpenAI models on the Responses path, so a newer-model quality gap is not shown to come from the SDK.
+
+**Newer-model support (the part that bears on quality).** Read the first row's PRs before anything else.
+
+| Gain | What the old lock lacks | Path |
+|---|---|---|
+| openai-agents 0.18.1 "GPT-5.6 model defaults", 0.18.2 "GPT-5.6 request controls" | SDK-side handling written for GPT-5.6. Contents are not on the release pages (PRs unread), so what changes is unknown. 0.17.6 predates both | OpenAI Responses |
+| openai 3.8.0, 3.18 to 3.21, 3.39 to 3.44, 3.46 to 3.54: GPT-6 family identifiers, response format updates, response tool usage models, reasoning input transformations on responses | Types and helpers for models released after 2.43.0 (2026-06). Whether 2.x drops or keeps response fields it does not know is not in the notes | OpenAI Responses |
+| openai-agents 0.20.0, 0.19.3: strip placeholder item IDs and output-only `created_by` when replaying model output; keep input item order when collapsing duplicates | Replay of earlier turns (retries, `SQLiteSession` history) is less clean with newer models' output items | OpenAI Responses, sessions |
+| openai-agents 0.21.1 Chat Completions reasoning replay; 0.19.3 clear pending thinking blocks; 0.22.1 reject unpaired function outputs | Reasoning is not replayed on Chat Completions, so a reasoning model loses it between tool calls | Claude via the gateway, Fireworks |
+| litellm 1.109.0 no `[System: ...]` placeholder on assistant tool-call turns; 1.105.0 and 1.105.1 empty-text thinking blocks dropped or kept signed; 1.108.0 adaptive-thinking rebuild drops stale keys | Extra text in Claude tool-call turns and thinking-block handling | Claude via `AnthropicModel`, non-Anthropic `litellm/` models |
+| litellm 1.108.0 Gemini 3+ no longer adds `temperature=1.0`; 1.109.0 `reasoning_effort` rounded to declared levels | Sampling and effort settings differ from what the caller set | `litellm/` Gemini models |
+| litellm 1.108.0 Gemini 4 Argon long answers auto-continued until `max_tokens` | Long answers can stop short | `litellm/` Gemini 4 |
+
+**Failures the old lock hides.** These are the other side of findings 1 and 2.
+
+| Gain | What the old lock lacks | Path |
+|---|---|---|
+| openai-agents 0.22.0 raises on `failed` or `incomplete` Responses | A truncated or failed response is returned as output instead of raised | OpenAI Responses |
+| openai-agents 0.22.1 `ModelBehaviorError` on truncated empty completions; 0.18.2 and 0.19.4 content-filter refusals surfaced | An empty turn or a refusal passes as a normal answer | Chat Completions models, `litellm/` |
+| openai-agents 0.23.0 rejects premature Chat Completions stream EOF; openai 3.12.0, 3.14.0, 3.17.0 null handling (finalized output kept on null completion, null text, null message content) | Partial or null responses are not caught or normalized | Chat Completions, Responses |
+| litellm 1.109.0 `context_length_exceeded` mapped to `ContextWindowExceededError`; 401 and 404 mapped to `AuthenticationError` and `NotFoundError` | Misclassified errors, which can send a non-retryable error into a retry bucket | `litellm/` models |
+
+**Usage and cost accounting.**
+
+| Gain | What the old lock lacks | Path |
+|---|---|---|
+| openai 3.36.0 (30-minute cache writes), 3.45.0 (12-hour cache writes), 3.9.0 (cache diagnostics); openai-agents 0.18.1 cache-write usage | The usage fields that report long-lifetime cache writes separately. macer's `gpt-5.6` write rates (30-minute and 12-hour columns) can only be applied to counts the SDK reports | OpenAI Responses |
+| openai-agents 0.19.1, 0.20.0, 0.21.1, 0.23.0: count requests when a provider omits usage, preserve raw usage, include compaction usage, normalize nullable token counts | `llm_calls` and token totals can undercount where a provider omits or nulls usage | Fireworks, `litellm/` |
+| litellm 1.108.1 streamed usage keeps cached and reasoning details (cached tokens had been billed at the full input rate); 1.104.6 failed and cancelled requests priced; 1.105.1 double-billing fix | litellm's own cost and spend numbers are wrong in those cases. macer prices with `utils/cost.py`, so this reaches it only where it reads litellm usage | `litellm/` models |
+
+**Cache controls.** macer can still send `prompt_cache_key` and similar through `extra_args`; what it lacks is typed support and reporting.
+
+| Gain | What the old lock lacks | Path |
+|---|---|---|
+| openai 3.32.0 cache settings, 3.38.0 cache lifetimes, 3.39 to 3.44 breakpoint TTL options, 3.45.0 12-hour caching, 3.15.0 prewarming | Typed options for the cache features of newer models | OpenAI Responses |
+| litellm 1.108.0 `cache_control` rewritten to `prompt_cache_breakpoint` for OpenAI gpt-5.6+ [S]; 1.109.0 `prompt_cache_retention` sent, Gemini context caches reused | Cache hits for gpt-5.6+ and Gemini routed through litellm | `litellm/` models |
+
+**Robustness.**
+
+| Gain | What the old lock lacks | Path |
+|---|---|---|
+| openai 2.52.0 honors `Retry-After`; 3.20.0 retries unmapped TLS transport errors; 3.21.0 retries only replayable content; 3.9.0 refuses overflowing retry delays; 3.14.0 and 3.14.1 error normalization | Retry behavior that newer servers and gateways expect | all OpenAI-client paths |
+| litellm 1.108.0 Gemini and Vertex streaming honors the per-request timeout (it was 6000 s); 1.109.0 stalled stream is `Timeout` 408 with retries | A stalled Gemini stream can wait up to 6000 s | `litellm/` Gemini |
+| openai-agents 0.19.1 and 0.20.0: session limits count valid items, orphaned tool outputs pruned, atomic session mutations | Session history can be left inconsistent after a failure. macer sets no session limit | `SQLiteSession` |
+
+**Security and privacy hardening.** The redactions are also finding 1.
+
+| Gain | What the old lock lacks | Path |
+|---|---|---|
+| openai-agents 0.18.3, 0.19.0, 0.21.0, 0.23.0: redact trace error details, raw exceptions in logs, tool output in validation errors, streaming tracebacks; 0.23.0 omits reasoning from default trace exports | Exception text and reasoning can reach logs and trace exports | all agents paths |
+| openai 2.47.0 patched aiohttp; 3.3.x patched networking dependencies; 3.4.0 preserve configured TLS hostname and Azure auth boundaries; 3.28.0 PyJWT constraint | Dependency and TLS fixes | OpenAI client |
+
+Next, in order: read the PRs behind 0.18.1 and 0.18.2 (the only rows that name GPT-5.6 handling), then run the old lock against the new one on one loan set (the table below) and compare the newer model's answers, not just the metrics.
+
 ## openai (2.43.0 to 3.54.0)
 
 Source for every row: `https://raw.githubusercontent.com/openai/openai-python/main/CHANGELOG.md` (CL), plus `https://github.com/openai/openai-python/releases/tag/v3.0.0` and `https://raw.githubusercontent.com/openai/openai-python/main/httpx2.md` (HX2) for 3.0.0. Dates are the changelog's. macer uses the Responses API for OpenAI models (`OpenAIResponsesModel`), Chat Completions for Claude via the AI Gateway and for Fireworks, and `litellm.aembedding` for embeddings (`jtbd/condition_dedup/embedding.py:106-114`, `text-embedding-3-small`).
