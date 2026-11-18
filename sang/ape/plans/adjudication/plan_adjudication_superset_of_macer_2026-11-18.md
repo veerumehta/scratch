@@ -11,11 +11,15 @@ Related earlier work, not moved: `docs/plans/plan_adjudication_evidence_scoping.
 - **T2 and S4 overstated a gap.** The SDK has a calculation tool: `jazzx_sdk/tools/calculate.py` (`Calculator`, `CalculationLog` with `has_result`, `calculate_tool`), used by `pipelines/policy/code.py`. Adjudication does not give it to the model (`_evidence_tools`, `agents/adjudication/segment.py:520-526`), and has no field for extracted values. The gap is wiring and a place for the values, not a missing tool.
 - **R4 overstated a gap.** `evaluation/experiment_comparison.py` compares a candidate with a baseline case by case with a measured noise floor and a McNemar test on flips (`compare_experiments`, `noise_floor_from`), and it reads cost. What it lacks is a per-rule verdict comparison over repeats.
 
+- **C4 overstated a gap.** A pluggable guideline selector exists: `SnippetSelector` in `jazzx_sdk/agents/reasoning/grounding.py` with `HeadingsOnlySelector` (a model picks from headings alone, any failure falls back to no selection) and `TopRankedSelector`, plus a `GroundingCache` seam with an in-memory cache. What is missing is a way for a pack to choose the selector (the case step hard-wires `TopRankedSelector`, `pipelines/steps.py:1853`) and a persistent cache.
+
 ## Items
 
 Sizes are estimated from comparable features in the CHANGELOG (learning loop L1: +341 / -11 lines, 11 files; recipes gaps R2.x: +150 to +400 lines each). A session is one working session of the runtime owner, code and tests together.
 
 ### A. Calculation and extracted values with provenance (parity T2, S4)
+
+Two steps: **A1** wires the existing calculator into tools mode behind a default-off spec flag and records its calls on each outcome; **A2** is the rest below.
 
 - **Design.** A rule or condition declares the values it extracts as pack data: a key, a description, optionally a unit. The verdict item gains `extracted: list[ExtractedValue]`, each with the declared key, a decimal value as text, cites (document and page, validated by the same checks as verdict cites), and the calculation steps. In tools mode the model gets `calculate_tool` (a `CalculationLog` per replica); a value that claims a calculation must equal a successful call in that log (`CalculationLog.has_result`), otherwise the validator raises a tool-required error so the retry sends the model back to the tool (the mechanism exists, `agents/run_kit.py:241-243,275-276`, and no adjudication validator uses it yet). A key outside the declared set, or a value that is not a number where a number is declared, is an ordinary validation error. In inline mode there are no tools: a value carries cites only and says so. Across replicas the value with most support stands, ties to the most complete, and the dissenting values stay in `inputs` (macer picks silently).
 - **Improves on macer.** The declared set is pack data, not a code list; a calculation is checked against what ran, not against a flag that Python was invoked; dissent is recorded.
@@ -53,18 +57,39 @@ Four parts, buildable one at a time. The SDK keeps `restates` and `resolved` in 
 
 ### E. A subject enum in the schema (parity S6)
 
-- **Design.** When a roster of subject tokens is present, `_BatchCondition.subject` becomes a `Literal` of the tokens through a cached `create_model` keyed by the token set, so the schema is byte-identical across turns (prompt-cache routing) and the model cannot write a wrong token. The validator stays as the backstop for an empty roster and for a prior condition's token.
-- **Placement.** `agents/adjudication/segment.py` plus a small helper beside it; tests in `tests/agents/adjudication/`.
-- **Tests.** Fail on old code: the built schema lists exactly the tokens; two builds for the same set return the same schema object; a strict schema build still passes (the pattern of the macer schema tests, `tests/test_agent_output_schemas.py` on the macer branch).
-- **Size and sessions.** About 120 + 120 lines; half a session. **Depends on.** Nothing. **Spend.** None.
+Built: `_scoped_verdict(tokens)` in `agents/adjudication/segment.py` limits a condition's subject to the roster tokens or empty, cached by the token set; tests in `tests/agents/adjudication/test_adjudication_subject_enum.py`.
+
+### F. A guideline-selection step a pack chooses, and search results retrievable in full (parity C4, T10)
+
+- **F1. Selector as pack data.** The selector seam and an LLM selector exist (`SnippetSelector`, `HeadingsOnlySelector`, `GroundingCache`). The change: `EvidenceSpec.grounding` names the selector (`top_ranked`, the default, or `headings`) and the cache, so a pack picks it without code; a failed selection already falls back to no selection. A persistent `GroundingCache` (the in-memory one is process-local) is a pack-supplied implementation of the same two methods; the SDK ships none. Placement: `agents/adjudication/spec.py` and `pipelines/steps.py:1843-1858`; `agents/reasoning/` holds 3 files and is unchanged. Tests, failing on old code: a spec naming `headings` reaches `PrecomputedGrounding` with that selector (scripted model); an unknown name is refused; the default is unchanged. About 80 + 100 lines; half a session. Depends on nothing. Spend: none to build; measuring whether a model-picked selection beats top-ranked on a fixture needs a typed figure.
+- **F2. A capped search result that can be read in full.** Today a result over `SEARCH_RESULT_MAX_LINES` (200) is cut with "narrow the pattern" and the rest is lost (`agents/adjudication/segment.py:517-531`, through `build_source_tools(compress_search_output=)`). The change: a per-run holder keeps the full output under an id, the cut result ends with that id, and a `read_reference(ref)` tool returns the full text (an unknown id says so, as text). No compression library: the cap and the retrieval are the whole feature, and a pack can still pass its own compressor through the existing hook. The holder is scoped to the run (a context variable set around the segment, as `_CITE_CHECKS` is), not process-wide. Placement: `tools/agent/dir_tools.py` (5 files in `tools/agent/`), the cap function in `segment.py`; tests in `tests/tools/` (new file, the directory now exists). Tests, failing on old code: a search over the cap returns the first lines and an id; `read_reference` returns all lines; an id from another run is refused; the tool goes through the real SDK entry point. About 150 + 150 lines; 1 session. Depends on nothing. Spend: none.
+
+### G. Session size and read-tool hygiene defaults (parity L10, C7)
+
+- **G1. The input filter on by default.** `InputFilter` exists and is stronger than macer's (it stubs the oldest tool outputs first, then drops the oldest reasoning groups; `agents/run_kit.py:476`), but `max_session_size_kb` defaults to 0 (off, `run_kit.py:656`). The change: the default comes from config as a named constant with an environment override, and 0 still turns it off; the adjudication call passes it. Choosing the number needs a measurement of real session sizes (macer uses 750 KB; that is a starting value to test, not a finding). The filter only acts above the limit, so a short session is untouched. Placement: `agents/run_kit.py` and `config/envvars.py` usage as `JAPES_CALL_DEADLINE_SECONDS` does; tests in `tests/` beside `test_agents_run_kit.py`. Tests, failing on old code: a session over the default is shrunk and its user items stay; 0 is a pass-through; the environment value wins. About 60 + 80 lines; half a session. Depends on a decision on the default. Spend: none to build.
+- **G2. A rendered-prompt snapshot test.** The prompts are versioned files composed with provenance, but nothing pins the text a segment sends. The change: a test renders `_render_batch_prompt` and the composed instructions for a fixed rule set (inline and tools mode, with and without a roster, with a rerun focus) and compares them with checked-in files, so a prompt change shows in review as a diff. Placement: `tests/agents/adjudication/` (a snapshot folder beside it, as `tests/` already has `test_loop_snapshot.py`). Tests: the snapshot test is the test; it must fail when a prompt line changes. About 60 lines plus the snapshot files; half a session. Depends on nothing. Spend: none.
 
 ## Not in this plan
 
-Smaller absorbs from the parity note, each its own change: a browse gate wired into adjudication (T9); a retrieval handle for a capped search result (T10); the input filter on by default (L10); a rendered-prompt snapshot test (C7); the rerun ledger of documents considered per section (C5); a guideline-selection step (C4); Gemini truncation (`agents/gemini_native.py` reads a `MAX_TOKENS` finish as completed); metering the usage of a truncated OpenAI attempt; segment concurrency as a spec field (R3).
+Smaller absorbs from the parity note, each its own change: a browse gate wired into adjudication (T9); the rerun ledger of documents considered per section (C5); metering a truncated attempt's usage is not possible from the SDK error (recorded as an incomplete call instead); `KernelModel` marks no truncation (not checked whether the kernel response has a finish reason); segment concurrency as a spec field (R3).
 
-## Recommendation
+## Which can be built offline now, and where they fit
 
-- **Fits 2.7.5:** E only. It is small, offline, no spend and no pack contract change. 2.7.5 already carries four parity commits and the squash is waiting; adding more than E delays it.
-- **2.8:** A first (it unblocks the metric half of any macer-like result), then C (cheap and it makes every later change measurable), D, B1, B4, then B2 and B3 (B3 waits on the feedback-surface decision).
-- **Typed spend, all in 2.8:** the measuring runs for A, B1, B2, C's baseline and D. Nothing here needs spend to build.
-- **Order of evidence.** Before A, B2 or D, decide with the user whether a before and after on one fixed case set is wanted, since each of them changes what the model sees or does.
+Every item builds offline with no provider call; spend appears only when a measuring run is wanted. What differs is whether a change alters what the model sees, so it needs a measurement first, or touches a pack contract.
+
+| Item | Changes model-visible behavior | Pack contract | Fits |
+|---|---|---|---|
+| E | no (built) | no | 2.7.5, done |
+| A1 calculation wired in, default off | only when a spec turns it on | no (an `EvidenceSpec` flag) | 2.7.5 |
+| A2 extracted values | yes | yes (declared values on a condition) | 2.8 |
+| C regression comparison | no | no | early 2.7.x |
+| D applicability planner | yes, when a pack opts in | no | 2.8 (value shows only when measured) |
+| B1 semantic dedup | yes | no | 2.8 (needs an embedding seam in `llm/`) |
+| B2, B3 resolvers | yes | B3 yes | 2.8 |
+| B4 support and dispute | no (computed from votes) | no | early 2.7.x, useful only with `replicas` above 1 |
+| F1 selector as pack data | no by default | no | early 2.7.x |
+| F2 capped search retrievable | yes (the model can fetch the rest) | no | early 2.7.x |
+| G1 input filter default | yes for long sessions only | no | early 2.7.x, after choosing the default |
+| G2 prompt snapshot test | no | no | 2.7.5 (tests only) |
+
+**Recommendation on A (calculation wired into adjudication).** Split it. **A1** gives the segment's tools-mode tool list the existing `calculate_tool` behind `EvidenceSpec.calculator`, default off, and records the `CalculationLog` calls on each outcome's `inputs` so a reviewer sees what the model computed. It adds no field to the answer, no pack contract change and no behavior change unless a spec turns it on; about 80 + 100 lines, half a session, and it fits 2.7.5. **A2** (declared extracted values, the validator that a claimed calculation matches a call, replica dissent) changes the answer schema and the pack, so it waits for 2.8 and for a decision on the pack contract version. Doing A1 now also makes the 2.8 work measurable: a spec that turns the calculator on can be compared with one that does not.
