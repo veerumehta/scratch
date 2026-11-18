@@ -90,21 +90,23 @@ Stage 1 plus 2 is the minimum that gives one resolution path; 4 and 6 carry the 
 
 ## 6. Name
 
-The user finds `expressions` too narrow and `compute` too general. The package holds functions and their registry, used by a DSL, a tool and generated code.
+The user finds `expressions` too narrow and `compute` too general, and has ruled out `lib`. Two constraints besides: japes's layering (the **library** is all the functionality, **recipes** are the platform agents and pipelines, the **container** is Plato and the Plato client), so a name must not read as a rival to "library" or "recipes"; and `jazzx_sdk/rules/lib.py` (`rules_lib`), which exists, is the library's first content, and must not look like a duplicate of the new package.
 
-| Name | For | Against |
-|---|---|---|
-| `stdlib` | Carries the JDK analogy: the standard library every pack, tool and generated rule can count on; breadth is expected; cannot be read as DSL syntax or a runtime | Reads like Python's own `stdlib` in conversation; the import `jazzx_sdk.stdlib` is unambiguous but speech is not |
-| `functions` | Says exactly what it holds | Generic; every module has functions |
-| `formulas` | Matches the DSL and the worksheet | Narrow again: dates, text matching and unknown handling are not formulas |
-| `calc` | Short; matches the calculator | Narrow in the same way as `expressions`; suggests arithmetic only |
-| `builtins` | "What is available everywhere", which is the point | Collides with Python's `builtins`; implies a fixed set, not a registry packs extend |
-| `fx` | Spreadsheet convention for functions | Cryptic outside finance |
-| `measures` | Fits finance metrics | Misses dates and text |
-| `derive` / `derivations` | The output is a derivation | The helpers (`norm`, `same_org`) derive nothing |
-| `numerics` | Honest about decimal safety | Dates, text matching and unknown handling are not numeric |
+| Name | Reads as a rival to library or recipes? | Against `rules/lib.py` | Other |
+|---|---|---|---|
+| `functions` | No | Says the same thing `rules_lib` is: its helpers are functions, so `jazzx_sdk.functions` and `jazzx_sdk.rules.lib` look like two copies | In the agents SDK and LLM APIs a "function" is a tool a model calls (`agents/function_tools.py`, `function_tool`; 17 files here use the term), so the package would be read as model-callable tools; generic; says nothing of a registry, types or tests |
+| `stdlib` | Mildly: it contains "lib", the word just ruled out for competing with "library", and reads as a rival standard library | Same: next to `rules_lib` it invites "which library?" | Carries the JDK analogy well, which is its only edge |
+| `builtins` | No: it reads as part of the language, which is what it is (the functions every formula, tool call and rule can assume) | Distinct: `rules_lib` is imported by name by a rule; builtins are resolved by the evaluator | Collides in the ear with Python's `builtins` (the import path, `jazzx_sdk.builtins`, does not); implies a fixed set, though the registry is extensible by pack declaration |
+| `primitives` | Yes, mildly: "primitive" already means the SDK's building blocks (35 files use it: finance primitives, spreading primitives), which is the library itself | No clash | Describes the wrong level: these are not the lowest pieces of the SDK, they are the function set |
+| `kit` | Yes: `run_kit`, the agent execution kit and "kit" in prose already name a way to run agents, which is the recipes side | No clash | Vague |
+| `formulas` | No | No clash | Narrow again: dates, text matching and unknown handling are not formulas |
+| `calc` | No | No clash | Collides with `tools/calculate.py` and `calculate_tool`; narrow |
+| `numerics` | No | No clash | Dates and text matching are not numeric |
+| `measures` | No | No clash | Misses dates and text; reads as finance |
+| `fx` | No | No clash | Cryptic outside spreadsheets |
+| `derive` / `derivations` | No | No clash | The output is a derivation, but `norm` and `same_org` derive nothing |
 
-**Recommendation: `stdlib`**, with `functions` as the fallback. The reason is the one you gave: the aim is a library every pack, tool and generated rule can assume, broad by design, and no other candidate says that without being either narrow (`formulas`, `calc`, `measures`) or empty (`functions`, `compute`). The cost is a spoken clash with Python's standard library, which the import path (`jazzx_sdk.stdlib`) removes in code. Your call; the name is the cheapest thing here to change before stage 1.
+**Recommendation: `builtins`**, over the plain `functions`. The package replaces a hard-coded chain of built-in functions in the evaluator with a registry, and a DSL's or a spreadsheet's "built-in functions" is the term a pack author already has for what this holds; it does not compete with "library", "recipes" or `rules_lib`. The case for `functions` is that it is plain and is the user's own phrase ("function library"); the case against is that it is the one candidate whose meaning in this ecosystem is a different thing (a tool a model calls) and that it duplicates what `rules_lib` is called. The costs of `builtins` are the ear-clash with Python's `builtins` and the impression of a closed set, which the note's own design (packs add functions by declaration) contradicts, so the package docstring would say so. Second choice `functions`, third `formulas`. The name is the cheapest thing to change before stage 1.
 
 ## What I did not verify
 
