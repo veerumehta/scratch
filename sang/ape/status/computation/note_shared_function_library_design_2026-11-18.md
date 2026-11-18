@@ -28,7 +28,7 @@ What the survey found, which shapes everything below:
 
 ### One resolution path
 
-A function is looked up by name in one registry. The DSL's two evaluators, `calculate_tool`, formula conditions, derived metrics and generated code all resolve a call the same way; adding a function is one registry entry, visible everywhere at once. The registry is data about functions (name, signature, units, summary, tests, version, unknown policy); the callables live beside it.
+A function is looked up by name in one registry. Inside the SDK process the DSL's two evaluators, `calculate_tool`, formula conditions and derived metrics all resolve a call the same way; adding a function is one registry entry, visible to all of them at once. Generated code runs in a child process that receives the core only (below), so it resolves against the core, not the registry. The registry is data about functions (name, signature, units, summary, tests, version, unknown policy); the callables live beside it.
 
 ### Two layers, because of `rules_lib`
 
@@ -41,16 +41,16 @@ A function is a plain callable that returns a value (or the declared unknown). M
 
 ### Packs add functions by declaration
 
-A pack function is data, not Python: a name, typed inputs, a body in the DSL calling registry functions, and test cases, validated at load (`expressions/validate.py` already checks undefined references, unit mismatches and cycles). `MetricDefinition` is the existing example for a metric; a function definition is the same idea without the period and approval fields. Python-bodied functions are added to the SDK only, through review.
+A pack function is data, not Python: a name, typed inputs, a body in the DSL calling registry functions, and test cases, validated at load (`expressions/validate.py` already checks undefined references, unit mismatches and cycles). `MetricDefinition` is the existing example for a metric; a function definition is the same idea without the period and approval fields. Python-bodied functions are added to the SDK only, through review. Three limits follow. A pack function lives in a pack-scoped namespace, so it cannot shadow a core or built-in name. Its body has a bounded call depth and no cycles. And because its body is DSL, it cannot run in the executor's child process (which imports only `datetime`, `decimal` and `re`): it is either expanded into core calls before the rule is delivered, or not offered to generated code.
 
 ### What a function must satisfy to be admitted
 
 The user accepts breadth here, so the bar is about being predictable, not small:
 
-1. **Named and typed.** A unique name in a dotted namespace, a signature with units where there are any (percent, months, USD).
+1. **Named and typed.** A name is unique by behavior, not only by spelling: two functions that answer differently for the same inputs do not share a name. `months_between` already has three meanings (below), so each variant gets its own name and says in its summary which rule it follows. A dotted namespace, and a signature with units where there are any (percent, months, USD).
 2. **Pure.** No I/O, clock or randomness; a date a function needs "now" for is an argument.
 3. **Decimal-safe.** Takes `int`, `Decimal` or text; a `float` is read as its printed text; computes and returns `Decimal` (never float arithmetic); never takes a `bool` as a number (the `rules_lib` rule).
-4. **A declared unknown policy**, one of a small named set: propagate the unknown, refuse with a reason, treat as zero. Not left to each function.
+4. **A declared unknown policy**, one of a small named set: propagate the unknown, refuse with a reason, treat as zero, raise. Not left to each function. `raise` is in the set because the income worksheet engine's own policy is to raise (`FormulaRuntimeError`, `UnknownReference`) and its caller turns that into "Not calculated"; without it the engine could not be an admitted consumer.
 5. **Tests in the entry.** At least three golden cases: a normal one, a boundary, and an unknown input. The registry test runs every entry.
 6. **A version rule.** When an answer a function gives changes, the library version changes and the manifest for the old version is kept (`LIB_VERSION` and `rules/manifests/` today).
 7. **A summary** (the first paragraph of the docstring), because the prompt list is generated from it.
@@ -58,18 +58,21 @@ The user accepts breadth here, so the bar is about being predictable, not small:
 
 ## 3. The income worksheet, and extract-then-compute
 
-What macer built (`origin/feat/income-worksheet-formula-metrics`, 61 files, +20,041 lines, read in part: `design/income_worksheet.md`, the stat and the commit titles): `metric_kind` of `formula` or `choice` on a job's metric definition (`models/jtbd_ontology.py`: `inputs`, `formula`, `options`, `default_rule`, `consistency_checks`, `notices`, `worksheet_total`); an engine that evaluates the whole set once per run over an entity-backed loan model, in dependency order, never raising ("Not calculated" with a reason); a choice reviewer (an LLM checks a choice against a quote); the engine began as a synced copy of mortgage-app's and a later commit loads it from Kernel instead ("MA-4125: Load the formula engine from Kernel instead of a synced copy (#360)"). I did not read the engine itself.
+What macer built (`origin/feat/income-worksheet-formula-metrics`, 61 files, +20,041 lines; read by me in part: `design/income_worksheet.md`, the stat and the commit titles; and by `sonnet-packs`: the `formula_engine.py` wrapper and the first 560 lines of the engine): `metric_kind` of `formula` or `choice` on a job's metric definition (`models/jtbd_ontology.py`: `inputs`, `formula`, `options`, `default_rule`, `consistency_checks`, `notices`, `worksheet_total`); an engine that evaluates the whole set once per run over an entity-backed loan model, in dependency order, never raising to its caller ("Not calculated" with a reason); and a choice reviewer.
+
+What the engine is: about 4,100 lines of its own language, not the SDK's DSL: a tokenizer, `%` literals and `InList`, entity paths with filters and segments over a loan model; `Decimal` values with a magnitude cap (`MAX_MAGNITUDE` 1e15) and `ROUND_HALF_UP`, `ROUND_CEILING`, `ROUND_FLOOR`; it raises `FormulaRuntimeError` and `UnknownReference` internally and macer's wrapper turns those into "Not calculated". It is owned by mortgage-app and macer never edits it. "Loads it from Kernel" (commit "MA-4125 ... #360") means macer downloads the source of the Kernel tool `income_worksheet_tool` (mortgage-app's script), cuts it at a banner and imports it with `importlib` at setup; macer hashes it. That is downloaded code that is then executed.
 
 How it fits:
 
-- **`formula` kind is the DSL's job.** A formula over inputs bound to entity fields is a `MetricDefinition` with document-field and custom-metric bindings, and the DSL already has cross-entity aggregation (`sum_entities`, `avg_entities`) and multi-period functions. What the engine adds that the DSL lacks are the income helpers (`total`, `average`, rounding, dates), which the registry would hold. Dependency order and "Not calculated with a reason" are the DSL's cycle check and typed `Refusal`.
-- **`choice` kind is not a function.** Selecting among options by a default rule and consistency checks, with an LLM review against a quote, is a pack metric kind with an agent step; the registry supplies the pieces its rule bodies call and nothing more.
+- **`formula` kind is not shown to be the DSL's job.** The engine's language and the DSL's are different, and translating the policy JSON's formulas into `MetricDefinition` is unproven. What the library can offer the engine is the shared pieces it re-implements (date arithmetic, rounding, totals), as functions it calls or as entries whose behavior matches the engine's. The DSL's cross-entity aggregation (`sum_entities`, `avg_entities`) and multi-period functions cover part of the ground, not the entity-path language.
+- **The engine's `months_between` is a third variant.** It counts months the MGIC Income Calculator way (Jan 1 to Jun 11, 2026 is 5.3667) and raises when the end is before the start; `rules_lib.months_between` floors to whole months and goes negative; `rules_lib.months_between_fraction` is another. Admission rule 1 exists for this: the engine's variant is its own entry (for example `months_elapsed_prorated`) that cites the MGIC rule.
+- **`choice` kind is more than an agent step.** The review is persisted as `IncomeWorksheetReview`; a correction needs a quote found in the named document; a correction that would raise the amount is held until a human records `correction_decisions`; the underwriter's saved edits override the AI review; choice metrics also carry `worksheet_total`, `consistency_checks` and `notices`. It needs persistence and a human-decision state, so it is a pack metric kind, not library content; the library supplies only the functions its rule bodies call.
 - **Extract-then-compute (2.6.9 item 11).** The recommendation holds and the library is what makes it safe: the model extracts raw values with provenance (A2 in `docs/plans/adjudication/plan_adjudication_superset_of_macer_2026-11-18.md`), and the SDK computes every derived figure through registry functions, so no figure rests on model arithmetic. The model's own calculator (A1) is for checking, not for the figure of record.
-- **Open for the user, not decided here:** whether the SDK's evaluator and the Kernel-hosted engine become one. The library should make the engine a consumer of the registry, not a second implementation.
+- **Open for the user, not decided here:** whether the SDK's evaluator and the Kernel-hosted engine become one, or the engine stays a separate consumer that calls library functions. Running downloaded source is a decision of its own.
 
 ## 4. What A1 should call now so it is not rework
 
-A1 (`tools/calculate.py`, `evidence.calculator`) reaches the DSL only through `evaluate_over_namespace` and keeps `Calculator.calculate(expression, inputs)`, `CalculationLog`, `calculate_tool` and the recorded shape (`as_record`: expression, inputs as text, value or error). That is the right dependency and needs no change: when the registry exists, the evaluator's function chain is replaced by a lookup, and the calculator gains `round`, `total`, dates and the rest without a line changed. Do not add functions or helpers inside `tools/calculate.py`, and do not copy `finance/metrics.py` formulas into it. One addition later, in A2 not A1: record the library version beside each call, so a recorded calculation can be replayed against the version that ran.
+A1 (`tools/calculate.py`, `evidence.calculator`) reaches the DSL only through `evaluate_over_namespace` and keeps `Calculator.calculate(expression, inputs)`, `CalculationLog`, `calculate_tool` and the recorded shape (`as_record`: expression, inputs as text, value or error). That is the right dependency and needs no change: when the registry exists, the evaluator's function chain is replaced by a lookup, and the calculator gains `round`, `total`, dates and the rest without a line changed. Do not add functions or helpers inside `tools/calculate.py`, and do not copy `finance/metrics.py` formulas into it. One addition later, in A2 not A1: record the library version beside each call (and, where a figure came from the worksheet engine, the engine's source hash), so a recorded calculation can be replayed against what ran.
 
 ## 5. Placement and migration cost
 
@@ -111,7 +114,7 @@ The user finds `expressions` too narrow and `compute` too general, and has ruled
 ## What I did not verify
 
 - I did not read the rest of `finance/` (periods, package, filings, workbook), `formal/compiler.py`'s use of `util/math`, or `pack/assessment.py`'s use of the DSL beyond the import.
-- macer's engine (`income_worksheet_engine.py`, `formula_engine.py`) was not read; the design doc and commit titles are the only evidence for the engine's shape, and I could not tell where in Kernel it now lives.
+- I did not read macer's engine; what is stated about it comes from `sonnet-packs`' read of the wrapper and the first 560 lines of the engine. Nobody read mortgage-app's source or ran anything, and the formulas in a policy JSON have not been tried against the DSL.
 - Importer counts are files that mention the module, not call sites, and not the downstream repos that vendor `rules_lib` text.
 - The claim that two functions' answers differ in the last digits (calculator against `finance.metrics`) is by reading float against Decimal arithmetic, not by running both.
 - I did not check whether the import-linter tiers allow a package at the position the placement section proposes; stage 1 would settle it.
