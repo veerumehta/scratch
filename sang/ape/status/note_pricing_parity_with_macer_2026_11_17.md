@@ -29,4 +29,4 @@ Everything else macer lists, including the Claude ids (fable 5/5.1/5.2, opus 4.6
 
 ## Before macer can delete its table
 
-Our side now matches macer wherever both have a real source. The remaining gaps are the three unpriced models and the `gpt-6` alias above, and the argon price after 2026-12-01. Also macer's tier-aware `compute_cost*(prompt_tokens=...)` has an equivalent in `ModelPricing.for_prompt_size`; per-request pricing (not totals summed across calls) is the caller's job on both sides.
+Our side now matches macer wherever both have a real source. The remaining gaps are the three unpriced models and the `gpt-6` alias above, and the argon price after 2026-12-01. macer's tier-aware `compute_cost*(prompt_tokens=...)` corresponds to our `ModelPricing.for_prompt_size`.
