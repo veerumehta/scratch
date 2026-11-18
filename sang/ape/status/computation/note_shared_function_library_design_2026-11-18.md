@@ -89,7 +89,7 @@ Migration, staged, each stage shippable and none starting before 2.7.5 ships:
 | 5 | `util/math/ratios.py` keeps threshold and sensitivity logic (it is not a function package); its division and non-finite handling use the registry | 5 in source | low |
 | 6 | `rules/lib.py` becomes generated from the core and delivered whole, as now; the `rules_lib` import name and the manifests are unchanged | 18 (11 in source) | a generated-code regression; `LIB_VERSION` and manifests guard it |
 
-Stage 1 plus 2 is the minimum that gives one resolution path; 4 and 6 carry the real cost and can wait.
+Stage 1 plus 2 is the minimum that gives one resolution path; 4 and 6 carry the real cost and can wait. `std` is not part of 2.7.5: stages 1 and 2 go first in the early 2.7.x list in `docs/plans/adjudication/plan_adjudication_superset_of_macer_2026-11-18.md`, after 2.7.5 ships.
 
 ## 6. Name
 
