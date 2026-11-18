@@ -57,3 +57,11 @@ jazzx_sdk/pipelines/policy/figures.py :: paren-figure-depends-on-wrap
 # offsets by one, so one record is skipped until the next sweep.
 # Blast radius: `guidance_sweep` and `guidance_uplift`, one record on a concurrent review change.
 jazzx_sdk/evaluation/feedback/paging.py :: offset-walk-skips-on-mutation
+
+# common-pointer-not-committed (NOTE), 2026-11-18, v2.7.5 review.
+# The reviewer saw the review worktree's `common` at e5f29d9a against the recorded 3cb0a55d. The recorded pointer carries every signature
+# `CommonGatewayRoute` uses (`use_ai_gateway(flag_key, settings=None)`, `ause_ai_gateway`, `async_openai_client(settings=None, **kwargs)`,
+# `openai_base_url`, `api_key`: checked with `git show 3cb0a55d:core/ai_gateway/__init__.py`); the review worktree's submodule was
+# stale and was moved to the recorded sha.
+# Blast radius: none for a clean checkout; the review worktree only.
+jazzx_sdk/llm/gateway/common.py :: common-pointer-not-committed
