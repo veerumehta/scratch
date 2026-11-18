@@ -1,4 +1,4 @@
-# Design note: one function library for pack, tool and generated-code computation
+# Design note: `std`, one function package for pack, tool and generated-code computation
 
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 
@@ -24,7 +24,7 @@ What the survey found, which shapes everything below:
 - **The "income-worksheet helpers" landed in `rules_lib`, not in `expressions/`.** CHANGELOG [2.6.8]: `total`, `average`, `lowest`, `highest` and `edate`, `eomonth`, plus rounding. The DSL has none of them; `evaluate_over_namespace` cannot round or total.
 - **`util/math/ratios.py` and `finance/metrics.py` overlap little.** One computes a ratio, the other judges a ratio against a threshold. The overlap is the division and the non-finite handling, written twice.
 
-## 2. The library: shape
+## 2. `std`: shape
 
 ### One resolution path
 
@@ -32,7 +32,7 @@ A function is looked up by name in one registry. Inside the SDK process the DSL'
 
 ### Two layers, because of `rules_lib`
 
-1. **Core**: pure, stdlib-only modules (the `rules/lib.py` discipline: `datetime`, `decimal`, `re`; no I/O, no clock, no randomness). It can be delivered whole into a child process with no SDK, as `rules_lib` is. `rules_lib` is the first content of the core, unchanged (1.1.2).
+1. **Core**: pure, stdlib-only modules (the `rules/lib.py` discipline: `datetime`, `decimal`, `re`; no I/O, no clock, no randomness). It can be delivered whole into a child process with no SDK, as `rules_lib` is. `rules_lib` is the first content of the `std` core, unchanged (1.1.2).
 2. **Registry**: in the SDK. It indexes the core's functions and the DSL builtins, holds their metadata and tests, renders the API list for prompts (as `render_api` does for `rules_lib`), and resolves calls for the evaluators and the tool.
 
 ### What a function returns: a value, and a derivation made by the registry
@@ -52,7 +52,7 @@ The user accepts breadth here, so the bar is about being predictable, not small:
 3. **Decimal-safe.** Takes `int`, `Decimal` or text; a `float` is read as its printed text; computes and returns `Decimal` (never float arithmetic); never takes a `bool` as a number (the `rules_lib` rule).
 4. **A declared unknown policy**, one of a small named set: propagate the unknown, refuse with a reason, treat as zero, raise. Not left to each function. `raise` is in the set because the income worksheet engine's own policy is to raise (`FormulaRuntimeError`, `UnknownReference`) and its caller turns that into "Not calculated"; without it the engine could not be an admitted consumer.
 5. **Tests in the entry.** At least three golden cases: a normal one, a boundary, and an unknown input. The registry test runs every entry.
-6. **A version rule.** When an answer a function gives changes, the library version changes and the manifest for the old version is kept (`LIB_VERSION` and `rules/manifests/` today).
+6. **A version rule.** When an answer a function gives changes, the `std` version changes and the manifest for the old version is kept (`LIB_VERSION` and `rules/manifests/` today).
 7. **A summary** (the first paragraph of the docstring), because the prompt list is generated from it.
 8. **No consumer names**, and stdlib-only if it belongs to the core.
 
@@ -67,8 +67,8 @@ How it fits:
 - **`formula` kind is not shown to be the DSL's job.** The engine's language and the DSL's are different, and translating the policy JSON's formulas into `MetricDefinition` is unproven. What the library can offer the engine is the shared pieces it re-implements (date arithmetic, rounding, totals), as functions it calls or as entries whose behavior matches the engine's. The DSL's cross-entity aggregation (`sum_entities`, `avg_entities`) and multi-period functions cover part of the ground, not the entity-path language.
 - **The engine's `months_between` is a third variant.** It counts months the MGIC Income Calculator way (Jan 1 to Jun 11, 2026 is 5.3667) and raises when the end is before the start; `rules_lib.months_between` floors to whole months and goes negative; `rules_lib.months_between_fraction` is another. Admission rule 1 exists for this: the engine's variant is its own entry (for example `months_elapsed_prorated`) that cites the MGIC rule.
 - **`choice` kind is more than an agent step.** The review is persisted as `IncomeWorksheetReview`; a correction needs a quote found in the named document; a correction that would raise the amount is held until a human records `correction_decisions`; the underwriter's saved edits override the AI review; choice metrics also carry `worksheet_total`, `consistency_checks` and `notices`. It needs persistence and a human-decision state, so it is a pack metric kind, not library content; the library supplies only the functions its rule bodies call.
-- **Extract-then-compute (2.6.9 item 11).** The recommendation holds and the library is what makes it safe: the model extracts raw values with provenance (A2 in `docs/plans/adjudication/plan_adjudication_superset_of_macer_2026-11-18.md`), and the SDK computes every derived figure through registry functions, so no figure rests on model arithmetic. The model's own calculator (A1) is for checking, not for the figure of record.
-- **Open for the user, not decided here:** whether the SDK's evaluator and the Kernel-hosted engine become one, or the engine stays a separate consumer that calls library functions. Running downloaded source is a decision of its own.
+- **Extract-then-compute (2.6.9 item 11).** The recommendation holds and `std` is what makes it safe: the model extracts raw values with provenance (A2 in `docs/plans/adjudication/plan_adjudication_superset_of_macer_2026-11-18.md`), and the SDK computes every derived figure through registry functions, so no figure rests on model arithmetic. The model's own calculator (A1) is for checking, not for the figure of record.
+- **Open for the user, not decided here:** whether the SDK's evaluator and the Kernel-hosted engine become one, or the engine stays a separate consumer that calls `std` functions. Running downloaded source is a decision of its own.
 
 ## 4. What A1 should call now so it is not rework
 
@@ -76,30 +76,31 @@ A1 (`tools/calculate.py`, `evidence.calculator`) reaches the DSL only through `e
 
 ## 5. Placement and migration cost
 
-Rule 7: the `jazzx_sdk/` root holds only cross-cutting core, and a new root module needs a stated reason. A new package is justified (the one thing the five places share), and it must sit below every package that uses it (`expressions`, `tools`, `rules`, `finance`, `pack`). The `sdk-layers` contract in `.importlinter` puts `util` at the bottom and `clients : handlers : identity : models : concurrency : safety : failures : streaming` above it, and `expressions` is not listed in it at all, so the exact tier is for stage 1 to settle. Core goes in a `core/` subpackage with stdlib-only imports; the registry above it.
+Rule 7: the `jazzx_sdk/` root holds only cross-cutting core, and a new root module needs a stated reason. A new package, `jazzx_sdk/std/`, is justified (the one thing the five places share), and it must sit below every package that uses it (`expressions`, `tools`, `rules`, `finance`, `pack`). The `sdk-layers` contract in `.importlinter` puts `util` at the bottom and `clients : handlers : identity : models : concurrency : safety : failures : streaming` above it, and `expressions` is not listed in it at all, so the exact tier is for stage 1 to settle. Core goes in a `core/` subpackage with stdlib-only imports; the registry above it.
 
-Migration, staged, each stage shippable and none starting before the library is chosen:
+Migration, staged, each stage shippable and none starting before 2.7.5 ships:
 
 | Stage | Change | Files touched (importers) | Risk |
 |---|---|---|---|
-| 1 | New package with the registry and `rules_lib` as its first entries (no moves; `rules_lib` stays byte-identical) | 0 existing | none |
+| 1 | New package `jazzx_sdk/std/` with the registry and `rules_lib` as its first entries (no moves; `rules_lib` stays byte-identical) | 0 existing | none |
 | 2 | The DSL's two evaluators resolve calls through the registry (one file, two functions) | `expressions/evaluate.py` (12 importers of the package) | a changed answer in a builtin: the DSL tests pin them |
 | 3 | The calculator and formula conditions get the registry for free; render the function list into the calculator's description | `tools/calculate.py` (5) | the prompt text changes; the prompt snapshot test (G2) shows it |
 | 4 | `finance/metrics.py` functions become Decimal registry entries; the module re-exports them | 5 in source, 2 in tests | float outputs change in the last digits: a version bump and a check of the callers |
-| 5 | `util/math/ratios.py` keeps threshold and sensitivity logic (it is not a function library); its division and non-finite handling use the registry | 5 in source | low |
+| 5 | `util/math/ratios.py` keeps threshold and sensitivity logic (it is not a function package); its division and non-finite handling use the registry | 5 in source | low |
 | 6 | `rules/lib.py` becomes generated from the core and delivered whole, as now; the `rules_lib` import name and the manifests are unchanged | 18 (11 in source) | a generated-code regression; `LIB_VERSION` and manifests guard it |
 
 Stage 1 plus 2 is the minimum that gives one resolution path; 4 and 6 carry the real cost and can wait.
 
 ## 6. Name
 
-The user finds `expressions` too narrow and `compute` too general, and has ruled out `lib`. Two constraints besides: japes's layering (the **library** is all the functionality, **recipes** are the platform agents and pipelines, the **container** is Plato and the Plato client), so a name must not read as a rival to "library" or "recipes"; and `jazzx_sdk/rules/lib.py` (`rules_lib`), which exists, is the library's first content, and must not look like a duplicate of the new package.
+The package is `jazzx_sdk/std/`. The user found `expressions` too narrow and `compute` too general, and ruled out `lib`. Two constraints applied to every candidate: japes's layering (the **library** is all the functionality, **recipes** are the platform agents and pipelines, the **container** is Plato and the Plato client), so a name must not read as a rival to "library" or "recipes"; and `jazzx_sdk/rules/lib.py` (`rules_lib`), which exists, is `std`'s first content and must not look like a duplicate of the new package.
 
 | Name | Reads as a rival to library or recipes? | Against `rules/lib.py` | Other |
 |---|---|---|---|
+| **`std`** (chosen) | No: it is the short form of "standard", not a second library | Distinct: `rules_lib` is imported by name by a rule; `std` is the shared source it comes from | No "lib" in it; no closed-set implication (a standard set grows by declaration); no clash with Python's `builtins` or `stdlib`. Risks below |
+| `builtins` | No | Distinct | Earlier pick. It lost to `std` on three counts: it implies a closed set, which packs adding functions by declaration contradicts; it clashes in the ear with Python's `builtins`; and `std` says "the standard everything assumes" without either |
 | `functions` | No | Says the same thing `rules_lib` is: its helpers are functions, so `jazzx_sdk.functions` and `jazzx_sdk.rules.lib` look like two copies | In the agents SDK and LLM APIs a "function" is a tool a model calls (`agents/function_tools.py`, `function_tool`; 17 files here use the term), so the package would be read as model-callable tools; generic; says nothing of a registry, types or tests |
-| `stdlib` | Mildly: it contains "lib", the word just ruled out for competing with "library", and reads as a rival standard library | Same: next to `rules_lib` it invites "which library?" | Carries the JDK analogy well, which is its only edge |
-| `builtins` | No: it reads as part of the language, which is what it is (the functions every formula, tool call and rule can assume) | Distinct: `rules_lib` is imported by name by a rule; builtins are resolved by the evaluator | Collides in the ear with Python's `builtins` (the import path, `jazzx_sdk.builtins`, does not); implies a fixed set, though the registry is extensible by pack declaration |
+| `stdlib` | Mildly: it contains "lib", the word ruled out for competing with "library", and reads as a rival standard library | Same: next to `rules_lib` it invites "which library?" | Carries the JDK analogy, its only edge over `std`, which has it too |
 | `primitives` | Yes, mildly: "primitive" already means the SDK's building blocks (35 files use it: finance primitives, spreading primitives), which is the library itself | No clash | Describes the wrong level: these are not the lowest pieces of the SDK, they are the function set |
 | `kit` | Yes: `run_kit`, the agent execution kit and "kit" in prose already name a way to run agents, which is the recipes side | No clash | Vague |
 | `formulas` | No | No clash | Narrow again: dates, text matching and unknown handling are not formulas |
@@ -109,7 +110,10 @@ The user finds `expressions` too narrow and `compute` too general, and has ruled
 | `fx` | No | No clash | Cryptic outside spreadsheets |
 | `derive` / `derivations` | No | No clash | The output is a derivation, but `norm` and `same_org` derive nothing |
 
-**Recommendation: `builtins`**, over the plain `functions`. The package replaces a hard-coded chain of built-in functions in the evaluator with a registry, and a DSL's or a spreadsheet's "built-in functions" is the term a pack author already has for what this holds; it does not compete with "library", "recipes" or `rules_lib`. The case for `functions` is that it is plain and is the user's own phrase ("function library"); the case against is that it is the one candidate whose meaning in this ecosystem is a different thing (a tool a model calls) and that it duplicates what `rules_lib` is called. The costs of `builtins` are the ear-clash with Python's `builtins` and the impression of a closed set, which the note's own design (packs add functions by declaration) contradicts, so the package docstring would say so. Second choice `functions`, third `formulas`. The name is the cheapest thing to change before stage 1.
+Two risks of `std`, both manageable:
+
+- **`std` also reads as standard deviation, or as stdin and stdout.** A deviation function in the package is therefore named `stdev` or `stddev`, never `std`, and a search for `std` in the tree has to be read with that in mind.
+- **It is less self-explanatory than `functions` or `formulas`.** The package docstring must say what it is: the standard functions every formula, tool call and generated rule can assume, resolved from one registry, extensible by pack declaration. The prompt list rendered from the registry (as `render_api` does for `rules_lib`) is the second place a reader meets it.
 
 ## What I did not verify
 
