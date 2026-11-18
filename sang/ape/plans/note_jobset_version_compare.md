@@ -41,7 +41,7 @@ the manifest exists. E. Move `/compare/ui` onto the shared component.
 
 ## Answers from sonnet-runtime (2026-10-26)
 
-- Bundles are a filesystem artifact (`scripts/local/acra_bundle.py`, folder plus `archive/<n>`), not served by Plato; no list route.
+- Bundles are a filesystem artifact (`scripts/local/acra/regen/acra_bundle.py`, folder plus `archive/<n>`), not served by Plato; no list route.
   Its proposed `bundle.json` (version, trial_pack_id, generated_at, sdk and plato version, stages {provider, model, prompt_versions},
   counts, template_digest, library_version) is a plan awaiting opus-xrepo. So the bundle picker (D) is dropped: compare reads the
   pack's jtbdset (published or draft) per program, plus uploads. Run metadata shows only if a route serves it later.

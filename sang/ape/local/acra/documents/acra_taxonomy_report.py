@@ -6,9 +6,9 @@ Reads the taxonomy's master sheet through a declared column mapping, proposes fo
 a second reference (for example the loan system's list) by name, and lists the entries no job reads and the
 job-named documents matching no entry. Every match is a proposal for a person to confirm.
 
-    python scripts/local/acra_taxonomy_report.py TAXONOMY.xlsx --coverage coverage.json \
+    python scripts/local/acra/documents/acra_taxonomy_report.py TAXONOMY.xlsx --coverage coverage.json \
         --registry document_types.yaml [--bytepro LIST.xlsx] [--out report.json]
-    python scripts/local/acra_taxonomy_report.py --plato URL --tenant T --taxonomy-ref ID@VERSION \
+    python scripts/local/acra/documents/acra_taxonomy_report.py --plato URL --tenant T --taxonomy-ref ID@VERSION \
         [--bytepro-ref ID@VERSION] --coverage coverage.json --registry document_types.yaml   # stored references
 """
 

@@ -7,7 +7,7 @@ import route writes a draft. `acra-e2e-ours` is the seed pack's skeleton (profil
 with our extracted jobs and the code written from them, per program, and the ledger that links them. Neither
 touches a published pack. Reads only the bundle and the seed; no loan data.
 
-    python scripts/local/acra_e2e_packs.py [--bundle DIR] [--out DIR]
+    python scripts/local/acra/e2e/acra_e2e_packs.py [--bundle DIR] [--out DIR]
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from jazzx_sdk.pack.jtbd_import import import_program_sets, write_import_to_draf
 ROOT = Path("/Users/sangit/src/japes")
 SEED = ROOT / "plato" / "data" / "seed_packs" / "acra_dscr_policy"
 BUNDLE = ROOT / "docs" / "status" / "Acra" / "acra_bundle"
-OUT = Path("/Users/sangit/src/.scratch/sang/ape/local/acra_e2e/packs")
+OUT = Path("/Users/sangit/src/.scratch/sang/ape/local/acra/e2e/packs")
 KSTUDIO_ID, OURS_ID = "acra-e2e-kstudio", "acra-e2e-ours"
 #: The whole-pipeline packs, one per engine mode: `acra-e2e-pipe-<variant>`.
 PIPELINE_VARIANTS = {"hybrid": "hybrid", "both": "both"}

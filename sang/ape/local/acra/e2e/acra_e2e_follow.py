@@ -2,7 +2,7 @@
 
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 
-    python scripts/local/acra_e2e_follow.py --run-id turn_... --label loan-2
+    python scripts/local/acra/e2e/acra_e2e_follow.py --run-id turn_... --label loan-2
 """
 
 from __future__ import annotations

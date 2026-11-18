@@ -1,7 +1,7 @@
 # Acra regeneration, slice 1 job-writer quality: results (sonnet-runtime, 2026-10-21)
 
 Two arms on the same config (4a, 4b; Plato at 17cfe8ff, before the later fixes), merged jobs only, files read with
-`scripts/local/acra_regen_measure.py`. Baseline is 3b (and regen 1/2 where noted). Outputs: `scripts/local/coverage/regen_4a|4b`.
+`scripts/local/acra/regen/acra_regen_measure.py`. Baseline is 3b (and regen 1/2 where noted). Outputs: `scripts/local/coverage/regen_4a|4b`.
 Spend: well under the approved $2 (cost ledger rebuilt, no loan files used).
 
 | Measure | Std 3b | Std 4a | Std 4b | Plat 3b | Plat 4a | Plat 4b |

@@ -8,7 +8,7 @@ reads it through the page cache. The raw result is saved under the e2e folder (i
 counts, ids and field names, never a value, name or amount. Plato holds the spend ceiling (`JAPES_RUN_BUDGET_USD`, set when
 it was started); ``--stop-after`` also asks the run to stop once that many seconds have passed.
 
-    python scripts/local/acra_e2e_pipeline.py --variant hybrid --label loan-2 [--publish] [--golden-conditions N]
+    python scripts/local/acra/e2e/acra_e2e_pipeline.py --variant hybrid --label loan-2 [--publish] [--golden-conditions N]
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from typing import Any
 from jazzx_plato_client import PlatoClient
 
 ROOT = Path("/Users/sangit/src/japes/docs/status/Acra/Acra Lending/e2e")
-PACKS = Path("/Users/sangit/src/.scratch/sang/ape/local/acra_e2e/packs")
+PACKS = Path("/Users/sangit/src/.scratch/sang/ape/local/acra/e2e/packs")
 POLL_SECONDS = 20
 TERMINAL = {"completed", "failed", "cancelled", "interrupted"}
 DECIDED = {"pass", "fail", "not_applicable"}

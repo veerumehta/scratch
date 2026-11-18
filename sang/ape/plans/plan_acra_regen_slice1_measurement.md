@@ -8,13 +8,13 @@ user's go for the spend. Policy documents only; no loan files; outputs only unde
 
 1. Same input as the baseline `acra-regen-3b`: the synced seed `plato/data/seed_packs/acra_dscr_policy` (consolidated
    guidelines v1.0). No source change.
-2. Same template flags as 3b: `ACRA_TEMPLATE_EXTRA=/Users/sangit/src/.scratch/sang/ape/local/acra/acra_template_extra.yaml`
+2. Same template flags as 3b: `ACRA_TEMPLATE_EXTRA=/Users/sangit/src/.scratch/sang/ape/local/acra/regen/acra_template_extra.yaml`
    (the `/tmp` copy is gone): `fold: {accept 0.8, ask 0.6, judge true}` and `data_mapping: {accept 0.8, ask 0.4, judge true}`.
    Slice 1 adds no template flag; `section_definitions` stays unset, so the planner gets the family descriptions (the
    consumer's own words, already in the seed's `mnemonics.families`).
 3. Local Plato must run the slice-1 code. The running process predates `v2.6.5`: it needs a restart from the shared checkout
    (`v2.6.5`, tree clean at that point). I do not restart it; opus-xrepo does, or says so.
-4. Harness: the existing `scripts/local/acra_regen.sh <trial-pack-id> <out-dir>` (seed, 4 extractions, merge-jobs, code,
+4. Harness: the existing `scripts/local/acra/regen/acra_regen.sh <trial-pack-id> <out-dir>` (seed, 4 extractions, merge-jobs, code,
    align, coverage), with `ACRA_TEMPLATE_EXTRA` set, trial id `acra-regen-4a` (repeat: `acra-regen-4b`), out
    `scripts/local/coverage/regen_4a`. Phases append to `regen_log.jsonl`. The harness records failed segments only in its log:
    after the run, retry connection-error failures with `acra_ledger_live.py retry-failed` (as for 3b) and say so in the table.
@@ -23,7 +23,7 @@ user's go for the spend. Policy documents only; no loan files; outputs only unde
 
 ## 2. Measurement
 
-Reader: `scripts/local/acra_regen_measure.py <dir>` (written now, files only). Run on the 3b bundle jobs it reproduces the
+Reader: `scripts/local/acra/regen/acra_regen_measure.py <dir>` (written now, files only). Run on the 3b bundle jobs it reproduces the
 assessment's numbers exactly (Standard 18 of 46 citations span sections, worst citation 16 jobs, 13 near-duplicate pairs, 56 jobs
 with reads and none computable; Platinum 23 of 35, 32, 22, 19), which is the check that the reader measures what the plan means.
 "Platinum listed-for-sale job count" is measured as the most jobs one citation has (32 today), with no Acra phrase in the

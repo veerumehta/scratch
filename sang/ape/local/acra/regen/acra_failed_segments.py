@@ -7,7 +7,7 @@ the Python extractor on the three Platinum segments (3.12 paragraphs 2 to 4) and
 the three Standard sections that failed, with the model the runs used. Prints the exception class
 and message of each, which the run record does not keep; stores nothing in Plato.
 
-    python scripts/local/acra_failed_segments.py
+    python scripts/local/acra/regen/acra_failed_segments.py
 """
 
 from __future__ import annotations

@@ -24,7 +24,7 @@ import asyncio, os
 from pathlib import Path
 from jazzx_plato_client import PlatoClient
 import importlib.util
-spec = importlib.util.spec_from_file_location("acra_taxonomy_report", "scripts/local/acra_taxonomy_report.py")
+spec = importlib.util.spec_from_file_location("acra_taxonomy_report", "scripts/local/acra/documents/acra_taxonomy_report.py")
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 TAXONOMY_COLUMNS = module.TAXONOMY_COLUMNS

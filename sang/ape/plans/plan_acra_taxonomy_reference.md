@@ -9,7 +9,7 @@ title rows above the header (row 4), 152 entries. Not copied into the repo, not 
    Priority maps through `attributes`; the ID prefix stays in the verbatim code (category is the Category column).
 2. Load: `acra-taxonomy@2026-10-17` through the upload route with the declared mapping; a script for the user
    (local Plato still runs 0.2.4, no document-references routes: pin to the tip, migrate to 0035, restart).
-3. Report (script `scripts/local/acra_taxonomy_report.py`, read-only, no adoption into acra-dscr-policy): proposals
+3. Report (script `scripts/local/acra/documents/acra_taxonomy_report.py`, read-only, no adoption into acra-dscr-policy): proposals
    of taxonomy entries against the BytePro reference by name (unmatched listed, nothing merged), the taxonomy
    entries no job reads (`coverage(..., registry)` over the taxonomy registry and the regen job documents) and
    the job-named documents matching no entry.

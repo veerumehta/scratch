@@ -44,7 +44,7 @@ what the planner now writes, and that is spend: not run.)
 `pipelines/policy/jtbd.py` (planner grouping, `_template_section`, the writer's draft schema gets `slug`), a small
 `pipelines/policy/job_identity.py` (prefix and slug rules, uniqueness, fallback; pure functions, tested without a model),
 `pack/jtbdset_lint.py` (the section check), `pack/jtbd_compare.py` and the compare route (the equivalence summary; the aligned
-mode exists), `scripts/local/acra_bundle.py` (record the identity rules' version in `bundle.json`). Estimated: part 1 half a
+mode exists), `scripts/local/acra/regen/acra_bundle.py` (record the identity rules' version in `bundle.json`). Estimated: part 1 half a
 day, part 2 half a day, part 3 one day with the prompt line, part 4 half a day. Parts 1, 2 and 4 are no-spend until measured.
 
 ## 4. Risks and the revisit trigger

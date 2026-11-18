@@ -217,7 +217,7 @@ def _xlsx(results: dict, path: Path) -> None:
 async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--runs", required=True)
-    parser.add_argument("--out", default=str(Path(__file__).parent / "coverage" / "compare"))
+    parser.add_argument("--out", default=str(Path(__file__).resolve().parents[2] / "coverage" / "compare"))
     parser.add_argument("--budget", type=float, default=5.0)
     parser.add_argument("--only", default="", help="comma-separated comparison names")
     args = parser.parse_args()

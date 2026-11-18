@@ -5,7 +5,7 @@ Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 Reuses `acra_compare_sets.compare`: lexical candidates, then one model call per K-Studio job labelling each
 candidate same, differs, partial or none. Writes pairs.json (the matched pairs by id) under --out.
 
-    python scripts/local/acra_e2e_pair.py --out DIR [--budget 3]
+    python scripts/local/acra/regen/acra_e2e_pair.py --out DIR [--budget 3]
 """
 
 from __future__ import annotations

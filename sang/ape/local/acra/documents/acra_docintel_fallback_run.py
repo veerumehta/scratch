@@ -20,8 +20,8 @@ from pathlib import Path
 import yaml
 
 ROOT = Path("/Users/sangit/src/japes")
-SOURCE = Path("/Users/sangit/src/.scratch/sang/ape/local/acra_e2e/packs/acra-e2e-ours")
-SCRATCH = Path("/Users/sangit/src/.scratch/sang/ape/local/acra_e2e/packs/acra-e2e-fallback")
+SOURCE = Path("/Users/sangit/src/.scratch/sang/ape/local/acra/e2e/packs/acra-e2e-ours")
+SCRATCH = Path("/Users/sangit/src/.scratch/sang/ape/local/acra/e2e/packs/acra-e2e-fallback")
 LOAN = ROOT / "docs" / "status" / "Acra" / "Acra Lending" / "e2e" / "loan-2"
 PACK_ID, VERSION = "acra-e2e-fallback", "0.0.1"
 STEP = "documents"

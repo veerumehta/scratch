@@ -35,12 +35,12 @@ SOURCE = "acra-dscr-policy"
 TRIAL = os.environ.get("ACRA_TRIAL", "acra-ledger-trial")
 SEED = Path("/Users/sangit/src/japes/plato/data/seed_packs/acra_dscr_policy")
 POLICIES = {"acra-standard": "Acra Standard DSCR (jobs)", "acra-platinum": "Acra Platinum Select DSCR (jobs)"}
-DIR = Path(os.environ.get("ACRA_DIR", Path(__file__).parent / "coverage" / "ledger_live"))
+DIR = Path(os.environ.get("ACRA_DIR", Path(__file__).resolve().parents[2] / "coverage" / "ledger_live"))
 TEMPLATE = "jtbd_template.yaml"
 #: A yaml file appended to the trial's jtbd_template.yaml by `seed` (the synced seed is not edited).
 TEMPLATE_EXTRA = Path(os.environ["ACRA_TEMPLATE_EXTRA"]) if os.environ.get("ACRA_TEMPLATE_EXTRA") else None
 #: One JSON line per phase result (run ids, counts, failed segments, cost), kept across regens to mine later.
-LOG = Path(os.environ.get("ACRA_REGEN_LOG", Path(__file__).parent / "coverage" / "regen_log.jsonl"))
+LOG = Path(os.environ.get("ACRA_REGEN_LOG", Path(__file__).resolve().parents[2] / "coverage" / "regen_log.jsonl"))
 POLL_SECONDS = 30
 #: A line per run this often while it is not finished, so a quiet terminal is not mistaken for a hang.
 HEARTBEAT_SECONDS = 120

@@ -76,7 +76,7 @@ async def main() -> None:
     parser.add_argument("--parallel", type=int, default=2)
     parser.add_argument("--attempts", type=int, default=2)
     parser.add_argument("--pack", default=PACK)
-    parser.add_argument("--out", default=str(Path(__file__).parent / "coverage" /
+    parser.add_argument("--out", default=str(Path(__file__).resolve().parents[2] / "coverage" /
                                              f"runs_{time.strftime('%Y%m%d')}.json"))
     args = parser.parse_args()
     wanted = {tuple(s.split(":")) for s in args.only.split(",") if s} or set(JOBS)

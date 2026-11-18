@@ -7,9 +7,9 @@ V4 hybrid, V5 both. Packs come from `acra_e2e_packs.py`. The record is the extra
 facts); its values never reach the report, which holds counts, rule ids and field names. Spend is metered:
 a variant stops asking the model at ``--variant-budget`` and the run stops at ``--total-budget``.
 
-    python scripts/local/acra_e2e_run.py --case CASE.json --out DIR [--pairs pairs.json] [--golden-conditions N]
-    python scripts/local/acra_e2e_run.py --dry-run --out DIR        # synthetic record, scripted model, no spend
-    python scripts/local/acra_e2e_run.py --plato URL --tenant T ... # assess through a Plato that holds the two packs
+    python scripts/local/acra/e2e/acra_e2e_run.py --case CASE.json --out DIR [--pairs pairs.json] [--golden-conditions N]
+    python scripts/local/acra/e2e/acra_e2e_run.py --dry-run --out DIR        # synthetic record, scripted model, no spend
+    python scripts/local/acra/e2e/acra_e2e_run.py --plato URL --tenant T ... # assess through a Plato that holds the two packs
                                                                     # (`--publish` stores them first; `--no-reason` skips jobs)
 """
 
@@ -29,7 +29,7 @@ from jazzx_sdk.fabric.canonical.local_executor import LocalPythonExecutor
 from jazzx_sdk.pack import Pack
 from jazzx_sdk.pack.assessment import AssessmentOutcome, assess
 
-PACKS = Path("/Users/sangit/src/.scratch/sang/ape/local/acra_e2e/packs")
+PACKS = Path("/Users/sangit/src/.scratch/sang/ape/local/acra/e2e/packs")
 SYNTHETIC = Path("/Users/sangit/src/japes/tests/data/dscr_gold_cases/double_cap.json")
 VARIANTS = [("V1 K-Studio jobs", "acra-e2e-kstudio", "jobs_only"), ("V2 our jobs", "acra-e2e-ours", "jobs_only"),
             ("V3 our code", "acra-e2e-ours", "code_only"), ("V4 hybrid", "acra-e2e-ours", "hybrid"),

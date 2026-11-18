@@ -8,9 +8,9 @@ AGGREGATE figures only: segment labels and page ranges, which pages were scanned
 fields were read (present or not, never the value), agreement between engines (a boolean), cost and
 time. It prints no text from the documents and writes nothing but the aggregate JSON.
 
-    python scripts/local/acra_scanned_validation.py --phase split-vision
-    python scripts/local/acra_scanned_validation.py --phase split-docintel
-    python scripts/local/acra_scanned_validation.py --phase appraisal
+    python scripts/local/acra/documents/acra_scanned_validation.py --phase split-vision
+    python scripts/local/acra/documents/acra_scanned_validation.py --phase split-docintel
+    python scripts/local/acra/documents/acra_scanned_validation.py --phase appraisal
 
 Needs the provider key and the DocIntel endpoint and key in the environment (see japes' .env).
 """

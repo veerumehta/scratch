@@ -8,7 +8,7 @@ aligns every Python rule to the JTBD jobs it implements (lexical candidates, the
 per rule), classifies each job (covered / computable-but-missing / not-computable), lists the
 Python rules no job accounts for, and writes JSON and xlsx with aggregates and the model cost.
 
-    python scripts/local/acra_coverage_report.py [--out /tmp/cov] [--budget 5.0]
+    python scripts/local/acra/regen/acra_coverage_report.py [--out /tmp/cov] [--budget 5.0]
 
 Guideline documents carry no borrower data. The model is the deployment's default.
 """

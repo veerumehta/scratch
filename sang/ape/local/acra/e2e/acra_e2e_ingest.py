@@ -5,7 +5,7 @@ Author: Virendra Mehta <virendra.mehta@jazzx.ai>
 Prints ids, counts and usage only: never a file name, a borrower name or a document value. The packet is the
 ``--entry``-th file (sorted, 1-based) of the loans folder; the read result is saved under the e2e folder (ignored).
 
-    python scripts/local/acra_e2e_ingest.py --entry 2 --label loan-2 [--pack acra-e2e-ours]
+    python scripts/local/acra/e2e/acra_e2e_ingest.py --entry 2 --label loan-2 [--pack acra-e2e-ours]
 """
 
 from __future__ import annotations

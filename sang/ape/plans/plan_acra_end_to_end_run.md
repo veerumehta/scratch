@@ -22,7 +22,7 @@ total, 8 per variant.
 1. Scratch packs: `acra-e2e-kstudio` (K-Studio jobs as jobs, through the JTBDSet import) and `acra-e2e-ours`
    (regen 3b jobs and code); neither touches `dscr-core` or `acra-dscr-policy`.
 2. Pairing: `acra_compare_sets.py` pairs K-Studio jobs with ours (matched requirements for agreement).
-3. Harness `scripts/local/acra_e2e_run.py`: for a case record, runs V1 (kstudio, jobs_only), V2 (ours, jobs_only),
+3. Harness `scripts/local/acra/e2e/acra_e2e_run.py`: for a case record, runs V1 (kstudio, jobs_only), V2 (ours, jobs_only),
    V3 (ours, code_only), V4 (ours, hybrid), V5 (ours, both) and writes per variant: decided share (pass, fail, not
    applicable) vs indeterminate vs withheld with the reason of each undecided requirement, data readiness (fields
    filled vs read, `missing_reads`), open conditions, cost and latency; across variants: agreement on paired

@@ -139,9 +139,9 @@ Other numbers worth a look before acceptance (code numbers not printed in the cl
 ## Process to repeat
 
 1. `ape/local/plato_worktree.sh restart <rev>`: Plato on the commit under test.
-2. `python ape/local/acra_rerun_extractions.py`: four runs, two at a time, each retried once if a
+2. `python ape/local/acra/regen/acra_rerun_extractions.py`: four runs, two at a time, each retried once if a
    part fails; writes `coverage/runs_<date>.json` (2 to 3 hours on the flex tier, about $0.15).
-3. `ape/local/acra_review_all.sh coverage/runs_<date>.json`: both coverage reports and the five
+3. `ape/local/acra/regen/acra_review_all.sh coverage/runs_<date>.json`: both coverage reports and the five
    comparisons (about an hour on flex, about $0.45). It reads proposals from the running Plato, so
    do not restart it until this finishes.
 4. Review in the xlsx files: `computable_but_missing` rows (rules to add), `differs` rows of

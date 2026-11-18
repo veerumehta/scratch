@@ -19,10 +19,11 @@ import httpx
 import yaml
 
 HERE = Path(__file__).parent
+LOCAL = Path(__file__).resolve().parents[2]
 SOURCE = "acra-regen-4b"
 CODABLE = {"code", "code_and_procedure"}
-COVERAGE = HERE / "coverage" / "regen_4b" / "coverage.json"
-RESULT = HERE / "coverage" / "case_author_sample.json"
+COVERAGE = LOCAL / "coverage" / "regen_4b" / "coverage.json"
+RESULT = LOCAL / "coverage" / "case_author_sample.json"
 
 
 def pick(per_policy: int, policies: list[str]) -> dict[str, list[str]]:
@@ -32,11 +33,11 @@ def pick(per_policy: int, policies: list[str]) -> dict[str, list[str]]:
 
 
 def run_trial(trial: str, flag: bool, chosen: dict[str, list[str]]) -> dict:
-    os.environ["ACRA_TRIAL"], os.environ["ACRA_DIR"] = trial, str(HERE / "coverage" / trial)
+    os.environ["ACRA_TRIAL"], os.environ["ACRA_DIR"] = trial, str(LOCAL / "coverage" / trial)
     sys.path.insert(0, str(HERE))
     import acra_ledger_live as L
 
-    L.SOURCE, L.TRIAL, L.DIR = SOURCE, trial, HERE / "coverage" / trial
+    L.SOURCE, L.TRIAL, L.DIR = SOURCE, trial, LOCAL / "coverage" / trial
     http = httpx.Client(headers=L.HEAD, timeout=L.TIMEOUT_SECONDS)
     L.copy(http)
     if flag:

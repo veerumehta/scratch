@@ -8,7 +8,7 @@ Taxonomy table) and writes ``golden/dataset_parts.json``: one case per Part with
 range carries the master category; the ranges the user excluded (unmapped, unclassified) keep their pages
 under ``excluded`` so boundaries stay whole. No loan file is opened and no loan text is read.
 
-    python scripts/local/acra_classification_dataset.py
+    python scripts/local/acra/documents/acra_classification_dataset.py
 """
 
 from __future__ import annotations

@@ -22,7 +22,7 @@ import yaml
 from jazzx_sdk.pack.ledger import DISPOSITIONS
 
 ROOT = Path("/Users/sangit/src/japes")
-COVERAGE = Path(__file__).parent / "coverage"
+COVERAGE = Path(__file__).resolve().parents[2] / "coverage"
 API = "http://localhost:8000/api/v1"
 HEAD = {"x-tenant-id": "acra-lending"}
 DEFAULT_TRIAL, SOURCE = "acra-ledger-trial", "acra-dscr-policy"

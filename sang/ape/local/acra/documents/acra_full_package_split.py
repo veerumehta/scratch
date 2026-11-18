@@ -9,8 +9,8 @@ and which were not, scanned-page count, cost and time. It prints no text from th
 writes nothing but the aggregate JSON (the file carries a real borrower; keep it out of git and out
 of chat).
 
-    python scripts/local/acra_full_package_split.py
-    python scripts/local/acra_full_package_split.py --package /path/to/other.pdf --out /tmp/x.json
+    python scripts/local/acra/documents/acra_full_package_split.py
+    python scripts/local/acra/documents/acra_full_package_split.py --package /path/to/other.pdf --out /tmp/x.json
 
 Needs the provider key in the environment (see japes' .env). Cost is a few tenths of a dollar at the
 vision model's rate (40 pages cost about $0.04); the spec's vision budget caps it at $5.
@@ -30,7 +30,7 @@ import acra_scanned_validation as base  # noqa: E402
 DEFAULT_PACKAGE = Path(
     "/Users/sangit/src/.scratch/sang/aci/plans/AcraL/Docs from DSCR CRE/Acra Lending/"
     "GoDocs - DSCR Loan Docs (File Funded in April 2026).pdf")
-DEFAULT_OUT = Path(__file__).resolve().parent / "coverage" / "ingest_full" / "split_vision.json"
+DEFAULT_OUT = Path(__file__).resolve().parents[2] / "coverage" / "ingest_full" / "split_vision.json"
 CONFIDENCE_BANDS = (0.5, 0.8, 0.95)
 
 

@@ -7,4 +7,4 @@
 sang/ape/status/Acra/Acra Lending/
 
 # Moved from /tmp: this script names a loan package file in its arguments.
-sang/ape/local/acra/acra_local_ingest_all.sh
+sang/ape/local/acra/documents/acra_local_ingest_all.sh
