@@ -319,6 +319,13 @@ python "$(git rev-parse --show-toplevel)/scripts/local/check_plan_refs.py"
 say "2g/4  layering: logic added under plato/ (warn only)"
 PUSH_REFS="$PUSH_REFS" python "$(git rev-parse --show-toplevel)/scripts/local/check_plato_layering.py" || true
 
+# ── 2h. layering: client methods added with no abstraction above the client ───────────────────────
+# Higher-level abstractions live in the fabric layer so consumers rarely need the client. Lists the public methods a push adds
+# to a service client that nothing under jazzx_sdk or plato (outside the clients) calls, as questions: who is the consumer and
+# what layer do they stand at (a service calling the generated client directly is a reason to stay at the client)? Warn only.
+say "2h/4  layering: client methods with no fabric abstraction (warn only)"
+PUSH_REFS="$PUSH_REFS" python "$(git rev-parse --show-toplevel)/scripts/local/check_fabric_layering.py" || true
+
 # ── 3. the suite ──────────────────────────────────────────────────────────────
 # `JAPES_SKIP_SUITE=1` keeps the review, which `--quick` does not: the review is the step that
 # catches what a green suite does not, and the suite is the slow one. Symmetric with the

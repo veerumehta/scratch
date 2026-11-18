@@ -398,6 +398,19 @@ if git diff --name-only ${diff_range:-} -- plato 2>/dev/null | grep -q '^plato/.
     } >> "$prompt_file"
 fi
 
+# Fabric layering: higher-level abstractions live in the fabric layer. Asked only when the diff adds a method to a service client.
+if git diff ${diff_range:-} -- jazzx_sdk/clients 2>/dev/null | grep -qE '^\+\s+(async )?def [a-z]'; then
+    {
+        printf '\nThis diff adds methods under jazzx_sdk/clients/. Rule: higher-level abstractions live in the fabric layer so '
+        printf 'consumers rarely need the client. Flag a new capability exposed only at the client layer, with no fabric-level '
+        printf 'abstraction, as a [SYMMETRY] finding: name the fabric module that should expose it (collections, entities, docs, graph, '
+        printf 'rag, canonical, global_config, or a new store) and cite the rule, or say why its consumers stand below the fabric '
+        printf '(a service that calls the generated client directly is the example). Methods on the Strict and Workspace wrappers, the '
+        printf 'mock and kh_protocol.py mirror the client and are not capabilities. Say nothing when each new method has its fabric home '
+        printf 'in the same diff.\n'
+    } >> "$prompt_file"
+fi
+
 # Findings the author has retired without fixing them. `TODO(...)` on the code and a `skip` marker
 # on a test are the only two closures the prompt above offers, and both are code constructs: a row
 # in a pack YAML has nowhere to put either, so a corpus finding the author declines can only be
