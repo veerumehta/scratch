@@ -19,7 +19,7 @@ Sizes are estimated from comparable features in the CHANGELOG (learning loop L1:
 
 ### A. Calculation and extracted values with provenance (parity T2, S4)
 
-Two steps: **A1** wires the existing calculator into tools mode behind a default-off spec flag and records its calls on each outcome; **A2** is the rest below.
+Two steps. **A1** is built: `evidence.calculator` (default off) gives tools mode the existing calculator and records its calls on each outcome's `inputs` under `calculations`. **A2** is the rest below. The calculator already shares the SDK's metric DSL (`jazzx_sdk/expressions`) with formula conditions and derived metrics; `finance/metrics.py` is separate float arithmetic and `pipelines/financial/spread.py` assembles spreads, so A2's declared values should name expressions in that DSL and not reach into either.
 
 - **Design.** A rule or condition declares the values it extracts as pack data: a key, a description, optionally a unit. The verdict item gains `extracted: list[ExtractedValue]`, each with the declared key, a decimal value as text, cites (document and page, validated by the same checks as verdict cites), and the calculation steps. In tools mode the model gets `calculate_tool` (a `CalculationLog` per replica); a value that claims a calculation must equal a successful call in that log (`CalculationLog.has_result`), otherwise the validator raises a tool-required error so the retry sends the model back to the tool (the mechanism exists, `agents/run_kit.py:241-243,275-276`, and no adjudication validator uses it yet). A key outside the declared set, or a value that is not a number where a number is declared, is an ordinary validation error. In inline mode there are no tools: a value carries cites only and says so. Across replicas the value with most support stands, ties to the most complete, and the dissenting values stay in `inputs` (macer picks silently).
 - **Improves on macer.** The declared set is pack data, not a code list; a calculation is checked against what ran, not against a flag that Python was invoked; dissent is recorded.
@@ -67,7 +67,7 @@ Built: `_scoped_verdict(tokens)` in `agents/adjudication/segment.py` limits a co
 ### G. Session size and read-tool hygiene defaults (parity L10, C7)
 
 - **G1. The input filter on by default.** `InputFilter` exists and is stronger than macer's (it stubs the oldest tool outputs first, then drops the oldest reasoning groups; `agents/run_kit.py:476`), but `max_session_size_kb` defaults to 0 (off, `run_kit.py:656`). The change: the default comes from config as a named constant with an environment override, and 0 still turns it off; the adjudication call passes it. Choosing the number needs a measurement of real session sizes (macer uses 750 KB; that is a starting value to test, not a finding). The filter only acts above the limit, so a short session is untouched. Placement: `agents/run_kit.py` and `config/envvars.py` usage as `JAPES_CALL_DEADLINE_SECONDS` does; tests in `tests/` beside `test_agents_run_kit.py`. Tests, failing on old code: a session over the default is shrunk and its user items stay; 0 is a pass-through; the environment value wins. About 60 + 80 lines; half a session. Depends on a decision on the default. Spend: none to build.
-- **G2. A rendered-prompt snapshot test.** The prompts are versioned files composed with provenance, but nothing pins the text a segment sends. The change: a test renders `_render_batch_prompt` and the composed instructions for a fixed rule set (inline and tools mode, with and without a roster, with a rerun focus) and compares them with checked-in files, so a prompt change shows in review as a diff. Placement: `tests/agents/adjudication/` (a snapshot folder beside it, as `tests/` already has `test_loop_snapshot.py`). Tests: the snapshot test is the test; it must fail when a prompt line changes. About 60 lines plus the snapshot files; half a session. Depends on nothing. Spend: none.
+- **G2. A rendered-prompt snapshot test (built: `tests/agents/adjudication/test_adjudication_prompt_snapshots.py`).** The prompts are versioned files composed with provenance, but nothing pins the text a segment sends. The change: a test renders `_render_batch_prompt` and the composed instructions for a fixed rule set (inline and tools mode, with and without a roster, with a rerun focus) and compares them with checked-in files, so a prompt change shows in review as a diff. Placement: `tests/agents/adjudication/` (a snapshot folder beside it, as `tests/` already has `test_loop_snapshot.py`). Tests: the snapshot test is the test; it must fail when a prompt line changes. About 60 lines plus the snapshot files; half a session. Depends on nothing. Spend: none.
 
 ## Not in this plan
 
@@ -80,7 +80,7 @@ Every item builds offline with no provider call; spend appears only when a measu
 | Item | Changes model-visible behavior | Pack contract | Fits |
 |---|---|---|---|
 | E | no (built) | no | 2.7.5, done |
-| A1 calculation wired in, default off | only when a spec turns it on | no (an `EvidenceSpec` flag) | 2.7.5 |
+| A1 calculation wired in, default off | only when a spec turns it on | no (an `EvidenceSpec` flag) | 2.7.5, built |
 | A2 extracted values | yes | yes (declared values on a condition) | 2.8 |
 | C regression comparison | no | no | early 2.7.x |
 | D applicability planner | yes, when a pack opts in | no | 2.8 (value shows only when measured) |
@@ -90,6 +90,6 @@ Every item builds offline with no provider call; spend appears only when a measu
 | F1 selector as pack data | no by default | no | early 2.7.x |
 | F2 capped search retrievable | yes (the model can fetch the rest) | no | early 2.7.x |
 | G1 input filter default | yes for long sessions only | no | early 2.7.x, after choosing the default |
-| G2 prompt snapshot test | no | no | 2.7.5 (tests only) |
+| G2 prompt snapshot test | no | no | 2.7.5, built (tests only) |
 
 **Recommendation on A (calculation wired into adjudication).** Split it. **A1** gives the segment's tools-mode tool list the existing `calculate_tool` behind `EvidenceSpec.calculator`, default off, and records the `CalculationLog` calls on each outcome's `inputs` so a reviewer sees what the model computed. It adds no field to the answer, no pack contract change and no behavior change unless a spec turns it on; about 80 + 100 lines, half a session, and it fits 2.7.5. **A2** (declared extracted values, the validator that a claimed calculation matches a call, replica dissent) changes the answer schema and the pack, so it waits for 2.8 and for a decision on the pack contract version. Doing A1 now also makes the 2.8 work measurable: a spec that turns the calculator on can be compared with one that does not.
