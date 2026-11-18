@@ -82,6 +82,7 @@ Every item builds offline with no provider call; spend appears only when a measu
 | E | no (built) | no | 2.7.5, done |
 | A1 calculation wired in, default off | only when a spec turns it on | no (an `EvidenceSpec` flag) | 2.7.5, built |
 | A2 extracted values | yes | yes (declared values on a condition) | 2.8 |
+| Served-tier costing, phase 2 (read the tier the response names on the agent-tier path by wrapping the SDK client, price by it, mark an unconfirmed tier; Anthropic `usage.service_tier`, Gemini `traffic_type`) | no | no | early 2.7.x, first with `std` stages 1 and 2 |
 | `std` stages 1 and 2 (the registry; the DSL resolves through it; `docs/status/computation/note_shared_function_library_design_2026-11-18.md`) | no | no | early 2.7.x, first |
 | C regression comparison | no | no | early 2.7.x |
 | D applicability planner | yes, when a pack opts in | no | 2.8 (value shows only when measured) |
