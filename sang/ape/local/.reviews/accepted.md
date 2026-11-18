@@ -65,3 +65,13 @@ jazzx_sdk/evaluation/feedback/paging.py :: offset-walk-skips-on-mutation
 # stale and was moved to the recorded sha.
 # Blast radius: none for a clean checkout; the review worktree only.
 jazzx_sdk/llm/gateway/common.py :: common-pointer-not-committed
+
+# abandoned-write-window (NOTE, low), 2026-11-18, v2.7.5 review.
+# `ChatCoordinator._protected` cancels a store write that ran past `commit_grace_seconds`, or that its own task's cancel interrupted,
+# without waiting for it to unwind, and records the run `indeterminate`. A write that unwinds after that can land after a reconcile
+# probe read "not landed". Waiting for the unwind was tried and withdrawn: it makes the grace bound up to two graces, which
+# `close()`'s budget (`timeout + commit_grace`) does not cover, and it changes what `commit_grace_seconds` bounds. `indeterminate`
+# is the recorded state and `reconcile` is the settling path, so the exposure is a probe run in the milliseconds the write takes to unwind.
+# Blast radius: a retained or abandoned terminal write on a store whose cancel is not immediate; the next turn of that key is held back
+# until the probe, which is the cost of `indeterminate`.
+jazzx_sdk/runs/chat.py :: abandoned-write-window
