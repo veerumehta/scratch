@@ -12,7 +12,7 @@ Executes `status/computation/note_shared_function_library_design_2026-11-18.md` 
 
 - `jazzx_sdk/std/core/`: stdlib-only modules (`datetime`, `decimal`, `re`; no I/O, clock or randomness). `rules/lib.py` stays byte-identical at 1.1.2 and is registered as the first entries, not moved.
 - `jazzx_sdk/std/registry.py`: an entry is name, signature, units, summary (first docstring paragraph), unknown policy (propagate, refuse, zero, raise), version, golden cases, the callable. `render_api` text for prompts comes from the registry.
-- Import-linter tier: `sdk-layers` gets a new `std` row directly above `util` (below `clients : handlers : ...`), so every package that uses it may import it and `std` imports `util` only. `expressions` is already in the contract (the fabric row), so nothing else moves. Checked by `lint-imports`.
+- Import-linter tier: `sdk-layers` gets a new `std` row at the bottom, below `util`. `std` imports nothing else of the SDK (the registry reads `core/`, which is stdlib-only), so every package, `util` included, may import it. Checked by `lint-imports`.
 - Tests under `tests/std/`: every entry's three golden cases run from the registry; `rules_lib` bytes and manifest 1.1.2 unchanged; the registry lists every public `rules_lib` helper; layering contract passes.
 - Adding a function is one entry plus its goldens; the registry test needs no other edit.
 
@@ -38,7 +38,7 @@ Functions become Decimal registry entries and the module re-exports them. Float 
 
 ## Stage 5: `util/math/ratios.py`
 
-Keeps threshold and sensitivity logic; its division and non-finite handling use the registry.
+Keeps threshold and sensitivity logic; its division goes through the std core (`util` may import `std`, which sits below it); the finite check stays, because it guards the float the result model holds.
 
 ## Out of scope
 
