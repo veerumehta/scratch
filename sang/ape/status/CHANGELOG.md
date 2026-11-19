@@ -2,6 +2,10 @@
 
 All notable changes to JAPES (JazzX SDK) will be documented in this file.
 
+## [2.7.6] - unreleased
+
+- **`std`, stage 1: a function registry with the `rules_lib` helpers as its first entries (new `jazzx_sdk/std/` with `core/` (stdlib-only, empty until the Acra entries) and `registry.py` (`Entry`, `Golden`, `UnknownPolicy`, `Registry`, `REGISTRY`, `render_api`); `.importlinter` `sdk-layers` +1 row (`std` directly above `util`); `tests/std/test_registry.py` new, 4 tests; +170 lines, 5 files).** `rules/lib.py` is unchanged at 1.1.2 and is registered from the module itself under the `rules_lib` namespace. Every other entry must declare an unknown policy and carry at least 3 golden cases, which the registry test runs.
+
 ## [2.7.5] - unreleased
 
 
