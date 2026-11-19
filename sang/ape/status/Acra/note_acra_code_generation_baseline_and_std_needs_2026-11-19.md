@@ -47,7 +47,7 @@ For a coded job the class says what stops its rule from answering at run time; f
 
 ### What this says about the target
 
-- Of the 97 jobs without code, **only 18 (+6 not linked) are the kind a std function helps**. 59 (39 + 20) need fields added to the case schema and the document extraction, and 14 need a policy answer from Acra. The ceiling for "coded" is about **93% (188 of 202)** if every class except the Acra and procedure ones becomes computable; **about 64% ((105 + 18 + 6) / 202) from std plus fixing the alignment**. Reaching 100% is not available from the SDK side: 13 jobs say so in their own reads.
+- Of the 97 jobs without code, **only 18 (+6 not linked) are the kind a std function helps**. 59 (39 + 20) need fields added to the case schema and the document extraction, and 14 need a policy answer from Acra. The ceiling for "coded" is about **93% (188 of 202)** if every class except the Acra and procedure ones becomes computable; **about 64% ((105 + 18 + 6) / 202) from std plus fixing the alignment, but only once the raw inputs of the 18 derived jobs are in the case schema**: the seed schema holds `appraised_value_usd`, `lowest_recent_listing_price_usd`, `total_loan_amount_usd` and `lease_rent_usd`, and holds no purchase price, subordinate lien amount, taxes, insurance, association dues, principal and interest payment or market rent. Without those, std alone moves the unlinked 6 (about 55%). Reaching 100% is not available from the SDK side: 13 jobs say so in their own reads.
 - The larger lever for answers that are right at run time is the 72 coded rules whose reads nobody supplies. Of those, the derived ones (CLTV, reserves months, months since an event, DSCR qualification) are exactly what std plus a derived-field declaration can supply; the raw ones (first-time buyer, escrow waiver, occupancy subtype) are extraction.
 - The rules mostly do not use the library: **11 of 38** helpers appear in the 97 rules (`unknown` 96, `gaps` 94, `flag` 51, `same` 50, `percent` 32, `ratio` 7, `band` 5, `match` 3, `known` 2, `close` 1, `norm` 1). Regen-5 ran on library 1.1.1 (22 helpers); 1.1.2 (38) has not been tried on these jobs. 10 rules write a grid as an if-ladder with two or more assignments; 22 spell the loan-purpose values by hand.
 
@@ -96,6 +96,8 @@ All rows are `gpt-6-luna` (flex), regen-5 and the 2026-10-22 sample.
 | Aligner | `extract alignment` 0.0263 USD, 62 calls | 0.026 per round |
 | Independent cases | 0.0087 USD, 21 calls, 10 jobs | 0.00087 per rule |
 | Whole regen-5, for scale | jtbd 0.0406 + python 0.2029 + python_jobs 0.1350 + alignment 0.0263 | 0.405 USD |
+
+`independent_cases: true` is a flag on the code run itself and records `independent_case_mismatches` on each rule; in the 10-job sample the run with it cost 0.0087 USD against 0.0048 without, so the cases add about 0.0004 per rule (the per-rule figure above is therefore conservative).
 
 Estimate for a round that rewrites jobs and regenerates 100 jobs (76 flagged, 18 derived, 6 unlinked) and writes cases for them: 0.041 + 100 × (0.0014 + 0.00087) + 0.026 = about **0.29 USD**, **about 0.40 USD** with a 35% margin for a longer prompt (the API list grows from 22 helpers in the regen-5 run to 38 or more; not measured). A failed-only round with no job rewrite: about 0.25 USD. Five rounds: **about 2 USD**, below one regen-5 run times five. Not in these numbers: the loan-2 verifier (0.0224 USD, needs the loan file), a rerun of the policy-to-python path (`extract python`, 0.2029 USD, not needed here), and any model other than gpt-6-luna.
 
