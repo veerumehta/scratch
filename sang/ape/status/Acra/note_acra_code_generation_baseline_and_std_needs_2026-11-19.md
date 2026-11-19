@@ -103,6 +103,15 @@ Estimate for a round that rewrites jobs and regenerates 100 jobs (76 flagged, 18
 
 Each run needs a dollar figure typed by the user (CLAUDE.md); a per-round cap of 0.50 USD and a total under 2.50 USD would cover the above.
 
+## 4. Extraction and schema items (held for the user's decision; no session owns them yet)
+
+Check each against the document registry first: the ledger's "unsupplied" means only that no document yields the field.
+
+- **Raw inputs the seed schema lacks** (it holds `appraised_value_usd`, `lowest_recent_listing_price_usd`, `total_loan_amount_usd`, `lease_rent_usd`): purchase price; subordinate lien amounts and HELOC limit and balance; annual real estate taxes, property insurance and association dues; the first payment due under the Note with note rate, term and interest-only term; market rent from the 1007 or 1025; verified assets for reserves.
+- **Dates** for `months_between`: application, closing, last listed, lease end, and bankruptcy, foreclosure and short-sale events.
+- **Facts read by coded rules** (probably loan-record fields rather than documents, so the source is a decision): first-time buyer, listed for sale in the last 6 months, occupancy subtype, escrow waived, channel, prepayment structure, DSCR qualification method, interest-only flag, entity documents complete, tradelines meet requirement.
+- **Derived, not extraction**: `cltv_percent` (`loan_to_value`), `reserves_months` (`ratio`), `months_since_*` (`months_between`), DSCR (`pitia`, `dscr`); declared as derived fields in pack data.
+
 ## Not verified
 
 - The class counts are a keyword reading of `missing_reads`; I read about 20 job rows and the examples fit, not all 97.
