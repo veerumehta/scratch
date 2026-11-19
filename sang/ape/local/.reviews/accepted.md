@@ -75,3 +75,11 @@ jazzx_sdk/llm/gateway/common.py :: common-pointer-not-committed
 # Blast radius: a retained or abandoned terminal write on a store whose cancel is not immediate; the next turn of that key is held back
 # until the probe, which is the cost of `indeterminate`.
 jazzx_sdk/runs/chat.py :: abandoned-write-window
+
+# The older Knowledge Hub read and write methods answer every failure with their documented failure value (`None` or `[]`) after a
+# log line, an outage and a refused request (422) alike; `_refuse_validation_error` only stops the parser's error object from being
+# returned as data. Raising on 422 alone would leave an outage reading the same way, so a caller that creates when a read comes back
+# empty is exposed either way. The v2 views and `list_global_configs` raise on a refusal; whether the older reads should follow is
+# settled in 2.7.6 as one contract change across the 18 methods, with `tests/clients/test_kh_refused_request_is_not_data.py`.
+# Blast radius: callers of the older reads (`fabric.entities`, `fabric.collections`, jaci) on a request the Hub refuses.
+jazzx_sdk/clients/knowledge_hub_client.py :: refused-read-reads-as-absent
