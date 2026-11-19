@@ -2,7 +2,7 @@
 
 Author: Virendra Mehta <virendra.mehta@jazzx.ai>. Read-only survey from stored artifacts: no provider call, no Plato call, no loan data opened. Decides nothing. Marks: **[run]** a script over stored files (`scripts/local/acra/regen/acra_baseline_by_job.py`, output `scripts/local/coverage/regen_5/baseline_by_job.csv`, 202 rows); **[code]** read in source; **[ledger]** a row of `scripts/local/costs/acra_costs.csv`; **[heuristic]** a keyword reading of text, to be corrected by a person.
 
-## 1. Baseline: regen-5 (trial pack `acra-regen-5`, 2026-10-22, library 1.1.1, SDK 2.6.6)
+## 1. Baseline: regen-5 (trial pack `acra-regen-5`, 2026-10-22, library 1.1.1, SDK 2.6.6, seed pack 0.2.18 with 47 schema fields)
 
 ### How the "50%" is measured, and where it lives
 
@@ -47,7 +47,7 @@ For a coded job the class says what stops its rule from answering at run time; f
 
 ### What this says about the target
 
-- Of the 97 jobs without code, **only 18 (+6 not linked) are the kind a std function helps**. 59 (39 + 20) need fields added to the case schema and the document extraction, and 14 need a policy answer from Acra. The ceiling for "coded" is about **93% (188 of 202)** if every class except the Acra and procedure ones becomes computable; **about 64% ((105 + 18 + 6) / 202) from std plus fixing the alignment, but only once the raw inputs of the 18 derived jobs are in the case schema**: the seed schema holds `appraised_value_usd`, `lowest_recent_listing_price_usd`, `total_loan_amount_usd` and `lease_rent_usd`, and holds no purchase price, subordinate lien amount, taxes, insurance, association dues, principal and interest payment or market rent. Without those, std alone moves the unlinked 6 (about 55%). Reaching 100% is not available from the SDK side: 13 jobs say so in their own reads.
+- Of the 97 jobs without code, **only 18 (+6 not linked) are the kind a std function helps**. 59 (39 + 20) need fields added to the case schema and the document extraction, and 14 need a policy answer from Acra. The ceiling for "coded" is about **93% (188 of 202)** if every class except the Acra and procedure ones becomes computable; **about 64% ((105 + 18 + 6) / 202) from std plus fixing the alignment, but only once the raw inputs of the 18 derived jobs are in the case schema**: the seed schema as of pack 0.3.1 (61 fields; regen-5 ran on 0.2.18 with 47, and 0.3.1 added the HELOC limit and balance, subordinate financing type, lease rent, lowest listing price, LTV, cash in hand and the ARM fields) still holds no purchase price, non-HELOC lien amount, taxes, insurance, association dues, first-payment amount, loan term or market rent, and `LoanCore.cltv_percent`, read by 40 jobs, is not a schema field at all. Without those, std alone moves the unlinked 6 (about 55%). Reaching 100% is not available from the SDK side: 13 jobs say so in their own reads.
 - The larger lever for answers that are right at run time is the 72 coded rules whose reads nobody supplies. Of those, the derived ones (CLTV, reserves months, months since an event, DSCR qualification) are exactly what std plus a derived-field declaration can supply; the raw ones (first-time buyer, escrow waiver, occupancy subtype) are extraction.
 - The rules mostly do not use the library: **11 of 38** helpers appear in the 97 rules (`unknown` 96, `gaps` 94, `flag` 51, `same` 50, `percent` 32, `ratio` 7, `band` 5, `match` 3, `known` 2, `close` 1, `norm` 1). Regen-5 ran on library 1.1.1 (22 helpers); 1.1.2 (38) has not been tried on these jobs. 10 rules write a grid as an if-ladder with two or more assignments; 22 spell the loan-purpose values by hand.
 
@@ -107,10 +107,12 @@ Each run needs a dollar figure typed by the user (CLAUDE.md); a per-round cap of
 
 Check each against the document registry first: the ledger's "unsupplied" means only that no document yields the field.
 
-- **Raw inputs the seed schema lacks** (it holds `appraised_value_usd`, `lowest_recent_listing_price_usd`, `total_loan_amount_usd`, `lease_rent_usd`): purchase price; subordinate lien amounts and HELOC limit and balance; annual real estate taxes, property insurance and association dues; the first payment due under the Note with note rate, term and interest-only term; market rent from the 1007 or 1025; verified assets for reserves.
+- **Raw inputs the 0.3.1 seed schema lacks** (it holds `appraised_value_usd`, `lowest_recent_listing_price_usd`, `total_loan_amount_usd`, `lease_rent_usd`, `heloc_limit_usd`, `heloc_balance_usd`, `subordinate_financing_type`, `note_rate_percent`): purchase price; subordinate lien amounts and HELOC limit and balance; annual real estate taxes, property insurance and association dues; the first payment due under the Note with note rate, term and interest-only term; market rent from the 1007 or 1025; verified assets for reserves.
 - **Dates** for `months_between`: application, closing, last listed, lease end, and bankruptcy, foreclosure and short-sale events.
 - **Facts read by coded rules** (probably loan-record fields rather than documents, so the source is a decision): first-time buyer, listed for sale in the last 6 months, occupancy subtype, escrow waived, channel, prepayment structure, DSCR qualification method, interest-only flag, entity documents complete, tradelines meet requirement.
 - **Derived, not extraction**: `cltv_percent` (`loan_to_value`), `reserves_months` (`ratio`), `months_since_*` (`months_between`), DSCR (`pitia`, `dscr`); declared as derived fields in pack data.
+
+Registry check against 0.3.1 [run]: of the 61 dotted schema fields 23 are yielded by a document type and 38 are not. Of the 19 unsupplied reads in the regen-5 report, 18 are schema fields no document yields (by design for ratios, spans and judgments: the registry header leaves them "to the submitted record") and `LoanCore.cltv_percent` is not in the schema.
 
 ## Not verified
 
