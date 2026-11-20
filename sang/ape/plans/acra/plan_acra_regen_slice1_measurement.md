@@ -84,5 +84,5 @@ Open risk, from 3b: provider connection errors lost 12 code jobs while the run r
 
 ## 5. After the run
 
-Rebuild the ledger; write `docs/plans/note_acra_regen_slice1_results.md` with the before/after table and the A1/A2 spread;
+Rebuild the ledger; write `docs/status/Acra/note_acra_regen_slice1_results.md` with the before/after table and the A1/A2 spread;
 update the CHANGELOG line counts if the run changes nothing in code (it does not). Never push.

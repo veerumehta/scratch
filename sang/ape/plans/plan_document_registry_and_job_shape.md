@@ -5,7 +5,7 @@ Acra seed data goes through the jaci session (the seed is `SYNCED_FROM` jaci). D
 
 ## 1. Why
 
-Comparing our extracted job sets with Acra's hand-built ones (`plans/note_acra_jtbd_rules_review.md`) showed
+Comparing our extracted job sets with Acra's hand-built ones (`status/Acra/note_acra_jtbd_rules_review.md`) showed
 that the content agrees (97% matched) but the shape does not. The gaps trace to config the pack lacks:
 
 - **Documents.** Three unconnected vocabularies in the Acra seed: the classifier taxonomy

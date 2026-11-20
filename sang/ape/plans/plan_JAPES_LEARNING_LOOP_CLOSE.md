@@ -1,6 +1,6 @@
 # plan_JAPES_LEARNING_LOOP_CLOSE
 
-Author: Virendra Mehta · 2026-11-10 · Status: not started
+Author: Virendra Mehta · 2026-11-10 · Status: L1 to L6 landed in 2.7.3 (Plato 0.3.3); see the status section
 
 ## Status and modifications
 
