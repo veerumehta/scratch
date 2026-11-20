@@ -7,6 +7,7 @@ Author: Virendra Mehta · 2026-11-19 · Status: slice A0 in progress
 The plan author may read and update this section; implementers append one dated line per slice (what landed, the commit, anything the plan got wrong). Newest line last.
 
 - 2026-11-19 drafted from the comparison of our job-to-code path with codec (kernel-lab `codec-core`), at the user's request. Round 1 of the coverage loop is running (trial pack `acra-regen-7b`).
+- 2026-11-19 A0, codec half read (no spend): its clause coverage counts a JTBD clause that names a deliverable as covered when the evaluator source tags it with an ask branch or a reasoned no-ask (`code_generator_agents/clause_coverage.py`), a traceability count at clause level. Its accuracy is the merge gate's eight numbers (`customers/revolution/merge_gate.json`): recall and precision against LOS and SME keys for conditions and calculations. Revolution baseline half not written yet.
 
 ## Goal
 
