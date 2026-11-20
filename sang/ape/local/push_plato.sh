@@ -16,6 +16,7 @@ read -r -p "Push plato? [y/N] " ok
 git push origin refs/heads/plato:refs/heads/plato
 read -r -p "Open the PR plato -> dev? [y/N] " ok
 [ "$ok" = "y" ] || exit 0
+subject="$(git log -1 --format=%s refs/heads/plato)"
 gh pr create --repo JazzX-LLC/japes --base dev --head plato \
-  --title "SDK 2.6.1 and Plato 0.2.1" \
-  --body "SDK 2.6.1, Plato 0.2.1 and jazzx-plato-client 0.2.1."
+  --title "$subject" \
+  --body "$subject"

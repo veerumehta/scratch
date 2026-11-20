@@ -1,0 +1,309 @@
+wrote 27 seed files into acra-regen-7, jtbd_template.yaml extended with acra_template_extra_casing.yaml
+jtbd:platinum attempt 1: run 7e3f68a98f6444efaee9b6a2a9b564c2
+jtbd:standard attempt 1: run 486969f75c3f434cbffd0295aedf00ee
+jtbd:standard still running after 120s: 0 of 0 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:platinum still running after 120s: 0 of 0 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:platinum still running after 240s: 0 of 0 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:standard still running after 240s: 0 of 0 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:standard still running after 360s: 0 of 0 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:platinum still running after 360s: 0 of 0 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:standard still running after 480s: 0 of 0 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:platinum still running after 480s: 0 of 0 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:platinum still running after 600s: 0 of 0 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:standard still running after 600s: 0 of 0 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:standard still running after 720s: 0 of 0 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:platinum still running after 720s: 0 of 0 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:platinum still running after 840s: 0 of 0 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:standard still running after 840s: 0 of 9 segments, 0 proposals, 2 calls, $0.0023 so far
+jtbd:standard still running after 960s: 0 of 9 segments, 0 proposals, 2 calls, $0.0023 so far
+jtbd:platinum still running after 960s: 0 of 0 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:standard still running after 1081s: 1 of 9 segments, 12 proposals, 3 calls, $0.0051 so far
+jtbd:platinum still running after 1081s: 0 of 0 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:standard still running after 1201s: 1 of 9 segments, 12 proposals, 3 calls, $0.0051 so far
+jtbd:platinum still running after 1201s: 0 of 0 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:standard still running after 1321s: 1 of 9 segments, 12 proposals, 3 calls, $0.0051 so far
+jtbd:platinum still running after 1321s: 0 of 0 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:platinum still running after 1441s: 0 of 0 segments, 0 proposals, 1 calls, $0.0012 so far
+jtbd:standard still running after 1441s: 1 of 9 segments, 12 proposals, 3 calls, $0.0051 so far
+jtbd:standard still running after 1561s: 1 of 9 segments, 12 proposals, 3 calls, $0.0051 so far
+jtbd:platinum still running after 1561s: 0 of 0 segments, 0 proposals, 1 calls, $0.0012 so far
+jtbd:standard still running after 1681s: 1 of 9 segments, 12 proposals, 3 calls, $0.0051 so far
+jtbd:platinum still running after 1681s: 0 of 0 segments, 0 proposals, 1 calls, $0.0012 so far
+jtbd:standard still running after 1801s: 1 of 9 segments, 12 proposals, 3 calls, $0.0051 so far
+jtbd:platinum still running after 1801s: 0 of 0 segments, 0 proposals, 1 calls, $0.0012 so far
+jtbd:platinum still running after 1921s: 0 of 0 segments, 0 proposals, 1 calls, $0.0012 so far
+jtbd:standard still running after 1921s: 2 of 9 segments, 36 proposals, 4 calls, $0.0079 so far
+jtbd:standard still running after 2042s: 2 of 9 segments, 36 proposals, 4 calls, $0.0079 so far
+jtbd:platinum still running after 2042s: 0 of 0 segments, 0 proposals, 1 calls, $0.0012 so far
+jtbd:standard still running after 2162s: 2 of 9 segments, 36 proposals, 4 calls, $0.0079 so far
+jtbd:platinum still running after 2162s: 0 of 0 segments, 0 proposals, 1 calls, $0.0012 so far
+jtbd:standard still running after 2282s: 2 of 9 segments, 36 proposals, 4 calls, $0.0079 so far
+jtbd:platinum still running after 2282s: 0 of 12 segments, 0 proposals, 2 calls, $0.0019 so far
+jtbd:standard still running after 2402s: 2 of 9 segments, 36 proposals, 4 calls, $0.0079 so far
+jtbd:platinum still running after 2402s: 0 of 12 segments, 0 proposals, 2 calls, $0.0019 so far
+jtbd:standard still running after 2522s: 2 of 9 segments, 36 proposals, 4 calls, $0.0079 so far
+jtbd:platinum still running after 2522s: 0 of 12 segments, 0 proposals, 2 calls, $0.0019 so far
+jtbd:platinum still running after 2642s: 0 of 12 segments, 0 proposals, 2 calls, $0.0019 so far
+jtbd:standard still running after 2642s: 2 of 9 segments, 36 proposals, 4 calls, $0.0079 so far
+jtbd:standard still running after 2762s: 2 of 9 segments, 36 proposals, 4 calls, $0.0079 so far
+jtbd:platinum still running after 2762s: 0 of 12 segments, 0 proposals, 2 calls, $0.0019 so far
+jtbd:platinum still running after 2882s: 0 of 12 segments, 0 proposals, 2 calls, $0.0019 so far
+jtbd:standard still running after 2882s: 2 of 9 segments, 36 proposals, 4 calls, $0.0079 so far
+jtbd:standard still running after 3002s: 2 of 9 segments, 36 proposals, 4 calls, $0.0079 so far
+jtbd:platinum still running after 3003s: 0 of 12 segments, 0 proposals, 2 calls, $0.0019 so far
+jtbd:standard still running after 3123s: 2 of 9 segments, 36 proposals, 4 calls, $0.0079 so far
+jtbd:platinum still running after 3123s: 0 of 12 segments, 0 proposals, 2 calls, $0.0019 so far
+jtbd:platinum still running after 3243s: 0 of 12 segments, 0 proposals, 2 calls, $0.0019 so far
+jtbd:standard still running after 3243s: 2 of 9 segments, 36 proposals, 4 calls, $0.0079 so far
+jtbd:standard still running after 3363s: 2 of 9 segments, 36 proposals, 4 calls, $0.0079 so far
+jtbd:platinum still running after 3363s: 0 of 12 segments, 0 proposals, 2 calls, $0.0019 so far
+jtbd:platinum still running after 3483s: 1 of 12 segments, 23 proposals, 3 calls, $0.0052 so far
+jtbd:standard still running after 3483s: 2 of 9 segments, 36 proposals, 4 calls, $0.0079 so far
+jtbd:platinum still running after 3603s: 1 of 12 segments, 23 proposals, 3 calls, $0.0052 so far
+jtbd:standard still running after 3603s: 3 of 9 segments, 46 proposals, 5 calls, $0.0096 so far
+jtbd:standard still running after 3723s: 3 of 9 segments, 46 proposals, 5 calls, $0.0096 so far
+jtbd:platinum still running after 3723s: 2 of 12 segments, 39 proposals, 4 calls, $0.0075 so far
+jtbd:standard still running after 3843s: 3 of 9 segments, 46 proposals, 5 calls, $0.0096 so far
+jtbd:platinum still running after 3843s: 2 of 12 segments, 39 proposals, 4 calls, $0.0075 so far
+jtbd:platinum still running after 3963s: 2 of 12 segments, 39 proposals, 4 calls, $0.0075 so far
+jtbd:standard still running after 3963s: 3 of 9 segments, 46 proposals, 5 calls, $0.0096 so far
+jtbd:standard still running after 4084s: 3 of 9 segments, 46 proposals, 5 calls, $0.0096 so far
+jtbd:platinum still running after 4084s: 3 of 12 segments, 52 proposals, 5 calls, $0.0096 so far
+jtbd:platinum still running after 4204s: 3 of 12 segments, 52 proposals, 5 calls, $0.0096 so far
+jtbd:standard still running after 4204s: 3 of 9 segments, 46 proposals, 5 calls, $0.0096 so far
+jtbd:standard still running after 4324s: 3 of 9 segments, 46 proposals, 5 calls, $0.0096 so far
+jtbd:platinum still running after 4324s: 3 of 12 segments, 52 proposals, 5 calls, $0.0096 so far
+jtbd:platinum still running after 4444s: 3 of 12 segments, 52 proposals, 5 calls, $0.0096 so far
+jtbd:standard still running after 4444s: 3 of 9 segments, 46 proposals, 5 calls, $0.0096 so far
+jtbd:platinum still running after 4564s: 3 of 12 segments, 52 proposals, 5 calls, $0.0096 so far
+jtbd:standard still running after 4564s: 3 of 9 segments, 46 proposals, 5 calls, $0.0096 so far
+jtbd:standard still running after 4684s: 3 of 9 segments, 46 proposals, 5 calls, $0.0096 so far
+jtbd:platinum still running after 4684s: 3 of 12 segments, 52 proposals, 5 calls, $0.0096 so far
+jtbd:standard still running after 4804s: 4 of 9 segments, 62 proposals, 6 calls, $0.0125 so far
+jtbd:platinum still running after 4804s: 4 of 12 segments, 80 proposals, 6 calls, $0.0123 so far
+jtbd:platinum still running after 4925s: 4 of 12 segments, 80 proposals, 6 calls, $0.0123 so far
+jtbd:standard still running after 4925s: 4 of 9 segments, 62 proposals, 6 calls, $0.0125 so far
+jtbd:standard still running after 5045s: 4 of 9 segments, 62 proposals, 6 calls, $0.0125 so far
+jtbd:platinum still running after 5045s: 4 of 12 segments, 80 proposals, 6 calls, $0.0123 so far
+jtbd:standard still running after 5165s: 4 of 9 segments, 62 proposals, 6 calls, $0.0125 so far
+jtbd:platinum still running after 5165s: 4 of 12 segments, 80 proposals, 6 calls, $0.0123 so far
+jtbd:standard still running after 5285s: 4 of 9 segments, 62 proposals, 6 calls, $0.0125 so far
+jtbd:platinum still running after 5285s: 4 of 12 segments, 80 proposals, 6 calls, $0.0123 so far
+jtbd:standard still running after 5405s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 5405s: 4 of 12 segments, 80 proposals, 6 calls, $0.0123 so far
+jtbd:platinum still running after 5525s: 4 of 12 segments, 80 proposals, 6 calls, $0.0123 so far
+jtbd:standard still running after 5525s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 5645s: 4 of 12 segments, 80 proposals, 7 calls, $0.0142 so far
+jtbd:standard still running after 5645s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:standard still running after 5765s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 5766s: 4 of 12 segments, 80 proposals, 7 calls, $0.0142 so far
+jtbd:standard still running after 5886s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 5886s: 4 of 12 segments, 80 proposals, 7 calls, $0.0142 so far
+jtbd:standard still running after 6006s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 6006s: 4 of 12 segments, 80 proposals, 8 calls, $0.0143 so far
+jtbd:platinum still running after 6126s: 4 of 12 segments, 80 proposals, 8 calls, $0.0143 so far
+jtbd:standard still running after 6126s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 6247s: 4 of 12 segments, 80 proposals, 8 calls, $0.0143 so far
+jtbd:standard still running after 6246s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:standard still running after 6368s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 6368s: 4 of 12 segments, 80 proposals, 8 calls, $0.0143 so far
+jtbd:standard still running after 6488s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 6488s: 4 of 12 segments, 80 proposals, 8 calls, $0.0143 so far
+jtbd:standard still running after 6608s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 6608s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 6728s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 6728s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 6848s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 6849s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 6968s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 6969s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 7088s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 7089s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 7208s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 7209s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 7328s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 7329s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 7448s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 7449s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 7568s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 7569s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 7688s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 7689s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 7809s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 7809s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 7929s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 7929s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 8049s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 8049s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 8169s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 8169s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 8289s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 8289s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 8409s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 8409s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 8529s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 8529s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 8649s: 5 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 8649s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 8769s: 6 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 8769s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 8889s: 6 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 8890s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 9009s: 6 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 9010s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 9130s: 6 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 9130s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:platinum still running after 9250s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 9250s: 6 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:standard still running after 9370s: 6 of 9 segments, 81 proposals, 7 calls, $0.0151 so far
+jtbd:platinum still running after 9370s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:platinum still running after 9490s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 9490s: 7 of 9 segments, 86 proposals, 8 calls, $0.0165 so far
+jtbd:platinum still running after 9610s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 9610s: 7 of 9 segments, 86 proposals, 8 calls, $0.0165 so far
+jtbd:standard still running after 9730s: 7 of 9 segments, 86 proposals, 8 calls, $0.0165 so far
+jtbd:platinum still running after 9730s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:platinum still running after 9850s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 9850s: 7 of 9 segments, 86 proposals, 8 calls, $0.0165 so far
+jtbd:standard still running after 9970s: 7 of 9 segments, 86 proposals, 8 calls, $0.0165 so far
+jtbd:platinum still running after 9970s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:platinum still running after 10090s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 10090s: 7 of 9 segments, 86 proposals, 8 calls, $0.0165 so far
+jtbd:standard still running after 10211s: 7 of 9 segments, 86 proposals, 8 calls, $0.0165 so far
+jtbd:platinum still running after 10211s: 5 of 12 segments, 92 proposals, 9 calls, $0.0143 so far
+jtbd:standard still running after 10331s: 7 of 9 segments, 86 proposals, 8 calls, $0.0165 so far
+jtbd:platinum still running after 10331s: 5 of 12 segments, 92 proposals, 10 calls, $0.0156 so far
+jtbd:platinum still running after 10451s: 5 of 12 segments, 92 proposals, 10 calls, $0.0156 so far
+jtbd:standard still running after 10451s: 8 of 9 segments, 95 proposals, 9 calls, $0.0191 so far
+jtbd:standard still running after 10571s: 8 of 9 segments, 95 proposals, 9 calls, $0.0191 so far
+jtbd:platinum still running after 10571s: 6 of 12 segments, 99 proposals, 11 calls, $0.0156 so far
+jtbd:standard still running after 10691s: 8 of 9 segments, 95 proposals, 9 calls, $0.0191 so far
+jtbd:platinum still running after 10691s: 6 of 12 segments, 99 proposals, 11 calls, $0.0156 so far
+jtbd:platinum still running after 10811s: 6 of 12 segments, 99 proposals, 11 calls, $0.0156 so far
+jtbd:standard still running after 10811s: 8 of 9 segments, 95 proposals, 9 calls, $0.0191 so far
+jtbd:platinum still running after 10931s: 6 of 12 segments, 99 proposals, 11 calls, $0.0156 so far
+jtbd:standard still running after 10931s: 8 of 9 segments, 95 proposals, 9 calls, $0.0191 so far
+jtbd:standard still running after 11051s: 8 of 9 segments, 95 proposals, 9 calls, $0.0191 so far
+jtbd:platinum still running after 11052s: 6 of 12 segments, 99 proposals, 11 calls, $0.0156 so far
+jtbd:platinum still running after 11172s: 6 of 12 segments, 99 proposals, 11 calls, $0.0156 so far
+jtbd:standard still running after 11172s: 8 of 9 segments, 95 proposals, 9 calls, $0.0191 so far
+jtbd:standard still running after 11292s: 8 of 9 segments, 95 proposals, 9 calls, $0.0191 so far
+jtbd:platinum still running after 11292s: 6 of 12 segments, 99 proposals, 11 calls, $0.0156 so far
+jtbd:platinum still running after 11412s: 6 of 12 segments, 99 proposals, 11 calls, $0.0156 so far
+jtbd:standard still running after 11412s: 8 of 9 segments, 95 proposals, 9 calls, $0.0191 so far
+jtbd:platinum still running after 11532s: 6 of 12 segments, 99 proposals, 11 calls, $0.0156 so far
+jtbd:standard still running after 11532s: 9 of 9 segments, 96 proposals, 10 calls, $0.0202 so far
+jtbd:platinum still running after 11652s: 6 of 12 segments, 99 proposals, 11 calls, $0.0156 so far
+jtbd:standard still running after 11652s: 9 of 9 segments, 96 proposals, 10 calls, $0.0202 so far
+jtbd:standard still running after 11772s: 9 of 9 segments, 96 proposals, 10 calls, $0.0202 so far
+jtbd:platinum still running after 11772s: 6 of 12 segments, 99 proposals, 11 calls, $0.0156 so far
+jtbd:standard still running after 11892s: 9 of 9 segments, 96 proposals, 10 calls, $0.0202 so far
+jtbd:platinum still running after 11892s: 6 of 12 segments, 99 proposals, 11 calls, $0.0156 so far
+jtbd:platinum still running after 12012s: 7 of 12 segments, 109 proposals, 14 calls, $0.0173 so far
+jtbd:standard still running after 12012s: 9 of 9 segments, 96 proposals, 10 calls, $0.0202 so far
+jtbd:standard run 486969f7 succeeded: 109 proposals, 0 of 9 parts failed, $0.0228
+jtbd:platinum still running after 12133s: 7 of 12 segments, 109 proposals, 14 calls, $0.0173 so far
+python:standard attempt 1: run 4720604444c84eba8566b460996e11f1
+jtbd:platinum still running after 12253s: 8 of 12 segments, 112 proposals, 15 calls, $0.0187 so far
+python:standard still running after 120s: 0 of 48 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:platinum still running after 12373s: 8 of 12 segments, 112 proposals, 15 calls, $0.0187 so far
+python:standard still running after 240s: 0 of 48 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:platinum still running after 12493s: 8 of 12 segments, 112 proposals, 15 calls, $0.0187 so far
+python:standard still running after 360s: 0 of 48 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:platinum still running after 12613s: 8 of 12 segments, 112 proposals, 15 calls, $0.0187 so far
+python:standard still running after 480s: 0 of 48 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:platinum still running after 12733s: 9 of 12 segments, 139 proposals, 16 calls, $0.0220 so far
+python:standard still running after 600s: 0 of 48 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:platinum still running after 12853s: 9 of 12 segments, 139 proposals, 16 calls, $0.0220 so far
+python:standard still running after 720s: 0 of 48 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:platinum still running after 12974s: 9 of 12 segments, 139 proposals, 16 calls, $0.0220 so far
+python:standard still running after 840s: 0 of 48 segments, 0 proposals, 0 calls, $0.0000 so far
+jtbd:platinum still running after 13094s: 11 of 12 segments, 166 proposals, 19 calls, $0.0259 so far
+python:standard still running after 960s: 0 of 48 segments, 0 proposals, 1 calls, $0.0004 so far
+jtbd:platinum still running after 13214s: 11 of 12 segments, 166 proposals, 19 calls, $0.0259 so far
+python:standard still running after 1080s: 0 of 48 segments, 0 proposals, 1 calls, $0.0004 so far
+jtbd:platinum still running after 13334s: 11 of 12 segments, 166 proposals, 19 calls, $0.0259 so far
+python:standard still running after 1200s: 0 of 48 segments, 0 proposals, 1 calls, $0.0004 so far
+jtbd:platinum still running after 13454s: 11 of 12 segments, 166 proposals, 19 calls, $0.0259 so far
+python:standard still running after 1320s: 1 of 48 segments, 0 proposals, 2 calls, $0.0005 so far
+Traceback (most recent call last):
+  File "/Users/sangit/src/japes/.venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/Users/sangit/src/japes/.venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sangit/src/japes/.venv/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/Users/sangit/src/japes/.venv/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sangit/src/japes/.venv/lib/python3.12/site-packages/httpcore/_async/connection.py", line 103, in handle_async_request
+    return await self._connection.handle_async_request(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sangit/src/japes/.venv/lib/python3.12/site-packages/httpcore/_async/http11.py", line 136, in handle_async_request
+    raise exc
+  File "/Users/sangit/src/japes/.venv/lib/python3.12/site-packages/httpcore/_async/http11.py", line 106, in handle_async_request
+    ) = await self._receive_response_headers(**kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sangit/src/japes/.venv/lib/python3.12/site-packages/httpcore/_async/http11.py", line 177, in _receive_response_headers
+    event = await self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sangit/src/japes/.venv/lib/python3.12/site-packages/httpcore/_async/http11.py", line 217, in _receive_event
+    data = await self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sangit/src/japes/.venv/lib/python3.12/site-packages/httpcore/_backends/anyio.py", line 32, in read
+    with map_exceptions(exc_map):
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/Users/sangit/src/japes/.venv/lib/python3.12/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ReadError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/sangit/src/.scratch/sang/ape/local/acra/regen/acra_rerun_extractions.py", line 95, in <module>
+    asyncio.run(main())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 685, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/sangit/src/.scratch/sang/ape/local/acra/regen/acra_rerun_extractions.py", line 89, in main
+    results = await asyncio.gather(*(gated(r, d) for r, d in JOBS if (r, d) in wanted))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sangit/src/.scratch/sang/ape/local/acra/regen/acra_rerun_extractions.py", line 88, in gated
+    return await _one(http, rep, doc, args.attempts, args.pack)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sangit/src/.scratch/sang/ape/local/acra/regen/acra_rerun_extractions.py", line 53, in _one
+    run = (await http.get(f"{API}/authoring/extract/runs/{run_id}")).json()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sangit/src/japes/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/sangit/src/japes/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sangit/src/japes/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sangit/src/japes/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sangit/src/japes/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sangit/src/japes/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sangit/src/japes/.venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/Users/sangit/src/japes/.venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ReadError

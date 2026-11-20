@@ -1,0 +1,94 @@
+# Where each field a coded rule reads comes from: a document the registry lists as yielding it, the
+# loan record (ProcessingTurn.submitted), a derived declaration over std, or a policy answer. One row per
+# field; `new_fields` are the raw inputs the extraction schema must gain. Names agreed with the pack owner.
+# `documents` are registry ids (existing, or proposed marked in proposed_documents).
+proposed_documents:
+  - purchase_contract
+  - closing_disclosure
+  - promissory_note
+  - rent_schedule
+  - tax_certificate
+  - heloc_statement
+  - hoa_statement
+  - asset_statement
+  - prepayment_addendum
+
+fields:
+  LoanCore.cltv_percent:
+    source: derived
+    how: loan_to_value(liens, values); inputs LoanCore.total_loan_amount_usd, LoanCore.subordinate_lien_amounts_usd, SubjectProperty.appraised_value_usd, SubjectProperty.lowest_recent_listing_price_usd
+    new_fields: [LoanCore.subordinate_lien_amounts_usd]
+    documents: [title_commitment, credit_report, loan_application, heloc_statement]
+  SubjectProperty.listed_for_sale_last_6_months:
+    source: derived
+    how: months_between(SubjectProperty.last_listed_date, LoanCore.application_date) under 6
+    new_fields: [SubjectProperty.last_listed_date, LoanCore.application_date]
+    documents: [listing_history]
+  RatioSet.reserves_months:
+    source: derived
+    how: ratio(total of Borrower.asset_accounts, pitia(first_payment_amount, taxes, insurance, dues))
+    new_fields: [Borrower.asset_accounts, LoanCore.first_payment_amount_usd, SubjectProperty.annual_property_tax_usd, SubjectProperty.annual_insurance_premium_usd, SubjectProperty.annual_association_dues_usd]
+    documents: [bank_statement, asset_statement, promissory_note, closing_disclosure, tax_certificate, hazard_insurance, hoa_questionnaire, hoa_statement]
+  Borrower.is_first_time_homebuyer:
+    source: loan_record
+    documents: [loan_application]
+  LoanCore.is_escrow_waived:
+    source: loan_record
+    documents: [closing_disclosure]
+  SubjectProperty.occupancy_subtype:
+    source: loan_record
+    documents: [loan_application, appraisal_report]
+  LoanCore.dscr_qualification_method:
+    source: loan_record
+    documents: []
+  MortgageLoanInformation.is_interest_only:
+    source: derived
+    how: LoanCore.interest_only_term_months above zero
+    new_fields: [LoanCore.interest_only_term_months]
+    documents: [promissory_note, closing_disclosure]
+  LoanCore.prepayment_penalty_structure:
+    source: document
+    documents: [promissory_note, prepayment_addendum]
+  LoanCore.channel:
+    source: loan_record
+    documents: []
+  Borrower.entity_documents_complete:
+    source: derived
+    how: the package completeness report (required entity documents all held)
+    documents: []
+  CreditReport.tradelines_meet_requirement:
+    source: derived
+    how: std count over CreditReport.tradelines against CreditReport.score_count
+    new_fields: [CreditReport.tradelines]
+    documents: [credit_report]
+  LoanCore.is_interest_only_10_40:
+    source: derived
+    how: interest_only_term_months equals 120 and loan_term_months equals 480
+    new_fields: [LoanCore.interest_only_term_months, LoanCore.loan_term_months]
+    documents: [promissory_note, closing_disclosure]
+  Borrower.is_entity_borrower_1:
+    source: loan_record
+    documents: [entity_documents, loan_application]
+  Borrower.months_since_bankruptcy_or_foreclosure:
+    source: derived
+    how: months_between(Borrower.bankruptcy_date or Borrower.foreclosure_date, LoanCore.application_date)
+    new_fields: [Borrower.bankruptcy_date, Borrower.foreclosure_date, LoanCore.application_date]
+    documents: [credit_report]
+  Borrower.months_since_short_sale_dil_or_modification:
+    source: derived
+    how: months_between(Borrower.short_sale_dil_date, LoanCore.application_date)
+    new_fields: [Borrower.short_sale_dil_date, LoanCore.application_date]
+    documents: [credit_report]
+  SubjectProperty.ownership_months:
+    source: derived
+    how: months_between(SubjectProperty.acquisition_date, LoanCore.application_date)
+    new_fields: [SubjectProperty.acquisition_date, LoanCore.application_date]
+    documents: [title_commitment, closing_disclosure]
+  LoanCore.is_delayed_financing:
+    source: loan_record
+    documents: [closing_disclosure]
+  RatioSet.total_monthly_obligation_usd:
+    source: derived
+    how: std total over the credit report's monthly liabilities
+    new_fields: [CreditReport.monthly_liabilities_usd]
+    documents: [credit_report]

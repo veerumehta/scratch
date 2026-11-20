@@ -120,3 +120,10 @@ output tokens, cache read and cache creation tokens, cost in USD, and `(fresh)` 
 what a resume saves is readable from the files. The other knobs are `REVIEW_UPSTREAM` (the range's
 base), `REVIEW_MAX_LINES` (slice size), `REVIEW_MAX_SLICES`, `REVIEW_KEEP` (transcripts kept) and
 `REVIEW_PRIOR_LINES` (how much of the previous transcript a fresh incremental round carries).
+
+## `raise_behind_pins.sh` - Raise installed packages that are behind poetry.lock
+
+Reads `poetry.lock` and installs the locked version of every package whose installed version is lower
+(path and git sources skipped); versions ahead of the lock are left alone, since CI installs the lock and
+ahead is acceptable. Takes an optional checkout path (default `/Users/sangit/src/japes`). Changes the
+`.venv`, so run it when no other session is using that venv.

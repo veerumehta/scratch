@@ -1,0 +1,234 @@
+wrote 27 seed files into acra-regen-7b, jtbd_template.yaml extended with acra_template_extra_casing.yaml
+jtbd:platinum attempt 1: run 7c96a9cbe3934f34a8730f739415a501
+jtbd:standard attempt 1: run fcbd05d175cc4293a45d7c9d237bd6e1
+jtbd:platinum still running after 120s: 0 of 8 segments, 0 proposals, 1 calls, $0.0020 so far
+jtbd:standard still running after 120s: 0 of 0 segments, 0 proposals, 1 calls, $0.0025 so far
+jtbd:platinum still running after 240s: 0 of 8 segments, 0 proposals, 1 calls, $0.0020 so far
+jtbd:standard still running after 240s: 0 of 10 segments, 0 proposals, 2 calls, $0.0034 so far
+jtbd:platinum still running after 360s: 1 of 8 segments, 19 proposals, 2 calls, $0.0045 so far
+jtbd:standard still running after 360s: 1 of 10 segments, 9 proposals, 3 calls, $0.0056 so far
+jtbd:platinum still running after 480s: 1 of 8 segments, 19 proposals, 2 calls, $0.0045 so far
+jtbd:standard still running after 480s: 1 of 10 segments, 9 proposals, 3 calls, $0.0056 so far
+jtbd:platinum still running after 600s: 2 of 8 segments, 34 proposals, 3 calls, $0.0069 so far
+jtbd:standard still running after 600s: 2 of 10 segments, 21 proposals, 4 calls, $0.0081 so far
+jtbd:platinum still running after 720s: 2 of 8 segments, 34 proposals, 4 calls, $0.0094 so far
+jtbd:standard still running after 720s: 2 of 10 segments, 21 proposals, 4 calls, $0.0081 so far
+jtbd:platinum still running after 840s: 3 of 8 segments, 47 proposals, 7 calls, $0.0095 so far
+jtbd:standard still running after 840s: 3 of 10 segments, 39 proposals, 5 calls, $0.0111 so far
+jtbd:platinum still running after 960s: 3 of 8 segments, 47 proposals, 7 calls, $0.0095 so far
+jtbd:standard still running after 960s: 3 of 10 segments, 39 proposals, 5 calls, $0.0111 so far
+jtbd:platinum still running after 1080s: 4 of 8 segments, 63 proposals, 10 calls, $0.0123 so far
+jtbd:standard still running after 1080s: 4 of 10 segments, 55 proposals, 6 calls, $0.0137 so far
+jtbd:standard still running after 1200s: 4 of 10 segments, 55 proposals, 6 calls, $0.0137 so far
+jtbd:platinum still running after 1200s: 5 of 8 segments, 69 proposals, 11 calls, $0.0137 so far
+jtbd:standard still running after 1320s: 4 of 10 segments, 55 proposals, 6 calls, $0.0137 so far
+jtbd:platinum still running after 1321s: 5 of 8 segments, 69 proposals, 11 calls, $0.0137 so far
+jtbd:standard still running after 1441s: 4 of 10 segments, 55 proposals, 7 calls, $0.0170 so far
+jtbd:platinum still running after 1441s: 6 of 8 segments, 80 proposals, 12 calls, $0.0160 so far
+jtbd:platinum still running after 1561s: 6 of 8 segments, 80 proposals, 12 calls, $0.0160 so far
+jtbd:standard still running after 1561s: 4 of 10 segments, 55 proposals, 8 calls, $0.0171 so far
+jtbd:standard still running after 1681s: 5 of 10 segments, 76 proposals, 9 calls, $0.0171 so far
+jtbd:platinum still running after 1681s: 7 of 8 segments, 85 proposals, 13 calls, $0.0172 so far
+jtbd:standard still running after 1801s: 5 of 10 segments, 76 proposals, 9 calls, $0.0171 so far
+jtbd:platinum still running after 1801s: 7 of 8 segments, 85 proposals, 13 calls, $0.0172 so far
+jtbd:platinum still running after 1921s: 7 of 8 segments, 85 proposals, 13 calls, $0.0172 so far
+jtbd:standard still running after 1921s: 6 of 10 segments, 105 proposals, 10 calls, $0.0207 so far
+jtbd:standard still running after 2041s: 6 of 10 segments, 105 proposals, 10 calls, $0.0207 so far
+jtbd:platinum still running after 2041s: 7 of 8 segments, 85 proposals, 13 calls, $0.0172 so far
+jtbd:standard still running after 2161s: 6 of 10 segments, 105 proposals, 10 calls, $0.0207 so far
+jtbd:platinum still running after 2161s: 7 of 8 segments, 85 proposals, 13 calls, $0.0172 so far
+jtbd:platinum run 7c96a9cb succeeded: 97 proposals, 0 of 8 parts failed, $0.0201
+python:standard attempt 1: run 8cb10e0506c1430eacbf3dd884c6f777
+jtbd:standard still running after 2281s: 7 of 10 segments, 126 proposals, 11 calls, $0.0236 so far
+python:standard still running after 120s: 2 of 48 segments, 0 proposals, 5 calls, $0.0019 so far
+jtbd:standard still running after 2401s: 8 of 10 segments, 128 proposals, 12 calls, $0.0247 so far
+python:standard still running after 240s: 2 of 48 segments, 0 proposals, 5 calls, $0.0019 so far
+jtbd:standard still running after 2522s: 9 of 10 segments, 133 proposals, 13 calls, $0.0263 so far
+python:standard still running after 360s: 2 of 48 segments, 0 proposals, 5 calls, $0.0019 so far
+jtbd:standard still running after 2642s: 9 of 10 segments, 133 proposals, 13 calls, $0.0263 so far
+python:standard still running after 480s: 3 of 48 segments, 0 proposals, 7 calls, $0.0024 so far
+jtbd:standard still running after 2762s: 10 of 10 segments, 133 proposals, 14 calls, $0.0273 so far
+python:standard still running after 600s: 3 of 48 segments, 0 proposals, 7 calls, $0.0024 so far
+jtbd:standard still running after 2882s: 10 of 10 segments, 133 proposals, 14 calls, $0.0273 so far
+python:standard still running after 720s: 3 of 48 segments, 0 proposals, 7 calls, $0.0024 so far
+jtbd:standard still running after 3002s: 10 of 10 segments, 133 proposals, 15 calls, $0.0273 so far
+python:standard still running after 840s: 3 of 48 segments, 0 proposals, 7 calls, $0.0024 so far
+jtbd:standard still running after 3122s: 10 of 10 segments, 133 proposals, 15 calls, $0.0273 so far
+python:standard still running after 960s: 4 of 48 segments, 0 proposals, 7 calls, $0.0024 so far
+jtbd:standard run fcbd05d1 succeeded: 129 proposals, 0 of 10 parts failed, $0.0273
+python:platinum attempt 1: run fb5a7f27056143c3817a8bddd8f5cfe6
+python:standard still running after 1083s: 5 of 48 segments, 0 proposals, 8 calls, $0.0029 so far
+python:platinum still running after 120s: 1 of 42 segments, 0 proposals, 2 calls, $0.0006 so far
+python:standard still running after 1203s: 6 of 48 segments, 0 proposals, 9 calls, $0.0030 so far
+python:platinum still running after 240s: 1 of 42 segments, 0 proposals, 3 calls, $0.0011 so far
+python:standard still running after 1323s: 6 of 48 segments, 0 proposals, 9 calls, $0.0030 so far
+python:platinum still running after 360s: 1 of 42 segments, 0 proposals, 3 calls, $0.0011 so far
+python:standard still running after 1444s: 6 of 48 segments, 0 proposals, 9 calls, $0.0030 so far
+python:platinum still running after 480s: 3 of 42 segments, 0 proposals, 7 calls, $0.0023 so far
+python:standard still running after 1564s: 6 of 48 segments, 0 proposals, 10 calls, $0.0054 so far
+python:platinum still running after 600s: 3 of 42 segments, 0 proposals, 7 calls, $0.0023 so far
+python:standard still running after 1684s: 6 of 48 segments, 0 proposals, 10 calls, $0.0054 so far
+python:platinum still running after 720s: 3 of 42 segments, 0 proposals, 7 calls, $0.0023 so far
+python:standard still running after 1804s: 6 of 48 segments, 0 proposals, 10 calls, $0.0054 so far
+python:platinum still running after 840s: 5 of 42 segments, 0 proposals, 10 calls, $0.0035 so far
+python:standard still running after 1924s: 8 of 48 segments, 2 proposals, 13 calls, $0.0080 so far
+python:platinum still running after 960s: 6 of 42 segments, 1 proposals, 13 calls, $0.0058 so far
+python:standard still running after 2044s: 9 of 48 segments, 3 proposals, 15 calls, $0.0094 so far
+python:platinum still running after 1080s: 7 of 42 segments, 2 proposals, 15 calls, $0.0072 so far
+python:standard still running after 2164s: 9 of 48 segments, 3 proposals, 15 calls, $0.0094 so far
+python:platinum still running after 1200s: 7 of 42 segments, 2 proposals, 15 calls, $0.0072 so far
+python:standard still running after 2284s: 9 of 48 segments, 3 proposals, 15 calls, $0.0094 so far
+python:platinum still running after 1320s: 7 of 42 segments, 2 proposals, 15 calls, $0.0072 so far
+python:standard still running after 2404s: 10 of 48 segments, 3 proposals, 17 calls, $0.0101 so far
+python:platinum still running after 1440s: 8 of 42 segments, 3 proposals, 16 calls, $0.0086 so far
+python:standard still running after 2524s: 10 of 48 segments, 3 proposals, 18 calls, $0.0116 so far
+python:platinum still running after 1560s: 9 of 42 segments, 4 proposals, 18 calls, $0.0103 so far
+python:standard still running after 2645s: 11 of 48 segments, 4 proposals, 20 calls, $0.0146 so far
+python:platinum still running after 1681s: 10 of 42 segments, 4 proposals, 20 calls, $0.0123 so far
+python:standard still running after 2765s: 11 of 48 segments, 4 proposals, 20 calls, $0.0146 so far
+python:platinum still running after 1801s: 10 of 42 segments, 4 proposals, 21 calls, $0.0137 so far
+python:standard still running after 2885s: 11 of 48 segments, 4 proposals, 20 calls, $0.0146 so far
+python:platinum still running after 1921s: 10 of 42 segments, 4 proposals, 21 calls, $0.0137 so far
+python:standard still running after 3005s: 11 of 48 segments, 4 proposals, 20 calls, $0.0146 so far
+python:platinum still running after 2041s: 10 of 42 segments, 4 proposals, 21 calls, $0.0137 so far
+python:standard still running after 3125s: 11 of 48 segments, 4 proposals, 22 calls, $0.0162 so far
+python:platinum still running after 2161s: 11 of 42 segments, 5 proposals, 22 calls, $0.0159 so far
+python:standard still running after 3245s: 12 of 48 segments, 5 proposals, 23 calls, $0.0177 so far
+python:platinum still running after 2281s: 12 of 42 segments, 6 proposals, 24 calls, $0.0178 so far
+python:standard still running after 3365s: 12 of 48 segments, 5 proposals, 25 calls, $0.0209 so far
+python:platinum still running after 2401s: 13 of 42 segments, 7 proposals, 27 calls, $0.0200 so far
+python:standard still running after 3485s: 12 of 48 segments, 5 proposals, 26 calls, $0.0224 so far
+python:platinum still running after 2521s: 14 of 42 segments, 8 proposals, 29 calls, $0.0211 so far
+python:standard still running after 3605s: 13 of 48 segments, 6 proposals, 28 calls, $0.0240 so far
+python:platinum still running after 2641s: 15 of 42 segments, 9 proposals, 32 calls, $0.0235 so far
+python:standard still running after 3725s: 15 of 48 segments, 7 proposals, 31 calls, $0.0263 so far
+python:platinum still running after 2761s: 17 of 42 segments, 10 proposals, 34 calls, $0.0251 so far
+python:standard still running after 3845s: 15 of 48 segments, 7 proposals, 32 calls, $0.0283 so far
+python:platinum still running after 2881s: 19 of 42 segments, 12 proposals, 38 calls, $0.0273 so far
+python:standard still running after 3966s: 15 of 48 segments, 7 proposals, 33 calls, $0.0300 so far
+python:platinum still running after 3001s: 20 of 42 segments, 12 proposals, 41 calls, $0.0293 so far
+python:standard still running after 4086s: 16 of 48 segments, 8 proposals, 34 calls, $0.0313 so far
+python:platinum still running after 3121s: 22 of 42 segments, 12 proposals, 44 calls, $0.0311 so far
+python:standard still running after 4206s: 16 of 48 segments, 8 proposals, 34 calls, $0.0313 so far
+python:platinum still running after 3241s: 22 of 42 segments, 12 proposals, 45 calls, $0.0321 so far
+python:standard still running after 4326s: 16 of 48 segments, 8 proposals, 35 calls, $0.0347 so far
+python:platinum still running after 3362s: 23 of 42 segments, 13 proposals, 47 calls, $0.0341 so far
+python:standard still running after 4446s: 16 of 48 segments, 8 proposals, 37 calls, $0.0383 so far
+python:platinum still running after 3482s: 24 of 42 segments, 14 proposals, 48 calls, $0.0351 so far
+python:standard still running after 4566s: 16 of 48 segments, 8 proposals, 37 calls, $0.0383 so far
+python:platinum still running after 3602s: 24 of 42 segments, 14 proposals, 48 calls, $0.0351 so far
+python:standard still running after 4686s: 16 of 48 segments, 8 proposals, 37 calls, $0.0383 so far
+python:platinum still running after 3722s: 24 of 42 segments, 14 proposals, 48 calls, $0.0351 so far
+python:standard still running after 4806s: 16 of 48 segments, 8 proposals, 38 calls, $0.0395 so far
+python:platinum still running after 3842s: 24 of 42 segments, 14 proposals, 49 calls, $0.0366 so far
+python:standard still running after 4926s: 17 of 48 segments, 9 proposals, 39 calls, $0.0412 so far
+python:platinum still running after 3962s: 25 of 42 segments, 15 proposals, 50 calls, $0.0376 so far
+python:standard still running after 5046s: 17 of 48 segments, 9 proposals, 39 calls, $0.0412 so far
+python:platinum still running after 4082s: 25 of 42 segments, 15 proposals, 50 calls, $0.0376 so far
+python:standard still running after 5167s: 17 of 48 segments, 9 proposals, 39 calls, $0.0412 so far
+python:platinum still running after 4202s: 25 of 42 segments, 15 proposals, 50 calls, $0.0376 so far
+python:standard still running after 5287s: 17 of 48 segments, 9 proposals, 39 calls, $0.0412 so far
+python:platinum still running after 4322s: 25 of 42 segments, 15 proposals, 51 calls, $0.0384 so far
+python:standard still running after 5407s: 18 of 48 segments, 10 proposals, 40 calls, $0.0428 so far
+python:platinum still running after 4442s: 25 of 42 segments, 15 proposals, 51 calls, $0.0384 so far
+python:standard still running after 5527s: 18 of 48 segments, 10 proposals, 40 calls, $0.0428 so far
+python:platinum still running after 4562s: 25 of 42 segments, 15 proposals, 51 calls, $0.0384 so far
+python:standard still running after 5647s: 19 of 48 segments, 11 proposals, 42 calls, $0.0436 so far
+python:platinum still running after 4682s: 26 of 42 segments, 15 proposals, 52 calls, $0.0397 so far
+python:standard still running after 5767s: 20 of 48 segments, 12 proposals, 45 calls, $0.0461 so far
+python:platinum still running after 4802s: 26 of 42 segments, 15 proposals, 53 calls, $0.0409 so far
+python:standard still running after 5887s: 22 of 48 segments, 12 proposals, 49 calls, $0.0482 so far
+python:platinum still running after 4923s: 27 of 42 segments, 16 proposals, 55 calls, $0.0432 so far
+python:standard still running after 6007s: 23 of 48 segments, 13 proposals, 51 calls, $0.0502 so far
+python:platinum still running after 5043s: 28 of 42 segments, 17 proposals, 58 calls, $0.0454 so far
+python:standard still running after 6127s: 23 of 48 segments, 13 proposals, 51 calls, $0.0502 so far
+python:platinum still running after 5163s: 28 of 42 segments, 17 proposals, 58 calls, $0.0454 so far
+python:standard still running after 6247s: 23 of 48 segments, 13 proposals, 51 calls, $0.0502 so far
+python:platinum still running after 5283s: 28 of 42 segments, 17 proposals, 58 calls, $0.0454 so far
+python:standard still running after 6368s: 24 of 48 segments, 14 proposals, 52 calls, $0.0511 so far
+python:platinum still running after 5403s: 29 of 42 segments, 18 proposals, 59 calls, $0.0462 so far
+python:standard still running after 6488s: 25 of 48 segments, 15 proposals, 55 calls, $0.0534 so far
+python:platinum still running after 5523s: 29 of 42 segments, 18 proposals, 61 calls, $0.0494 so far
+python:standard still running after 6608s: 27 of 48 segments, 16 proposals, 59 calls, $0.0555 so far
+python:platinum still running after 5643s: 29 of 42 segments, 18 proposals, 62 calls, $0.0508 so far
+python:standard still running after 6728s: 29 of 48 segments, 17 proposals, 62 calls, $0.0575 so far
+python:platinum still running after 5763s: 31 of 42 segments, 19 proposals, 66 calls, $0.0540 so far
+python:standard still running after 6848s: 30 of 48 segments, 18 proposals, 64 calls, $0.0597 so far
+python:platinum still running after 5883s: 32 of 42 segments, 20 proposals, 68 calls, $0.0563 so far
+python:standard still running after 6968s: 31 of 48 segments, 19 proposals, 66 calls, $0.0628 so far
+python:platinum still running after 6003s: 35 of 42 segments, 22 proposals, 74 calls, $0.0593 so far
+python:standard still running after 7088s: 31 of 48 segments, 19 proposals, 69 calls, $0.0652 so far
+python:platinum still running after 6123s: 37 of 42 segments, 23 proposals, 77 calls, $0.0618 so far
+python:standard still running after 7208s: 32 of 48 segments, 20 proposals, 71 calls, $0.0679 so far
+python:platinum still running after 6244s: 39 of 42 segments, 24 proposals, 82 calls, $0.0644 so far
+python:platinum run fb5a7f27 succeeded: 24 proposals, 0 of 42 parts failed, $0.0666
+python:standard still running after 7328s: 33 of 48 segments, 21 proposals, 75 calls, $0.0714 so far
+python:standard still running after 7448s: 34 of 48 segments, 21 proposals, 76 calls, $0.0723 so far
+python:standard still running after 7568s: 34 of 48 segments, 21 proposals, 79 calls, $0.0773 so far
+python:standard still running after 7689s: 35 of 48 segments, 22 proposals, 80 calls, $0.0788 so far
+python:standard still running after 7809s: 35 of 48 segments, 22 proposals, 82 calls, $0.0808 so far
+python:standard still running after 7929s: 36 of 48 segments, 23 proposals, 84 calls, $0.0839 so far
+python:standard still running after 8049s: 37 of 48 segments, 24 proposals, 86 calls, $0.0862 so far
+python:standard still running after 8169s: 38 of 48 segments, 25 proposals, 88 calls, $0.0887 so far
+python:standard still running after 8289s: 38 of 48 segments, 25 proposals, 89 calls, $0.0900 so far
+python:standard still running after 8409s: 41 of 48 segments, 26 proposals, 95 calls, $0.0932 so far
+python:standard still running after 8529s: 42 of 48 segments, 26 proposals, 97 calls, $0.0946 so far
+python:standard still running after 8650s: 43 of 48 segments, 27 proposals, 101 calls, $0.0981 so far
+python:standard still running after 8770s: 46 of 48 segments, 28 proposals, 107 calls, $0.1009 so far
+python:standard run 8cb10e05 succeeded: 28 proposals, 0 of 48 parts failed, $0.1025
+wrote /Users/sangit/src/.scratch/sang/ape/local/coverage/regen_7b/runs.json
+  acra-standard run fcbd05d1: {"trigger": "approve", "decided": ["acra-standard:acra-standard.appraisal_review.above_80_00_ltv_property_eligibility", "acra-standard:acra-standard.appraisal_review.declining_market_cltv_reduction", 
+  merged into acra-standard: {"rel_path": "policies/acra-standard.yaml", "policy_id": "acra-standard", "added": ["acra-standard.appraisal_review.above_80_00_ltv_property_eligibility", "acra-standard.appraisal_review.declining_market_cltv_reduction", "acra-standard.appraisal_review.eligible_property_types", "acra-standard.apprai
+  acra-platinum run 7c96a9cb: {"trigger": "approve", "decided": ["acra-platinum:acra-platinum.appraisal_review.condo_and_two_unit_cltv_cap", "acra-platinum:acra-platinum.appraisal_review.declining_market_cltv_reduction", "acra-pla
+  merged into acra-platinum: {"rel_path": "policies/acra-platinum.yaml", "policy_id": "acra-platinum", "added": ["acra-platinum.appraisal_review.condo_and_two_unit_cltv_cap", "acra-platinum.appraisal_review.declining_market_cltv_reduction", "acra-platinum.appraisal_review.eligible_property_type", "acra-platinum.appraisal_review
+job run 38460c3f0d024dc7a4263f51707f6448 for acra-standard
+job run 9fba59cb18914a27a847d099727c3983 for acra-platinum
+  run 38460c3f still running after 124s: 0 proposed so far, $0 spent
+  run 38460c3f still running after 244s: 0 proposed so far, $0 spent
+  run 38460c3f still running after 364s: 0 proposed so far, $0 spent
+  run 38460c3f still running after 484s: 1 proposed so far, $0 spent
+  run 38460c3f still running after 604s: 1 proposed so far, $0 spent
+  run 38460c3f still running after 724s: 3 proposed so far, $0 spent
+  run 38460c3f still running after 844s: 4 proposed so far, $0 spent
+  run 38460c3f still running after 965s: 6 proposed so far, $0 spent
+  run 38460c3f still running after 1085s: 7 proposed so far, $0 spent
+  run 38460c3f still running after 1205s: 9 proposed so far, $0 spent
+  run 38460c3f still running after 1325s: 9 proposed so far, $0 spent
+  run 38460c3f still running after 1445s: 9 proposed so far, $0 spent
+  run 38460c3f still running after 1565s: 9 proposed so far, $0 spent
+  run 38460c3f still running after 1685s: 11 proposed so far, $0 spent
+  run 38460c3f still running after 1805s: 12 proposed so far, $0 spent
+  run 38460c3f still running after 1925s: 12 proposed so far, $0 spent
+  run 38460c3f still running after 2046s: 14 proposed so far, $0 spent
+  run 38460c3f still running after 2166s: 16 proposed so far, $0 spent
+  run 38460c3f still running after 2286s: 16 proposed so far, $0 spent
+  run 38460c3f still running after 2406s: 18 proposed so far, $0 spent
+  run 38460c3f still running after 2526s: 21 proposed so far, $0 spent
+  run 38460c3f still running after 2646s: 24 proposed so far, $0 spent
+  run 38460c3f still running after 2766s: 27 proposed so far, $0 spent
+  run 38460c3f still running after 2886s: 30 proposed so far, $0 spent
+  run 38460c3f still running after 3007s: 32 proposed so far, $0 spent
+  run 38460c3f still running after 3127s: 33 proposed so far, $0 spent
+  run 38460c3f still running after 3247s: 33 proposed so far, $0 spent
+  run 38460c3f still running after 3367s: 33 proposed so far, $0 spent
+  run 38460c3f still running after 3487s: 34 proposed so far, $0 spent
+  run 38460c3f still running after 3607s: 35 proposed so far, $0 spent
+  run 38460c3f still running after 3727s: 37 proposed so far, $0 spent
+  run 38460c3f still running after 3847s: 38 proposed so far, $0 spent
+  run 38460c3f still running after 3967s: 40 proposed so far, $0 spent
+  run 38460c3f still running after 4087s: 40 proposed so far, $0 spent
+  run 38460c3f still running after 4207s: 41 proposed so far, $0 spent
+  run 38460c3f still running after 4328s: 43 proposed so far, $0 spent
+  run 38460c3f still running after 4448s: 43 proposed so far, $0 spent
+  run 38460c3f still running after 4568s: 43 proposed so far, $0 spent
+  run 38460c3f still running after 4688s: 44 proposed so far, $0 spent
+  run 38460c3f still running after 4808s: 44 proposed so far, $0 spent
+  run 38460c3f still running after 4928s: 45 proposed so far, $0 spent
+  run 38460c3f still running after 5048s: 45 proposed so far, $0 spent
+  run 38460c3f still running after 5168s: 45 proposed so far, $0 spent
+  run 38460c3f still running after 5288s: 45 proposed so far, $0 spent
+  run 38460c3f still running after 5409s: 46 proposed so far, $0 spent
+  run 38460c3f python_jobs acra-standard: succeeded, 54 parts, 0 failed, 47 proposed, $0.0846
+  run 9fba59cb python_jobs acra-platinum: succeeded, 38 parts, 0 failed, 29 proposed, $0.0566
+  acra-standard run 38460c3f: {"trigger": "approve", "decided": ["acra-standard:acra-standard.appraisal_review.above_80_00_ltv_property_eligibility.python", "acra-standard:acra-standard.appraisal_review.eligible_property_types.pyt
+POST http://localhost:8000/api/v1/authoring/review/acra-regen-7b/merge-rules: 409 {"detail":"AuthoredValueError: policies/acra-standard.yaml is over the 1048576-byte draft file limit"}
