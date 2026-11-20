@@ -1,6 +1,6 @@
 # Acra code generation: the extraction side of the gap
 
-Author: Virendra Mehta <virendra.mehta@jazzx.ai>. Owner: sonnet-docs. Status: draft for opus-xrepo, nothing built. No provider call was made; every claim below is read from files, marked **[registry]** (seed pack `document_types.yaml`), **[schema]** (`schemas/loan_document_fields.json`, identical to jaci's copy, pack 0.3.1), **[ledger]** (`scripts/local/coverage/regen_5/coverage.json`) or **[code]** (SDK source).
+Author: Virendra Mehta <virendra.mehta@jazzx.ai>. Owner: sonnet-docs. Status: approved by opus-xrepo; P1 to P4 only, no spend. Branch `acra-extraction` (cut from plato). Field names and document ids agreed with sonnet-packs. No provider call was made; every claim below is read from files, marked **[registry]** (seed pack `document_types.yaml`), **[schema]** (`schemas/loan_document_fields.json`, identical to jaci's copy, pack 0.3.1), **[ledger]** (`scripts/local/coverage/regen_5/coverage.json`) or **[code]** (SDK source).
 
 Goal: raise "coded" from 52% toward 93% (`note_acra_code_generation_baseline_and_std_needs_2026-11-19.md`). This plan is the part that supplies the inputs coded rules read: raw fields, dates and loan-record facts. Derived figures (`cltv_percent`, `reserves_months`, DSCR, months since an event) are std and derived-field declarations, owned by sonnet-runtime. Seed-pack data edits are sonnet-packs' (through jaci first); this plan proposes names and sources and does not edit them.
 
@@ -10,9 +10,9 @@ Goal: raise "coded" from 52% toward 93% (`note_acra_code_generation_baseline_and
 - The caller's own values (`ProcessingTurn.submitted`) are never replaced by a document read [code, `pipelines/document/process.py` and `reconcile.py`]. That is the loan-record path, and it needs no document.
 - Per-field source preference between documents is `ProcessingTurn.precedence` (field to document classes, best first).
 
-## 2. Correction to the baseline note
+## 2. The baseline's schema
 
-The note says the seed schema holds four of the raw inputs and no HELOC, rate or lien fields. The current seed schema [schema] already holds `LoanCore.heloc_limit_usd`, `heloc_balance_usd`, `subordinate_financing_type`, `note_rate_percent`, `lease_rent_usd`, `lowest_recent_listing_price_usd`, `is_escrow_waived`, `channel`, `prepayment_penalty_structure`, `dscr_qualification_method`, `is_interest_only`, `occupancy_subtype`, `is_first_time_homebuyer`, `listed_for_sale_last_6_months`, `entity_documents_complete`, `tradelines_meet_requirement` and the ARM caps. Of its 67 fields, **41 are yielded by no document [registry]**: they exist and are never read. The gap is mostly `yields` and missing document types, not missing schema fields. (If regen-5's trial pack carried an older schema, the note's count was right for it; the 2.7 seed is the base here.)
+The regen-5 baseline ran on seed pack 0.2.18 (47 schema fields); pack 0.3.1 added 14, including the HELOC limit and balance, subordinate financing type, lease rent, listing price and LTV. Against 0.3.1 the schema [schema] holds `LoanCore.heloc_limit_usd`, `heloc_balance_usd`, `subordinate_financing_type`, `note_rate_percent`, `lease_rent_usd`, `lowest_recent_listing_price_usd`, `is_escrow_waived`, `channel`, `prepayment_penalty_structure`, `dscr_qualification_method`, `is_interest_only`, `occupancy_subtype`, `is_first_time_homebuyer`, `listed_for_sale_last_6_months`, `entity_documents_complete`, `tradelines_meet_requirement` and the ARM caps. Of its 67 properties, **41 are yielded by no document type [registry]** (sonnet-packs counts 38 of 61 dotted names). The gap is mostly `yields` and missing document types, not missing schema fields. `LoanCore.cltv_percent` is not a schema field (only `ltv_percent` is): it needs a derived declaration, not extraction.
 
 ## 3. Item by item (each checked against the registry)
 
@@ -27,11 +27,14 @@ Registry today: 17 types. Yielding: `loan_application` (12 fields), `appraisal_r
 | Annual taxes | absent | no | `SubjectProperty.annual_property_tax_usd` | new `tax_certificate`, `appraisal_report`, `closing_disclosure` (escrow), `title_commitment` |
 | Property insurance (annual) | absent | `hazard_insurance` yields nothing | `SubjectProperty.annual_insurance_premium_usd` | `hazard_insurance` (declarations page), `closing_disclosure` |
 | Association dues (annual) | absent | no | `SubjectProperty.annual_association_dues_usd` | `hoa_questionnaire`, `appraisal_report`, new `hoa_statement` |
-| First payment under the Note | absent | no | `LoanCore.monthly_principal_interest_usd` | new `promissory_note`, `closing_disclosure` |
+| First payment under the Note | absent | no | `LoanCore.first_payment_amount_usd` | new `promissory_note`, `closing_disclosure` |
 | Note rate | present, unyielded | no | `LoanCore.note_rate_percent` (exists) | `promissory_note`, `closing_disclosure` |
 | Term, interest-only term | absent | no | `LoanCore.loan_term_months`, `LoanCore.interest_only_term_months` | `promissory_note`, `closing_disclosure` |
+| Bureau scores | `representative_score` only | yes (`credit_report`) | `CreditReport.bureau_scores` (list of stated scores; `middle_score` needs them) | `credit_report` |
 | Market rent (1007, 1025) | absent (`lease_rent_usd` is the lease, unyielded) | no | `SubjectProperty.market_rent_usd` | new `rent_schedule` (child of `appraisal_report`; forms 1007 and 1025); `lease_agreement` should yield the existing `lease_rent_usd` |
 | Verified assets | absent | `bank_statement` yields nothing | `Borrower.asset_accounts` (list: institution, account type, balance, statement date), not a bare total: which assets count is policy, so extraction supplies the accounts and std totals them | `bank_statement`, new `asset_statement` (retirement, brokerage) |
+
+Periods stay as the document states them (the first payment and rents are monthly, taxes, insurance and dues annual); each field's description says which, and the derived declarations normalize with `monthly`. HELOC stays in its own fields (STD-10.7 takes the greater of limit and balance).
 
 ### 3b. Dates for `months_between`
 
@@ -65,7 +68,7 @@ Each is an ISO date field; the months-since fields become derived through `month
 
 Nothing above needs a new pipeline. The SDK work is to prove the existing extraction carries these field shapes, then fix what does not:
 
-- **P1, shapes (fakes, no provider).** Tests that `DocumentAgent.extract` and `extract_located` handle: a list of numbers, a list of objects (accounts, tradelines; `Borrower.reo_properties` is the precedent in the schema), an ISO date, money as `Decimal`-safe numbers, and a missing value staying unknown rather than 0 (note `ownership_months` and the months fields default to 0 in the current schema: a default of 0 reads as "none", which is wrong for an unsupplied field; propose `null` defaults to sonnet-packs). Each failing shape gets a fix in `tools/documents/` with a test that failed first.
+- **P1, shapes (fakes, no provider).** Found and fixed: the chunk merge counted a default (`False`, `0`) as a report, so an earlier chunk's default hid a later chunk's value (committed on `acra-extraction`). Remaining: Tests that `DocumentAgent.extract` and `extract_located` handle: a list of numbers, a list of objects (accounts, tradelines; `Borrower.reo_properties` is the precedent in the schema), an ISO date, money as `Decimal`-safe numbers, and a missing value staying unknown rather than 0 (note `ownership_months` and the months fields default to 0 in the current schema: a default of 0 reads as "none", which is wrong for an unsupplied field; sonnet-packs agreed: unsupplied numbers default to `null`). Each failing shape gets a fix in `tools/documents/` with a test that failed first.
 - **P2, reconcile.** `precedence` entries for each new field, as pack data in the turn; verify with fakes that two documents disagreeing on purchase price or taxes surface as a conflict and that a `submitted` loan-record value is never replaced.
 - **P3, loan-record path.** A fakes e2e: a turn with `submitted` holding channel, first-time buyer, escrow waived and DSCR method reaches the rule context unreplaced, with no document naming them. Document the caller contract in the pipeline's docstring.
 - **P4, measure.** Re-run the ledger's registry check (no spend) on the proposed `document_types.yaml` and schema: the unsupplied-reads list in `coverage.json` (19 fields today) should drop to the derived ones only. Target stated before the change: every item in 3a to 3c either yielded by a type, supplied by the loan record, or declared derived.
@@ -73,8 +76,8 @@ Nothing above needs a new pipeline. The SDK work is to prove the existing extrac
 
 ## 5. Agreements needed before building
 
-1. sonnet-packs: the field names in section 3 and the new document types (`purchase_contract`, `closing_disclosure`, `promissory_note`, `rent_schedule`, `tax_certificate`, `heloc_statement`, `hoa_statement`, `asset_statement`, `prepayment_addendum`), their mapping to the Master Taxonomy ids, and `null` defaults for unsupplied numbers.
-2. sonnet-runtime: whether P1 to P3 fold into v2.7.6 or take their own branch (the user's rule: cut from `plato`, not from a version branch), and the derived-declaration names for months-since and reserves so 3b and 3c point at them.
+1. Done (sonnet-packs, schema and `document_types.yaml` edits go through jaci, from sonnet-jaci): the field names in section 3 and the new document types (`purchase_contract`, `closing_disclosure`, `promissory_note`, `rent_schedule`, `tax_certificate`, `heloc_statement`, `hoa_statement`, `asset_statement`, `prepayment_addendum`), their mapping to the Master Taxonomy ids (theirs, from the taxonomy workbook), and `null` defaults.
+2. Done (sonnet-runtime): own branch from `plato`, folded in before the squash. They provide functions only (`loan_to_value`, `months_between`, `pitia`, `dscr`, `middle_score`); the derived-declaration names are pack data, sonnet-packs'. My field names stay the extraction schema's own.
 3. The user: any live extraction on synthetic or loan documents to prove a field (a typed figure per run). The plan has none.
 
 ## 6. Residuals and unknowns
